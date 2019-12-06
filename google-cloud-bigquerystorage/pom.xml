@@ -99,6 +99,20 @@
       <artifactId>google-cloud-bigquery</artifactId>
       <version>1.102.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-core</artifactId>
+      <version>1.91.3</version>
+    </dependency>
 
     <dependency>
       <groupId>com.google.api.grpc</groupId>
