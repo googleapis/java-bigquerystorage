@@ -17,7 +17,7 @@ set -eo pipefail
 # Display commands being run.
 set -x
 
-cd github/java-bigquerydatatransfer/
+cd github/java-bigquerystorage/
 
 # Print out Java version
 java -version

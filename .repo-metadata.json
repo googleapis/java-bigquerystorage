@@ -7,7 +7,7 @@
   "release_level": "alpha",
   "language": "java",
   "repo": "googleapis/java-bigquerystorage",
-  "repo_short": "java-bigquerydatatransfer",
+  "repo_short": "java-bigquerystorage",
   "distribution_name": "com.google.cloud:google-cloud-bigquerystorage",
   "api_id": "bigquerystorage.googleapis.com"
 }

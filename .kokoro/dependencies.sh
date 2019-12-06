@@ -15,7 +15,7 @@
 
 set -eo pipefail
 
-cd github/java-bigquerydatatransfer/
+cd github/java-bigquerystorage/
 
 # Print out Java
 java -version
