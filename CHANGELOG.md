@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.120.2](https://www.github.com/googleapis/java-bigquerystorage/compare/v0.120.1...v0.120.2) (2020-01-17)
+
+
+### Dependencies
+
+* update dependency org.threeten:threetenbp to v1.4.1 ([617db50](https://www.github.com/googleapis/java-bigquerystorage/commit/617db50f70095fa574e2fb5316dfa7b5e609bd5e))
+
 ## [0.120.0](https://www.github.com/googleapis/java-bigquerystorage/compare/0.120.0-beta...v0.120.0) (2020-01-07)
 
 
