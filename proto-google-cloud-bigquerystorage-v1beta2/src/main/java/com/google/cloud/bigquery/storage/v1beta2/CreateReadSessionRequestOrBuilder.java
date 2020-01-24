@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -19,60 +18,86 @@
 
 package com.google.cloud.bigquery.storage.v1beta2;
 
-public interface CreateReadSessionRequestOrBuilder extends
+public interface CreateReadSessionRequestOrBuilder
+    extends
     // @@protoc_insertion_point(interface_extends:google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest)
     com.google.protobuf.MessageOrBuilder {
 
   /**
+   *
+   *
    * <pre>
    * Required. The request project that owns the session, in the form of
    * `projects/{project_id}`.
    * </pre>
    *
-   * <code>string parent = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }</code>
+   * <code>
+   * string parent = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }
+   * </code>
+   *
    * @return The parent.
    */
   java.lang.String getParent();
   /**
+   *
+   *
    * <pre>
    * Required. The request project that owns the session, in the form of
    * `projects/{project_id}`.
    * </pre>
    *
-   * <code>string parent = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }</code>
+   * <code>
+   * string parent = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }
+   * </code>
+   *
    * @return The bytes for parent.
    */
-  com.google.protobuf.ByteString
-      getParentBytes();
+  com.google.protobuf.ByteString getParentBytes();
 
   /**
+   *
+   *
    * <pre>
    * Required. Session to be created.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ReadSession read_session = 2 [(.google.api.field_behavior) = REQUIRED];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ReadSession read_session = 2 [(.google.api.field_behavior) = REQUIRED];
+   * </code>
+   *
    * @return Whether the readSession field is set.
    */
   boolean hasReadSession();
   /**
+   *
+   *
    * <pre>
    * Required. Session to be created.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ReadSession read_session = 2 [(.google.api.field_behavior) = REQUIRED];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ReadSession read_session = 2 [(.google.api.field_behavior) = REQUIRED];
+   * </code>
+   *
    * @return The readSession.
    */
   com.google.cloud.bigquery.storage.v1beta2.ReadSession getReadSession();
   /**
+   *
+   *
    * <pre>
    * Required. Session to be created.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ReadSession read_session = 2 [(.google.api.field_behavior) = REQUIRED];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ReadSession read_session = 2 [(.google.api.field_behavior) = REQUIRED];
+   * </code>
    */
   com.google.cloud.bigquery.storage.v1beta2.ReadSessionOrBuilder getReadSessionOrBuilder();
 
   /**
+   *
+   *
    * <pre>
    * Max initial number of streams. If unset or zero, the server will
    * provide a value of streams so as to produce reasonable throughput. Must be
@@ -84,6 +109,7 @@ public interface CreateReadSessionRequestOrBuilder extends
    * </pre>
    *
    * <code>int32 max_stream_count = 3;</code>
+   *
    * @return The maxStreamCount.
    */
   int getMaxStreamCount();

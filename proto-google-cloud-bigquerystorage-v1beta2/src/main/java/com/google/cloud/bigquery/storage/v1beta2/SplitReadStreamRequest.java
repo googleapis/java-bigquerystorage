@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -20,37 +19,39 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 /**
+ *
+ *
  * <pre>
  * Request message for `SplitReadStream`.
  * </pre>
  *
  * Protobuf type {@code google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest}
  */
-public  final class SplitReadStreamRequest extends
-    com.google.protobuf.GeneratedMessageV3 implements
+public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedMessageV3
+    implements
     // @@protoc_insertion_point(message_implements:google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest)
     SplitReadStreamRequestOrBuilder {
-private static final long serialVersionUID = 0L;
+  private static final long serialVersionUID = 0L;
   // Use SplitReadStreamRequest.newBuilder() to construct.
   private SplitReadStreamRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
     super(builder);
   }
+
   private SplitReadStreamRequest() {
     name_ = "";
   }
 
   @java.lang.Override
   @SuppressWarnings({"unused"})
-  protected java.lang.Object newInstance(
-      UnusedPrivateParameter unused) {
+  protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new SplitReadStreamRequest();
   }
 
   @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet
-  getUnknownFields() {
+  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
     return this.unknownFields;
   }
+
   private SplitReadStreamRequest(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -69,57 +70,65 @@ private static final long serialVersionUID = 0L;
           case 0:
             done = true;
             break;
-          case 10: {
-            java.lang.String s = input.readStringRequireUtf8();
+          case 10:
+            {
+              java.lang.String s = input.readStringRequireUtf8();
 
-            name_ = s;
-            break;
-          }
-          case 17: {
-
-            fraction_ = input.readDouble();
-            break;
-          }
-          default: {
-            if (!parseUnknownField(
-                input, unknownFields, extensionRegistry, tag)) {
-              done = true;
+              name_ = s;
+              break;
             }
-            break;
-          }
+          case 17:
+            {
+              fraction_ = input.readDouble();
+              break;
+            }
+          default:
+            {
+              if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
         }
       }
     } catch (com.google.protobuf.InvalidProtocolBufferException e) {
       throw e.setUnfinishedMessage(this);
     } catch (java.io.IOException e) {
-      throw new com.google.protobuf.InvalidProtocolBufferException(
-          e).setUnfinishedMessage(this);
+      throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
     } finally {
       this.unknownFields = unknownFields.build();
       makeExtensionsImmutable();
     }
   }
-  public static final com.google.protobuf.Descriptors.Descriptor
-      getDescriptor() {
-    return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_descriptor;
+
+  public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+    return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+        .internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_descriptor;
   }
 
   @java.lang.Override
   protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internalGetFieldAccessorTable() {
-    return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_fieldAccessorTable
+    return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+        .internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_fieldAccessorTable
         .ensureFieldAccessorsInitialized(
-            com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.class, com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.Builder.class);
+            com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.class,
+            com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.Builder.class);
   }
 
   public static final int NAME_FIELD_NUMBER = 1;
   private volatile java.lang.Object name_;
   /**
+   *
+   *
    * <pre>
    * Required. Name of the stream to split.
    * </pre>
    *
-   * <code>string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }</code>
+   * <code>
+   * string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }
+   * </code>
+   *
    * @return The name.
    */
   public java.lang.String getName() {
@@ -127,28 +136,30 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
+      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       name_ = s;
       return s;
     }
   }
   /**
+   *
+   *
    * <pre>
    * Required. Name of the stream to split.
    * </pre>
    *
-   * <code>string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }</code>
+   * <code>
+   * string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }
+   * </code>
+   *
    * @return The bytes for name.
    */
-  public com.google.protobuf.ByteString
-      getNameBytes() {
+  public com.google.protobuf.ByteString getNameBytes() {
     java.lang.Object ref = name_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (java.lang.String) ref);
+      com.google.protobuf.ByteString b =
+          com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
       name_ = b;
       return b;
     } else {
@@ -159,6 +170,8 @@ private static final long serialVersionUID = 0L;
   public static final int FRACTION_FIELD_NUMBER = 2;
   private double fraction_;
   /**
+   *
+   *
    * <pre>
    * A value in the range (0.0, 1.0) that specifies the fractional point at
    * which the original stream should be split. The actual split point is
@@ -170,6 +183,7 @@ private static final long serialVersionUID = 0L;
    * </pre>
    *
    * <code>double fraction = 2;</code>
+   *
    * @return The fraction.
    */
   public double getFraction() {
@@ -177,6 +191,7 @@ private static final long serialVersionUID = 0L;
   }
 
   private byte memoizedIsInitialized = -1;
+
   @java.lang.Override
   public final boolean isInitialized() {
     byte isInitialized = memoizedIsInitialized;
@@ -188,8 +203,7 @@ private static final long serialVersionUID = 0L;
   }
 
   @java.lang.Override
-  public void writeTo(com.google.protobuf.CodedOutputStream output)
-                      throws java.io.IOException {
+  public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
     if (!getNameBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
     }
@@ -209,8 +223,7 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
     }
     if (fraction_ != 0D) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeDoubleSize(2, fraction_);
+      size += com.google.protobuf.CodedOutputStream.computeDoubleSize(2, fraction_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -220,18 +233,17 @@ private static final long serialVersionUID = 0L;
   @java.lang.Override
   public boolean equals(final java.lang.Object obj) {
     if (obj == this) {
-     return true;
+      return true;
     }
     if (!(obj instanceof com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest)) {
       return super.equals(obj);
     }
-    com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest other = (com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest) obj;
+    com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest other =
+        (com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest) obj;
 
-    if (!getName()
-        .equals(other.getName())) return false;
+    if (!getName().equals(other.getName())) return false;
     if (java.lang.Double.doubleToLongBits(getFraction())
-        != java.lang.Double.doubleToLongBits(
-            other.getFraction())) return false;
+        != java.lang.Double.doubleToLongBits(other.getFraction())) return false;
     if (!unknownFields.equals(other.unknownFields)) return false;
     return true;
   }
@@ -246,125 +258,137 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + NAME_FIELD_NUMBER;
     hash = (53 * hash) + getName().hashCode();
     hash = (37 * hash) + FRACTION_FIELD_NUMBER;
-    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-        java.lang.Double.doubleToLongBits(getFraction()));
+    hash =
+        (53 * hash)
+            + com.google.protobuf.Internal.hashLong(
+                java.lang.Double.doubleToLongBits(getFraction()));
     hash = (29 * hash) + unknownFields.hashCode();
     memoizedHashCode = hash;
     return hash;
   }
 
   public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
-      java.nio.ByteBuffer data)
-      throws com.google.protobuf.InvalidProtocolBufferException {
+      java.nio.ByteBuffer data) throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
-      java.nio.ByteBuffer data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      java.nio.ByteBuffer data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
       com.google.protobuf.ByteString data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
       com.google.protobuf.ByteString data,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(byte[] data)
-      throws com.google.protobuf.InvalidProtocolBufferException {
+
+  public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
+      byte[] data) throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
-      byte[] data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(java.io.InputStream input)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
-  }
+
   public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+      java.io.InputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
-  public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseDelimitedFrom(java.io.InputStream input)
+
+  public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseDelimitedFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+      java.io.InputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
   }
+
+  public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseDelimitedFrom(
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(
+        PARSER, input, extensionRegistry);
+  }
+
   public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
-      com.google.protobuf.CodedInputStream input)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
+      com.google.protobuf.CodedInputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest parseFrom(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
 
   @java.lang.Override
-  public Builder newBuilderForType() { return newBuilder(); }
+  public Builder newBuilderForType() {
+    return newBuilder();
+  }
+
   public static Builder newBuilder() {
     return DEFAULT_INSTANCE.toBuilder();
   }
-  public static Builder newBuilder(com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest prototype) {
+
+  public static Builder newBuilder(
+      com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest prototype) {
     return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-  }
-  @java.lang.Override
-  public Builder toBuilder() {
-    return this == DEFAULT_INSTANCE
-        ? new Builder() : new Builder().mergeFrom(this);
   }
 
   @java.lang.Override
-  protected Builder newBuilderForType(
-      com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+  public Builder toBuilder() {
+    return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+  }
+
+  @java.lang.Override
+  protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
     Builder builder = new Builder(parent);
     return builder;
   }
   /**
+   *
+   *
    * <pre>
    * Request message for `SplitReadStream`.
    * </pre>
    *
    * Protobuf type {@code google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest}
    */
-  public static final class Builder extends
-      com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+  public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder>
+      implements
       // @@protoc_insertion_point(builder_implements:google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest)
       com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequestOrBuilder {
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_descriptor;
+    public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_descriptor;
     }
 
     @java.lang.Override
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_fieldAccessorTable
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.class, com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.Builder.class);
+              com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.class,
+              com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.Builder.class);
     }
 
     // Construct using com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.newBuilder()
@@ -372,16 +396,15 @@ private static final long serialVersionUID = 0L;
       maybeForceBuilderInitialization();
     }
 
-    private Builder(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+    private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
       super(parent);
       maybeForceBuilderInitialization();
     }
+
     private void maybeForceBuilderInitialization() {
-      if (com.google.protobuf.GeneratedMessageV3
-              .alwaysUseFieldBuilders) {
-      }
+      if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
     }
+
     @java.lang.Override
     public Builder clear() {
       super.clear();
@@ -393,13 +416,14 @@ private static final long serialVersionUID = 0L;
     }
 
     @java.lang.Override
-    public com.google.protobuf.Descriptors.Descriptor
-        getDescriptorForType() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_descriptor;
+    public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_descriptor;
     }
 
     @java.lang.Override
-    public com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest getDefaultInstanceForType() {
+    public com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest
+        getDefaultInstanceForType() {
       return com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.getDefaultInstance();
     }
 
@@ -414,7 +438,8 @@ private static final long serialVersionUID = 0L;
 
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest buildPartial() {
-      com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest result = new com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest(this);
+      com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest result =
+          new com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest(this);
       result.name_ = name_;
       result.fraction_ = fraction_;
       onBuilt();
@@ -425,46 +450,50 @@ private static final long serialVersionUID = 0L;
     public Builder clone() {
       return super.clone();
     }
+
     @java.lang.Override
     public Builder setField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
       return super.setField(field, value);
     }
+
     @java.lang.Override
-    public Builder clearField(
-        com.google.protobuf.Descriptors.FieldDescriptor field) {
+    public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
       return super.clearField(field);
     }
+
     @java.lang.Override
-    public Builder clearOneof(
-        com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+    public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
       return super.clearOneof(oneof);
     }
+
     @java.lang.Override
     public Builder setRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        int index, java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
       return super.setRepeatedField(field, index, value);
     }
+
     @java.lang.Override
     public Builder addRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
       return super.addRepeatedField(field, value);
     }
+
     @java.lang.Override
     public Builder mergeFrom(com.google.protobuf.Message other) {
       if (other instanceof com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest) {
-        return mergeFrom((com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest)other);
+        return mergeFrom((com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest) other);
       } else {
         super.mergeFrom(other);
         return this;
       }
     }
 
-    public Builder mergeFrom(com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest other) {
-      if (other == com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.getDefaultInstance()) return this;
+    public Builder mergeFrom(
+        com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest other) {
+      if (other
+          == com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.getDefaultInstance())
+        return this;
       if (!other.getName().isEmpty()) {
         name_ = other.name_;
         onChanged();
@@ -491,7 +520,9 @@ private static final long serialVersionUID = 0L;
       try {
         parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        parsedMessage = (com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest) e.getUnfinishedMessage();
+        parsedMessage =
+            (com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest)
+                e.getUnfinishedMessage();
         throw e.unwrapIOException();
       } finally {
         if (parsedMessage != null) {
@@ -503,18 +534,22 @@ private static final long serialVersionUID = 0L;
 
     private java.lang.Object name_ = "";
     /**
+     *
+     *
      * <pre>
      * Required. Name of the stream to split.
      * </pre>
      *
-     * <code>string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }</code>
+     * <code>
+     * string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }
+     * </code>
+     *
      * @return The name.
      */
     public java.lang.String getName() {
       java.lang.Object ref = name_;
       if (!(ref instanceof java.lang.String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
+        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         name_ = s;
         return s;
@@ -523,20 +558,23 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Required. Name of the stream to split.
      * </pre>
      *
-     * <code>string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }</code>
+     * <code>
+     * string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }
+     * </code>
+     *
      * @return The bytes for name.
      */
-    public com.google.protobuf.ByteString
-        getNameBytes() {
+    public com.google.protobuf.ByteString getNameBytes() {
       java.lang.Object ref = name_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
         name_ = b;
         return b;
       } else {
@@ -544,61 +582,76 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Required. Name of the stream to split.
      * </pre>
      *
-     * <code>string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }</code>
+     * <code>
+     * string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }
+     * </code>
+     *
      * @param value The name to set.
      * @return This builder for chaining.
      */
-    public Builder setName(
-        java.lang.String value) {
+    public Builder setName(java.lang.String value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  
+        throw new NullPointerException();
+      }
+
       name_ = value;
       onChanged();
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Required. Name of the stream to split.
      * </pre>
      *
-     * <code>string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }</code>
+     * <code>
+     * string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }
+     * </code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearName() {
-      
+
       name_ = getDefaultInstance().getName();
       onChanged();
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Required. Name of the stream to split.
      * </pre>
      *
-     * <code>string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }</code>
+     * <code>
+     * string name = 1 [(.google.api.field_behavior) = REQUIRED, (.google.api.resource_reference) = { ... }
+     * </code>
+     *
      * @param value The bytes for name to set.
      * @return This builder for chaining.
      */
-    public Builder setNameBytes(
-        com.google.protobuf.ByteString value) {
+    public Builder setNameBytes(com.google.protobuf.ByteString value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-      
+        throw new NullPointerException();
+      }
+      checkByteStringIsUtf8(value);
+
       name_ = value;
       onChanged();
       return this;
     }
 
-    private double fraction_ ;
+    private double fraction_;
     /**
+     *
+     *
      * <pre>
      * A value in the range (0.0, 1.0) that specifies the fractional point at
      * which the original stream should be split. The actual split point is
@@ -610,12 +663,15 @@ private static final long serialVersionUID = 0L;
      * </pre>
      *
      * <code>double fraction = 2;</code>
+     *
      * @return The fraction.
      */
     public double getFraction() {
       return fraction_;
     }
     /**
+     *
+     *
      * <pre>
      * A value in the range (0.0, 1.0) that specifies the fractional point at
      * which the original stream should be split. The actual split point is
@@ -627,16 +683,19 @@ private static final long serialVersionUID = 0L;
      * </pre>
      *
      * <code>double fraction = 2;</code>
+     *
      * @param value The fraction to set.
      * @return This builder for chaining.
      */
     public Builder setFraction(double value) {
-      
+
       fraction_ = value;
       onChanged();
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * A value in the range (0.0, 1.0) that specifies the fractional point at
      * which the original stream should be split. The actual split point is
@@ -648,17 +707,18 @@ private static final long serialVersionUID = 0L;
      * </pre>
      *
      * <code>double fraction = 2;</code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearFraction() {
-      
+
       fraction_ = 0D;
       onChanged();
       return this;
     }
+
     @java.lang.Override
-    public final Builder setUnknownFields(
-        final com.google.protobuf.UnknownFieldSet unknownFields) {
+    public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
       return super.setUnknownFields(unknownFields);
     }
 
@@ -668,30 +728,32 @@ private static final long serialVersionUID = 0L;
       return super.mergeUnknownFields(unknownFields);
     }
 
-
     // @@protoc_insertion_point(builder_scope:google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest)
   }
 
   // @@protoc_insertion_point(class_scope:google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest)
-  private static final com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest DEFAULT_INSTANCE;
+  private static final com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest
+      DEFAULT_INSTANCE;
+
   static {
     DEFAULT_INSTANCE = new com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest();
   }
 
-  public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest getDefaultInstance() {
+  public static com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest
+      getDefaultInstance() {
     return DEFAULT_INSTANCE;
   }
 
-  private static final com.google.protobuf.Parser<SplitReadStreamRequest>
-      PARSER = new com.google.protobuf.AbstractParser<SplitReadStreamRequest>() {
-    @java.lang.Override
-    public SplitReadStreamRequest parsePartialFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return new SplitReadStreamRequest(input, extensionRegistry);
-    }
-  };
+  private static final com.google.protobuf.Parser<SplitReadStreamRequest> PARSER =
+      new com.google.protobuf.AbstractParser<SplitReadStreamRequest>() {
+        @java.lang.Override
+        public SplitReadStreamRequest parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new SplitReadStreamRequest(input, extensionRegistry);
+        }
+      };
 
   public static com.google.protobuf.Parser<SplitReadStreamRequest> parser() {
     return PARSER;
@@ -703,9 +765,8 @@ private static final long serialVersionUID = 0L;
   }
 
   @java.lang.Override
-  public com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest getDefaultInstanceForType() {
+  public com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest
+      getDefaultInstanceForType() {
     return DEFAULT_INSTANCE;
   }
-
 }
-

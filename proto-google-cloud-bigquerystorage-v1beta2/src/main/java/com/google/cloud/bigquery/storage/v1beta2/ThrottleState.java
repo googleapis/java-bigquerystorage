@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -20,36 +19,37 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 /**
+ *
+ *
  * <pre>
  * Information on if the current connection is being throttled.
  * </pre>
  *
  * Protobuf type {@code google.cloud.bigquery.storage.v1beta2.ThrottleState}
  */
-public  final class ThrottleState extends
-    com.google.protobuf.GeneratedMessageV3 implements
+public final class ThrottleState extends com.google.protobuf.GeneratedMessageV3
+    implements
     // @@protoc_insertion_point(message_implements:google.cloud.bigquery.storage.v1beta2.ThrottleState)
     ThrottleStateOrBuilder {
-private static final long serialVersionUID = 0L;
+  private static final long serialVersionUID = 0L;
   // Use ThrottleState.newBuilder() to construct.
   private ThrottleState(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
     super(builder);
   }
-  private ThrottleState() {
-  }
+
+  private ThrottleState() {}
 
   @java.lang.Override
   @SuppressWarnings({"unused"})
-  protected java.lang.Object newInstance(
-      UnusedPrivateParameter unused) {
+  protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new ThrottleState();
   }
 
   @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet
-  getUnknownFields() {
+  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
     return this.unknownFields;
   }
+
   private ThrottleState(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -68,52 +68,57 @@ private static final long serialVersionUID = 0L;
           case 0:
             done = true;
             break;
-          case 8: {
-
-            throttlePercent_ = input.readInt32();
-            break;
-          }
-          default: {
-            if (!parseUnknownField(
-                input, unknownFields, extensionRegistry, tag)) {
-              done = true;
+          case 8:
+            {
+              throttlePercent_ = input.readInt32();
+              break;
             }
-            break;
-          }
+          default:
+            {
+              if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
         }
       }
     } catch (com.google.protobuf.InvalidProtocolBufferException e) {
       throw e.setUnfinishedMessage(this);
     } catch (java.io.IOException e) {
-      throw new com.google.protobuf.InvalidProtocolBufferException(
-          e).setUnfinishedMessage(this);
+      throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
     } finally {
       this.unknownFields = unknownFields.build();
       makeExtensionsImmutable();
     }
   }
-  public static final com.google.protobuf.Descriptors.Descriptor
-      getDescriptor() {
-    return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_descriptor;
+
+  public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+    return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+        .internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_descriptor;
   }
 
   @java.lang.Override
   protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internalGetFieldAccessorTable() {
-    return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_fieldAccessorTable
+    return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+        .internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_fieldAccessorTable
         .ensureFieldAccessorsInitialized(
-            com.google.cloud.bigquery.storage.v1beta2.ThrottleState.class, com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder.class);
+            com.google.cloud.bigquery.storage.v1beta2.ThrottleState.class,
+            com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder.class);
   }
 
   public static final int THROTTLE_PERCENT_FIELD_NUMBER = 1;
   private int throttlePercent_;
   /**
+   *
+   *
    * <pre>
    * How much this connection is being throttled. Zero means no throttling,
    * 100 means fully throttled.
    * </pre>
    *
    * <code>int32 throttle_percent = 1;</code>
+   *
    * @return The throttlePercent.
    */
   public int getThrottlePercent() {
@@ -121,6 +126,7 @@ private static final long serialVersionUID = 0L;
   }
 
   private byte memoizedIsInitialized = -1;
+
   @java.lang.Override
   public final boolean isInitialized() {
     byte isInitialized = memoizedIsInitialized;
@@ -132,8 +138,7 @@ private static final long serialVersionUID = 0L;
   }
 
   @java.lang.Override
-  public void writeTo(com.google.protobuf.CodedOutputStream output)
-                      throws java.io.IOException {
+  public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
     if (throttlePercent_ != 0) {
       output.writeInt32(1, throttlePercent_);
     }
@@ -147,8 +152,7 @@ private static final long serialVersionUID = 0L;
 
     size = 0;
     if (throttlePercent_ != 0) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeInt32Size(1, throttlePercent_);
+      size += com.google.protobuf.CodedOutputStream.computeInt32Size(1, throttlePercent_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -158,15 +162,15 @@ private static final long serialVersionUID = 0L;
   @java.lang.Override
   public boolean equals(final java.lang.Object obj) {
     if (obj == this) {
-     return true;
+      return true;
     }
     if (!(obj instanceof com.google.cloud.bigquery.storage.v1beta2.ThrottleState)) {
       return super.equals(obj);
     }
-    com.google.cloud.bigquery.storage.v1beta2.ThrottleState other = (com.google.cloud.bigquery.storage.v1beta2.ThrottleState) obj;
+    com.google.cloud.bigquery.storage.v1beta2.ThrottleState other =
+        (com.google.cloud.bigquery.storage.v1beta2.ThrottleState) obj;
 
-    if (getThrottlePercent()
-        != other.getThrottlePercent()) return false;
+    if (getThrottlePercent() != other.getThrottlePercent()) return false;
     if (!unknownFields.equals(other.unknownFields)) return false;
     return true;
   }
@@ -186,117 +190,127 @@ private static final long serialVersionUID = 0L;
   }
 
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(
-      java.nio.ByteBuffer data)
-      throws com.google.protobuf.InvalidProtocolBufferException {
+      java.nio.ByteBuffer data) throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(
-      java.nio.ByteBuffer data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      java.nio.ByteBuffer data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(
       com.google.protobuf.ByteString data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(
       com.google.protobuf.ByteString data,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(byte[] data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(
-      byte[] data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(java.io.InputStream input)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
-  }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+      java.io.InputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
-  public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseDelimitedFrom(java.io.InputStream input)
+
+  public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseDelimitedFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+      java.io.InputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
   }
+
+  public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseDelimitedFrom(
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(
+        PARSER, input, extensionRegistry);
+  }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(
-      com.google.protobuf.CodedInputStream input)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
+      com.google.protobuf.CodedInputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ThrottleState parseFrom(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
 
   @java.lang.Override
-  public Builder newBuilderForType() { return newBuilder(); }
+  public Builder newBuilderForType() {
+    return newBuilder();
+  }
+
   public static Builder newBuilder() {
     return DEFAULT_INSTANCE.toBuilder();
   }
-  public static Builder newBuilder(com.google.cloud.bigquery.storage.v1beta2.ThrottleState prototype) {
+
+  public static Builder newBuilder(
+      com.google.cloud.bigquery.storage.v1beta2.ThrottleState prototype) {
     return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-  }
-  @java.lang.Override
-  public Builder toBuilder() {
-    return this == DEFAULT_INSTANCE
-        ? new Builder() : new Builder().mergeFrom(this);
   }
 
   @java.lang.Override
-  protected Builder newBuilderForType(
-      com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+  public Builder toBuilder() {
+    return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+  }
+
+  @java.lang.Override
+  protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
     Builder builder = new Builder(parent);
     return builder;
   }
   /**
+   *
+   *
    * <pre>
    * Information on if the current connection is being throttled.
    * </pre>
    *
    * Protobuf type {@code google.cloud.bigquery.storage.v1beta2.ThrottleState}
    */
-  public static final class Builder extends
-      com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+  public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder>
+      implements
       // @@protoc_insertion_point(builder_implements:google.cloud.bigquery.storage.v1beta2.ThrottleState)
       com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder {
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_descriptor;
+    public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_descriptor;
     }
 
     @java.lang.Override
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_fieldAccessorTable
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              com.google.cloud.bigquery.storage.v1beta2.ThrottleState.class, com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder.class);
+              com.google.cloud.bigquery.storage.v1beta2.ThrottleState.class,
+              com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder.class);
     }
 
     // Construct using com.google.cloud.bigquery.storage.v1beta2.ThrottleState.newBuilder()
@@ -304,16 +318,15 @@ private static final long serialVersionUID = 0L;
       maybeForceBuilderInitialization();
     }
 
-    private Builder(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+    private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
       super(parent);
       maybeForceBuilderInitialization();
     }
+
     private void maybeForceBuilderInitialization() {
-      if (com.google.protobuf.GeneratedMessageV3
-              .alwaysUseFieldBuilders) {
-      }
+      if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
     }
+
     @java.lang.Override
     public Builder clear() {
       super.clear();
@@ -323,9 +336,9 @@ private static final long serialVersionUID = 0L;
     }
 
     @java.lang.Override
-    public com.google.protobuf.Descriptors.Descriptor
-        getDescriptorForType() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_descriptor;
+    public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_ThrottleState_descriptor;
     }
 
     @java.lang.Override
@@ -344,7 +357,8 @@ private static final long serialVersionUID = 0L;
 
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1beta2.ThrottleState buildPartial() {
-      com.google.cloud.bigquery.storage.v1beta2.ThrottleState result = new com.google.cloud.bigquery.storage.v1beta2.ThrottleState(this);
+      com.google.cloud.bigquery.storage.v1beta2.ThrottleState result =
+          new com.google.cloud.bigquery.storage.v1beta2.ThrottleState(this);
       result.throttlePercent_ = throttlePercent_;
       onBuilt();
       return result;
@@ -354,38 +368,39 @@ private static final long serialVersionUID = 0L;
     public Builder clone() {
       return super.clone();
     }
+
     @java.lang.Override
     public Builder setField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
       return super.setField(field, value);
     }
+
     @java.lang.Override
-    public Builder clearField(
-        com.google.protobuf.Descriptors.FieldDescriptor field) {
+    public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
       return super.clearField(field);
     }
+
     @java.lang.Override
-    public Builder clearOneof(
-        com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+    public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
       return super.clearOneof(oneof);
     }
+
     @java.lang.Override
     public Builder setRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        int index, java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
       return super.setRepeatedField(field, index, value);
     }
+
     @java.lang.Override
     public Builder addRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
       return super.addRepeatedField(field, value);
     }
+
     @java.lang.Override
     public Builder mergeFrom(com.google.protobuf.Message other) {
       if (other instanceof com.google.cloud.bigquery.storage.v1beta2.ThrottleState) {
-        return mergeFrom((com.google.cloud.bigquery.storage.v1beta2.ThrottleState)other);
+        return mergeFrom((com.google.cloud.bigquery.storage.v1beta2.ThrottleState) other);
       } else {
         super.mergeFrom(other);
         return this;
@@ -393,7 +408,8 @@ private static final long serialVersionUID = 0L;
     }
 
     public Builder mergeFrom(com.google.cloud.bigquery.storage.v1beta2.ThrottleState other) {
-      if (other == com.google.cloud.bigquery.storage.v1beta2.ThrottleState.getDefaultInstance()) return this;
+      if (other == com.google.cloud.bigquery.storage.v1beta2.ThrottleState.getDefaultInstance())
+        return this;
       if (other.getThrottlePercent() != 0) {
         setThrottlePercent(other.getThrottlePercent());
       }
@@ -416,7 +432,8 @@ private static final long serialVersionUID = 0L;
       try {
         parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        parsedMessage = (com.google.cloud.bigquery.storage.v1beta2.ThrottleState) e.getUnfinishedMessage();
+        parsedMessage =
+            (com.google.cloud.bigquery.storage.v1beta2.ThrottleState) e.getUnfinishedMessage();
         throw e.unwrapIOException();
       } finally {
         if (parsedMessage != null) {
@@ -426,53 +443,62 @@ private static final long serialVersionUID = 0L;
       return this;
     }
 
-    private int throttlePercent_ ;
+    private int throttlePercent_;
     /**
+     *
+     *
      * <pre>
      * How much this connection is being throttled. Zero means no throttling,
      * 100 means fully throttled.
      * </pre>
      *
      * <code>int32 throttle_percent = 1;</code>
+     *
      * @return The throttlePercent.
      */
     public int getThrottlePercent() {
       return throttlePercent_;
     }
     /**
+     *
+     *
      * <pre>
      * How much this connection is being throttled. Zero means no throttling,
      * 100 means fully throttled.
      * </pre>
      *
      * <code>int32 throttle_percent = 1;</code>
+     *
      * @param value The throttlePercent to set.
      * @return This builder for chaining.
      */
     public Builder setThrottlePercent(int value) {
-      
+
       throttlePercent_ = value;
       onChanged();
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * How much this connection is being throttled. Zero means no throttling,
      * 100 means fully throttled.
      * </pre>
      *
      * <code>int32 throttle_percent = 1;</code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearThrottlePercent() {
-      
+
       throttlePercent_ = 0;
       onChanged();
       return this;
     }
+
     @java.lang.Override
-    public final Builder setUnknownFields(
-        final com.google.protobuf.UnknownFieldSet unknownFields) {
+    public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
       return super.setUnknownFields(unknownFields);
     }
 
@@ -482,12 +508,12 @@ private static final long serialVersionUID = 0L;
       return super.mergeUnknownFields(unknownFields);
     }
 
-
     // @@protoc_insertion_point(builder_scope:google.cloud.bigquery.storage.v1beta2.ThrottleState)
   }
 
   // @@protoc_insertion_point(class_scope:google.cloud.bigquery.storage.v1beta2.ThrottleState)
   private static final com.google.cloud.bigquery.storage.v1beta2.ThrottleState DEFAULT_INSTANCE;
+
   static {
     DEFAULT_INSTANCE = new com.google.cloud.bigquery.storage.v1beta2.ThrottleState();
   }
@@ -496,16 +522,16 @@ private static final long serialVersionUID = 0L;
     return DEFAULT_INSTANCE;
   }
 
-  private static final com.google.protobuf.Parser<ThrottleState>
-      PARSER = new com.google.protobuf.AbstractParser<ThrottleState>() {
-    @java.lang.Override
-    public ThrottleState parsePartialFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return new ThrottleState(input, extensionRegistry);
-    }
-  };
+  private static final com.google.protobuf.Parser<ThrottleState> PARSER =
+      new com.google.protobuf.AbstractParser<ThrottleState>() {
+        @java.lang.Override
+        public ThrottleState parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new ThrottleState(input, extensionRegistry);
+        }
+      };
 
   public static com.google.protobuf.Parser<ThrottleState> parser() {
     return PARSER;
@@ -520,6 +546,4 @@ private static final long serialVersionUID = 0L;
   public com.google.cloud.bigquery.storage.v1beta2.ThrottleState getDefaultInstanceForType() {
     return DEFAULT_INSTANCE;
   }
-
 }
-

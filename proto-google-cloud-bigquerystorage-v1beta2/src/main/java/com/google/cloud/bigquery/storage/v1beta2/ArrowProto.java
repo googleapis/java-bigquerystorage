@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -21,60 +20,59 @@ package com.google.cloud.bigquery.storage.v1beta2;
 
 public final class ArrowProto {
   private ArrowProto() {}
-  public static void registerAllExtensions(
-      com.google.protobuf.ExtensionRegistryLite registry) {
+
+  public static void registerAllExtensions(com.google.protobuf.ExtensionRegistryLite registry) {}
+
+  public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {
+    registerAllExtensions((com.google.protobuf.ExtensionRegistryLite) registry);
   }
 
-  public static void registerAllExtensions(
-      com.google.protobuf.ExtensionRegistry registry) {
-    registerAllExtensions(
-        (com.google.protobuf.ExtensionRegistryLite) registry);
-  }
   static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_google_cloud_bigquery_storage_v1beta2_ArrowSchema_descriptor;
-  static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_google_cloud_bigquery_storage_v1beta2_ArrowSchema_descriptor;
+  static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_google_cloud_bigquery_storage_v1beta2_ArrowSchema_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_google_cloud_bigquery_storage_v1beta2_ArrowRecordBatch_descriptor;
-  static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_google_cloud_bigquery_storage_v1beta2_ArrowRecordBatch_descriptor;
+  static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_google_cloud_bigquery_storage_v1beta2_ArrowRecordBatch_fieldAccessorTable;
 
-  public static com.google.protobuf.Descriptors.FileDescriptor
-      getDescriptor() {
+  public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
     return descriptor;
   }
-  private static  com.google.protobuf.Descriptors.FileDescriptor
-      descriptor;
+
+  private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
+
   static {
     java.lang.String[] descriptorData = {
-      "\n1google/cloud/bigquery/storage/v1beta2/" +
-      "arrow.proto\022%google.cloud.bigquery.stora" +
-      "ge.v1beta2\"(\n\013ArrowSchema\022\031\n\021serialized_" +
-      "schema\030\001 \001(\014\"3\n\020ArrowRecordBatch\022\037\n\027seri" +
-      "alized_record_batch\030\001 \001(\014B\207\001\n)com.google" +
-      ".cloud.bigquery.storage.v1beta2B\nArrowPr" +
-      "otoP\001ZLgoogle.golang.org/genproto/google" +
-      "apis/cloud/bigquery/storage/v1beta2;stor" +
-      "ageb\006proto3"
+      "\n1google/cloud/bigquery/storage/v1beta2/"
+          + "arrow.proto\022%google.cloud.bigquery.stora"
+          + "ge.v1beta2\"(\n\013ArrowSchema\022\031\n\021serialized_"
+          + "schema\030\001 \001(\014\"3\n\020ArrowRecordBatch\022\037\n\027seri"
+          + "alized_record_batch\030\001 \001(\014B\207\001\n)com.google"
+          + ".cloud.bigquery.storage.v1beta2B\nArrowPr"
+          + "otoP\001ZLgoogle.golang.org/genproto/google"
+          + "apis/cloud/bigquery/storage/v1beta2;stor"
+          + "ageb\006proto3"
     };
-    descriptor = com.google.protobuf.Descriptors.FileDescriptor
-      .internalBuildGeneratedFileFrom(descriptorData,
-        new com.google.protobuf.Descriptors.FileDescriptor[] {
-        });
+    descriptor =
+        com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(
+            descriptorData, new com.google.protobuf.Descriptors.FileDescriptor[] {});
     internal_static_google_cloud_bigquery_storage_v1beta2_ArrowSchema_descriptor =
-      getDescriptor().getMessageTypes().get(0);
-    internal_static_google_cloud_bigquery_storage_v1beta2_ArrowSchema_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_google_cloud_bigquery_storage_v1beta2_ArrowSchema_descriptor,
-        new java.lang.String[] { "SerializedSchema", });
+        getDescriptor().getMessageTypes().get(0);
+    internal_static_google_cloud_bigquery_storage_v1beta2_ArrowSchema_fieldAccessorTable =
+        new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+            internal_static_google_cloud_bigquery_storage_v1beta2_ArrowSchema_descriptor,
+            new java.lang.String[] {
+              "SerializedSchema",
+            });
     internal_static_google_cloud_bigquery_storage_v1beta2_ArrowRecordBatch_descriptor =
-      getDescriptor().getMessageTypes().get(1);
-    internal_static_google_cloud_bigquery_storage_v1beta2_ArrowRecordBatch_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_google_cloud_bigquery_storage_v1beta2_ArrowRecordBatch_descriptor,
-        new java.lang.String[] { "SerializedRecordBatch", });
+        getDescriptor().getMessageTypes().get(1);
+    internal_static_google_cloud_bigquery_storage_v1beta2_ArrowRecordBatch_fieldAccessorTable =
+        new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+            internal_static_google_cloud_bigquery_storage_v1beta2_ArrowRecordBatch_descriptor,
+            new java.lang.String[] {
+              "SerializedRecordBatch",
+            });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

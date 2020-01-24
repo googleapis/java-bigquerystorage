@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -20,6 +19,8 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 /**
+ *
+ *
  * <pre>
  * Response from calling `ReadRows` may include row data, progress and
  * throttling information.
@@ -27,30 +28,29 @@ package com.google.cloud.bigquery.storage.v1beta2;
  *
  * Protobuf type {@code google.cloud.bigquery.storage.v1beta2.ReadRowsResponse}
  */
-public  final class ReadRowsResponse extends
-    com.google.protobuf.GeneratedMessageV3 implements
+public final class ReadRowsResponse extends com.google.protobuf.GeneratedMessageV3
+    implements
     // @@protoc_insertion_point(message_implements:google.cloud.bigquery.storage.v1beta2.ReadRowsResponse)
     ReadRowsResponseOrBuilder {
-private static final long serialVersionUID = 0L;
+  private static final long serialVersionUID = 0L;
   // Use ReadRowsResponse.newBuilder() to construct.
   private ReadRowsResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
     super(builder);
   }
-  private ReadRowsResponse() {
-  }
+
+  private ReadRowsResponse() {}
 
   @java.lang.Override
   @SuppressWarnings({"unused"})
-  protected java.lang.Object newInstance(
-      UnusedPrivateParameter unused) {
+  protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new ReadRowsResponse();
   }
 
   @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet
-  getUnknownFields() {
+  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
     return this.unknownFields;
   }
+
   private ReadRowsResponse(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -69,105 +69,126 @@ private static final long serialVersionUID = 0L;
           case 0:
             done = true;
             break;
-          case 18: {
-            com.google.cloud.bigquery.storage.v1beta2.StreamStats.Builder subBuilder = null;
-            if (stats_ != null) {
-              subBuilder = stats_.toBuilder();
-            }
-            stats_ = input.readMessage(com.google.cloud.bigquery.storage.v1beta2.StreamStats.parser(), extensionRegistry);
-            if (subBuilder != null) {
-              subBuilder.mergeFrom(stats_);
-              stats_ = subBuilder.buildPartial();
-            }
+          case 18:
+            {
+              com.google.cloud.bigquery.storage.v1beta2.StreamStats.Builder subBuilder = null;
+              if (stats_ != null) {
+                subBuilder = stats_.toBuilder();
+              }
+              stats_ =
+                  input.readMessage(
+                      com.google.cloud.bigquery.storage.v1beta2.StreamStats.parser(),
+                      extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(stats_);
+                stats_ = subBuilder.buildPartial();
+              }
 
-            break;
-          }
-          case 26: {
-            com.google.cloud.bigquery.storage.v1beta2.AvroRows.Builder subBuilder = null;
-            if (rowsCase_ == 3) {
-              subBuilder = ((com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_).toBuilder();
+              break;
             }
-            rows_ =
-                input.readMessage(com.google.cloud.bigquery.storage.v1beta2.AvroRows.parser(), extensionRegistry);
-            if (subBuilder != null) {
-              subBuilder.mergeFrom((com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_);
-              rows_ = subBuilder.buildPartial();
+          case 26:
+            {
+              com.google.cloud.bigquery.storage.v1beta2.AvroRows.Builder subBuilder = null;
+              if (rowsCase_ == 3) {
+                subBuilder =
+                    ((com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_).toBuilder();
+              }
+              rows_ =
+                  input.readMessage(
+                      com.google.cloud.bigquery.storage.v1beta2.AvroRows.parser(),
+                      extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom((com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_);
+                rows_ = subBuilder.buildPartial();
+              }
+              rowsCase_ = 3;
+              break;
             }
-            rowsCase_ = 3;
-            break;
-          }
-          case 34: {
-            com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder subBuilder = null;
-            if (rowsCase_ == 4) {
-              subBuilder = ((com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_).toBuilder();
+          case 34:
+            {
+              com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder subBuilder = null;
+              if (rowsCase_ == 4) {
+                subBuilder =
+                    ((com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_)
+                        .toBuilder();
+              }
+              rows_ =
+                  input.readMessage(
+                      com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.parser(),
+                      extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(
+                    (com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_);
+                rows_ = subBuilder.buildPartial();
+              }
+              rowsCase_ = 4;
+              break;
             }
-            rows_ =
-                input.readMessage(com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.parser(), extensionRegistry);
-            if (subBuilder != null) {
-              subBuilder.mergeFrom((com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_);
-              rows_ = subBuilder.buildPartial();
-            }
-            rowsCase_ = 4;
-            break;
-          }
-          case 42: {
-            com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder subBuilder = null;
-            if (throttleState_ != null) {
-              subBuilder = throttleState_.toBuilder();
-            }
-            throttleState_ = input.readMessage(com.google.cloud.bigquery.storage.v1beta2.ThrottleState.parser(), extensionRegistry);
-            if (subBuilder != null) {
-              subBuilder.mergeFrom(throttleState_);
-              throttleState_ = subBuilder.buildPartial();
-            }
+          case 42:
+            {
+              com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder subBuilder = null;
+              if (throttleState_ != null) {
+                subBuilder = throttleState_.toBuilder();
+              }
+              throttleState_ =
+                  input.readMessage(
+                      com.google.cloud.bigquery.storage.v1beta2.ThrottleState.parser(),
+                      extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(throttleState_);
+                throttleState_ = subBuilder.buildPartial();
+              }
 
-            break;
-          }
-          case 48: {
-
-            rowCount_ = input.readInt64();
-            break;
-          }
-          default: {
-            if (!parseUnknownField(
-                input, unknownFields, extensionRegistry, tag)) {
-              done = true;
+              break;
             }
-            break;
-          }
+          case 48:
+            {
+              rowCount_ = input.readInt64();
+              break;
+            }
+          default:
+            {
+              if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
         }
       }
     } catch (com.google.protobuf.InvalidProtocolBufferException e) {
       throw e.setUnfinishedMessage(this);
     } catch (java.io.IOException e) {
-      throw new com.google.protobuf.InvalidProtocolBufferException(
-          e).setUnfinishedMessage(this);
+      throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
     } finally {
       this.unknownFields = unknownFields.build();
       makeExtensionsImmutable();
     }
   }
-  public static final com.google.protobuf.Descriptors.Descriptor
-      getDescriptor() {
-    return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_descriptor;
+
+  public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+    return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+        .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_descriptor;
   }
 
   @java.lang.Override
   protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internalGetFieldAccessorTable() {
-    return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_fieldAccessorTable
+    return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+        .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_fieldAccessorTable
         .ensureFieldAccessorsInitialized(
-            com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.class, com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.Builder.class);
+            com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.class,
+            com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.Builder.class);
   }
 
   private int rowsCase_ = 0;
   private java.lang.Object rows_;
-  public enum RowsCase
-      implements com.google.protobuf.Internal.EnumLite {
+
+  public enum RowsCase implements com.google.protobuf.Internal.EnumLite {
     AVRO_ROWS(3),
     ARROW_RECORD_BATCH(4),
     ROWS_NOT_SET(0);
     private final int value;
+
     private RowsCase(int value) {
       this.value = value;
     }
@@ -183,50 +204,61 @@ private static final long serialVersionUID = 0L;
 
     public static RowsCase forNumber(int value) {
       switch (value) {
-        case 3: return AVRO_ROWS;
-        case 4: return ARROW_RECORD_BATCH;
-        case 0: return ROWS_NOT_SET;
-        default: return null;
+        case 3:
+          return AVRO_ROWS;
+        case 4:
+          return ARROW_RECORD_BATCH;
+        case 0:
+          return ROWS_NOT_SET;
+        default:
+          return null;
       }
     }
+
     public int getNumber() {
       return this.value;
     }
   };
 
-  public RowsCase
-  getRowsCase() {
-    return RowsCase.forNumber(
-        rowsCase_);
+  public RowsCase getRowsCase() {
+    return RowsCase.forNumber(rowsCase_);
   }
 
   public static final int AVRO_ROWS_FIELD_NUMBER = 3;
   /**
+   *
+   *
    * <pre>
    * Serialized row data in AVRO format.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.AvroRows avro_rows = 3;</code>
+   *
    * @return Whether the avroRows field is set.
    */
   public boolean hasAvroRows() {
     return rowsCase_ == 3;
   }
   /**
+   *
+   *
    * <pre>
    * Serialized row data in AVRO format.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.AvroRows avro_rows = 3;</code>
+   *
    * @return The avroRows.
    */
   public com.google.cloud.bigquery.storage.v1beta2.AvroRows getAvroRows() {
     if (rowsCase_ == 3) {
-       return (com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_;
+      return (com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_;
     }
     return com.google.cloud.bigquery.storage.v1beta2.AvroRows.getDefaultInstance();
   }
   /**
+   *
+   *
    * <pre>
    * Serialized row data in AVRO format.
    * </pre>
@@ -235,47 +267,56 @@ private static final long serialVersionUID = 0L;
    */
   public com.google.cloud.bigquery.storage.v1beta2.AvroRowsOrBuilder getAvroRowsOrBuilder() {
     if (rowsCase_ == 3) {
-       return (com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_;
+      return (com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_;
     }
     return com.google.cloud.bigquery.storage.v1beta2.AvroRows.getDefaultInstance();
   }
 
   public static final int ARROW_RECORD_BATCH_FIELD_NUMBER = 4;
   /**
+   *
+   *
    * <pre>
    * Serialized row data in Arrow RecordBatch format.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
+   *
    * @return Whether the arrowRecordBatch field is set.
    */
   public boolean hasArrowRecordBatch() {
     return rowsCase_ == 4;
   }
   /**
+   *
+   *
    * <pre>
    * Serialized row data in Arrow RecordBatch format.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
+   *
    * @return The arrowRecordBatch.
    */
   public com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch getArrowRecordBatch() {
     if (rowsCase_ == 4) {
-       return (com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_;
+      return (com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_;
     }
     return com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.getDefaultInstance();
   }
   /**
+   *
+   *
    * <pre>
    * Serialized row data in Arrow RecordBatch format.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
    */
-  public com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder getArrowRecordBatchOrBuilder() {
+  public com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder
+      getArrowRecordBatchOrBuilder() {
     if (rowsCase_ == 4) {
-       return (com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_;
+      return (com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_;
     }
     return com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.getDefaultInstance();
   }
@@ -283,11 +324,14 @@ private static final long serialVersionUID = 0L;
   public static final int ROW_COUNT_FIELD_NUMBER = 6;
   private long rowCount_;
   /**
+   *
+   *
    * <pre>
    * Number of serialized rows in the rows block.
    * </pre>
    *
    * <code>int64 row_count = 6;</code>
+   *
    * @return The rowCount.
    */
   public long getRowCount() {
@@ -297,28 +341,38 @@ private static final long serialVersionUID = 0L;
   public static final int STATS_FIELD_NUMBER = 2;
   private com.google.cloud.bigquery.storage.v1beta2.StreamStats stats_;
   /**
+   *
+   *
    * <pre>
    * Statistics for the stream.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.StreamStats stats = 2;</code>
+   *
    * @return Whether the stats field is set.
    */
   public boolean hasStats() {
     return stats_ != null;
   }
   /**
+   *
+   *
    * <pre>
    * Statistics for the stream.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.StreamStats stats = 2;</code>
+   *
    * @return The stats.
    */
   public com.google.cloud.bigquery.storage.v1beta2.StreamStats getStats() {
-    return stats_ == null ? com.google.cloud.bigquery.storage.v1beta2.StreamStats.getDefaultInstance() : stats_;
+    return stats_ == null
+        ? com.google.cloud.bigquery.storage.v1beta2.StreamStats.getDefaultInstance()
+        : stats_;
   }
   /**
+   *
+   *
    * <pre>
    * Statistics for the stream.
    * </pre>
@@ -332,30 +386,40 @@ private static final long serialVersionUID = 0L;
   public static final int THROTTLE_STATE_FIELD_NUMBER = 5;
   private com.google.cloud.bigquery.storage.v1beta2.ThrottleState throttleState_;
   /**
+   *
+   *
    * <pre>
    * Throttling state. If unset, the latest response still describes
    * the current throttling status.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ThrottleState throttle_state = 5;</code>
+   *
    * @return Whether the throttleState field is set.
    */
   public boolean hasThrottleState() {
     return throttleState_ != null;
   }
   /**
+   *
+   *
    * <pre>
    * Throttling state. If unset, the latest response still describes
    * the current throttling status.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ThrottleState throttle_state = 5;</code>
+   *
    * @return The throttleState.
    */
   public com.google.cloud.bigquery.storage.v1beta2.ThrottleState getThrottleState() {
-    return throttleState_ == null ? com.google.cloud.bigquery.storage.v1beta2.ThrottleState.getDefaultInstance() : throttleState_;
+    return throttleState_ == null
+        ? com.google.cloud.bigquery.storage.v1beta2.ThrottleState.getDefaultInstance()
+        : throttleState_;
   }
   /**
+   *
+   *
    * <pre>
    * Throttling state. If unset, the latest response still describes
    * the current throttling status.
@@ -363,11 +427,13 @@ private static final long serialVersionUID = 0L;
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ThrottleState throttle_state = 5;</code>
    */
-  public com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder getThrottleStateOrBuilder() {
+  public com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder
+      getThrottleStateOrBuilder() {
     return getThrottleState();
   }
 
   private byte memoizedIsInitialized = -1;
+
   @java.lang.Override
   public final boolean isInitialized() {
     byte isInitialized = memoizedIsInitialized;
@@ -379,8 +445,7 @@ private static final long serialVersionUID = 0L;
   }
 
   @java.lang.Override
-  public void writeTo(com.google.protobuf.CodedOutputStream output)
-                      throws java.io.IOException {
+  public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
     if (stats_ != null) {
       output.writeMessage(2, getStats());
     }
@@ -406,24 +471,23 @@ private static final long serialVersionUID = 0L;
 
     size = 0;
     if (stats_ != null) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeMessageSize(2, getStats());
+      size += com.google.protobuf.CodedOutputStream.computeMessageSize(2, getStats());
     }
     if (rowsCase_ == 3) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeMessageSize(3, (com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_);
+      size +=
+          com.google.protobuf.CodedOutputStream.computeMessageSize(
+              3, (com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_);
     }
     if (rowsCase_ == 4) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeMessageSize(4, (com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_);
+      size +=
+          com.google.protobuf.CodedOutputStream.computeMessageSize(
+              4, (com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_);
     }
     if (throttleState_ != null) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeMessageSize(5, getThrottleState());
+      size += com.google.protobuf.CodedOutputStream.computeMessageSize(5, getThrottleState());
     }
     if (rowCount_ != 0L) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeInt64Size(6, rowCount_);
+      size += com.google.protobuf.CodedOutputStream.computeInt64Size(6, rowCount_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -433,34 +497,30 @@ private static final long serialVersionUID = 0L;
   @java.lang.Override
   public boolean equals(final java.lang.Object obj) {
     if (obj == this) {
-     return true;
+      return true;
     }
     if (!(obj instanceof com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse)) {
       return super.equals(obj);
     }
-    com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse other = (com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse) obj;
+    com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse other =
+        (com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse) obj;
 
-    if (getRowCount()
-        != other.getRowCount()) return false;
+    if (getRowCount() != other.getRowCount()) return false;
     if (hasStats() != other.hasStats()) return false;
     if (hasStats()) {
-      if (!getStats()
-          .equals(other.getStats())) return false;
+      if (!getStats().equals(other.getStats())) return false;
     }
     if (hasThrottleState() != other.hasThrottleState()) return false;
     if (hasThrottleState()) {
-      if (!getThrottleState()
-          .equals(other.getThrottleState())) return false;
+      if (!getThrottleState().equals(other.getThrottleState())) return false;
     }
     if (!getRowsCase().equals(other.getRowsCase())) return false;
     switch (rowsCase_) {
       case 3:
-        if (!getAvroRows()
-            .equals(other.getAvroRows())) return false;
+        if (!getAvroRows().equals(other.getAvroRows())) return false;
         break;
       case 4:
-        if (!getArrowRecordBatch()
-            .equals(other.getArrowRecordBatch())) return false;
+        if (!getArrowRecordBatch().equals(other.getArrowRecordBatch())) return false;
         break;
       case 0:
       default:
@@ -477,8 +537,7 @@ private static final long serialVersionUID = 0L;
     int hash = 41;
     hash = (19 * hash) + getDescriptor().hashCode();
     hash = (37 * hash) + ROW_COUNT_FIELD_NUMBER;
-    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-        getRowCount());
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getRowCount());
     if (hasStats()) {
       hash = (37 * hash) + STATS_FIELD_NUMBER;
       hash = (53 * hash) + getStats().hashCode();
@@ -505,96 +564,104 @@ private static final long serialVersionUID = 0L;
   }
 
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(
-      java.nio.ByteBuffer data)
-      throws com.google.protobuf.InvalidProtocolBufferException {
+      java.nio.ByteBuffer data) throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(
-      java.nio.ByteBuffer data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      java.nio.ByteBuffer data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(
       com.google.protobuf.ByteString data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(
       com.google.protobuf.ByteString data,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(byte[] data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(
-      byte[] data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(java.io.InputStream input)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
-  }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+      java.io.InputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
-  public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseDelimitedFrom(java.io.InputStream input)
+
+  public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseDelimitedFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+      java.io.InputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
   }
+
+  public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseDelimitedFrom(
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(
+        PARSER, input, extensionRegistry);
+  }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(
-      com.google.protobuf.CodedInputStream input)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
+      com.google.protobuf.CodedInputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse parseFrom(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
 
   @java.lang.Override
-  public Builder newBuilderForType() { return newBuilder(); }
+  public Builder newBuilderForType() {
+    return newBuilder();
+  }
+
   public static Builder newBuilder() {
     return DEFAULT_INSTANCE.toBuilder();
   }
-  public static Builder newBuilder(com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse prototype) {
+
+  public static Builder newBuilder(
+      com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse prototype) {
     return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-  }
-  @java.lang.Override
-  public Builder toBuilder() {
-    return this == DEFAULT_INSTANCE
-        ? new Builder() : new Builder().mergeFrom(this);
   }
 
   @java.lang.Override
-  protected Builder newBuilderForType(
-      com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+  public Builder toBuilder() {
+    return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+  }
+
+  @java.lang.Override
+  protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
     Builder builder = new Builder(parent);
     return builder;
   }
   /**
+   *
+   *
    * <pre>
    * Response from calling `ReadRows` may include row data, progress and
    * throttling information.
@@ -602,21 +669,23 @@ private static final long serialVersionUID = 0L;
    *
    * Protobuf type {@code google.cloud.bigquery.storage.v1beta2.ReadRowsResponse}
    */
-  public static final class Builder extends
-      com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+  public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder>
+      implements
       // @@protoc_insertion_point(builder_implements:google.cloud.bigquery.storage.v1beta2.ReadRowsResponse)
       com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponseOrBuilder {
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_descriptor;
+    public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_descriptor;
     }
 
     @java.lang.Override
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_fieldAccessorTable
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.class, com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.Builder.class);
+              com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.class,
+              com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.Builder.class);
     }
 
     // Construct using com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.newBuilder()
@@ -624,16 +693,15 @@ private static final long serialVersionUID = 0L;
       maybeForceBuilderInitialization();
     }
 
-    private Builder(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+    private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
       super(parent);
       maybeForceBuilderInitialization();
     }
+
     private void maybeForceBuilderInitialization() {
-      if (com.google.protobuf.GeneratedMessageV3
-              .alwaysUseFieldBuilders) {
-      }
+      if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
     }
+
     @java.lang.Override
     public Builder clear() {
       super.clear();
@@ -657,9 +725,9 @@ private static final long serialVersionUID = 0L;
     }
 
     @java.lang.Override
-    public com.google.protobuf.Descriptors.Descriptor
-        getDescriptorForType() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_descriptor;
+    public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsResponse_descriptor;
     }
 
     @java.lang.Override
@@ -678,7 +746,8 @@ private static final long serialVersionUID = 0L;
 
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse buildPartial() {
-      com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse result = new com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse(this);
+      com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse result =
+          new com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse(this);
       if (rowsCase_ == 3) {
         if (avroRowsBuilder_ == null) {
           result.rows_ = rows_;
@@ -713,38 +782,39 @@ private static final long serialVersionUID = 0L;
     public Builder clone() {
       return super.clone();
     }
+
     @java.lang.Override
     public Builder setField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
       return super.setField(field, value);
     }
+
     @java.lang.Override
-    public Builder clearField(
-        com.google.protobuf.Descriptors.FieldDescriptor field) {
+    public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
       return super.clearField(field);
     }
+
     @java.lang.Override
-    public Builder clearOneof(
-        com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+    public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
       return super.clearOneof(oneof);
     }
+
     @java.lang.Override
     public Builder setRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        int index, java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
       return super.setRepeatedField(field, index, value);
     }
+
     @java.lang.Override
     public Builder addRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
       return super.addRepeatedField(field, value);
     }
+
     @java.lang.Override
     public Builder mergeFrom(com.google.protobuf.Message other) {
       if (other instanceof com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse) {
-        return mergeFrom((com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse)other);
+        return mergeFrom((com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse) other);
       } else {
         super.mergeFrom(other);
         return this;
@@ -752,7 +822,8 @@ private static final long serialVersionUID = 0L;
     }
 
     public Builder mergeFrom(com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse other) {
-      if (other == com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.getDefaultInstance()) return this;
+      if (other == com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.getDefaultInstance())
+        return this;
       if (other.getRowCount() != 0L) {
         setRowCount(other.getRowCount());
       }
@@ -763,17 +834,20 @@ private static final long serialVersionUID = 0L;
         mergeThrottleState(other.getThrottleState());
       }
       switch (other.getRowsCase()) {
-        case AVRO_ROWS: {
-          mergeAvroRows(other.getAvroRows());
-          break;
-        }
-        case ARROW_RECORD_BATCH: {
-          mergeArrowRecordBatch(other.getArrowRecordBatch());
-          break;
-        }
-        case ROWS_NOT_SET: {
-          break;
-        }
+        case AVRO_ROWS:
+          {
+            mergeAvroRows(other.getAvroRows());
+            break;
+          }
+        case ARROW_RECORD_BATCH:
+          {
+            mergeArrowRecordBatch(other.getArrowRecordBatch());
+            break;
+          }
+        case ROWS_NOT_SET:
+          {
+            break;
+          }
       }
       this.mergeUnknownFields(other.unknownFields);
       onChanged();
@@ -794,7 +868,8 @@ private static final long serialVersionUID = 0L;
       try {
         parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        parsedMessage = (com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse) e.getUnfinishedMessage();
+        parsedMessage =
+            (com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse) e.getUnfinishedMessage();
         throw e.unwrapIOException();
       } finally {
         if (parsedMessage != null) {
@@ -803,12 +878,12 @@ private static final long serialVersionUID = 0L;
       }
       return this;
     }
+
     private int rowsCase_ = 0;
     private java.lang.Object rows_;
-    public RowsCase
-        getRowsCase() {
-      return RowsCase.forNumber(
-          rowsCase_);
+
+    public RowsCase getRowsCase() {
+      return RowsCase.forNumber(rowsCase_);
     }
 
     public Builder clearRows() {
@@ -818,26 +893,34 @@ private static final long serialVersionUID = 0L;
       return this;
     }
 
-
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.google.cloud.bigquery.storage.v1beta2.AvroRows, com.google.cloud.bigquery.storage.v1beta2.AvroRows.Builder, com.google.cloud.bigquery.storage.v1beta2.AvroRowsOrBuilder> avroRowsBuilder_;
+            com.google.cloud.bigquery.storage.v1beta2.AvroRows,
+            com.google.cloud.bigquery.storage.v1beta2.AvroRows.Builder,
+            com.google.cloud.bigquery.storage.v1beta2.AvroRowsOrBuilder>
+        avroRowsBuilder_;
     /**
+     *
+     *
      * <pre>
      * Serialized row data in AVRO format.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.AvroRows avro_rows = 3;</code>
+     *
      * @return Whether the avroRows field is set.
      */
     public boolean hasAvroRows() {
       return rowsCase_ == 3;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in AVRO format.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.AvroRows avro_rows = 3;</code>
+     *
      * @return The avroRows.
      */
     public com.google.cloud.bigquery.storage.v1beta2.AvroRows getAvroRows() {
@@ -854,6 +937,8 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in AVRO format.
      * </pre>
@@ -874,6 +959,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in AVRO format.
      * </pre>
@@ -892,6 +979,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in AVRO format.
      * </pre>
@@ -900,10 +989,13 @@ private static final long serialVersionUID = 0L;
      */
     public Builder mergeAvroRows(com.google.cloud.bigquery.storage.v1beta2.AvroRows value) {
       if (avroRowsBuilder_ == null) {
-        if (rowsCase_ == 3 &&
-            rows_ != com.google.cloud.bigquery.storage.v1beta2.AvroRows.getDefaultInstance()) {
-          rows_ = com.google.cloud.bigquery.storage.v1beta2.AvroRows.newBuilder((com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_)
-              .mergeFrom(value).buildPartial();
+        if (rowsCase_ == 3
+            && rows_ != com.google.cloud.bigquery.storage.v1beta2.AvroRows.getDefaultInstance()) {
+          rows_ =
+              com.google.cloud.bigquery.storage.v1beta2.AvroRows.newBuilder(
+                      (com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_)
+                  .mergeFrom(value)
+                  .buildPartial();
         } else {
           rows_ = value;
         }
@@ -918,6 +1010,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in AVRO format.
      * </pre>
@@ -941,6 +1035,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in AVRO format.
      * </pre>
@@ -951,6 +1047,8 @@ private static final long serialVersionUID = 0L;
       return getAvroRowsFieldBuilder().getBuilder();
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in AVRO format.
      * </pre>
@@ -968,6 +1066,8 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in AVRO format.
      * </pre>
@@ -975,43 +1075,58 @@ private static final long serialVersionUID = 0L;
      * <code>.google.cloud.bigquery.storage.v1beta2.AvroRows avro_rows = 3;</code>
      */
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.google.cloud.bigquery.storage.v1beta2.AvroRows, com.google.cloud.bigquery.storage.v1beta2.AvroRows.Builder, com.google.cloud.bigquery.storage.v1beta2.AvroRowsOrBuilder> 
+            com.google.cloud.bigquery.storage.v1beta2.AvroRows,
+            com.google.cloud.bigquery.storage.v1beta2.AvroRows.Builder,
+            com.google.cloud.bigquery.storage.v1beta2.AvroRowsOrBuilder>
         getAvroRowsFieldBuilder() {
       if (avroRowsBuilder_ == null) {
         if (!(rowsCase_ == 3)) {
           rows_ = com.google.cloud.bigquery.storage.v1beta2.AvroRows.getDefaultInstance();
         }
-        avroRowsBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-            com.google.cloud.bigquery.storage.v1beta2.AvroRows, com.google.cloud.bigquery.storage.v1beta2.AvroRows.Builder, com.google.cloud.bigquery.storage.v1beta2.AvroRowsOrBuilder>(
+        avroRowsBuilder_ =
+            new com.google.protobuf.SingleFieldBuilderV3<
+                com.google.cloud.bigquery.storage.v1beta2.AvroRows,
+                com.google.cloud.bigquery.storage.v1beta2.AvroRows.Builder,
+                com.google.cloud.bigquery.storage.v1beta2.AvroRowsOrBuilder>(
                 (com.google.cloud.bigquery.storage.v1beta2.AvroRows) rows_,
                 getParentForChildren(),
                 isClean());
         rows_ = null;
       }
       rowsCase_ = 3;
-      onChanged();;
+      onChanged();
+      ;
       return avroRowsBuilder_;
     }
 
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch, com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder, com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder> arrowRecordBatchBuilder_;
+            com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch,
+            com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder,
+            com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder>
+        arrowRecordBatchBuilder_;
     /**
+     *
+     *
      * <pre>
      * Serialized row data in Arrow RecordBatch format.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
+     *
      * @return Whether the arrowRecordBatch field is set.
      */
     public boolean hasArrowRecordBatch() {
       return rowsCase_ == 4;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in Arrow RecordBatch format.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
+     *
      * @return The arrowRecordBatch.
      */
     public com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch getArrowRecordBatch() {
@@ -1028,13 +1143,16 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in Arrow RecordBatch format.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
      */
-    public Builder setArrowRecordBatch(com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch value) {
+    public Builder setArrowRecordBatch(
+        com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch value) {
       if (arrowRecordBatchBuilder_ == null) {
         if (value == null) {
           throw new NullPointerException();
@@ -1048,6 +1166,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in Arrow RecordBatch format.
      * </pre>
@@ -1066,18 +1186,26 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in Arrow RecordBatch format.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
      */
-    public Builder mergeArrowRecordBatch(com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch value) {
+    public Builder mergeArrowRecordBatch(
+        com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch value) {
       if (arrowRecordBatchBuilder_ == null) {
-        if (rowsCase_ == 4 &&
-            rows_ != com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.getDefaultInstance()) {
-          rows_ = com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.newBuilder((com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_)
-              .mergeFrom(value).buildPartial();
+        if (rowsCase_ == 4
+            && rows_
+                != com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch
+                    .getDefaultInstance()) {
+          rows_ =
+              com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.newBuilder(
+                      (com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_)
+                  .mergeFrom(value)
+                  .buildPartial();
         } else {
           rows_ = value;
         }
@@ -1092,6 +1220,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in Arrow RecordBatch format.
      * </pre>
@@ -1115,23 +1245,29 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in Arrow RecordBatch format.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
      */
-    public com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder getArrowRecordBatchBuilder() {
+    public com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder
+        getArrowRecordBatchBuilder() {
       return getArrowRecordBatchFieldBuilder().getBuilder();
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in Arrow RecordBatch format.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
      */
-    public com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder getArrowRecordBatchOrBuilder() {
+    public com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder
+        getArrowRecordBatchOrBuilder() {
       if ((rowsCase_ == 4) && (arrowRecordBatchBuilder_ != null)) {
         return arrowRecordBatchBuilder_.getMessageOrBuilder();
       } else {
@@ -1142,6 +1278,8 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Serialized row data in Arrow RecordBatch format.
      * </pre>
@@ -1149,61 +1287,76 @@ private static final long serialVersionUID = 0L;
      * <code>.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch arrow_record_batch = 4;</code>
      */
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch, com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder, com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder> 
+            com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch,
+            com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder,
+            com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder>
         getArrowRecordBatchFieldBuilder() {
       if (arrowRecordBatchBuilder_ == null) {
         if (!(rowsCase_ == 4)) {
           rows_ = com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.getDefaultInstance();
         }
-        arrowRecordBatchBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-            com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch, com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder, com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder>(
+        arrowRecordBatchBuilder_ =
+            new com.google.protobuf.SingleFieldBuilderV3<
+                com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch,
+                com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch.Builder,
+                com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatchOrBuilder>(
                 (com.google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch) rows_,
                 getParentForChildren(),
                 isClean());
         rows_ = null;
       }
       rowsCase_ = 4;
-      onChanged();;
+      onChanged();
+      ;
       return arrowRecordBatchBuilder_;
     }
 
-    private long rowCount_ ;
+    private long rowCount_;
     /**
+     *
+     *
      * <pre>
      * Number of serialized rows in the rows block.
      * </pre>
      *
      * <code>int64 row_count = 6;</code>
+     *
      * @return The rowCount.
      */
     public long getRowCount() {
       return rowCount_;
     }
     /**
+     *
+     *
      * <pre>
      * Number of serialized rows in the rows block.
      * </pre>
      *
      * <code>int64 row_count = 6;</code>
+     *
      * @param value The rowCount to set.
      * @return This builder for chaining.
      */
     public Builder setRowCount(long value) {
-      
+
       rowCount_ = value;
       onChanged();
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Number of serialized rows in the rows block.
      * </pre>
      *
      * <code>int64 row_count = 6;</code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearRowCount() {
-      
+
       rowCount_ = 0L;
       onChanged();
       return this;
@@ -1211,34 +1364,47 @@ private static final long serialVersionUID = 0L;
 
     private com.google.cloud.bigquery.storage.v1beta2.StreamStats stats_;
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.google.cloud.bigquery.storage.v1beta2.StreamStats, com.google.cloud.bigquery.storage.v1beta2.StreamStats.Builder, com.google.cloud.bigquery.storage.v1beta2.StreamStatsOrBuilder> statsBuilder_;
+            com.google.cloud.bigquery.storage.v1beta2.StreamStats,
+            com.google.cloud.bigquery.storage.v1beta2.StreamStats.Builder,
+            com.google.cloud.bigquery.storage.v1beta2.StreamStatsOrBuilder>
+        statsBuilder_;
     /**
+     *
+     *
      * <pre>
      * Statistics for the stream.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.StreamStats stats = 2;</code>
+     *
      * @return Whether the stats field is set.
      */
     public boolean hasStats() {
       return statsBuilder_ != null || stats_ != null;
     }
     /**
+     *
+     *
      * <pre>
      * Statistics for the stream.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.StreamStats stats = 2;</code>
+     *
      * @return The stats.
      */
     public com.google.cloud.bigquery.storage.v1beta2.StreamStats getStats() {
       if (statsBuilder_ == null) {
-        return stats_ == null ? com.google.cloud.bigquery.storage.v1beta2.StreamStats.getDefaultInstance() : stats_;
+        return stats_ == null
+            ? com.google.cloud.bigquery.storage.v1beta2.StreamStats.getDefaultInstance()
+            : stats_;
       } else {
         return statsBuilder_.getMessage();
       }
     }
     /**
+     *
+     *
      * <pre>
      * Statistics for the stream.
      * </pre>
@@ -1259,6 +1425,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Statistics for the stream.
      * </pre>
@@ -1277,6 +1445,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Statistics for the stream.
      * </pre>
@@ -1287,7 +1457,9 @@ private static final long serialVersionUID = 0L;
       if (statsBuilder_ == null) {
         if (stats_ != null) {
           stats_ =
-            com.google.cloud.bigquery.storage.v1beta2.StreamStats.newBuilder(stats_).mergeFrom(value).buildPartial();
+              com.google.cloud.bigquery.storage.v1beta2.StreamStats.newBuilder(stats_)
+                  .mergeFrom(value)
+                  .buildPartial();
         } else {
           stats_ = value;
         }
@@ -1299,6 +1471,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Statistics for the stream.
      * </pre>
@@ -1317,6 +1491,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Statistics for the stream.
      * </pre>
@@ -1324,11 +1500,13 @@ private static final long serialVersionUID = 0L;
      * <code>.google.cloud.bigquery.storage.v1beta2.StreamStats stats = 2;</code>
      */
     public com.google.cloud.bigquery.storage.v1beta2.StreamStats.Builder getStatsBuilder() {
-      
+
       onChanged();
       return getStatsFieldBuilder().getBuilder();
     }
     /**
+     *
+     *
      * <pre>
      * Statistics for the stream.
      * </pre>
@@ -1339,11 +1517,14 @@ private static final long serialVersionUID = 0L;
       if (statsBuilder_ != null) {
         return statsBuilder_.getMessageOrBuilder();
       } else {
-        return stats_ == null ?
-            com.google.cloud.bigquery.storage.v1beta2.StreamStats.getDefaultInstance() : stats_;
+        return stats_ == null
+            ? com.google.cloud.bigquery.storage.v1beta2.StreamStats.getDefaultInstance()
+            : stats_;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Statistics for the stream.
      * </pre>
@@ -1351,14 +1532,17 @@ private static final long serialVersionUID = 0L;
      * <code>.google.cloud.bigquery.storage.v1beta2.StreamStats stats = 2;</code>
      */
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.google.cloud.bigquery.storage.v1beta2.StreamStats, com.google.cloud.bigquery.storage.v1beta2.StreamStats.Builder, com.google.cloud.bigquery.storage.v1beta2.StreamStatsOrBuilder> 
+            com.google.cloud.bigquery.storage.v1beta2.StreamStats,
+            com.google.cloud.bigquery.storage.v1beta2.StreamStats.Builder,
+            com.google.cloud.bigquery.storage.v1beta2.StreamStatsOrBuilder>
         getStatsFieldBuilder() {
       if (statsBuilder_ == null) {
-        statsBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-            com.google.cloud.bigquery.storage.v1beta2.StreamStats, com.google.cloud.bigquery.storage.v1beta2.StreamStats.Builder, com.google.cloud.bigquery.storage.v1beta2.StreamStatsOrBuilder>(
-                getStats(),
-                getParentForChildren(),
-                isClean());
+        statsBuilder_ =
+            new com.google.protobuf.SingleFieldBuilderV3<
+                com.google.cloud.bigquery.storage.v1beta2.StreamStats,
+                com.google.cloud.bigquery.storage.v1beta2.StreamStats.Builder,
+                com.google.cloud.bigquery.storage.v1beta2.StreamStatsOrBuilder>(
+                getStats(), getParentForChildren(), isClean());
         stats_ = null;
       }
       return statsBuilder_;
@@ -1366,36 +1550,49 @@ private static final long serialVersionUID = 0L;
 
     private com.google.cloud.bigquery.storage.v1beta2.ThrottleState throttleState_;
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.google.cloud.bigquery.storage.v1beta2.ThrottleState, com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder, com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder> throttleStateBuilder_;
+            com.google.cloud.bigquery.storage.v1beta2.ThrottleState,
+            com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder,
+            com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder>
+        throttleStateBuilder_;
     /**
+     *
+     *
      * <pre>
      * Throttling state. If unset, the latest response still describes
      * the current throttling status.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ThrottleState throttle_state = 5;</code>
+     *
      * @return Whether the throttleState field is set.
      */
     public boolean hasThrottleState() {
       return throttleStateBuilder_ != null || throttleState_ != null;
     }
     /**
+     *
+     *
      * <pre>
      * Throttling state. If unset, the latest response still describes
      * the current throttling status.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ThrottleState throttle_state = 5;</code>
+     *
      * @return The throttleState.
      */
     public com.google.cloud.bigquery.storage.v1beta2.ThrottleState getThrottleState() {
       if (throttleStateBuilder_ == null) {
-        return throttleState_ == null ? com.google.cloud.bigquery.storage.v1beta2.ThrottleState.getDefaultInstance() : throttleState_;
+        return throttleState_ == null
+            ? com.google.cloud.bigquery.storage.v1beta2.ThrottleState.getDefaultInstance()
+            : throttleState_;
       } else {
         return throttleStateBuilder_.getMessage();
       }
     }
     /**
+     *
+     *
      * <pre>
      * Throttling state. If unset, the latest response still describes
      * the current throttling status.
@@ -1417,6 +1614,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Throttling state. If unset, the latest response still describes
      * the current throttling status.
@@ -1436,6 +1635,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Throttling state. If unset, the latest response still describes
      * the current throttling status.
@@ -1443,11 +1644,14 @@ private static final long serialVersionUID = 0L;
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ThrottleState throttle_state = 5;</code>
      */
-    public Builder mergeThrottleState(com.google.cloud.bigquery.storage.v1beta2.ThrottleState value) {
+    public Builder mergeThrottleState(
+        com.google.cloud.bigquery.storage.v1beta2.ThrottleState value) {
       if (throttleStateBuilder_ == null) {
         if (throttleState_ != null) {
           throttleState_ =
-            com.google.cloud.bigquery.storage.v1beta2.ThrottleState.newBuilder(throttleState_).mergeFrom(value).buildPartial();
+              com.google.cloud.bigquery.storage.v1beta2.ThrottleState.newBuilder(throttleState_)
+                  .mergeFrom(value)
+                  .buildPartial();
         } else {
           throttleState_ = value;
         }
@@ -1459,6 +1663,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Throttling state. If unset, the latest response still describes
      * the current throttling status.
@@ -1478,6 +1684,8 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Throttling state. If unset, the latest response still describes
      * the current throttling status.
@@ -1485,12 +1693,15 @@ private static final long serialVersionUID = 0L;
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ThrottleState throttle_state = 5;</code>
      */
-    public com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder getThrottleStateBuilder() {
-      
+    public com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder
+        getThrottleStateBuilder() {
+
       onChanged();
       return getThrottleStateFieldBuilder().getBuilder();
     }
     /**
+     *
+     *
      * <pre>
      * Throttling state. If unset, the latest response still describes
      * the current throttling status.
@@ -1498,15 +1709,19 @@ private static final long serialVersionUID = 0L;
      *
      * <code>.google.cloud.bigquery.storage.v1beta2.ThrottleState throttle_state = 5;</code>
      */
-    public com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder getThrottleStateOrBuilder() {
+    public com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder
+        getThrottleStateOrBuilder() {
       if (throttleStateBuilder_ != null) {
         return throttleStateBuilder_.getMessageOrBuilder();
       } else {
-        return throttleState_ == null ?
-            com.google.cloud.bigquery.storage.v1beta2.ThrottleState.getDefaultInstance() : throttleState_;
+        return throttleState_ == null
+            ? com.google.cloud.bigquery.storage.v1beta2.ThrottleState.getDefaultInstance()
+            : throttleState_;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Throttling state. If unset, the latest response still describes
      * the current throttling status.
@@ -1515,21 +1730,24 @@ private static final long serialVersionUID = 0L;
      * <code>.google.cloud.bigquery.storage.v1beta2.ThrottleState throttle_state = 5;</code>
      */
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.google.cloud.bigquery.storage.v1beta2.ThrottleState, com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder, com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder> 
+            com.google.cloud.bigquery.storage.v1beta2.ThrottleState,
+            com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder,
+            com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder>
         getThrottleStateFieldBuilder() {
       if (throttleStateBuilder_ == null) {
-        throttleStateBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-            com.google.cloud.bigquery.storage.v1beta2.ThrottleState, com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder, com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder>(
-                getThrottleState(),
-                getParentForChildren(),
-                isClean());
+        throttleStateBuilder_ =
+            new com.google.protobuf.SingleFieldBuilderV3<
+                com.google.cloud.bigquery.storage.v1beta2.ThrottleState,
+                com.google.cloud.bigquery.storage.v1beta2.ThrottleState.Builder,
+                com.google.cloud.bigquery.storage.v1beta2.ThrottleStateOrBuilder>(
+                getThrottleState(), getParentForChildren(), isClean());
         throttleState_ = null;
       }
       return throttleStateBuilder_;
     }
+
     @java.lang.Override
-    public final Builder setUnknownFields(
-        final com.google.protobuf.UnknownFieldSet unknownFields) {
+    public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
       return super.setUnknownFields(unknownFields);
     }
 
@@ -1539,12 +1757,12 @@ private static final long serialVersionUID = 0L;
       return super.mergeUnknownFields(unknownFields);
     }
 
-
     // @@protoc_insertion_point(builder_scope:google.cloud.bigquery.storage.v1beta2.ReadRowsResponse)
   }
 
   // @@protoc_insertion_point(class_scope:google.cloud.bigquery.storage.v1beta2.ReadRowsResponse)
   private static final com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse DEFAULT_INSTANCE;
+
   static {
     DEFAULT_INSTANCE = new com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse();
   }
@@ -1553,16 +1771,16 @@ private static final long serialVersionUID = 0L;
     return DEFAULT_INSTANCE;
   }
 
-  private static final com.google.protobuf.Parser<ReadRowsResponse>
-      PARSER = new com.google.protobuf.AbstractParser<ReadRowsResponse>() {
-    @java.lang.Override
-    public ReadRowsResponse parsePartialFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return new ReadRowsResponse(input, extensionRegistry);
-    }
-  };
+  private static final com.google.protobuf.Parser<ReadRowsResponse> PARSER =
+      new com.google.protobuf.AbstractParser<ReadRowsResponse>() {
+        @java.lang.Override
+        public ReadRowsResponse parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new ReadRowsResponse(input, extensionRegistry);
+        }
+      };
 
   public static com.google.protobuf.Parser<ReadRowsResponse> parser() {
     return PARSER;
@@ -1577,6 +1795,4 @@ private static final long serialVersionUID = 0L;
   public com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse getDefaultInstanceForType() {
     return DEFAULT_INSTANCE;
   }
-
 }
-

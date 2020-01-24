@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -19,33 +18,41 @@
 
 package com.google.cloud.bigquery.storage.v1beta2;
 
-public interface ReadSessionOrBuilder extends
+public interface ReadSessionOrBuilder
+    extends
     // @@protoc_insertion_point(interface_extends:google.cloud.bigquery.storage.v1beta2.ReadSession)
     com.google.protobuf.MessageOrBuilder {
 
   /**
+   *
+   *
    * <pre>
    * Output only. Unique identifier for the session, in the form
    * `projects/{project_id}/locations/{location}/sessions/{session_id}`.
    * </pre>
    *
    * <code>string name = 1 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   *
    * @return The name.
    */
   java.lang.String getName();
   /**
+   *
+   *
    * <pre>
    * Output only. Unique identifier for the session, in the form
    * `projects/{project_id}/locations/{location}/sessions/{session_id}`.
    * </pre>
    *
    * <code>string name = 1 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   *
    * @return The bytes for name.
    */
-  com.google.protobuf.ByteString
-      getNameBytes();
+  com.google.protobuf.ByteString getNameBytes();
 
   /**
+   *
+   *
    * <pre>
    * Output only. Time at which the session becomes invalid. After this time,
    * subsequent requests to read this Session will return errors. The
@@ -53,11 +60,15 @@ public interface ReadSessionOrBuilder extends
    * updated.
    * </pre>
    *
-   * <code>.google.protobuf.Timestamp expire_time = 2 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>.google.protobuf.Timestamp expire_time = 2 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
+   *
    * @return Whether the expireTime field is set.
    */
   boolean hasExpireTime();
   /**
+   *
+   *
    * <pre>
    * Output only. Time at which the session becomes invalid. After this time,
    * subsequent requests to read this Session will return errors. The
@@ -65,11 +76,15 @@ public interface ReadSessionOrBuilder extends
    * updated.
    * </pre>
    *
-   * <code>.google.protobuf.Timestamp expire_time = 2 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>.google.protobuf.Timestamp expire_time = 2 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
+   *
    * @return The expireTime.
    */
   com.google.protobuf.Timestamp getExpireTime();
   /**
+   *
+   *
    * <pre>
    * Output only. Time at which the session becomes invalid. After this time,
    * subsequent requests to read this Session will return errors. The
@@ -77,165 +92,241 @@ public interface ReadSessionOrBuilder extends
    * updated.
    * </pre>
    *
-   * <code>.google.protobuf.Timestamp expire_time = 2 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>.google.protobuf.Timestamp expire_time = 2 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
    */
   com.google.protobuf.TimestampOrBuilder getExpireTimeOrBuilder();
 
   /**
+   *
+   *
    * <pre>
    * Immutable. Data format of the output data. Behavior defaults to Apache
    * Avro.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.DataFormat data_format = 3 [(.google.api.field_behavior) = IMMUTABLE];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.DataFormat data_format = 3 [(.google.api.field_behavior) = IMMUTABLE];
+   * </code>
+   *
    * @return The enum numeric value on the wire for dataFormat.
    */
   int getDataFormatValue();
   /**
+   *
+   *
    * <pre>
    * Immutable. Data format of the output data. Behavior defaults to Apache
    * Avro.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.DataFormat data_format = 3 [(.google.api.field_behavior) = IMMUTABLE];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.DataFormat data_format = 3 [(.google.api.field_behavior) = IMMUTABLE];
+   * </code>
+   *
    * @return The dataFormat.
    */
   com.google.cloud.bigquery.storage.v1beta2.DataFormat getDataFormat();
 
   /**
+   *
+   *
    * <pre>
    * Output only. Avro schema.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.AvroSchema avro_schema = 4 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.AvroSchema avro_schema = 4 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
+   *
    * @return Whether the avroSchema field is set.
    */
   boolean hasAvroSchema();
   /**
+   *
+   *
    * <pre>
    * Output only. Avro schema.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.AvroSchema avro_schema = 4 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.AvroSchema avro_schema = 4 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
+   *
    * @return The avroSchema.
    */
   com.google.cloud.bigquery.storage.v1beta2.AvroSchema getAvroSchema();
   /**
+   *
+   *
    * <pre>
    * Output only. Avro schema.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.AvroSchema avro_schema = 4 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.AvroSchema avro_schema = 4 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
    */
   com.google.cloud.bigquery.storage.v1beta2.AvroSchemaOrBuilder getAvroSchemaOrBuilder();
 
   /**
+   *
+   *
    * <pre>
    * Output only. Arrow schema.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ArrowSchema arrow_schema = 5 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ArrowSchema arrow_schema = 5 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
+   *
    * @return Whether the arrowSchema field is set.
    */
   boolean hasArrowSchema();
   /**
+   *
+   *
    * <pre>
    * Output only. Arrow schema.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ArrowSchema arrow_schema = 5 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ArrowSchema arrow_schema = 5 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
+   *
    * @return The arrowSchema.
    */
   com.google.cloud.bigquery.storage.v1beta2.ArrowSchema getArrowSchema();
   /**
+   *
+   *
    * <pre>
    * Output only. Arrow schema.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ArrowSchema arrow_schema = 5 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ArrowSchema arrow_schema = 5 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
    */
   com.google.cloud.bigquery.storage.v1beta2.ArrowSchemaOrBuilder getArrowSchemaOrBuilder();
 
   /**
+   *
+   *
    * <pre>
    * Table that this ReadSession is reading from, in the form
    * `projects/{project_id}/datasets/{dataset_id}/tables/{table_id}
    * </pre>
    *
    * <code>string table = 6;</code>
+   *
    * @return The table.
    */
   java.lang.String getTable();
   /**
+   *
+   *
    * <pre>
    * Table that this ReadSession is reading from, in the form
    * `projects/{project_id}/datasets/{dataset_id}/tables/{table_id}
    * </pre>
    *
    * <code>string table = 6;</code>
+   *
    * @return The bytes for table.
    */
-  com.google.protobuf.ByteString
-      getTableBytes();
+  com.google.protobuf.ByteString getTableBytes();
 
   /**
+   *
+   *
    * <pre>
    * Optional. Any modifiers which are applied when reading from the specified
    * table.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiers table_modifiers = 7 [(.google.api.field_behavior) = OPTIONAL];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiers table_modifiers = 7 [(.google.api.field_behavior) = OPTIONAL];
+   * </code>
+   *
    * @return Whether the tableModifiers field is set.
    */
   boolean hasTableModifiers();
   /**
+   *
+   *
    * <pre>
    * Optional. Any modifiers which are applied when reading from the specified
    * table.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiers table_modifiers = 7 [(.google.api.field_behavior) = OPTIONAL];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiers table_modifiers = 7 [(.google.api.field_behavior) = OPTIONAL];
+   * </code>
+   *
    * @return The tableModifiers.
    */
   com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiers getTableModifiers();
   /**
+   *
+   *
    * <pre>
    * Optional. Any modifiers which are applied when reading from the specified
    * table.
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiers table_modifiers = 7 [(.google.api.field_behavior) = OPTIONAL];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiers table_modifiers = 7 [(.google.api.field_behavior) = OPTIONAL];
+   * </code>
    */
-  com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiersOrBuilder getTableModifiersOrBuilder();
+  com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiersOrBuilder
+      getTableModifiersOrBuilder();
 
   /**
+   *
+   *
    * <pre>
    * Optional. Read options for this session (e.g. column selection, filters).
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions read_options = 8 [(.google.api.field_behavior) = OPTIONAL];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions read_options = 8 [(.google.api.field_behavior) = OPTIONAL];
+   * </code>
+   *
    * @return Whether the readOptions field is set.
    */
   boolean hasReadOptions();
   /**
+   *
+   *
    * <pre>
    * Optional. Read options for this session (e.g. column selection, filters).
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions read_options = 8 [(.google.api.field_behavior) = OPTIONAL];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions read_options = 8 [(.google.api.field_behavior) = OPTIONAL];
+   * </code>
+   *
    * @return The readOptions.
    */
   com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions getReadOptions();
   /**
+   *
+   *
    * <pre>
    * Optional. Read options for this session (e.g. column selection, filters).
    * </pre>
    *
-   * <code>.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions read_options = 8 [(.google.api.field_behavior) = OPTIONAL];</code>
+   * <code>
+   * .google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions read_options = 8 [(.google.api.field_behavior) = OPTIONAL];
+   * </code>
    */
-  com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptionsOrBuilder getReadOptionsOrBuilder();
+  com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptionsOrBuilder
+      getReadOptionsOrBuilder();
 
   /**
+   *
+   *
    * <pre>
    * Output only. A list of streams created with the session.
    * At least one stream is created with the session. In the future, larger
@@ -244,11 +335,14 @@ public interface ReadSessionOrBuilder extends
    * instead, which is not yet available.
    * </pre>
    *
-   * <code>repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
    */
-  java.util.List<com.google.cloud.bigquery.storage.v1beta2.ReadStream> 
-      getStreamsList();
+  java.util.List<com.google.cloud.bigquery.storage.v1beta2.ReadStream> getStreamsList();
   /**
+   *
+   *
    * <pre>
    * Output only. A list of streams created with the session.
    * At least one stream is created with the session. In the future, larger
@@ -257,10 +351,14 @@ public interface ReadSessionOrBuilder extends
    * instead, which is not yet available.
    * </pre>
    *
-   * <code>repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
    */
   com.google.cloud.bigquery.storage.v1beta2.ReadStream getStreams(int index);
   /**
+   *
+   *
    * <pre>
    * Output only. A list of streams created with the session.
    * At least one stream is created with the session. In the future, larger
@@ -269,10 +367,14 @@ public interface ReadSessionOrBuilder extends
    * instead, which is not yet available.
    * </pre>
    *
-   * <code>repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
    */
   int getStreamsCount();
   /**
+   *
+   *
    * <pre>
    * Output only. A list of streams created with the session.
    * At least one stream is created with the session. In the future, larger
@@ -281,11 +383,15 @@ public interface ReadSessionOrBuilder extends
    * instead, which is not yet available.
    * </pre>
    *
-   * <code>repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
    */
-  java.util.List<? extends com.google.cloud.bigquery.storage.v1beta2.ReadStreamOrBuilder> 
+  java.util.List<? extends com.google.cloud.bigquery.storage.v1beta2.ReadStreamOrBuilder>
       getStreamsOrBuilderList();
   /**
+   *
+   *
    * <pre>
    * Output only. A list of streams created with the session.
    * At least one stream is created with the session. In the future, larger
@@ -294,10 +400,11 @@ public interface ReadSessionOrBuilder extends
    * instead, which is not yet available.
    * </pre>
    *
-   * <code>repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   * <code>
+   * repeated .google.cloud.bigquery.storage.v1beta2.ReadStream streams = 10 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
    */
-  com.google.cloud.bigquery.storage.v1beta2.ReadStreamOrBuilder getStreamsOrBuilder(
-      int index);
+  com.google.cloud.bigquery.storage.v1beta2.ReadStreamOrBuilder getStreamsOrBuilder(int index);
 
   public com.google.cloud.bigquery.storage.v1beta2.ReadSession.SchemaCase getSchemaCase();
 }

@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -20,19 +19,20 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 /**
+ *
+ *
  * <pre>
  * Data format for input or output data.
  * </pre>
  *
  * Protobuf enum {@code google.cloud.bigquery.storage.v1beta2.DataFormat}
  */
-public enum DataFormat
-    implements com.google.protobuf.ProtocolMessageEnum {
-  /**
-   * <code>DATA_FORMAT_UNSPECIFIED = 0;</code>
-   */
+public enum DataFormat implements com.google.protobuf.ProtocolMessageEnum {
+  /** <code>DATA_FORMAT_UNSPECIFIED = 0;</code> */
   DATA_FORMAT_UNSPECIFIED(0),
   /**
+   *
+   *
    * <pre>
    * Avro is a standard open source row based file format.
    * See https://avro.apache.org/ for more details.
@@ -42,6 +42,8 @@ public enum DataFormat
    */
   AVRO(1),
   /**
+   *
+   *
    * <pre>
    * Arrow is a standard open source column-based message format.
    * See https://arrow.apache.org/ for more details.
@@ -53,11 +55,11 @@ public enum DataFormat
   UNRECOGNIZED(-1),
   ;
 
-  /**
-   * <code>DATA_FORMAT_UNSPECIFIED = 0;</code>
-   */
+  /** <code>DATA_FORMAT_UNSPECIFIED = 0;</code> */
   public static final int DATA_FORMAT_UNSPECIFIED_VALUE = 0;
   /**
+   *
+   *
    * <pre>
    * Avro is a standard open source row based file format.
    * See https://avro.apache.org/ for more details.
@@ -67,6 +69,8 @@ public enum DataFormat
    */
   public static final int AVRO_VALUE = 1;
   /**
+   *
+   *
    * <pre>
    * Arrow is a standard open source column-based message format.
    * See https://arrow.apache.org/ for more details.
@@ -75,7 +79,6 @@ public enum DataFormat
    * <code>ARROW = 2;</code>
    */
   public static final int ARROW_VALUE = 2;
-
 
   public final int getNumber() {
     if (this == UNRECOGNIZED) {
@@ -101,45 +104,47 @@ public enum DataFormat
    */
   public static DataFormat forNumber(int value) {
     switch (value) {
-      case 0: return DATA_FORMAT_UNSPECIFIED;
-      case 1: return AVRO;
-      case 2: return ARROW;
-      default: return null;
+      case 0:
+        return DATA_FORMAT_UNSPECIFIED;
+      case 1:
+        return AVRO;
+      case 2:
+        return ARROW;
+      default:
+        return null;
     }
   }
 
-  public static com.google.protobuf.Internal.EnumLiteMap<DataFormat>
-      internalGetValueMap() {
+  public static com.google.protobuf.Internal.EnumLiteMap<DataFormat> internalGetValueMap() {
     return internalValueMap;
   }
-  private static final com.google.protobuf.Internal.EnumLiteMap<
-      DataFormat> internalValueMap =
-        new com.google.protobuf.Internal.EnumLiteMap<DataFormat>() {
-          public DataFormat findValueByNumber(int number) {
-            return DataFormat.forNumber(number);
-          }
-        };
 
-  public final com.google.protobuf.Descriptors.EnumValueDescriptor
-      getValueDescriptor() {
+  private static final com.google.protobuf.Internal.EnumLiteMap<DataFormat> internalValueMap =
+      new com.google.protobuf.Internal.EnumLiteMap<DataFormat>() {
+        public DataFormat findValueByNumber(int number) {
+          return DataFormat.forNumber(number);
+        }
+      };
+
+  public final com.google.protobuf.Descriptors.EnumValueDescriptor getValueDescriptor() {
     return getDescriptor().getValues().get(ordinal());
   }
-  public final com.google.protobuf.Descriptors.EnumDescriptor
-      getDescriptorForType() {
+
+  public final com.google.protobuf.Descriptors.EnumDescriptor getDescriptorForType() {
     return getDescriptor();
   }
-  public static final com.google.protobuf.Descriptors.EnumDescriptor
-      getDescriptor() {
-    return com.google.cloud.bigquery.storage.v1beta2.StreamProto.getDescriptor().getEnumTypes().get(0);
+
+  public static final com.google.protobuf.Descriptors.EnumDescriptor getDescriptor() {
+    return com.google.cloud.bigquery.storage.v1beta2.StreamProto.getDescriptor()
+        .getEnumTypes()
+        .get(0);
   }
 
   private static final DataFormat[] VALUES = values();
 
-  public static DataFormat valueOf(
-      com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+  public static DataFormat valueOf(com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
     if (desc.getType() != getDescriptor()) {
-      throw new java.lang.IllegalArgumentException(
-        "EnumValueDescriptor is not for this type.");
+      throw new java.lang.IllegalArgumentException("EnumValueDescriptor is not for this type.");
     }
     if (desc.getIndex() == -1) {
       return UNRECOGNIZED;
@@ -155,4 +160,3 @@ public enum DataFormat
 
   // @@protoc_insertion_point(enum_scope:google.cloud.bigquery.storage.v1beta2.DataFormat)
 }
-

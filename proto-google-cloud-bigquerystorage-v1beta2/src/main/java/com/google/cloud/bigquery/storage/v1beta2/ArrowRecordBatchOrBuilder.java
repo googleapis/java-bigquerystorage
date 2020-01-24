@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -19,16 +18,20 @@
 
 package com.google.cloud.bigquery.storage.v1beta2;
 
-public interface ArrowRecordBatchOrBuilder extends
+public interface ArrowRecordBatchOrBuilder
+    extends
     // @@protoc_insertion_point(interface_extends:google.cloud.bigquery.storage.v1beta2.ArrowRecordBatch)
     com.google.protobuf.MessageOrBuilder {
 
   /**
+   *
+   *
    * <pre>
    * IPC-serialized Arrow RecordBatch.
    * </pre>
    *
    * <code>bytes serialized_record_batch = 1;</code>
+   *
    * @return The serializedRecordBatch.
    */
   com.google.protobuf.ByteString getSerializedRecordBatch();

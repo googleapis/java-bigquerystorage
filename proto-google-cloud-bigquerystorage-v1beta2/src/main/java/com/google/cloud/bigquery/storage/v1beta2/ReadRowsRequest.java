@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -20,37 +19,39 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 /**
+ *
+ *
  * <pre>
  * Request message for `ReadRows`.
  * </pre>
  *
  * Protobuf type {@code google.cloud.bigquery.storage.v1beta2.ReadRowsRequest}
  */
-public  final class ReadRowsRequest extends
-    com.google.protobuf.GeneratedMessageV3 implements
+public final class ReadRowsRequest extends com.google.protobuf.GeneratedMessageV3
+    implements
     // @@protoc_insertion_point(message_implements:google.cloud.bigquery.storage.v1beta2.ReadRowsRequest)
     ReadRowsRequestOrBuilder {
-private static final long serialVersionUID = 0L;
+  private static final long serialVersionUID = 0L;
   // Use ReadRowsRequest.newBuilder() to construct.
   private ReadRowsRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
     super(builder);
   }
+
   private ReadRowsRequest() {
     readStream_ = "";
   }
 
   @java.lang.Override
   @SuppressWarnings({"unused"})
-  protected java.lang.Object newInstance(
-      UnusedPrivateParameter unused) {
+  protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new ReadRowsRequest();
   }
 
   @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet
-  getUnknownFields() {
+  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
     return this.unknownFields;
   }
+
   private ReadRowsRequest(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -69,57 +70,63 @@ private static final long serialVersionUID = 0L;
           case 0:
             done = true;
             break;
-          case 10: {
-            java.lang.String s = input.readStringRequireUtf8();
+          case 10:
+            {
+              java.lang.String s = input.readStringRequireUtf8();
 
-            readStream_ = s;
-            break;
-          }
-          case 16: {
-
-            offset_ = input.readInt64();
-            break;
-          }
-          default: {
-            if (!parseUnknownField(
-                input, unknownFields, extensionRegistry, tag)) {
-              done = true;
+              readStream_ = s;
+              break;
             }
-            break;
-          }
+          case 16:
+            {
+              offset_ = input.readInt64();
+              break;
+            }
+          default:
+            {
+              if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
         }
       }
     } catch (com.google.protobuf.InvalidProtocolBufferException e) {
       throw e.setUnfinishedMessage(this);
     } catch (java.io.IOException e) {
-      throw new com.google.protobuf.InvalidProtocolBufferException(
-          e).setUnfinishedMessage(this);
+      throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
     } finally {
       this.unknownFields = unknownFields.build();
       makeExtensionsImmutable();
     }
   }
-  public static final com.google.protobuf.Descriptors.Descriptor
-      getDescriptor() {
-    return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_descriptor;
+
+  public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+    return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+        .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_descriptor;
   }
 
   @java.lang.Override
   protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internalGetFieldAccessorTable() {
-    return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_fieldAccessorTable
+    return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+        .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_fieldAccessorTable
         .ensureFieldAccessorsInitialized(
-            com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.class, com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.Builder.class);
+            com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.class,
+            com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.Builder.class);
   }
 
   public static final int READ_STREAM_FIELD_NUMBER = 1;
   private volatile java.lang.Object readStream_;
   /**
+   *
+   *
    * <pre>
    * Required. Stream to read rows from.
    * </pre>
    *
    * <code>string read_stream = 1 [(.google.api.field_behavior) = REQUIRED];</code>
+   *
    * @return The readStream.
    */
   public java.lang.String getReadStream() {
@@ -127,28 +134,28 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
+      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       readStream_ = s;
       return s;
     }
   }
   /**
+   *
+   *
    * <pre>
    * Required. Stream to read rows from.
    * </pre>
    *
    * <code>string read_stream = 1 [(.google.api.field_behavior) = REQUIRED];</code>
+   *
    * @return The bytes for readStream.
    */
-  public com.google.protobuf.ByteString
-      getReadStreamBytes() {
+  public com.google.protobuf.ByteString getReadStreamBytes() {
     java.lang.Object ref = readStream_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (java.lang.String) ref);
+      com.google.protobuf.ByteString b =
+          com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
       readStream_ = b;
       return b;
     } else {
@@ -159,6 +166,8 @@ private static final long serialVersionUID = 0L;
   public static final int OFFSET_FIELD_NUMBER = 2;
   private long offset_;
   /**
+   *
+   *
    * <pre>
    * The offset requested must be less than the last row read from Read.
    * Requesting a larger offset is undefined. If not specified, start reading
@@ -166,6 +175,7 @@ private static final long serialVersionUID = 0L;
    * </pre>
    *
    * <code>int64 offset = 2;</code>
+   *
    * @return The offset.
    */
   public long getOffset() {
@@ -173,6 +183,7 @@ private static final long serialVersionUID = 0L;
   }
 
   private byte memoizedIsInitialized = -1;
+
   @java.lang.Override
   public final boolean isInitialized() {
     byte isInitialized = memoizedIsInitialized;
@@ -184,8 +195,7 @@ private static final long serialVersionUID = 0L;
   }
 
   @java.lang.Override
-  public void writeTo(com.google.protobuf.CodedOutputStream output)
-                      throws java.io.IOException {
+  public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
     if (!getReadStreamBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 1, readStream_);
     }
@@ -205,8 +215,7 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, readStream_);
     }
     if (offset_ != 0L) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeInt64Size(2, offset_);
+      size += com.google.protobuf.CodedOutputStream.computeInt64Size(2, offset_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -216,17 +225,16 @@ private static final long serialVersionUID = 0L;
   @java.lang.Override
   public boolean equals(final java.lang.Object obj) {
     if (obj == this) {
-     return true;
+      return true;
     }
     if (!(obj instanceof com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest)) {
       return super.equals(obj);
     }
-    com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest other = (com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest) obj;
+    com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest other =
+        (com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest) obj;
 
-    if (!getReadStream()
-        .equals(other.getReadStream())) return false;
-    if (getOffset()
-        != other.getOffset()) return false;
+    if (!getReadStream().equals(other.getReadStream())) return false;
+    if (getOffset() != other.getOffset()) return false;
     if (!unknownFields.equals(other.unknownFields)) return false;
     return true;
   }
@@ -241,125 +249,134 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + READ_STREAM_FIELD_NUMBER;
     hash = (53 * hash) + getReadStream().hashCode();
     hash = (37 * hash) + OFFSET_FIELD_NUMBER;
-    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-        getOffset());
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getOffset());
     hash = (29 * hash) + unknownFields.hashCode();
     memoizedHashCode = hash;
     return hash;
   }
 
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(
-      java.nio.ByteBuffer data)
-      throws com.google.protobuf.InvalidProtocolBufferException {
+      java.nio.ByteBuffer data) throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(
-      java.nio.ByteBuffer data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      java.nio.ByteBuffer data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(
       com.google.protobuf.ByteString data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(
       com.google.protobuf.ByteString data,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(byte[] data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(
-      byte[] data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(java.io.InputStream input)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
-  }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+      java.io.InputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
-  public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseDelimitedFrom(java.io.InputStream input)
+
+  public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseDelimitedFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+      java.io.InputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
   }
+
+  public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseDelimitedFrom(
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(
+        PARSER, input, extensionRegistry);
+  }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(
-      com.google.protobuf.CodedInputStream input)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
+      com.google.protobuf.CodedInputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
+
   public static com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest parseFrom(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
 
   @java.lang.Override
-  public Builder newBuilderForType() { return newBuilder(); }
+  public Builder newBuilderForType() {
+    return newBuilder();
+  }
+
   public static Builder newBuilder() {
     return DEFAULT_INSTANCE.toBuilder();
   }
-  public static Builder newBuilder(com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest prototype) {
+
+  public static Builder newBuilder(
+      com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest prototype) {
     return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-  }
-  @java.lang.Override
-  public Builder toBuilder() {
-    return this == DEFAULT_INSTANCE
-        ? new Builder() : new Builder().mergeFrom(this);
   }
 
   @java.lang.Override
-  protected Builder newBuilderForType(
-      com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+  public Builder toBuilder() {
+    return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+  }
+
+  @java.lang.Override
+  protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
     Builder builder = new Builder(parent);
     return builder;
   }
   /**
+   *
+   *
    * <pre>
    * Request message for `ReadRows`.
    * </pre>
    *
    * Protobuf type {@code google.cloud.bigquery.storage.v1beta2.ReadRowsRequest}
    */
-  public static final class Builder extends
-      com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+  public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder>
+      implements
       // @@protoc_insertion_point(builder_implements:google.cloud.bigquery.storage.v1beta2.ReadRowsRequest)
       com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequestOrBuilder {
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_descriptor;
+    public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_descriptor;
     }
 
     @java.lang.Override
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_fieldAccessorTable
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.class, com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.Builder.class);
+              com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.class,
+              com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.Builder.class);
     }
 
     // Construct using com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.newBuilder()
@@ -367,16 +384,15 @@ private static final long serialVersionUID = 0L;
       maybeForceBuilderInitialization();
     }
 
-    private Builder(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+    private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
       super(parent);
       maybeForceBuilderInitialization();
     }
+
     private void maybeForceBuilderInitialization() {
-      if (com.google.protobuf.GeneratedMessageV3
-              .alwaysUseFieldBuilders) {
-      }
+      if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
     }
+
     @java.lang.Override
     public Builder clear() {
       super.clear();
@@ -388,9 +404,9 @@ private static final long serialVersionUID = 0L;
     }
 
     @java.lang.Override
-    public com.google.protobuf.Descriptors.Descriptor
-        getDescriptorForType() {
-      return com.google.cloud.bigquery.storage.v1beta2.StorageProto.internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_descriptor;
+    public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+      return com.google.cloud.bigquery.storage.v1beta2.StorageProto
+          .internal_static_google_cloud_bigquery_storage_v1beta2_ReadRowsRequest_descriptor;
     }
 
     @java.lang.Override
@@ -409,7 +425,8 @@ private static final long serialVersionUID = 0L;
 
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest buildPartial() {
-      com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest result = new com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest(this);
+      com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest result =
+          new com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest(this);
       result.readStream_ = readStream_;
       result.offset_ = offset_;
       onBuilt();
@@ -420,38 +437,39 @@ private static final long serialVersionUID = 0L;
     public Builder clone() {
       return super.clone();
     }
+
     @java.lang.Override
     public Builder setField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
       return super.setField(field, value);
     }
+
     @java.lang.Override
-    public Builder clearField(
-        com.google.protobuf.Descriptors.FieldDescriptor field) {
+    public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
       return super.clearField(field);
     }
+
     @java.lang.Override
-    public Builder clearOneof(
-        com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+    public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
       return super.clearOneof(oneof);
     }
+
     @java.lang.Override
     public Builder setRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        int index, java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
       return super.setRepeatedField(field, index, value);
     }
+
     @java.lang.Override
     public Builder addRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        java.lang.Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
       return super.addRepeatedField(field, value);
     }
+
     @java.lang.Override
     public Builder mergeFrom(com.google.protobuf.Message other) {
       if (other instanceof com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest) {
-        return mergeFrom((com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest)other);
+        return mergeFrom((com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest) other);
       } else {
         super.mergeFrom(other);
         return this;
@@ -459,7 +477,8 @@ private static final long serialVersionUID = 0L;
     }
 
     public Builder mergeFrom(com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest other) {
-      if (other == com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.getDefaultInstance()) return this;
+      if (other == com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.getDefaultInstance())
+        return this;
       if (!other.getReadStream().isEmpty()) {
         readStream_ = other.readStream_;
         onChanged();
@@ -486,7 +505,8 @@ private static final long serialVersionUID = 0L;
       try {
         parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        parsedMessage = (com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest) e.getUnfinishedMessage();
+        parsedMessage =
+            (com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest) e.getUnfinishedMessage();
         throw e.unwrapIOException();
       } finally {
         if (parsedMessage != null) {
@@ -498,18 +518,20 @@ private static final long serialVersionUID = 0L;
 
     private java.lang.Object readStream_ = "";
     /**
+     *
+     *
      * <pre>
      * Required. Stream to read rows from.
      * </pre>
      *
      * <code>string read_stream = 1 [(.google.api.field_behavior) = REQUIRED];</code>
+     *
      * @return The readStream.
      */
     public java.lang.String getReadStream() {
       java.lang.Object ref = readStream_;
       if (!(ref instanceof java.lang.String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
+        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         readStream_ = s;
         return s;
@@ -518,20 +540,21 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Required. Stream to read rows from.
      * </pre>
      *
      * <code>string read_stream = 1 [(.google.api.field_behavior) = REQUIRED];</code>
+     *
      * @return The bytes for readStream.
      */
-    public com.google.protobuf.ByteString
-        getReadStreamBytes() {
+    public com.google.protobuf.ByteString getReadStreamBytes() {
       java.lang.Object ref = readStream_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
         readStream_ = b;
         return b;
       } else {
@@ -539,61 +562,70 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
+     *
+     *
      * <pre>
      * Required. Stream to read rows from.
      * </pre>
      *
      * <code>string read_stream = 1 [(.google.api.field_behavior) = REQUIRED];</code>
+     *
      * @param value The readStream to set.
      * @return This builder for chaining.
      */
-    public Builder setReadStream(
-        java.lang.String value) {
+    public Builder setReadStream(java.lang.String value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  
+        throw new NullPointerException();
+      }
+
       readStream_ = value;
       onChanged();
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Required. Stream to read rows from.
      * </pre>
      *
      * <code>string read_stream = 1 [(.google.api.field_behavior) = REQUIRED];</code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearReadStream() {
-      
+
       readStream_ = getDefaultInstance().getReadStream();
       onChanged();
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * Required. Stream to read rows from.
      * </pre>
      *
      * <code>string read_stream = 1 [(.google.api.field_behavior) = REQUIRED];</code>
+     *
      * @param value The bytes for readStream to set.
      * @return This builder for chaining.
      */
-    public Builder setReadStreamBytes(
-        com.google.protobuf.ByteString value) {
+    public Builder setReadStreamBytes(com.google.protobuf.ByteString value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-      
+        throw new NullPointerException();
+      }
+      checkByteStringIsUtf8(value);
+
       readStream_ = value;
       onChanged();
       return this;
     }
 
-    private long offset_ ;
+    private long offset_;
     /**
+     *
+     *
      * <pre>
      * The offset requested must be less than the last row read from Read.
      * Requesting a larger offset is undefined. If not specified, start reading
@@ -601,12 +633,15 @@ private static final long serialVersionUID = 0L;
      * </pre>
      *
      * <code>int64 offset = 2;</code>
+     *
      * @return The offset.
      */
     public long getOffset() {
       return offset_;
     }
     /**
+     *
+     *
      * <pre>
      * The offset requested must be less than the last row read from Read.
      * Requesting a larger offset is undefined. If not specified, start reading
@@ -614,16 +649,19 @@ private static final long serialVersionUID = 0L;
      * </pre>
      *
      * <code>int64 offset = 2;</code>
+     *
      * @param value The offset to set.
      * @return This builder for chaining.
      */
     public Builder setOffset(long value) {
-      
+
       offset_ = value;
       onChanged();
       return this;
     }
     /**
+     *
+     *
      * <pre>
      * The offset requested must be less than the last row read from Read.
      * Requesting a larger offset is undefined. If not specified, start reading
@@ -631,17 +669,18 @@ private static final long serialVersionUID = 0L;
      * </pre>
      *
      * <code>int64 offset = 2;</code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearOffset() {
-      
+
       offset_ = 0L;
       onChanged();
       return this;
     }
+
     @java.lang.Override
-    public final Builder setUnknownFields(
-        final com.google.protobuf.UnknownFieldSet unknownFields) {
+    public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
       return super.setUnknownFields(unknownFields);
     }
 
@@ -651,12 +690,12 @@ private static final long serialVersionUID = 0L;
       return super.mergeUnknownFields(unknownFields);
     }
 
-
     // @@protoc_insertion_point(builder_scope:google.cloud.bigquery.storage.v1beta2.ReadRowsRequest)
   }
 
   // @@protoc_insertion_point(class_scope:google.cloud.bigquery.storage.v1beta2.ReadRowsRequest)
   private static final com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest DEFAULT_INSTANCE;
+
   static {
     DEFAULT_INSTANCE = new com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest();
   }
@@ -665,16 +704,16 @@ private static final long serialVersionUID = 0L;
     return DEFAULT_INSTANCE;
   }
 
-  private static final com.google.protobuf.Parser<ReadRowsRequest>
-      PARSER = new com.google.protobuf.AbstractParser<ReadRowsRequest>() {
-    @java.lang.Override
-    public ReadRowsRequest parsePartialFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return new ReadRowsRequest(input, extensionRegistry);
-    }
-  };
+  private static final com.google.protobuf.Parser<ReadRowsRequest> PARSER =
+      new com.google.protobuf.AbstractParser<ReadRowsRequest>() {
+        @java.lang.Override
+        public ReadRowsRequest parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new ReadRowsRequest(input, extensionRegistry);
+        }
+      };
 
   public static com.google.protobuf.Parser<ReadRowsRequest> parser() {
     return PARSER;
@@ -689,6 +728,4 @@ private static final long serialVersionUID = 0L;
   public com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest getDefaultInstanceForType() {
     return DEFAULT_INSTANCE;
   }
-
 }
-

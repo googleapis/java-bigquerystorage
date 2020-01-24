@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -17,21 +16,18 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import static io.grpc.MethodDescriptor.generateFullMethodName;
-import static io.grpc.stub.ClientCalls.asyncBidiStreamingCall;
-import static io.grpc.stub.ClientCalls.asyncClientStreamingCall;
 import static io.grpc.stub.ClientCalls.asyncServerStreamingCall;
 import static io.grpc.stub.ClientCalls.asyncUnaryCall;
 import static io.grpc.stub.ClientCalls.blockingServerStreamingCall;
 import static io.grpc.stub.ClientCalls.blockingUnaryCall;
 import static io.grpc.stub.ClientCalls.futureUnaryCall;
-import static io.grpc.stub.ServerCalls.asyncBidiStreamingCall;
-import static io.grpc.stub.ServerCalls.asyncClientStreamingCall;
 import static io.grpc.stub.ServerCalls.asyncServerStreamingCall;
 import static io.grpc.stub.ServerCalls.asyncUnaryCall;
-import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;
 import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
 
 /**
+ *
+ *
  * <pre>
  * BigQuery Read API.
  * The Read API can be used to read data from BigQuery.
@@ -47,102 +43,147 @@ public final class BigQueryReadGrpc {
   public static final String SERVICE_NAME = "google.cloud.bigquery.storage.v1beta2.BigQueryRead";
 
   // Static method descriptors that strictly reflect the proto.
-  private static volatile io.grpc.MethodDescriptor<com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest,
-      com.google.cloud.bigquery.storage.v1beta2.ReadSession> getCreateReadSessionMethod;
+  private static volatile io.grpc.MethodDescriptor<
+          com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest,
+          com.google.cloud.bigquery.storage.v1beta2.ReadSession>
+      getCreateReadSessionMethod;
 
   @io.grpc.stub.annotations.RpcMethod(
       fullMethodName = SERVICE_NAME + '/' + "CreateReadSession",
       requestType = com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest.class,
       responseType = com.google.cloud.bigquery.storage.v1beta2.ReadSession.class,
       methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
-  public static io.grpc.MethodDescriptor<com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest,
-      com.google.cloud.bigquery.storage.v1beta2.ReadSession> getCreateReadSessionMethod() {
-    io.grpc.MethodDescriptor<com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest, com.google.cloud.bigquery.storage.v1beta2.ReadSession> getCreateReadSessionMethod;
+  public static io.grpc.MethodDescriptor<
+          com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest,
+          com.google.cloud.bigquery.storage.v1beta2.ReadSession>
+      getCreateReadSessionMethod() {
+    io.grpc.MethodDescriptor<
+            com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest,
+            com.google.cloud.bigquery.storage.v1beta2.ReadSession>
+        getCreateReadSessionMethod;
     if ((getCreateReadSessionMethod = BigQueryReadGrpc.getCreateReadSessionMethod) == null) {
       synchronized (BigQueryReadGrpc.class) {
         if ((getCreateReadSessionMethod = BigQueryReadGrpc.getCreateReadSessionMethod) == null) {
-          BigQueryReadGrpc.getCreateReadSessionMethod = getCreateReadSessionMethod =
-              io.grpc.MethodDescriptor.<com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest, com.google.cloud.bigquery.storage.v1beta2.ReadSession>newBuilder()
-              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
-              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "CreateReadSession"))
-              .setSampledToLocalTracing(true)
-              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest.getDefaultInstance()))
-              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  com.google.cloud.bigquery.storage.v1beta2.ReadSession.getDefaultInstance()))
-              .setSchemaDescriptor(new BigQueryReadMethodDescriptorSupplier("CreateReadSession"))
-              .build();
+          BigQueryReadGrpc.getCreateReadSessionMethod =
+              getCreateReadSessionMethod =
+                  io.grpc.MethodDescriptor
+                      .<com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest,
+                          com.google.cloud.bigquery.storage.v1beta2.ReadSession>
+                          newBuilder()
+                      .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+                      .setFullMethodName(generateFullMethodName(SERVICE_NAME, "CreateReadSession"))
+                      .setSampledToLocalTracing(true)
+                      .setRequestMarshaller(
+                          io.grpc.protobuf.ProtoUtils.marshaller(
+                              com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest
+                                  .getDefaultInstance()))
+                      .setResponseMarshaller(
+                          io.grpc.protobuf.ProtoUtils.marshaller(
+                              com.google.cloud.bigquery.storage.v1beta2.ReadSession
+                                  .getDefaultInstance()))
+                      .setSchemaDescriptor(
+                          new BigQueryReadMethodDescriptorSupplier("CreateReadSession"))
+                      .build();
         }
       }
     }
     return getCreateReadSessionMethod;
   }
 
-  private static volatile io.grpc.MethodDescriptor<com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest,
-      com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse> getReadRowsMethod;
+  private static volatile io.grpc.MethodDescriptor<
+          com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest,
+          com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>
+      getReadRowsMethod;
 
   @io.grpc.stub.annotations.RpcMethod(
       fullMethodName = SERVICE_NAME + '/' + "ReadRows",
       requestType = com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.class,
       responseType = com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.class,
       methodType = io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
-  public static io.grpc.MethodDescriptor<com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest,
-      com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse> getReadRowsMethod() {
-    io.grpc.MethodDescriptor<com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest, com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse> getReadRowsMethod;
+  public static io.grpc.MethodDescriptor<
+          com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest,
+          com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>
+      getReadRowsMethod() {
+    io.grpc.MethodDescriptor<
+            com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest,
+            com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>
+        getReadRowsMethod;
     if ((getReadRowsMethod = BigQueryReadGrpc.getReadRowsMethod) == null) {
       synchronized (BigQueryReadGrpc.class) {
         if ((getReadRowsMethod = BigQueryReadGrpc.getReadRowsMethod) == null) {
-          BigQueryReadGrpc.getReadRowsMethod = getReadRowsMethod =
-              io.grpc.MethodDescriptor.<com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest, com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>newBuilder()
-              .setType(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
-              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "ReadRows"))
-              .setSampledToLocalTracing(true)
-              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest.getDefaultInstance()))
-              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse.getDefaultInstance()))
-              .setSchemaDescriptor(new BigQueryReadMethodDescriptorSupplier("ReadRows"))
-              .build();
+          BigQueryReadGrpc.getReadRowsMethod =
+              getReadRowsMethod =
+                  io.grpc.MethodDescriptor
+                      .<com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest,
+                          com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>
+                          newBuilder()
+                      .setType(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
+                      .setFullMethodName(generateFullMethodName(SERVICE_NAME, "ReadRows"))
+                      .setSampledToLocalTracing(true)
+                      .setRequestMarshaller(
+                          io.grpc.protobuf.ProtoUtils.marshaller(
+                              com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest
+                                  .getDefaultInstance()))
+                      .setResponseMarshaller(
+                          io.grpc.protobuf.ProtoUtils.marshaller(
+                              com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse
+                                  .getDefaultInstance()))
+                      .setSchemaDescriptor(new BigQueryReadMethodDescriptorSupplier("ReadRows"))
+                      .build();
         }
       }
     }
     return getReadRowsMethod;
   }
 
-  private static volatile io.grpc.MethodDescriptor<com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest,
-      com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse> getSplitReadStreamMethod;
+  private static volatile io.grpc.MethodDescriptor<
+          com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest,
+          com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>
+      getSplitReadStreamMethod;
 
   @io.grpc.stub.annotations.RpcMethod(
       fullMethodName = SERVICE_NAME + '/' + "SplitReadStream",
       requestType = com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.class,
       responseType = com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse.class,
       methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
-  public static io.grpc.MethodDescriptor<com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest,
-      com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse> getSplitReadStreamMethod() {
-    io.grpc.MethodDescriptor<com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest, com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse> getSplitReadStreamMethod;
+  public static io.grpc.MethodDescriptor<
+          com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest,
+          com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>
+      getSplitReadStreamMethod() {
+    io.grpc.MethodDescriptor<
+            com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest,
+            com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>
+        getSplitReadStreamMethod;
     if ((getSplitReadStreamMethod = BigQueryReadGrpc.getSplitReadStreamMethod) == null) {
       synchronized (BigQueryReadGrpc.class) {
         if ((getSplitReadStreamMethod = BigQueryReadGrpc.getSplitReadStreamMethod) == null) {
-          BigQueryReadGrpc.getSplitReadStreamMethod = getSplitReadStreamMethod =
-              io.grpc.MethodDescriptor.<com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest, com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>newBuilder()
-              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
-              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "SplitReadStream"))
-              .setSampledToLocalTracing(true)
-              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest.getDefaultInstance()))
-              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse.getDefaultInstance()))
-              .setSchemaDescriptor(new BigQueryReadMethodDescriptorSupplier("SplitReadStream"))
-              .build();
+          BigQueryReadGrpc.getSplitReadStreamMethod =
+              getSplitReadStreamMethod =
+                  io.grpc.MethodDescriptor
+                      .<com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest,
+                          com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>
+                          newBuilder()
+                      .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+                      .setFullMethodName(generateFullMethodName(SERVICE_NAME, "SplitReadStream"))
+                      .setSampledToLocalTracing(true)
+                      .setRequestMarshaller(
+                          io.grpc.protobuf.ProtoUtils.marshaller(
+                              com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest
+                                  .getDefaultInstance()))
+                      .setResponseMarshaller(
+                          io.grpc.protobuf.ProtoUtils.marshaller(
+                              com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse
+                                  .getDefaultInstance()))
+                      .setSchemaDescriptor(
+                          new BigQueryReadMethodDescriptorSupplier("SplitReadStream"))
+                      .build();
         }
       }
     }
     return getSplitReadStreamMethod;
   }
 
-  /**
-   * Creates a new async stub that supports all call types for the service
-   */
+  /** Creates a new async stub that supports all call types for the service */
   public static BigQueryReadStub newStub(io.grpc.Channel channel) {
     return new BigQueryReadStub(channel);
   }
@@ -150,28 +191,28 @@ public final class BigQueryReadGrpc {
   /**
    * Creates a new blocking-style stub that supports unary and streaming output calls on the service
    */
-  public static BigQueryReadBlockingStub newBlockingStub(
-      io.grpc.Channel channel) {
+  public static BigQueryReadBlockingStub newBlockingStub(io.grpc.Channel channel) {
     return new BigQueryReadBlockingStub(channel);
   }
 
-  /**
-   * Creates a new ListenableFuture-style stub that supports unary calls on the service
-   */
-  public static BigQueryReadFutureStub newFutureStub(
-      io.grpc.Channel channel) {
+  /** Creates a new ListenableFuture-style stub that supports unary calls on the service */
+  public static BigQueryReadFutureStub newFutureStub(io.grpc.Channel channel) {
     return new BigQueryReadFutureStub(channel);
   }
 
   /**
+   *
+   *
    * <pre>
    * BigQuery Read API.
    * The Read API can be used to read data from BigQuery.
    * </pre>
    */
-  public static abstract class BigQueryReadImplBase implements io.grpc.BindableService {
+  public abstract static class BigQueryReadImplBase implements io.grpc.BindableService {
 
     /**
+     *
+     *
      * <pre>
      * Creates a new read session. A read session divides the contents of a
      * BigQuery table into one or more streams, which can then be used to read
@@ -191,12 +232,16 @@ public final class BigQueryReadGrpc {
      * not require manual clean-up by the caller.
      * </pre>
      */
-    public void createReadSession(com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest request,
-        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadSession> responseObserver) {
+    public void createReadSession(
+        com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest request,
+        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadSession>
+            responseObserver) {
       asyncUnimplementedUnaryCall(getCreateReadSessionMethod(), responseObserver);
     }
 
     /**
+     *
+     *
      * <pre>
      * Reads rows from the stream in the format prescribed by the ReadSession.
      * Each response contains one or more table rows, up to a maximum of 100 MiB
@@ -206,12 +251,16 @@ public final class BigQueryReadGrpc {
      * state of the stream.
      * </pre>
      */
-    public void readRows(com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest request,
-        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse> responseObserver) {
+    public void readRows(
+        com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest request,
+        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>
+            responseObserver) {
       asyncUnimplementedUnaryCall(getReadRowsMethod(), responseObserver);
     }
 
     /**
+     *
+     *
      * <pre>
      * Splits a given `ReadStream` into two `ReadStream` objects. These
      * `ReadStream` objects are referred to as the primary and the residual
@@ -226,39 +275,45 @@ public final class BigQueryReadGrpc {
      * completion.
      * </pre>
      */
-    public void splitReadStream(com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest request,
-        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse> responseObserver) {
+    public void splitReadStream(
+        com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest request,
+        io.grpc.stub.StreamObserver<
+                com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>
+            responseObserver) {
       asyncUnimplementedUnaryCall(getSplitReadStreamMethod(), responseObserver);
     }
 
-    @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
+    @java.lang.Override
+    public final io.grpc.ServerServiceDefinition bindService() {
       return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
           .addMethod(
-            getCreateReadSessionMethod(),
-            asyncUnaryCall(
-              new MethodHandlers<
-                com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest,
-                com.google.cloud.bigquery.storage.v1beta2.ReadSession>(
-                  this, METHODID_CREATE_READ_SESSION)))
+              getCreateReadSessionMethod(),
+              asyncUnaryCall(
+                  new MethodHandlers<
+                      com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest,
+                      com.google.cloud.bigquery.storage.v1beta2.ReadSession>(
+                      this, METHODID_CREATE_READ_SESSION)))
           .addMethod(
-            getReadRowsMethod(),
-            asyncServerStreamingCall(
-              new MethodHandlers<
-                com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest,
-                com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>(
-                  this, METHODID_READ_ROWS)))
+              getReadRowsMethod(),
+              asyncServerStreamingCall(
+                  new MethodHandlers<
+                      com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest,
+                      com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>(
+                      this, METHODID_READ_ROWS)))
           .addMethod(
-            getSplitReadStreamMethod(),
-            asyncUnaryCall(
-              new MethodHandlers<
-                com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest,
-                com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>(
-                  this, METHODID_SPLIT_READ_STREAM)))
+              getSplitReadStreamMethod(),
+              asyncUnaryCall(
+                  new MethodHandlers<
+                      com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest,
+                      com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>(
+                      this, METHODID_SPLIT_READ_STREAM)))
           .build();
     }
   }
 
   /**
+   *
+   *
    * <pre>
    * BigQuery Read API.
    * The Read API can be used to read data from BigQuery.
@@ -269,18 +324,18 @@ public final class BigQueryReadGrpc {
       super(channel);
     }
 
-    private BigQueryReadStub(io.grpc.Channel channel,
-        io.grpc.CallOptions callOptions) {
+    private BigQueryReadStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       super(channel, callOptions);
     }
 
     @java.lang.Override
-    protected BigQueryReadStub build(io.grpc.Channel channel,
-        io.grpc.CallOptions callOptions) {
+    protected BigQueryReadStub build(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       return new BigQueryReadStub(channel, callOptions);
     }
 
     /**
+     *
+     *
      * <pre>
      * Creates a new read session. A read session divides the contents of a
      * BigQuery table into one or more streams, which can then be used to read
@@ -300,13 +355,19 @@ public final class BigQueryReadGrpc {
      * not require manual clean-up by the caller.
      * </pre>
      */
-    public void createReadSession(com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest request,
-        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadSession> responseObserver) {
+    public void createReadSession(
+        com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest request,
+        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadSession>
+            responseObserver) {
       asyncUnaryCall(
-          getChannel().newCall(getCreateReadSessionMethod(), getCallOptions()), request, responseObserver);
+          getChannel().newCall(getCreateReadSessionMethod(), getCallOptions()),
+          request,
+          responseObserver);
     }
 
     /**
+     *
+     *
      * <pre>
      * Reads rows from the stream in the format prescribed by the ReadSession.
      * Each response contains one or more table rows, up to a maximum of 100 MiB
@@ -316,13 +377,17 @@ public final class BigQueryReadGrpc {
      * state of the stream.
      * </pre>
      */
-    public void readRows(com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest request,
-        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse> responseObserver) {
+    public void readRows(
+        com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest request,
+        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>
+            responseObserver) {
       asyncServerStreamingCall(
           getChannel().newCall(getReadRowsMethod(), getCallOptions()), request, responseObserver);
     }
 
     /**
+     *
+     *
      * <pre>
      * Splits a given `ReadStream` into two `ReadStream` objects. These
      * `ReadStream` objects are referred to as the primary and the residual
@@ -337,36 +402,45 @@ public final class BigQueryReadGrpc {
      * completion.
      * </pre>
      */
-    public void splitReadStream(com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest request,
-        io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse> responseObserver) {
+    public void splitReadStream(
+        com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest request,
+        io.grpc.stub.StreamObserver<
+                com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>
+            responseObserver) {
       asyncUnaryCall(
-          getChannel().newCall(getSplitReadStreamMethod(), getCallOptions()), request, responseObserver);
+          getChannel().newCall(getSplitReadStreamMethod(), getCallOptions()),
+          request,
+          responseObserver);
     }
   }
 
   /**
+   *
+   *
    * <pre>
    * BigQuery Read API.
    * The Read API can be used to read data from BigQuery.
    * </pre>
    */
-  public static final class BigQueryReadBlockingStub extends io.grpc.stub.AbstractStub<BigQueryReadBlockingStub> {
+  public static final class BigQueryReadBlockingStub
+      extends io.grpc.stub.AbstractStub<BigQueryReadBlockingStub> {
     private BigQueryReadBlockingStub(io.grpc.Channel channel) {
       super(channel);
     }
 
-    private BigQueryReadBlockingStub(io.grpc.Channel channel,
-        io.grpc.CallOptions callOptions) {
+    private BigQueryReadBlockingStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       super(channel, callOptions);
     }
 
     @java.lang.Override
-    protected BigQueryReadBlockingStub build(io.grpc.Channel channel,
-        io.grpc.CallOptions callOptions) {
+    protected BigQueryReadBlockingStub build(
+        io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       return new BigQueryReadBlockingStub(channel, callOptions);
     }
 
     /**
+     *
+     *
      * <pre>
      * Creates a new read session. A read session divides the contents of a
      * BigQuery table into one or more streams, which can then be used to read
@@ -386,12 +460,15 @@ public final class BigQueryReadGrpc {
      * not require manual clean-up by the caller.
      * </pre>
      */
-    public com.google.cloud.bigquery.storage.v1beta2.ReadSession createReadSession(com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest request) {
+    public com.google.cloud.bigquery.storage.v1beta2.ReadSession createReadSession(
+        com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest request) {
       return blockingUnaryCall(
           getChannel(), getCreateReadSessionMethod(), getCallOptions(), request);
     }
 
     /**
+     *
+     *
      * <pre>
      * Reads rows from the stream in the format prescribed by the ReadSession.
      * Each response contains one or more table rows, up to a maximum of 100 MiB
@@ -408,6 +485,8 @@ public final class BigQueryReadGrpc {
     }
 
     /**
+     *
+     *
      * <pre>
      * Splits a given `ReadStream` into two `ReadStream` objects. These
      * `ReadStream` objects are referred to as the primary and the residual
@@ -422,35 +501,39 @@ public final class BigQueryReadGrpc {
      * completion.
      * </pre>
      */
-    public com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse splitReadStream(com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest request) {
-      return blockingUnaryCall(
-          getChannel(), getSplitReadStreamMethod(), getCallOptions(), request);
+    public com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse splitReadStream(
+        com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest request) {
+      return blockingUnaryCall(getChannel(), getSplitReadStreamMethod(), getCallOptions(), request);
     }
   }
 
   /**
+   *
+   *
    * <pre>
    * BigQuery Read API.
    * The Read API can be used to read data from BigQuery.
    * </pre>
    */
-  public static final class BigQueryReadFutureStub extends io.grpc.stub.AbstractStub<BigQueryReadFutureStub> {
+  public static final class BigQueryReadFutureStub
+      extends io.grpc.stub.AbstractStub<BigQueryReadFutureStub> {
     private BigQueryReadFutureStub(io.grpc.Channel channel) {
       super(channel);
     }
 
-    private BigQueryReadFutureStub(io.grpc.Channel channel,
-        io.grpc.CallOptions callOptions) {
+    private BigQueryReadFutureStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       super(channel, callOptions);
     }
 
     @java.lang.Override
-    protected BigQueryReadFutureStub build(io.grpc.Channel channel,
-        io.grpc.CallOptions callOptions) {
+    protected BigQueryReadFutureStub build(
+        io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       return new BigQueryReadFutureStub(channel, callOptions);
     }
 
     /**
+     *
+     *
      * <pre>
      * Creates a new read session. A read session divides the contents of a
      * BigQuery table into one or more streams, which can then be used to read
@@ -470,13 +553,17 @@ public final class BigQueryReadGrpc {
      * not require manual clean-up by the caller.
      * </pre>
      */
-    public com.google.common.util.concurrent.ListenableFuture<com.google.cloud.bigquery.storage.v1beta2.ReadSession> createReadSession(
-        com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest request) {
+    public com.google.common.util.concurrent.ListenableFuture<
+            com.google.cloud.bigquery.storage.v1beta2.ReadSession>
+        createReadSession(
+            com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest request) {
       return futureUnaryCall(
           getChannel().newCall(getCreateReadSessionMethod(), getCallOptions()), request);
     }
 
     /**
+     *
+     *
      * <pre>
      * Splits a given `ReadStream` into two `ReadStream` objects. These
      * `ReadStream` objects are referred to as the primary and the residual
@@ -491,8 +578,9 @@ public final class BigQueryReadGrpc {
      * completion.
      * </pre>
      */
-    public com.google.common.util.concurrent.ListenableFuture<com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse> splitReadStream(
-        com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest request) {
+    public com.google.common.util.concurrent.ListenableFuture<
+            com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>
+        splitReadStream(com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest request) {
       return futureUnaryCall(
           getChannel().newCall(getSplitReadStreamMethod(), getCallOptions()), request);
     }
@@ -502,11 +590,11 @@ public final class BigQueryReadGrpc {
   private static final int METHODID_READ_ROWS = 1;
   private static final int METHODID_SPLIT_READ_STREAM = 2;
 
-  private static final class MethodHandlers<Req, Resp> implements
-      io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
-      io.grpc.stub.ServerCalls.ServerStreamingMethod<Req, Resp>,
-      io.grpc.stub.ServerCalls.ClientStreamingMethod<Req, Resp>,
-      io.grpc.stub.ServerCalls.BidiStreamingMethod<Req, Resp> {
+  private static final class MethodHandlers<Req, Resp>
+      implements io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
+          io.grpc.stub.ServerCalls.ServerStreamingMethod<Req, Resp>,
+          io.grpc.stub.ServerCalls.ClientStreamingMethod<Req, Resp>,
+          io.grpc.stub.ServerCalls.BidiStreamingMethod<Req, Resp> {
     private final BigQueryReadImplBase serviceImpl;
     private final int methodId;
 
@@ -520,16 +608,24 @@ public final class BigQueryReadGrpc {
     public void invoke(Req request, io.grpc.stub.StreamObserver<Resp> responseObserver) {
       switch (methodId) {
         case METHODID_CREATE_READ_SESSION:
-          serviceImpl.createReadSession((com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest) request,
-              (io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadSession>) responseObserver);
+          serviceImpl.createReadSession(
+              (com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest) request,
+              (io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadSession>)
+                  responseObserver);
           break;
         case METHODID_READ_ROWS:
-          serviceImpl.readRows((com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest) request,
-              (io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>) responseObserver);
+          serviceImpl.readRows(
+              (com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest) request,
+              (io.grpc.stub.StreamObserver<
+                      com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse>)
+                  responseObserver);
           break;
         case METHODID_SPLIT_READ_STREAM:
-          serviceImpl.splitReadStream((com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest) request,
-              (io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>) responseObserver);
+          serviceImpl.splitReadStream(
+              (com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest) request,
+              (io.grpc.stub.StreamObserver<
+                      com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse>)
+                  responseObserver);
           break;
         default:
           throw new AssertionError();
@@ -547,8 +643,9 @@ public final class BigQueryReadGrpc {
     }
   }
 
-  private static abstract class BigQueryReadBaseDescriptorSupplier
-      implements io.grpc.protobuf.ProtoFileDescriptorSupplier, io.grpc.protobuf.ProtoServiceDescriptorSupplier {
+  private abstract static class BigQueryReadBaseDescriptorSupplier
+      implements io.grpc.protobuf.ProtoFileDescriptorSupplier,
+          io.grpc.protobuf.ProtoServiceDescriptorSupplier {
     BigQueryReadBaseDescriptorSupplier() {}
 
     @java.lang.Override
@@ -590,12 +687,14 @@ public final class BigQueryReadGrpc {
       synchronized (BigQueryReadGrpc.class) {
         result = serviceDescriptor;
         if (result == null) {
-          serviceDescriptor = result = io.grpc.ServiceDescriptor.newBuilder(SERVICE_NAME)
-              .setSchemaDescriptor(new BigQueryReadFileDescriptorSupplier())
-              .addMethod(getCreateReadSessionMethod())
-              .addMethod(getReadRowsMethod())
-              .addMethod(getSplitReadStreamMethod())
-              .build();
+          serviceDescriptor =
+              result =
+                  io.grpc.ServiceDescriptor.newBuilder(SERVICE_NAME)
+                      .setSchemaDescriptor(new BigQueryReadFileDescriptorSupplier())
+                      .addMethod(getCreateReadSessionMethod())
+                      .addMethod(getReadRowsMethod())
+                      .addMethod(getSplitReadStreamMethod())
+                      .build();
         }
       }
     }

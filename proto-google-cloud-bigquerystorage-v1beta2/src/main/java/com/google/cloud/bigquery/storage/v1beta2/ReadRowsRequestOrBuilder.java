@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -19,31 +18,39 @@
 
 package com.google.cloud.bigquery.storage.v1beta2;
 
-public interface ReadRowsRequestOrBuilder extends
+public interface ReadRowsRequestOrBuilder
+    extends
     // @@protoc_insertion_point(interface_extends:google.cloud.bigquery.storage.v1beta2.ReadRowsRequest)
     com.google.protobuf.MessageOrBuilder {
 
   /**
+   *
+   *
    * <pre>
    * Required. Stream to read rows from.
    * </pre>
    *
    * <code>string read_stream = 1 [(.google.api.field_behavior) = REQUIRED];</code>
+   *
    * @return The readStream.
    */
   java.lang.String getReadStream();
   /**
+   *
+   *
    * <pre>
    * Required. Stream to read rows from.
    * </pre>
    *
    * <code>string read_stream = 1 [(.google.api.field_behavior) = REQUIRED];</code>
+   *
    * @return The bytes for readStream.
    */
-  com.google.protobuf.ByteString
-      getReadStreamBytes();
+  com.google.protobuf.ByteString getReadStreamBytes();
 
   /**
+   *
+   *
    * <pre>
    * The offset requested must be less than the last row read from Read.
    * Requesting a larger offset is undefined. If not specified, start reading
@@ -51,6 +58,7 @@ public interface ReadRowsRequestOrBuilder extends
    * </pre>
    *
    * <code>int64 offset = 2;</code>
+   *
    * @return The offset.
    */
   long getOffset();

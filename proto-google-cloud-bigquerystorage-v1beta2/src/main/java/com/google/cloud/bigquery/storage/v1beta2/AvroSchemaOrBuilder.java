@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -19,29 +18,35 @@
 
 package com.google.cloud.bigquery.storage.v1beta2;
 
-public interface AvroSchemaOrBuilder extends
+public interface AvroSchemaOrBuilder
+    extends
     // @@protoc_insertion_point(interface_extends:google.cloud.bigquery.storage.v1beta2.AvroSchema)
     com.google.protobuf.MessageOrBuilder {
 
   /**
+   *
+   *
    * <pre>
    * Json serialized schema, as described at
    * https://avro.apache.org/docs/1.8.1/spec.html.
    * </pre>
    *
    * <code>string schema = 1;</code>
+   *
    * @return The schema.
    */
   java.lang.String getSchema();
   /**
+   *
+   *
    * <pre>
    * Json serialized schema, as described at
    * https://avro.apache.org/docs/1.8.1/spec.html.
    * </pre>
    *
    * <code>string schema = 1;</code>
+   *
    * @return The bytes for schema.
    */
-  com.google.protobuf.ByteString
-      getSchemaBytes();
+  com.google.protobuf.ByteString getSchemaBytes();
 }

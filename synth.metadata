@@ -1,5 +1,5 @@
 {
-  "updateTime": "2020-01-24T23:19:44.031416Z",
+  "updateTime": "2020-01-24T23:27:34.134940Z",
   "sources": [
     {
       "generator": {
@@ -264,6 +264,12 @@
     },
     {
       "path": "google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1beta1/stub/GrpcBigQueryStorageStub.java"
+    },
+    {
+      "path": "google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1beta2/BaseBigQueryReadClient.java"
+    },
+    {
+      "path": "google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1beta2/stub/GrpcBigQueryReadCallableFactory.java"
     },
     {
       "path": "google-cloud-bigquerystorage/src/test/java/com/google/cloud/bigquery/storage/v1beta1/BaseBigQueryStorageClientTest.java"

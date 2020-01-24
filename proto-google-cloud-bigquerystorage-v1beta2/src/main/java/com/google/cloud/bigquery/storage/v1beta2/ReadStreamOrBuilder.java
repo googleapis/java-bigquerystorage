@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -19,29 +18,35 @@
 
 package com.google.cloud.bigquery.storage.v1beta2;
 
-public interface ReadStreamOrBuilder extends
+public interface ReadStreamOrBuilder
+    extends
     // @@protoc_insertion_point(interface_extends:google.cloud.bigquery.storage.v1beta2.ReadStream)
     com.google.protobuf.MessageOrBuilder {
 
   /**
+   *
+   *
    * <pre>
    * Output only. Name of the stream, in the form
    * `projects/{project_id}/locations/{location}/sessions/{session_id}/streams/{stream_id}`.
    * </pre>
    *
    * <code>string name = 1 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   *
    * @return The name.
    */
   java.lang.String getName();
   /**
+   *
+   *
    * <pre>
    * Output only. Name of the stream, in the form
    * `projects/{project_id}/locations/{location}/sessions/{session_id}/streams/{stream_id}`.
    * </pre>
    *
    * <code>string name = 1 [(.google.api.field_behavior) = OUTPUT_ONLY];</code>
+   *
    * @return The bytes for name.
    */
-  com.google.protobuf.ByteString
-      getNameBytes();
+  com.google.protobuf.ByteString getNameBytes();
 }

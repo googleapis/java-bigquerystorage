@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2020 Google LLC
  *
@@ -19,11 +18,14 @@
 
 package com.google.cloud.bigquery.storage.v1beta2;
 
-public interface SplitReadStreamResponseOrBuilder extends
+public interface SplitReadStreamResponseOrBuilder
+    extends
     // @@protoc_insertion_point(interface_extends:google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse)
     com.google.protobuf.MessageOrBuilder {
 
   /**
+   *
+   *
    * <pre>
    * Primary stream, which contains the beginning portion of
    * |original_stream|. An empty value indicates that the original stream can no
@@ -31,10 +33,13 @@ public interface SplitReadStreamResponseOrBuilder extends
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ReadStream primary_stream = 1;</code>
+   *
    * @return Whether the primaryStream field is set.
    */
   boolean hasPrimaryStream();
   /**
+   *
+   *
    * <pre>
    * Primary stream, which contains the beginning portion of
    * |original_stream|. An empty value indicates that the original stream can no
@@ -42,10 +47,13 @@ public interface SplitReadStreamResponseOrBuilder extends
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ReadStream primary_stream = 1;</code>
+   *
    * @return The primaryStream.
    */
   com.google.cloud.bigquery.storage.v1beta2.ReadStream getPrimaryStream();
   /**
+   *
+   *
    * <pre>
    * Primary stream, which contains the beginning portion of
    * |original_stream|. An empty value indicates that the original stream can no
@@ -57,26 +65,34 @@ public interface SplitReadStreamResponseOrBuilder extends
   com.google.cloud.bigquery.storage.v1beta2.ReadStreamOrBuilder getPrimaryStreamOrBuilder();
 
   /**
+   *
+   *
    * <pre>
    * Remainder stream, which contains the tail of |original_stream|. An empty
    * value indicates that the original stream can no longer be split.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ReadStream remainder_stream = 2;</code>
+   *
    * @return Whether the remainderStream field is set.
    */
   boolean hasRemainderStream();
   /**
+   *
+   *
    * <pre>
    * Remainder stream, which contains the tail of |original_stream|. An empty
    * value indicates that the original stream can no longer be split.
    * </pre>
    *
    * <code>.google.cloud.bigquery.storage.v1beta2.ReadStream remainder_stream = 2;</code>
+   *
    * @return The remainderStream.
    */
   com.google.cloud.bigquery.storage.v1beta2.ReadStream getRemainderStream();
   /**
+   *
+   *
    * <pre>
    * Remainder stream, which contains the tail of |original_stream|. An empty
    * value indicates that the original stream can no longer be split.
