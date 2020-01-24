@@ -20,18 +20,9 @@ import synthtool.languages.java as java
 
 gapic = gcp.GAPICGenerator()
 service = 'bigquerystorage'
-versions = ['v1beta1']
+versions = ['v1beta1', 'v1beta2', 'v1alpha2']
 
 for version in versions:
-  java.gapic_library(
-      service=service,
-      version=version,
-      config_pattern='/google/cloud/bigquery/storage/artman_{service}_{version}.yaml',
-      package_pattern='com.google.cloud.bigquery.storage.{version}',
-      gapic=gapic,
-  )
-
-for version in ['v1beta2']:
   java.bazel_library(
       service='bigquery-storage',
       version=version,
