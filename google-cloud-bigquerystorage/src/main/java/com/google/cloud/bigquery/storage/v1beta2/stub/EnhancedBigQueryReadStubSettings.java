@@ -33,6 +33,7 @@ import com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse;
 import com.google.cloud.bigquery.storage.v1beta2.ReadSession;
 import com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest;
 import com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse;
+import com.google.cloud.bigquery.storage.v1beta2.stub.readrows.ReadRowsResumptionStrategy;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 
@@ -165,7 +166,10 @@ public class EnhancedBigQueryReadStubSettings extends StubSettings<EnhancedBigQu
       // Per-method settings using baseSettings for defaults.
       createReadSessionSettings = baseDefaults.createReadSessionSettings();
       splitReadStreamSettings = baseDefaults.splitReadStreamSettings();
-      readRowsSettings = baseDefaults.readRowsSettings();
+
+      // Per-method settings using override values for defaults.
+      readRowsSettings = baseDefaults.readRowsSettings()
+          .setResumptionStrategy(new ReadRowsResumptionStrategy());
 
       unaryMethodSettingsBuilders =
           ImmutableList.<UnaryCallSettings.Builder<?, ?>>of(
