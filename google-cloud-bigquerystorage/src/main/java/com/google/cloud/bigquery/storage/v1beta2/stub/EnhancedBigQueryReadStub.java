@@ -49,13 +49,11 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
             .setStreamWatchdogCheckInterval(settings.getStreamWatchdogCheckInterval())
             .setStreamWatchdogProvider(settings.getStreamWatchdogProvider());
 
-    // CreateReadSession is a simple pass-through.
     baseSettingsBuilder
         .createReadSessionSettings()
         .setRetryableCodes(settings.createReadSessionSettings().getRetryableCodes())
         .setRetrySettings(settings.createReadSessionSettings().getRetrySettings());
 
-    // ReadRows is a simple pass-through.
     baseSettingsBuilder
         .readRowsSettings()
         .setRetryableCodes(settings.readRowsSettings().getRetryableCodes())
@@ -63,7 +61,6 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
         .setResumptionStrategy(settings.readRowsSettings().getResumptionStrategy())
         .setIdleTimeout(settings.readRowsSettings().getIdleTimeout());
 
-    // SplitReadStream is a simple pass-through.
     baseSettingsBuilder
         .splitReadStreamSettings()
         .setRetryableCodes(settings.splitReadStreamSettings().getRetryableCodes())
