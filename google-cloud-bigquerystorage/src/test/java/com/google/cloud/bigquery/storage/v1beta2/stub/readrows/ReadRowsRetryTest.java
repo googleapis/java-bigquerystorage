@@ -24,7 +24,6 @@ import com.google.cloud.bigquery.storage.v1beta2.BigQueryReadGrpc.BigQueryReadIm
 import com.google.cloud.bigquery.storage.v1beta2.BigQueryReadSettings;
 import com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest;
 import com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse;
-import com.google.cloud.bigquery.storage.v1beta2.ReadStream;
 import com.google.common.collect.Queues;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
@@ -219,9 +218,7 @@ public class ReadRowsRetryTest {
     }
 
     static ReadRowsRequest createRequest(String streamName, long offset) {
-      return ReadRowsRequest.newBuilder().setReadStream(streamName)
-                  .setOffset(offset)
-          .build();
+      return ReadRowsRequest.newBuilder().setReadStream(streamName).setOffset(offset).build();
     }
 
     static ReadRowsResponse createResponse(int numberOfRows) {

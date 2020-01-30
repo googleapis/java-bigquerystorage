@@ -40,7 +40,8 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ResourceHeaderTest {
 
-  private static final String TEST_TABLE_REFERENCE = "projects/project/datasets/dataset/tables/table";
+  private static final String TEST_TABLE_REFERENCE =
+      "projects/project/datasets/dataset/tables/table";
 
   private static final String TEST_STREAM_NAME = "streamName";
 
@@ -49,7 +50,8 @@ public class ResourceHeaderTest {
   private static final String HEADER_NAME = "x-goog-request-params";
 
   private static final Pattern READ_SESSION_NAME_PATTERN =
-      Pattern.compile(".*" + "read_session\\.table=projects/project/datasets/dataset/tables/table" + ".*");
+      Pattern.compile(
+          ".*" + "read_session\\.table=projects/project/datasets/dataset/tables/table" + ".*");
   private static final Pattern READ_STREAM_PATTERN =
       Pattern.compile(".*" + "read_stream=streamName" + ".*");
   private static final Pattern STREAM_NAME_PATTERN =
@@ -95,7 +97,8 @@ public class ResourceHeaderTest {
   @Test
   public void createReadSessionTest() {
     try {
-      client.createReadSession("parents/project", ReadSession.newBuilder().setTable(TEST_TABLE_REFERENCE).build(), 1);
+      client.createReadSession(
+          "parents/project", ReadSession.newBuilder().setTable(TEST_TABLE_REFERENCE).build(), 1);
     } catch (UnimplementedException e) {
       // Ignore the error: none of the methods are actually implemented.
     }

@@ -42,9 +42,8 @@ import java.util.concurrent.TimeUnit;
  * </code>
  * </pre>
  *
- * <p>Note: close() needs to be called on the BigQueryReadClient object to clean up resources
- * such as threads. In the example above, try-with-resources is used, which automatically calls
- * close().
+ * <p>Note: close() needs to be called on the BigQueryReadClient object to clean up resources such
+ * as threads. In the example above, try-with-resources is used, which automatically calls close().
  *
  * <p>The surface of this class includes several types of Java methods for each of the API's
  * methods:
@@ -107,14 +106,13 @@ public class BigQueryReadClient implements BackgroundResource {
    * Constructs an instance of BigQueryReadClient, using the given settings. The channels are
    * created based on the settings passed in, or defaults for any settings that are not set.
    */
-  public static final BigQueryReadClient create(BigQueryReadSettings settings)
-      throws IOException {
+  public static final BigQueryReadClient create(BigQueryReadSettings settings) throws IOException {
     return new BigQueryReadClient(settings);
   }
 
   /**
-   * Constructs an instance of BigQueryReadClient, using the given stub for making calls. This
-   * is for advanced usage - prefer to use BigQueryReadSettings}.
+   * Constructs an instance of BigQueryReadClient, using the given stub for making calls. This is
+   * for advanced usage - prefer to use BigQueryReadSettings}.
    */
   @BetaApi("A restructuring of stub classes is planned, so this may break in the future")
   public static final BigQueryReadClient create(EnhancedBigQueryReadStub stub) {
@@ -122,8 +120,8 @@ public class BigQueryReadClient implements BackgroundResource {
   }
 
   /**
-   * Constructs an instance of BigQueryReadClient, using the given settings. This is protected
-   * so that it is easy to make a subclass, but otherwise, the static factory methods should be
+   * Constructs an instance of BigQueryReadClient, using the given settings. This is protected so
+   * that it is easy to make a subclass, but otherwise, the static factory methods should be
    * preferred.
    */
   protected BigQueryReadClient(BigQueryReadSettings settings) throws IOException {

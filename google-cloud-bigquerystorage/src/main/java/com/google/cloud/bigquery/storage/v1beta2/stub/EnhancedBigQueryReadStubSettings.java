@@ -57,7 +57,8 @@ import java.util.List;
  * </code>
  * </pre>
  */
-public class EnhancedBigQueryReadStubSettings extends StubSettings<EnhancedBigQueryReadStubSettings> {
+public class EnhancedBigQueryReadStubSettings
+    extends StubSettings<EnhancedBigQueryReadStubSettings> {
 
   private final UnaryCallSettings<CreateReadSessionRequest, ReadSession> createReadSessionSettings;
   private final ServerStreamingCallSettings<ReadRowsRequest, ReadRowsResponse> readRowsSettings;
@@ -138,7 +139,8 @@ public class EnhancedBigQueryReadStubSettings extends StubSettings<EnhancedBigQu
   }
 
   /** Builder for {@link EnhancedBigQueryReadStubSettings}. */
-  public static class Builder extends StubSettings.Builder<EnhancedBigQueryReadStubSettings, Builder> {
+  public static class Builder
+      extends StubSettings.Builder<EnhancedBigQueryReadStubSettings, Builder> {
     private final ImmutableList<UnaryCallSettings.Builder<?, ?>> unaryMethodSettingsBuilders;
 
     private final UnaryCallSettings.Builder<CreateReadSessionRequest, ReadSession>
@@ -168,8 +170,8 @@ public class EnhancedBigQueryReadStubSettings extends StubSettings<EnhancedBigQu
       splitReadStreamSettings = baseDefaults.splitReadStreamSettings();
 
       // Per-method settings using override values for defaults.
-      readRowsSettings = baseDefaults.readRowsSettings()
-          .setResumptionStrategy(new ReadRowsResumptionStrategy());
+      readRowsSettings =
+          baseDefaults.readRowsSettings().setResumptionStrategy(new ReadRowsResumptionStrategy());
 
       unaryMethodSettingsBuilders =
           ImmutableList.<UnaryCallSettings.Builder<?, ?>>of(
