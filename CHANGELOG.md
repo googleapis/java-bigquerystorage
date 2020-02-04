@@ -1,5 +1,12 @@
 # Changelog
 
+### [0.121.1](https://www.github.com/googleapis/java-bigquerystorage/compare/v0.121.0...v0.121.1) (2020-02-04)
+
+
+### Documentation
+
+* update libraries-bom ([#54](https://www.github.com/googleapis/java-bigquerystorage/issues/54)) ([abf05eb](https://www.github.com/googleapis/java-bigquerystorage/commit/abf05ebe09ac8f71f3b59e5f8473fe3d56f4242e))
+
 ## [0.121.0](https://www.github.com/googleapis/java-bigquerystorage/compare/v0.120.1...v0.121.0) (2020-02-03)
 
 
