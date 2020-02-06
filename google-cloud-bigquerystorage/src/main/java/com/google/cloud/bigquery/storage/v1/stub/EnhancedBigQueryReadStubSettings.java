@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.cloud.bigquery.storage.v1beta2.stub;
+package com.google.cloud.bigquery.storage.v1.stub;
 
 import com.google.api.core.ApiFunction;
 import com.google.api.core.BetaApi;
@@ -26,14 +26,14 @@ import com.google.api.gax.rpc.ServerStreamingCallSettings;
 import com.google.api.gax.rpc.StubSettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.api.gax.rpc.UnaryCallSettings;
-import com.google.cloud.bigquery.storage.v1beta2.BaseBigQueryReadSettings;
-import com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest;
-import com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest;
-import com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse;
-import com.google.cloud.bigquery.storage.v1beta2.ReadSession;
-import com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest;
-import com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse;
-import com.google.cloud.bigquery.storage.v1beta2.stub.readrows.ReadRowsResumptionStrategy;
+import com.google.cloud.bigquery.storage.v1.BaseBigQueryReadSettings;
+import com.google.cloud.bigquery.storage.v1.CreateReadSessionRequest;
+import com.google.cloud.bigquery.storage.v1.ReadRowsRequest;
+import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
+import com.google.cloud.bigquery.storage.v1.ReadSession;
+import com.google.cloud.bigquery.storage.v1.SplitReadStreamRequest;
+import com.google.cloud.bigquery.storage.v1.SplitReadStreamResponse;
+import com.google.cloud.bigquery.storage.v1.stub.readrows.ReadRowsResumptionStrategy;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 

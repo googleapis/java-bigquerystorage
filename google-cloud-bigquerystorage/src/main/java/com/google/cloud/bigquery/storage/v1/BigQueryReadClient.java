@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.cloud.bigquery.storage.v1beta2;
+package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.core.BetaApi;
 import com.google.api.gax.core.BackgroundResource;
 import com.google.api.gax.rpc.ServerStreamingCallable;
 import com.google.api.gax.rpc.UnaryCallable;
-import com.google.cloud.bigquery.storage.v1beta2.stub.EnhancedBigQueryReadStub;
+import com.google.cloud.bigquery.storage.v1.stub.EnhancedBigQueryReadStub;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 

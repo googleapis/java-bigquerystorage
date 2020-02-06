@@ -13,4 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.cloud.bigquery.storage.v1beta2.stub.readrows;
+package com.google.cloud.bigquery.storage.v1.stub.readrows;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.cloud.bigquery.storage.v1beta2;
+package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.core.ApiFunction;
 import com.google.api.core.BetaApi;
@@ -26,7 +26,7 @@ import com.google.api.gax.rpc.ClientSettings;
 import com.google.api.gax.rpc.ServerStreamingCallSettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.api.gax.rpc.UnaryCallSettings;
-import com.google.cloud.bigquery.storage.v1beta2.stub.EnhancedBigQueryReadStubSettings;
+import com.google.cloud.bigquery.storage.v1.stub.EnhancedBigQueryReadStubSettings;
 import java.io.IOException;
 import java.util.List;
 
