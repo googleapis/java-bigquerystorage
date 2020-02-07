@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.cloud.bigquery.storage.v1beta2.it;
+package com.google.cloud.bigquery.storage.v1.it;
 
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.assertArrayEquals;
@@ -38,16 +38,16 @@ import com.google.cloud.bigquery.StandardTableDefinition;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
 import com.google.cloud.bigquery.TimePartitioning;
-import com.google.cloud.bigquery.storage.v1beta2.BigQueryReadClient;
-import com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest;
-import com.google.cloud.bigquery.storage.v1beta2.DataFormat;
-import com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest;
-import com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse;
-import com.google.cloud.bigquery.storage.v1beta2.ReadSession;
-import com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableModifiers;
-import com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions;
-import com.google.cloud.bigquery.storage.v1beta2.ReadStream;
-import com.google.cloud.bigquery.storage.v1beta2.it.SimpleRowReader.AvroRowConsumer;
+import com.google.cloud.bigquery.storage.v1.BigQueryReadClient;
+import com.google.cloud.bigquery.storage.v1.CreateReadSessionRequest;
+import com.google.cloud.bigquery.storage.v1.DataFormat;
+import com.google.cloud.bigquery.storage.v1.ReadRowsRequest;
+import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
+import com.google.cloud.bigquery.storage.v1.ReadSession;
+import com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers;
+import com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions;
+import com.google.cloud.bigquery.storage.v1.ReadStream;
+import com.google.cloud.bigquery.storage.v1.it.SimpleRowReader.AvroRowConsumer;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Timestamp;

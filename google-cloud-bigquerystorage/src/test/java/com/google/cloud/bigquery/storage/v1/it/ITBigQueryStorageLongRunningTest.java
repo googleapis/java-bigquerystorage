@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package com.google.cloud.bigquery.storage.v1beta2.it;
+package com.google.cloud.bigquery.storage.v1.it;
 
 import static org.junit.Assert.assertEquals;
 
 import com.google.api.gax.rpc.ServerStream;
 import com.google.cloud.ServiceOptions;
-import com.google.cloud.bigquery.storage.v1beta2.BigQueryReadClient;
-import com.google.cloud.bigquery.storage.v1beta2.DataFormat;
-import com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest;
-import com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse;
-import com.google.cloud.bigquery.storage.v1beta2.ReadSession;
-import com.google.cloud.bigquery.storage.v1beta2.ReadStream;
+import com.google.cloud.bigquery.storage.v1.BigQueryReadClient;
+import com.google.cloud.bigquery.storage.v1.DataFormat;
+import com.google.cloud.bigquery.storage.v1.ReadRowsRequest;
+import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
+import com.google.cloud.bigquery.storage.v1.ReadSession;
+import com.google.cloud.bigquery.storage.v1.ReadStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

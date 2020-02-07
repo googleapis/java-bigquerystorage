@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.cloud.bigquery.storage.v1beta2.it;
+package com.google.cloud.bigquery.storage.v1.it;
 
 /** Test helper class to generate BigQuery resource paths. */
 public class BigQueryResource {

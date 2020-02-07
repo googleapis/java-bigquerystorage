@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.google.cloud.bigquery.storage.v1beta2.it;
+package com.google.cloud.bigquery.storage.v1.it;
 
-import com.google.cloud.bigquery.storage.v1beta2.AvroRows;
+import com.google.cloud.bigquery.storage.v1.AvroRows;
 import com.google.common.base.Preconditions;
 import java.io.IOException;
 import org.apache.avro.Schema;
