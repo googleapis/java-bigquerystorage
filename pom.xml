@@ -231,6 +231,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
+          <version>2.10</version>
           <configuration>
             <ignoredUnusedDeclaredDependencies>org.objenesis:objenesis</ignoredUnusedDeclaredDependencies>
           </configuration>
@@ -250,6 +251,7 @@
     <module>grpc-google-cloud-bigquerystorage-v1</module>
     <module>google-cloud-bigquerystorage</module>
     <module>google-cloud-bigquerystorage-bom</module>
+    <module>bigquerystorage-google-cloud-samples</module>
   </modules>
 
   <reporting>
