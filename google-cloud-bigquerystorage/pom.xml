@@ -74,7 +74,6 @@
       <groupId>org.threeten</groupId>
       <artifactId>threetenbp</artifactId>
     </dependency>
-
     <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>
@@ -152,6 +151,11 @@
       <artifactId>gax-grpc</artifactId>
       <classifier>testlib</classifier>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.zetasql</groupId>
+      <artifactId>zetasql-types</artifactId>
+      <version>2020.02.1</version>
     </dependency>
   </dependencies>
 
