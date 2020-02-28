@@ -18,49 +18,29 @@
   </properties>
 
   <!-- [START bigquerystorage_java_dependencies] -->
-  <!--  Using libraries-bom to manage versions.
+  <!--  Using libraries-bom to manage versions. -->
+  <!--
   See https://github.com/GoogleCloudPlatform/cloud-opensource-java/wiki/The-Google-Cloud-Platform-Libraries-BOM -->
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.google.cloud</groupId>
-        <artifactId>libraries-bom</artifactId>
-        <version>4.0.1</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
+<!--  <dependencyManagement>-->
+<!--    <dependencies>-->
+<!--      <dependency>-->
+<!--        <groupId>com.google.cloud</groupId>-->
+<!--        <artifactId>libraries-bom</artifactId>-->
+<!--        <version>4.0.1</version>-->
+<!--        <type>pom</type>-->
+<!--        <scope>import</scope>-->
+<!--      </dependency>-->
+<!--    </dependencies>-->
+<!--  </dependencyManagement>-->
 
   <dependencies>
     <dependency>
-      <groupId>com.google.truth</groupId>
-      <artifactId>truth</artifactId>
-      <version>1.0</version>
-<!--      <scope>test</scope>-->
-    </dependency>
-
-    <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-bigquerystorage</artifactId>
-<!--      <version>0.124.0-beta</version>-->
+      <!-- Not using libraries BOM -->
+      <version>0.124.0-beta</version>
     </dependency>
     <!-- [END bigquerystorage_java_dependencies] -->
-    <dependency>
-      <groupId>com.google.api</groupId>
-      <artifactId>gax</artifactId>
-      <version>1.53.1</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>google-cloud-core</artifactId>
-      <version>1.92.4</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.auth</groupId>
-      <artifactId>google-auth-library-oauth2-http</artifactId>
-      <version>0.20.0</version>
-    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
