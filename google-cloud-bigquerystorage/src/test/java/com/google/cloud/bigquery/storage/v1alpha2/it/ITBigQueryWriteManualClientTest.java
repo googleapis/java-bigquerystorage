@@ -18,6 +18,8 @@ package com.google.cloud.bigquery.storage.v1alpha2.it;
 
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.BatchingSettings;
+import com.google.api.gax.batching.FlowController;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto;
@@ -29,15 +31,20 @@ import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.cloud.bigquery.Schema;
 import com.google.protobuf.Descriptors;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.threeten.bp.Duration;
 
 import com.google.protobuf.*;
 
 import java.util.HashMap;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * ProtobufEnvelope - allows creating a protobuf message without the .proto file dynamically.
@@ -95,6 +102,7 @@ public class ITBigQueryWriteManualClientTest {
 	private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
 
 	private static BigQueryWriteClient client;
+	private static TableInfo tableInfo;
 	private static String tableId;
 	private static BigQuery bigquery;
 
@@ -108,7 +116,7 @@ public class ITBigQueryWriteManualClientTest {
 				DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
 		bigquery.create(datasetInfo);
 		LOG.info("Created test dataset: " + DATASET);
-		TableInfo tableInfo = TableInfo.newBuilder(TableId.of(DATASET, TABLE),
+		tableInfo = TableInfo.newBuilder(TableId.of(DATASET, TABLE),
 				StandardTableDefinition.of(
 						Schema.of(com.google.cloud.bigquery.Field.newBuilder(
 								"foo", LegacySQLTypeName.STRING).build()))).build();
@@ -128,15 +136,12 @@ public class ITBigQueryWriteManualClientTest {
 		}
 
 		if (bigquery != null) {
-			RemoteBigQueryHelper.forceDelete(bigquery, DATASET);
-			LOG.info("Deleted test dataset: " + DATASET);
+			// RemoteBigQueryHelper.forceDelete(bigquery, DATASET);
+			// LOG.info("Deleted test dataset: " + DATASET);
 		}
 	}
 
-	private AppendRowsRequest createAppendRequest(String streamName) {
-		ProtobufEnvelope pe = new ProtobufEnvelope();
-		pe.addField("foo", "aaa",
-				DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING);
+	private AppendRowsRequest createAppendRequest(String streamName, String[] messages) {
 		AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
 
 		AppendRowsRequest.ProtoData.Builder dataBuilder = AppendRowsRequest.ProtoData.newBuilder();
@@ -146,27 +151,101 @@ public class ITBigQueryWriteManualClientTest {
 								DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING).setNumber(1).build()).build()));
 
 		ProtoBufProto.ProtoRows.Builder rows = ProtoBufProto.ProtoRows.newBuilder();
+		ProtobufEnvelope pe = new ProtobufEnvelope();
 		try {
-			rows.addSerializedRows(pe.constructMessage("t").toByteString());
+			for (String message : messages) {
+				pe.addField("foo", message,
+						DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING);
+				rows.addSerializedRows(pe.constructMessage("t").toByteString());
+				pe.clear();
+			}
 		} catch (Descriptors.DescriptorValidationException e) {
 			throw new RuntimeException(e);
 		}
-		pe.clear();
 		dataBuilder.setRows(rows.build());
 		return requestBuilder.setProtoRows(dataBuilder.build()).setWriteStream(streamName).build();
 	}
 
 	@Test
-	public void testSimpleWrite() throws IOException, InterruptedException, ExecutionException {
+	public void testDefaultWrite() throws IOException, InterruptedException, ExecutionException {
 		WriteStream writeStream =
 				client.createWriteStream(
 						CreateWriteStreamRequest.newBuilder().setParent(tableId).setWriteStream(
-								WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build()).build());
-		StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName())
-				                            .setBatchingSettings(
-				                            		BatchingSettings.newBuilder().setElementCountThreshold(1L).build())
-				                            .build();
-		ApiFuture<AppendRowsResponse> response = streamWriter.append(createAppendRequest(writeStream.getName()));
+								WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+								.build());
+		StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build();
+
+		AppendRowsRequest request = createAppendRequest(writeStream.getName(), new String[]{"aaa"});
+		ApiFuture<AppendRowsResponse> response = streamWriter.append(request);
 		LOG.info("Test Got response: " + response.get().getOffset());
+
+		streamWriter.shutdown();
+
+		// Settings
+		BatchingSettings batchingSettings = streamWriter.getBatchingSettings();
+		assertEquals(100L, batchingSettings.getElementCountThreshold().longValue());
+		assertEquals(100 * 1024L,  // 10 Kb
+				batchingSettings.getRequestByteThreshold().longValue());
+		assertEquals(Duration.ofMillis(1), batchingSettings.getDelayThreshold());
+		assertEquals(true, batchingSettings.getIsEnabled());
+		assertEquals(FlowController.LimitExceededBehavior.Block,
+				batchingSettings.getFlowControlSettings().getLimitExceededBehavior());
+		assertEquals(1000L,
+				batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount().longValue());
+		assertEquals(100 * 1024 * 1024L,  // 100 Mb
+				batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes().longValue());
+
+		RetrySettings retrySettings = streamWriter.getRetrySettings();
+		assertEquals(Duration.ofMillis(100), retrySettings.getInitialRetryDelay());
+		assertEquals(1.3, retrySettings.getRetryDelayMultiplier(), 0.001);
+		assertEquals(Duration.ofSeconds(60), retrySettings.getMaxRetryDelay());
+		assertEquals(Duration.ofSeconds(600), retrySettings.getTotalTimeout());
+		assertEquals(3, retrySettings.getMaxAttempts());
+	}
+
+	@Test
+	public void testBatchWrite() throws IOException, InterruptedException, ExecutionException {
+		LOG.info("Creating stream");
+		WriteStream writeStream =
+				client.createWriteStream(
+						CreateWriteStreamRequest.newBuilder().setParent(tableId).setWriteStream(
+								WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+								.build());
+		StreamWriter streamWriter =
+				StreamWriter.newBuilder(writeStream.getName())
+				    .setBatchingSettings(
+						 BatchingSettings.newBuilder()
+							.setRequestByteThreshold(1024 * 1024L)  // 1 Mb
+							.setElementCountThreshold(2L)
+							.setDelayThreshold(Duration.ofSeconds(10))
+							.build())
+				         .build();
+
+		LOG.info("Sending one message");
+		ApiFuture<AppendRowsResponse> response = streamWriter.append(
+				createAppendRequest(writeStream.getName(), new String[]{"aaa"}));
+		LOG.info("Test Got response: " + response.get().getOffset());
+		assertEquals(0, response.get().getOffset());
+
+		LOG.info("Sending two more messages");
+		ApiFuture<AppendRowsResponse> response1 = streamWriter.append(
+				createAppendRequest(writeStream.getName(), new String[]{"bbb", "ccc"}));
+		ApiFuture<AppendRowsResponse> response2 = streamWriter.append(
+				createAppendRequest(writeStream.getName(), new String[]{"ddd"}));
+		LOG.info("Test Got response 1: " + response1.get().getOffset());
+		assertEquals(1, response1.get().getOffset());
+		LOG.info("Test Got response 2: " + response2.get().getOffset());
+		assertEquals(3, response2.get().getOffset());
+
+		TableResult result = bigquery.listTableData(tableInfo.getTableId(),
+				BigQuery.TableDataListOption.startIndex(0L));
+		Iterator<FieldValueList> iter = result.getValues().iterator();
+		assertEquals("aaa", iter.next().get(0).getStringValue());
+		assertEquals("bbb", iter.next().get(0).getStringValue());
+		assertEquals("ccc", iter.next().get(0).getStringValue());
+		assertEquals("ddd", iter.next().get(0).getStringValue());
+		assertEquals(false, iter.hasNext());
+
+		streamWriter.shutdown();
 	}
 }
