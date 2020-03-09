@@ -15,7 +15,7 @@
  */
 syntax = "proto2";
 
-package com.google.cloud.bigquery.storage.v1alpha2;
+package com.google.cloud.bigquery.storage.test;
 
 // import "zetasql/public/proto/type_annotation.proto";
 

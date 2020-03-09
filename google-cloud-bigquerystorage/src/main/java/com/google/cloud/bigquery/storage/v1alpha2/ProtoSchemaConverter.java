@@ -64,7 +64,4 @@ public class ProtoSchemaConverter {
 		StructName structName = new StructName();
 		return convertInternal(descriptor, visitedTypes, structName);
 	}
-
-
-
 }

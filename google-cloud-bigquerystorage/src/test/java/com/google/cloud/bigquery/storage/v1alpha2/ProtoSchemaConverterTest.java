@@ -18,7 +18,7 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 import org.junit.*;
 
 import java.io.IOException;
-import com.google.cloud.bigquery.storage.v1alpha2.AllSupportedTypes;
+import com.google.cloud.bigquery.storage.test.AllSupportedTypes;
 
 public class ProtoSchemaConverterTest {
 	@Before
