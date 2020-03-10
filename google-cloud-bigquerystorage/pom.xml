@@ -100,7 +100,6 @@
       <groupId>org.threeten</groupId>
       <artifactId>threetenbp</artifactId>
     </dependency>
-
     <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>
