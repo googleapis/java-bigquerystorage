@@ -17,13 +17,11 @@ syntax = "proto2";
 
 package com.google.cloud.bigquery.storage.test;
 
-// import "zetasql/public/proto/type_annotation.proto";
+import "google/protobuf/descriptor.proto";
 
 enum TestEnum {
   TestEnum0 = 0;
   TestEnum1 = 1;
-  TestEnum2 = 2;
-  TestEnum3 = 3;
 }
 
 message AllSupportedTypes {
@@ -35,11 +33,24 @@ message AllSupportedTypes {
   optional double double_value = 6;
   optional bool bool_value = 7;
   optional TestEnum enum_value = 8;
-  optional string string_value = 9;
-  optional int32 date = 10; // [(zetasql.format) = DATE];
-  optional int64 timestamp_micros = 11; // [(zetasql.format) = TIMESTAMP_MICROS];
-  optional int64 timestamp_millis = 12; // [(zetasql.format) = TIMESTAMP_MILLIS];
-  optional int64 timestamp_seconds = 13; // [(zetqsql.format) = TIMESTAMP_SECONDS];
-  optional bytes byte_value = 14;
-  optional bytes geo_value = 15; // [(zetasql.format) = ST_GEOGRAPHY_ENCODED];
+  required string string_value = 9;
+}
+
+message InnerType {
+  repeated string value = 1;
+}
+message NestedType {
+  repeated InnerType inner_type = 1;
+}
+
+message ComplicateType {
+  repeated NestedType nested_repeated_type = 1;
+  optional InnerType inner_type = 2;
+}
+
+message ContainsRecursive {
+  optional RecursiveType field = 1;
+}
+message RecursiveType {
+  optional ContainsRecursive field = 2;
 }

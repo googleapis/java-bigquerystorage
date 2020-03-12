@@ -15,53 +15,64 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.grpc.GrpcStatusCode;
-import com.google.protobuf.Descriptors.Descriptor;
-import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.api.gax.rpc.InvalidArgumentException;
+import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoSchema;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
-import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoSchema;
+import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.FieldDescriptor;
 import io.grpc.Status;
-
 import java.util.*;
 
-// A converter class that prepares turn a native protobuf::DescriptorProto to a self contained protobuf::DescriptorProto
-// that can be used by the service.
+// A Converter class that turns a native protobuf::DescriptorProto to a self contained
+// protobuf::DescriptorProto
+// that can be reconstructed by the backend.
 public class ProtoSchemaConverter {
-	private class StructName {
-		public String getName() { return "__S" + (count++); }
-		private int count = 0;
-	}
-	ProtoSchema convertInternal(Descriptor input, List<String> visitedTypes, StructName structName) {
-		DescriptorProto.Builder result = DescriptorProto.newBuilder();
-		result.setName(structName.getName());
-		visitedTypes.add(input.getFullName());
-		for (int i = 0; i < input.getFields().size(); i++) {
-			FieldDescriptor input_field = input.getFields().get(i);
-			FieldDescriptorProto.Builder result_field = input_field.toProto().toBuilder();
-			if (input_field.getType() == FieldDescriptor.Type.GROUP ||
-			    input_field.getType() == FieldDescriptor.Type.MESSAGE) {
-				if (visitedTypes.contains(input_field.getFullName())) {
-					throw new InvalidArgumentException(
-							"Recursive type is not supported", null, GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
-							false);
-				}
-				result.addNestedType(
-						convertInternal(input_field.getMessageType(), visitedTypes, structName).getProtoDescriptor());
-				visitedTypes.add(input_field.getFullName());
-				result_field.setTypeName(result.getNestedType(result.getNestedTypeCount() - 1).getName());
-			}
-			if (input_field.getType() == FieldDescriptor.Type.ENUM) {
-				result.addEnumType(input_field.getEnumType().toProto());
-				result_field.setTypeName(result.getEnumType(result.getEnumTypeCount() - 1).getName());
-			}
-		}
-		return ProtoSchema.newBuilder().setProtoDescriptor(result.build()).build();
-	}
-	ProtoSchema convert(Descriptor descriptor) {
-		ArrayList<String> visitedTypes = new ArrayList<String>();
-		StructName structName = new StructName();
-		return convertInternal(descriptor, visitedTypes, structName);
-	}
+  private static class StructName {
+    public String getName() {
+      return "__S" + (count++);
+    }
+
+    private int count = 0;
+  }
+
+  private static ProtoSchema convertInternal(
+      Descriptor input, List<String> visitedTypes, StructName structName) {
+    DescriptorProto.Builder resultProto = DescriptorProto.newBuilder();
+    resultProto.setName(structName.getName());
+    visitedTypes.add(input.getFullName());
+    for (int i = 0; i < input.getFields().size(); i++) {
+      FieldDescriptor inputField = input.getFields().get(i);
+      FieldDescriptorProto.Builder resultField = inputField.toProto().toBuilder();
+      if (inputField.getType() == FieldDescriptor.Type.GROUP
+          || inputField.getType() == FieldDescriptor.Type.MESSAGE) {
+        if (visitedTypes.contains(inputField.getMessageType().getFullName())) {
+          throw new InvalidArgumentException(
+              "Recursive type is not supported:" + inputField.getMessageType().getFullName(),
+              null,
+              GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
+              false);
+        }
+        resultProto.addNestedType(
+            convertInternal(inputField.getMessageType(), visitedTypes, structName)
+                .getProtoDescriptor());
+        visitedTypes.remove(inputField.getMessageType().getFullName());
+        resultField.setTypeName(
+            resultProto.getNestedType(resultProto.getNestedTypeCount() - 1).getName());
+      }
+      if (inputField.getType() == FieldDescriptor.Type.ENUM) {
+        resultProto.addEnumType(inputField.getEnumType().toProto());
+        resultField.setTypeName(
+            resultProto.getEnumType(resultProto.getEnumTypeCount() - 1).getName());
+      }
+      resultProto.addField(resultField);
+    }
+    return ProtoSchema.newBuilder().setProtoDescriptor(resultProto.build()).build();
+  }
+
+  public static ProtoSchema convert(Descriptor descriptor) {
+    ArrayList<String> visitedTypes = new ArrayList<String>();
+    return convertInternal(descriptor, visitedTypes, new StructName());
+  }
 }
