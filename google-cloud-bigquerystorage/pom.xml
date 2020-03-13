@@ -151,6 +151,10 @@
       <artifactId>google-cloud-core</artifactId>
       <version>${google.core.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>com.google.api.grpc</groupId>
@@ -178,10 +182,6 @@
       <artifactId>gax-grpc</artifactId>
       <classifier>testlib</classifier>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
     </dependency>
   </dependencies>
 
