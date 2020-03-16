@@ -86,7 +86,8 @@ class Waiter {
   }
 
   public synchronized void waitOnSizeLimit(int incomingSize) {
-    while (this.pendingSize + incomingSize >= this.flowControlSettings.getMaxOutstandingRequestBytes()) {
+    while (this.pendingSize + incomingSize
+        >= this.flowControlSettings.getMaxOutstandingRequestBytes()) {
       overLimit("Byte size");
     }
   }

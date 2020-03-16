@@ -120,6 +120,7 @@ public class StreamWriter {
         BigQueryWriteSettings.newBuilder()
             .setCredentialsProvider(builder.credentialsProvider)
             .setTransportChannelProvider(builder.channelProvider)
+            //.setExecutorProvider(builder.executorProvider)
             .setEndpoint(builder.endpoint)
             .build();
     shutdown = new AtomicBoolean(false);
@@ -159,6 +160,7 @@ public class StreamWriter {
    * @return the message ID wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
+    LOG.info("append");
     Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
 
     final AppendRequestAndFutureResponse outstandingAppend =
@@ -167,11 +169,12 @@ public class StreamWriter {
     messagesBatchLock.lock();
     try {
       batchesToSend = messagesBatch.add(outstandingAppend);
+      LOG.info("sent? " + batchesToSend.isEmpty());
       // Setup the next duration based delivery alarm if there are messages batched.
       setupAlarm();
       if (!batchesToSend.isEmpty()) {
         for (final InflightBatch batch : batchesToSend) {
-          LOG.fine("Scheduling a batch for immediate sending.");
+          LOG.info("Scheduling a batch for immediate sending.");
           writeBatch(batch);
         }
       }
@@ -187,6 +190,7 @@ public class StreamWriter {
     if (stub != null) {
       stub.shutdown();
     }
+    LOG.info("Creating BigQueryWriteClient");
     stub = BigQueryWriteClient.create(stubSettings);
     backgroundResourceList.add(stub);
     backgroundResources = new BackgroundResourceAggregation(backgroundResourceList);
@@ -199,13 +203,13 @@ public class StreamWriter {
     if (!messagesBatch.isEmpty()) {
       if (!activeAlarm.getAndSet(true)) {
         long delayThresholdMs = getBatchingSettings().getDelayThreshold().toMillis();
-        LOG.log(Level.FINE, "Setting up alarm for the next {0} ms.", delayThresholdMs);
+        LOG.log(Level.INFO, "Setting up alarm for the next {0} ms.", delayThresholdMs);
         currentAlarmFuture =
             executor.schedule(
                 new Runnable() {
                   @Override
                   public void run() {
-                    LOG.log(Level.FINE, "Sending messages based on schedule");
+                    LOG.info("Sending messages based on schedule");
                     activeAlarm.getAndSet(false);
                     messagesBatchLock.lock();
                     try {
@@ -314,6 +318,11 @@ public class StreamWriter {
           inflightRequests.get(0).message.getProtoRows().toBuilder().setRows(rowsBuilder.build());
       if (!attachSchema) {
         data.clearWriterSchema();
+      } else {
+        if (!data.hasWriterSchema()) {
+          throw new IllegalStateException(
+              "The first message on the connection must have writer schema set");
+        }
       }
       return inflightRequests.get(0).message.toBuilder().setProtoRows(data.build()).build();
     }
@@ -532,6 +541,7 @@ public class StreamWriter {
       implements ResponseObserver<AppendRowsResponse> {
     private InflightBatch inflightBatch;
     private StreamWriter streamWriter;
+    private int totalRetries = 0;
 
     public void setInflightBatch(InflightBatch batch) {
       this.inflightBatch = batch;
@@ -554,16 +564,17 @@ public class StreamWriter {
     @Override
     public void onResponse(AppendRowsResponse response) {
       try {
-      	if (response == null) {
-	        inflightBatch.onFailure(
-			        new IllegalStateException("Response is null"));
+        totalRetries = 0;
+        if (response == null) {
+          inflightBatch.onFailure(new IllegalStateException("Response is null"));
         }
-      	// TODO: Deal with in stream errors.
-      	if (response.hasError()) {
-      		throw new RuntimeException("Stream had a failed response: " + response.getError().getMessage());
+        // TODO: Deal with in stream errors.
+        if (response.hasError()) {
+          throw new RuntimeException(
+              "Stream had a failed response: " + response.getError().getMessage());
         }
-      	if (inflightBatch.getExpectedOffset() > 0
-			        && response.getOffset() != inflightBatch.getExpectedOffset()) {
+        if (inflightBatch.getExpectedOffset() > 0
+            && response.getOffset() != inflightBatch.getExpectedOffset()) {
           inflightBatch.onFailure(
               new IllegalStateException(
                   String.format(
@@ -583,9 +594,14 @@ public class StreamWriter {
 
     @Override
     public void onError(Throwable t) {
+      LOG.info("OnError called!!!! " + t.toString());
       if (isRecoverableError(t)) {
         try {
-          streamWriter.refreshAppend();
+          if (totalRetries < 3) {
+            streamWriter.refreshAppend();
+            totalRetries ++;
+            streamWriter.writeBatch(inflightBatch);
+          }
         } catch (IOException e) {
           inflightBatch.onFailure(e);
           streamWriter.messagesWaiter.incrementPendingCount(-1);

@@ -21,20 +21,19 @@ import static org.junit.Assert.assertEquals;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.batching.FlowController;
-import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.Schema;
+import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.v1alpha2.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto;
+import com.google.cloud.bigquery.storage.v1alpha2.ProtoSchemaConverter;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
 import com.google.cloud.bigquery.storage.v1alpha2.StreamWriter;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.protobuf.*;
-import com.google.protobuf.Descriptors;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -101,29 +100,12 @@ public class ITBigQueryWriteManualClientTest {
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
 
     AppendRowsRequest.ProtoData.Builder dataBuilder = AppendRowsRequest.ProtoData.newBuilder();
-    dataBuilder.setWriterSchema(
-        ProtoBufProto.ProtoSchema.newBuilder()
-            .setProtoDescriptor(
-                DescriptorProtos.DescriptorProto.newBuilder()
-                    .setName("Message")
-                    .addField(
-                        DescriptorProtos.FieldDescriptorProto.newBuilder()
-                            .setName("foo")
-                            .setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING)
-                            .setNumber(1)
-                            .build())
-                    .build()));
+    dataBuilder.setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()));
 
     ProtoBufProto.ProtoRows.Builder rows = ProtoBufProto.ProtoRows.newBuilder();
-    ProtobufEnvelope pe = new ProtobufEnvelope();
-    try {
-      for (String message : messages) {
-        pe.addField("foo", message, DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING);
-        rows.addSerializedRows(pe.constructMessage("t").toByteString());
-        pe.clear();
-      }
-    } catch (Descriptors.DescriptorValidationException e) {
-      throw new RuntimeException(e);
+    for (String message : messages) {
+      FooType foo = FooType.newBuilder().setFoo(message).build();
+      rows.addSerializedRows(foo.toByteString());
     }
     dataBuilder.setRows(rows.build());
     return requestBuilder.setProtoRows(dataBuilder.build()).setWriteStream(streamName).build();

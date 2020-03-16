@@ -39,6 +39,7 @@ message AllSupportedTypes {
 message InnerType {
   repeated string value = 1;
 }
+
 message NestedType {
   repeated InnerType inner_type = 1;
 }
@@ -51,6 +52,11 @@ message ComplicateType {
 message ContainsRecursive {
   optional RecursiveType field = 1;
 }
+
 message RecursiveType {
   optional ContainsRecursive field = 2;
+}
+
+message FooType {
+  optional string foo = 1;
 }

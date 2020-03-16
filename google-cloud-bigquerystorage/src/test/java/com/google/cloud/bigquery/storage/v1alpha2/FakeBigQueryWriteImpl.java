@@ -16,17 +16,17 @@
 
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import com.google.common.base.Optional;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
-
+import com.google.common.base.Optional;
+import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.grpc.stub.StreamObserver;
+import java.util.logging.Logger;
 import org.threeten.bp.Duration;
 
 /**
@@ -35,123 +35,132 @@ import org.threeten.bp.Duration;
  */
 class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
 
-	private final LinkedBlockingQueue<AppendRowsRequest> requests = new LinkedBlockingQueue<>();
-	private final LinkedBlockingQueue<Response> responses = new LinkedBlockingQueue<>();
-	private final AtomicInteger nextMessageId = new AtomicInteger(1);
-	private boolean autoPublishResponse;
-	private ScheduledExecutorService executor = null;
-	private Duration responseDelay = Duration.ZERO;
+  private static final Logger LOG = Logger.getLogger(FakeBigQueryWriteImpl.class.getName());
 
-	/** Class used to save the state of a possible response. */
-	private static class Response {
-		Optional<AppendRowsResponse> appendResponse;
-		Optional<Throwable> error;
+  private final LinkedBlockingQueue<AppendRowsRequest> requests = new LinkedBlockingQueue<>();
+  private final LinkedBlockingQueue<Response> responses = new LinkedBlockingQueue<>();
+  private final AtomicInteger nextMessageId = new AtomicInteger(1);
+  private boolean autoPublishResponse;
+  private ScheduledExecutorService executor = null;
+  private Duration responseDelay = Duration.ZERO;
 
-		public Response(AppendRowsResponse appendResponse) {
-			this.appendResponse = Optional.of(appendResponse);
-			this.error = Optional.absent();
-		}
+  /** Class used to save the state of a possible response. */
+  private static class Response {
+    Optional<AppendRowsResponse> appendResponse;
+    Optional<Throwable> error;
 
-		public Response(Throwable exception) {
-			this.appendResponse = Optional.absent();
-			this.error = Optional.of(exception);
-		}
+    public Response(AppendRowsResponse appendResponse) {
+      this.appendResponse = Optional.of(appendResponse);
+      this.error = Optional.absent();
+    }
 
-		public AppendRowsResponse getResponse() {
-			return appendResponse.get();
-		}
+    public Response(Throwable exception) {
+      this.appendResponse = Optional.absent();
+      this.error = Optional.of(exception);
+    }
 
-		public Throwable getError() {
-			return error.get();
-		}
+    public AppendRowsResponse getResponse() {
+      return appendResponse.get();
+    }
 
-		boolean isError() {
-			return error.isPresent();
-		}
+    public Throwable getError() {
+      return error.get();
+    }
 
-		@Override
-		public String toString() {
-			if (isError()) {
-				return error.get().toString();
-			}
-			return appendResponse.get().toString();
-		}
-	}
+    boolean isError() {
+      return error.isPresent();
+    }
 
-	@Override
-	public StreamObserver<AppendRowsRequest> appendRows(
-			final StreamObserver<AppendRowsResponse> responseObserver) {
-		final Response response = responses.remove();
-		StreamObserver<AppendRowsRequest> requestObserver =
-				new StreamObserver<AppendRowsRequest>() {
-					@Override
-					public void onNext(AppendRowsRequest value) {
-						if (responseDelay == Duration.ZERO) {
-							sendResponse(response, responseObserver);
-						} else {
-							final Response responseToSend = response;
-							executor.schedule(
-									new Runnable() {
-										@Override
-										public void run() {
-											sendResponse(responseToSend, responseObserver);
-										}
-									},
-									responseDelay.toMillis(),
-									TimeUnit.MILLISECONDS);
-						}
-					}
+    @Override
+    public String toString() {
+      if (isError()) {
+        return error.get().toString();
+      }
+      return appendResponse.get().toString();
+    }
+  }
 
-					@Override
-					public void onError(Throwable t) {
-						responseObserver.onError(t);
-					}
+  @Override
+  public StreamObserver<AppendRowsRequest> appendRows(
+      final StreamObserver<AppendRowsResponse> responseObserver) {
+    LOG.info("appendRows called!!!" + responses.size());
+    Thread.dumpStack();
+    final Response response = responses.remove();
+    StreamObserver<AppendRowsRequest> requestObserver =
+        new StreamObserver<AppendRowsRequest>() {
+          @Override
+          public void onNext(AppendRowsRequest value) {
+            if (responseDelay == Duration.ZERO) {
+              sendResponse(response, responseObserver);
+            } else {
+              final Response responseToSend = response;
+              executor.schedule(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      sendResponse(responseToSend, responseObserver);
+                    }
+                  },
+                  responseDelay.toMillis(),
+                  TimeUnit.MILLISECONDS);
+            }
+          }
 
-					@Override
-					public void onCompleted() {
-						responseObserver.onCompleted();
-					}
-				};
-		return requestObserver;
-	}
+          @Override
+          public void onError(Throwable t) {
+            responseObserver.onError(t);
+          }
 
-	private void sendResponse(Response response, StreamObserver<AppendRowsResponse> responseObserver) {
-		if (response.isError()) {
-			responseObserver.onError(response.getError());
-		} else {
-			responseObserver.onNext(response.getResponse());
-			responseObserver.onCompleted();
-		}
-	}
+          @Override
+          public void onCompleted() {
+            responseObserver.onCompleted();
+          }
+        };
+    return requestObserver;
+  }
 
-	/** Set an executor to use to delay publish responses. */
-	public FakeBigQueryWriteImpl setExecutor(ScheduledExecutorService executor) {
-		this.executor = executor;
-		return this;
-	}
+  private void sendResponse(
+      Response response, StreamObserver<AppendRowsResponse> responseObserver) {
+    if (response.isError()) {
+      responseObserver.onError(response.getError());
+    } else {
+      responseObserver.onNext(response.getResponse());
+      responseObserver.onCompleted();
+    }
+  }
 
-	/** Set an amount of time by which to delay publish responses. */
-	public FakeBigQueryWriteImpl setResponseDelay(Duration responseDelay) {
-		this.responseDelay = responseDelay;
-		return this;
-	}
+  /** Set an executor to use to delay publish responses. */
+  public FakeBigQueryWriteImpl setExecutor(ScheduledExecutorService executor) {
+    this.executor = executor;
+    return this;
+  }
 
-	public FakeBigQueryWriteImpl addResponse(AppendRowsResponse appendRowsResponse) {
-		responses.add(new Response(appendRowsResponse));
-		return this;
-	}
+  /** Set an amount of time by which to delay publish responses. */
+  public FakeBigQueryWriteImpl setResponseDelay(Duration responseDelay) {
+    this.responseDelay = responseDelay;
+    return this;
+  }
 
-	public FakeBigQueryWriteImpl addResponse(
-			AppendRowsResponse.Builder appendResponseBuilder) {
-		return addResponse(appendResponseBuilder.build());
-	}
+  public FakeBigQueryWriteImpl addResponse(AppendRowsResponse appendRowsResponse) {
+    responses.add(new Response(appendRowsResponse));
+    return this;
+  }
 
-	public FakeBigQueryWriteImpl addPublishError(Throwable error) {
-		responses.add(new Response(error));
-		return this;
-	}
+  public FakeBigQueryWriteImpl addResponse(AppendRowsResponse.Builder appendResponseBuilder) {
+    return addResponse(appendResponseBuilder.build());
+  }
 
-	public List<AppendRowsRequest> getCapturedRequests() {
-		return new ArrayList<AppendRowsRequest>(requests);
-	}
+  public FakeBigQueryWriteImpl addConnectionError(Throwable error) {
+    responses.add(new Response(error));
+    return this;
+  }
+
+  public List<AppendRowsRequest> getCapturedRequests() {
+    return new ArrayList<AppendRowsRequest>(requests);
+  }
+
+  public void reset() {
+    requests.clear();
+    responses.clear();
+  }
 }

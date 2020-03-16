@@ -23,20 +23,20 @@ import java.util.concurrent.atomic.AtomicLong;
 /** A Clock to help with testing time-based logic. */
 public class FakeClock implements ApiClock {
 
-	private final AtomicLong millis = new AtomicLong();
+  private final AtomicLong millis = new AtomicLong();
 
-	// Advances the clock value by {@code time} in {@code timeUnit}.
-	public void advance(long time, TimeUnit timeUnit) {
-		millis.addAndGet(timeUnit.toMillis(time));
-	}
+  // Advances the clock value by {@code time} in {@code timeUnit}.
+  public void advance(long time, TimeUnit timeUnit) {
+    millis.addAndGet(timeUnit.toMillis(time));
+  }
 
-	@Override
-	public long nanoTime() {
-		return millisTime() * 1000_000L;
-	}
+  @Override
+  public long nanoTime() {
+    return millisTime() * 1000_000L;
+  }
 
-	@Override
-	public long millisTime() {
-		return millis.get();
-	}
+  @Override
+  public long millisTime() {
+    return millis.get();
+  }
 }
