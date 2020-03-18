@@ -44,7 +44,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import io.grpc.StatusRuntimeException;
 import org.threeten.bp.Duration;
+import org.threeten.bp.Instant;
 
 /**
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
@@ -90,6 +93,8 @@ public class StreamWriter {
   ClientStream<AppendRowsRequest> clientStream;
   private final AppendResponseObserver responseObserver;
 
+  private int currentRetries = 0;
+
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
@@ -120,7 +125,7 @@ public class StreamWriter {
         BigQueryWriteSettings.newBuilder()
             .setCredentialsProvider(builder.credentialsProvider)
             .setTransportChannelProvider(builder.channelProvider)
-            //.setExecutorProvider(builder.executorProvider)
+            // .setExecutorProvider(builder.executorProvider)
             .setEndpoint(builder.endpoint)
             .build();
     shutdown = new AtomicBoolean(false);
@@ -160,7 +165,6 @@ public class StreamWriter {
    * @return the message ID wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
-    LOG.info("append");
     Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
 
     final AppendRequestAndFutureResponse outstandingAppend =
@@ -169,7 +173,6 @@ public class StreamWriter {
     messagesBatchLock.lock();
     try {
       batchesToSend = messagesBatch.add(outstandingAppend);
-      LOG.info("sent? " + batchesToSend.isEmpty());
       // Setup the next duration based delivery alarm if there are messages batched.
       setupAlarm();
       if (!batchesToSend.isEmpty()) {
@@ -190,12 +193,10 @@ public class StreamWriter {
     if (stub != null) {
       stub.shutdown();
     }
-    LOG.info("Creating BigQueryWriteClient");
     stub = BigQueryWriteClient.create(stubSettings);
     backgroundResourceList.add(stub);
     backgroundResources = new BackgroundResourceAggregation(backgroundResourceList);
     bidiStreamingCallable = stub.appendRowsCallable();
-    clientStream = bidiStreamingCallable.splitCall(responseObserver);
     messagesBatch.resetAttachSchema();
   }
 
@@ -249,14 +250,28 @@ public class StreamWriter {
   }
 
   private void writeBatch(final InflightBatch inflightBatch) {
-    AppendRowsRequest request = inflightBatch.getMergedRequest();
-    messagesWaiter.waitOnElementCount();
-    messagesWaiter.waitOnSizeLimit(inflightBatch.getByteSize());
-    responseObserver.setInflightBatch(inflightBatch);
-    LOG.finer("Sending message: " + request.toString());
-    clientStream.send(request);
-    messagesWaiter.incrementPendingCount(1);
-    messagesWaiter.incrementPendingSize(inflightBatch.getByteSize());
+    try {
+      if (inflightBatch != null) {
+        AppendRowsRequest request = inflightBatch.getMergedRequest();
+        messagesWaiter.waitOnElementCount();
+        messagesWaiter.waitOnSizeLimit(inflightBatch.getByteSize());
+        responseObserver.setInflightBatch(inflightBatch);
+
+        clientStream = bidiStreamingCallable.splitCall(responseObserver);
+        while (!clientStream.isSendReady()) {
+          Thread.sleep(100);
+        }
+        LOG.info("Sending!!!!!");
+        clientStream.send(request);
+
+        synchronized (messagesWaiter) {
+          messagesWaiter.incrementPendingCount(1);
+          messagesWaiter.incrementPendingSize(inflightBatch.getByteSize());
+        }
+      }
+    } catch (InterruptedException e) {
+      return;
+    }
   }
 
   // The batch of messages that is being sent/processed.
@@ -370,6 +385,11 @@ public class StreamWriter {
     return batchingSettings;
   }
 
+  /** The retry settings configured on this {@code StreamWriter}. */
+  public RetrySettings getRetrySettings() {
+    return retrySettings;
+  }
+
   /**
    * Schedules immediate flush of any outstanding messages and waits until all are processed.
    *
@@ -434,9 +454,8 @@ public class StreamWriter {
     static final long DEFAULT_ELEMENT_COUNT_THRESHOLD = 100L;
     static final long DEFAULT_REQUEST_BYTES_THRESHOLD = 100 * 1024L; // 100 kB
     static final Duration DEFAULT_DELAY_THRESHOLD = Duration.ofMillis(1);
-    private static final Duration DEFAULT_INITIAL_RPC_TIMEOUT = Duration.ofSeconds(5);
-    private static final Duration DEFAULT_MAX_RPC_TIMEOUT = Duration.ofSeconds(600);
-    private static final Duration DEFAULT_TOTAL_TIMEOUT = Duration.ofSeconds(600);
+    static final Duration DEFAULT_INITIAL_RPC_TIMEOUT = Duration.ofSeconds(5);
+    static final Duration DEFAULT_TOTAL_TIMEOUT = Duration.ofSeconds(600);
     static final FlowControlSettings DEFAULT_FLOW_CONTROL_SETTINGS =
         FlowControlSettings.newBuilder()
             .setLimitExceededBehavior(FlowController.LimitExceededBehavior.Block)
@@ -453,9 +472,10 @@ public class StreamWriter {
     static final RetrySettings DEFAULT_RETRY_SETTINGS =
         RetrySettings.newBuilder()
             .setTotalTimeout(DEFAULT_TOTAL_TIMEOUT)
-            .setInitialRetryDelay(Duration.ofMillis(100))
-            .setRetryDelayMultiplier(1.3)
-            .setMaxRetryDelay(Duration.ofSeconds(60))
+            // Setting retry delay to 5 seconds since this is the right amount of time
+            // for metadata server to pick up the right stream row count.
+            .setInitialRetryDelay(Duration.ofSeconds(5))
+            .setMaxRetryDelay(Duration.ofSeconds(20))
             .setMaxAttempts(3)
             .build();
     static final boolean DEFAULT_ENABLE_MESSAGE_ORDERING = false;
@@ -516,10 +536,26 @@ public class StreamWriter {
       Preconditions.checkArgument(batchingSettings.getRequestByteThreshold() > 0);
       Preconditions.checkNotNull(batchingSettings.getDelayThreshold());
       Preconditions.checkArgument(batchingSettings.getDelayThreshold().toMillis() > 0);
+      Preconditions.checkArgument(
+          batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() > 0);
+      Preconditions.checkArgument(
+          batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() > 0);
+      Preconditions.checkArgument(
+          batchingSettings.getFlowControlSettings().getLimitExceededBehavior()
+              != FlowController.LimitExceededBehavior.Ignore);
       this.batchingSettings = batchingSettings;
       return this;
     }
 
+    public Builder setRetrySettings(RetrySettings retrySettings) {
+      Preconditions.checkNotNull(retrySettings);
+      Preconditions.checkArgument(
+          retrySettings.getTotalTimeout().compareTo(MIN_TOTAL_TIMEOUT) >= 0);
+      Preconditions.checkArgument(
+          retrySettings.getInitialRpcTimeout().compareTo(MIN_RPC_TIMEOUT) >= 0);
+      this.retrySettings = retrySettings;
+      return this;
+    }
     /** Gives the ability to set a custom executor to be used by the library. */
     public Builder setExecutorProvider(ExecutorProvider executorProvider) {
       this.executorProvider = Preconditions.checkNotNull(executorProvider);
@@ -541,7 +577,6 @@ public class StreamWriter {
       implements ResponseObserver<AppendRowsResponse> {
     private InflightBatch inflightBatch;
     private StreamWriter streamWriter;
-    private int totalRetries = 0;
 
     public void setInflightBatch(InflightBatch batch) {
       this.inflightBatch = batch;
@@ -563,8 +598,9 @@ public class StreamWriter {
 
     @Override
     public void onResponse(AppendRowsResponse response) {
+      LOG.info("On response called: " + response.toString());
       try {
-        totalRetries = 0;
+        streamWriter.currentRetries = 0;
         if (response == null) {
           inflightBatch.onFailure(new IllegalStateException("Response is null"));
         }
@@ -584,8 +620,11 @@ public class StreamWriter {
           inflightBatch.onSuccess(response);
         }
       } finally {
-        streamWriter.messagesWaiter.incrementPendingCount(-1);
-        streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
+        synchronized (streamWriter.messagesWaiter) {
+          streamWriter.messagesWaiter.incrementPendingCount(-1);
+          streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
+          streamWriter.messagesWaiter.notifyAll();
+        }
       }
     }
 
@@ -594,25 +633,43 @@ public class StreamWriter {
 
     @Override
     public void onError(Throwable t) {
-      LOG.info("OnError called!!!! " + t.toString());
       if (isRecoverableError(t)) {
         try {
-          if (totalRetries < 3) {
+          if (streamWriter.currentRetries < streamWriter.getRetrySettings().getMaxAttempts()) {
             streamWriter.refreshAppend();
-            totalRetries ++;
-            streamWriter.writeBatch(inflightBatch);
+            streamWriter.currentRetries++;
+            streamWriter.executor.schedule(
+                new Runnable() {
+                  @Override
+                  public void run() {
+                    streamWriter.writeBatch(inflightBatch);
+                  }
+                },
+                streamWriter.getRetrySettings().getInitialRetryDelay().toMillis(),
+                TimeUnit.MILLISECONDS);
+          } else {
+            streamWriter.currentRetries = 0;
+            inflightBatch.onFailure(t);
           }
         } catch (IOException e) {
+          streamWriter.currentRetries = 0;
           inflightBatch.onFailure(e);
-          streamWriter.messagesWaiter.incrementPendingCount(-1);
-          streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
+          synchronized (streamWriter.messagesWaiter) {
+            streamWriter.messagesWaiter.incrementPendingCount(-1);
+            streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
+            streamWriter.messagesWaiter.notifyAll();
+          }
         }
       } else {
         try {
+          streamWriter.currentRetries = 0;
           inflightBatch.onFailure(t);
         } finally {
-          streamWriter.messagesWaiter.incrementPendingCount(-1);
-          streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
+          synchronized (streamWriter.messagesWaiter) {
+            streamWriter.messagesWaiter.incrementPendingCount(-1);
+            streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
+            streamWriter.messagesWaiter.notifyAll();
+          }
         }
       }
     }
