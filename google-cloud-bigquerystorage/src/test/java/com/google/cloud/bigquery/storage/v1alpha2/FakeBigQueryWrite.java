@@ -16,51 +16,59 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.gax.grpc.testing.MockGrpcService;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.protobuf.AbstractMessage;
 import io.grpc.ServerServiceDefinition;
-import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
-
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import org.threeten.bp.Duration;
 
 public class FakeBigQueryWrite implements MockGrpcService {
-	private final FakeBigQueryWriteImpl serviceImpl;
+  private final FakeBigQueryWriteImpl serviceImpl;
 
-	public FakeBigQueryWrite() {
-		serviceImpl = new FakeBigQueryWriteImpl();
-	}
+  public FakeBigQueryWrite() {
+    serviceImpl = new FakeBigQueryWriteImpl();
+  }
 
-	@Override
-	public List<AbstractMessage> getRequests() {
-		return new LinkedList<AbstractMessage>(serviceImpl.getCapturedRequests());
-	}
+  @Override
+  public List<AbstractMessage> getRequests() {
+    return new LinkedList<AbstractMessage>(serviceImpl.getCapturedRequests());
+  }
 
-	public List<AppendRowsRequest> getAppendRequests() {
-		return serviceImpl.getCapturedRequests();
-	}
+  public List<AppendRowsRequest> getAppendRequests() {
+    return serviceImpl.getCapturedRequests();
+  }
 
-	@Override
-	public void addResponse(AbstractMessage response) {
-		if (response instanceof AppendRowsResponse) {
-			serviceImpl.addResponse((AppendRowsResponse) response);
-		} else {
-			throw new IllegalStateException("Unsupported service");
-		}
-	}
+  @Override
+  public void addResponse(AbstractMessage response) {
+    if (response instanceof AppendRowsResponse) {
+      serviceImpl.addResponse((AppendRowsResponse) response);
+    } else {
+      throw new IllegalStateException("Unsupported service");
+    }
+  }
 
-	@Override
-	public void addException(Exception exception) {
-		serviceImpl.addConnectionError(exception);
-	}
+  @Override
+  public void addException(Exception exception) {
+    serviceImpl.addConnectionError(exception);
+  }
 
-	@Override
-	public ServerServiceDefinition getServiceDefinition() {
-		return serviceImpl.bindService();
-	}
+  @Override
+  public ServerServiceDefinition getServiceDefinition() {
+    return serviceImpl.bindService();
+  }
 
-	@Override
-	public void reset() {
-		serviceImpl.reset();
-	}
+  @Override
+  public void reset() {
+    serviceImpl.reset();
+  }
+
+  public void setResponseDelay(Duration delay) {
+    serviceImpl.setResponseDelay(delay);
+  }
+
+  public void setExecutor(ScheduledExecutorService executor) {
+    serviceImpl.setExecutor(executor);
+  }
 }
-

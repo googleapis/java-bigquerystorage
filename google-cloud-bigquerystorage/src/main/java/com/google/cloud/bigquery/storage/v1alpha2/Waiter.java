@@ -50,15 +50,13 @@ class Waiter {
   }
 
   private void overLimit(String message) {
-    LOG.info("OVERRRR");
     boolean interrupted = false;
     try {
       if (this.flowControlSettings.getLimitExceededBehavior()
           == FlowController.LimitExceededBehavior.Block) {
         try {
-          LOG.info("Wait on: " + message);
+          LOG.fine("Wait on: " + message);
           wait();
-          LOG.info("Exit wait !!!!");
         } catch (InterruptedException e) {
           // Ignored, uninterruptibly.
           interrupted = true;
@@ -93,7 +91,7 @@ class Waiter {
   }
 
   public synchronized void waitOnSizeLimit(int incomingSize) {
-    LOG.info(
+    LOG.fine(
         "Waiting on size limit "
             + (this.pendingSize + incomingSize)
             + " "

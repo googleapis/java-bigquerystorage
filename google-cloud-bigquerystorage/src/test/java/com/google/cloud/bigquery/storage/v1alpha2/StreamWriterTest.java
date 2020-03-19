@@ -22,7 +22,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import apple.laf.JRSUIConstants;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.batching.FlowControlSettings;
@@ -38,6 +37,7 @@ import com.google.api.gax.rpc.DataLossException;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Arrays;
@@ -87,10 +87,11 @@ public class StreamWriterTest {
 
   @After
   public void tearDown() throws Exception {
+    LOG.info("tearDown called");
     serviceHelper.stop();
   }
 
-  private AppendRowsRequest createAppendRequest(String[] messages) {
+  private AppendRowsRequest createAppendRequest(String[] messages, long offset) {
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     AppendRowsRequest.ProtoData.Builder dataBuilder = AppendRowsRequest.ProtoData.newBuilder();
     dataBuilder.setWriterSchema(
@@ -110,6 +111,9 @@ public class StreamWriterTest {
       FooType foo = FooType.newBuilder().setFoo(message).build();
       rows.addSerializedRows(foo.toByteString());
     }
+    if (offset > 0) {
+      requestBuilder.setOffset(Int64Value.of(offset));
+    }
     return requestBuilder
         .setProtoRows(dataBuilder.setRows(rows.build()).build())
         .setWriteStream(TEST_STREAM)
@@ -117,7 +121,7 @@ public class StreamWriterTest {
   }
 
   private ApiFuture<AppendRowsResponse> sendTestMessage(StreamWriter writer, String[] messages) {
-    return writer.append(createAppendRequest(messages));
+    return writer.append(createAppendRequest(messages, -1));
   }
 
   private StreamWriter.Builder getTestStreamWriterBuilder() {
@@ -131,7 +135,6 @@ public class StreamWriterTest {
   public void testAppendByDuration() throws Exception {
     StreamWriter writer =
         getTestStreamWriterBuilder()
-            // To demonstrate that reaching duration will trigger append
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
@@ -146,7 +149,7 @@ public class StreamWriterTest {
 
     assertFalse(appendFuture1.isDone());
     assertFalse(appendFuture2.isDone());
-
+    Thread.sleep(2000L);
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
 
     assertEquals(0L, appendFuture1.get().getOffset());
@@ -165,7 +168,6 @@ public class StreamWriterTest {
     assertEquals(
         true, testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
     writer.shutdown();
-    writer.awaitTermination(1, TimeUnit.MINUTES);
   }
 
   @Test
@@ -219,7 +221,6 @@ public class StreamWriterTest {
     assertEquals(
         false, testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
     writer.shutdown();
-    writer.awaitTermination(1, TimeUnit.MINUTES);
   }
 
   @Test
@@ -256,12 +257,11 @@ public class StreamWriterTest {
     assertEquals(3, testBigQueryWrite.getAppendRequests().size());
 
     writer.shutdown();
-    writer.awaitTermination(1, TimeUnit.MINUTES);
   }
 
   @Test
   public void testWriteByShutdown() throws Exception {
-    StreamWriter publisher =
+    StreamWriter writer =
         getTestStreamWriterBuilder()
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
@@ -272,15 +272,17 @@ public class StreamWriterTest {
             .build();
 
     testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0L).build());
+    testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(1L).build());
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(publisher, new String[] {"A"});
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(publisher, new String[] {"B"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
 
     // Note we are not advancing time or reaching the count threshold but messages should
     // still get written by call to shutdown
 
-    publisher.shutdown();
-    publisher.awaitTermination(1, TimeUnit.MINUTES);
+    writer.shutdown();
+    LOG.info("Wait for termination");
+    writer.awaitTermination(10, TimeUnit.SECONDS);
 
     // Verify the publishes completed
     assertTrue(appendFuture1.isDone());
@@ -293,7 +295,6 @@ public class StreamWriterTest {
   public void testWriteMixedSizeAndDuration() throws Exception {
     StreamWriter writer =
         getTestStreamWriterBuilder()
-            // To demonstrate that reaching duration will trigger publish
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
@@ -346,14 +347,12 @@ public class StreamWriterTest {
     assertEquals(
         false, testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
     writer.shutdown();
-    writer.awaitTermination(1, TimeUnit.MINUTES);
   }
 
   @Test
   public void testFlowControlBehaviorBlock() throws Exception {
     StreamWriter writer =
         getTestStreamWriterBuilder()
-            // To demonstrate that reaching duration will trigger publish
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
@@ -369,19 +368,28 @@ public class StreamWriterTest {
 
     testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(2L).build());
     testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(3L).build());
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
+    testBigQueryWrite.setResponseDelay(Duration.ofSeconds(10));
+
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     final StreamWriter writer1 = writer;
     Runnable runnable =
         new Runnable() {
           @Override
           public void run() {
-            ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer1, new String[]{"B"});
+            ApiFuture<AppendRowsResponse> appendFuture2 =
+                sendTestMessage(writer1, new String[] {"B"});
           }
         };
     Thread t = new Thread(runnable);
     t.start();
-    assertEquals(Thread.State.RUNNABLE, t.getState());
+    assertEquals(true, t.isAlive());
+    // Wait a while before advance timer, there is a race conditiont that the time can be advanced
+    // before the response is scheduled to send.
+    Thread.sleep(2000);
+    fakeExecutor.advanceTime(Duration.ofSeconds(10));
+    // The first requests gets back while the second one is blocked.
     assertEquals(2L, appendFuture1.get().getOffset());
+    fakeExecutor.advanceTime(Duration.ofSeconds(10));
     t.join();
     writer.shutdown();
   }
@@ -390,7 +398,6 @@ public class StreamWriterTest {
   public void testFlowControlBehaviorException() throws Exception {
     StreamWriter writer =
         getTestStreamWriterBuilder()
-            // To demonstrate that reaching duration will trigger publish
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
@@ -399,23 +406,22 @@ public class StreamWriterTest {
                         StreamWriter.Builder.DEFAULT_FLOW_CONTROL_SETTINGS
                             .toBuilder()
                             .setMaxOutstandingElementCount(1L)
-                            .setLimitExceededBehavior(FlowController.LimitExceededBehavior.ThrowException)
+                            .setLimitExceededBehavior(
+                                FlowController.LimitExceededBehavior.ThrowException)
                             .build())
                     .build())
             .build();
 
     testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(1L).build());
-    // testBigQueryWrite.setResponseDelay(Duration.ofSeconds(5));
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     try {
-      ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"B"});
+      ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
       Assert.fail("This should fail");
     } catch (IllegalStateException e) {
       assertEquals("FlowControl limit exceeded: Element count", e.getMessage());
     }
     assertEquals(1L, appendFuture1.get().getOffset());
     writer.shutdown();
-    writer.awaitTermination(1, TimeUnit.MINUTES);
   }
 
   @Test
@@ -425,26 +431,25 @@ public class StreamWriterTest {
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
+                    .setDelayThreshold(Duration.ofSeconds(100000))
                     .setElementCountThreshold(1L)
                     .build())
             .build();
 
+    // Case 1: Request succeeded after retry since the error is transient.
     StatusRuntimeException transientError = new StatusRuntimeException(Status.UNAVAILABLE);
     testBigQueryWrite.addException(transientError);
     testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
     ApiFuture<AppendRowsResponse> future1 = sendTestMessage(writer, new String[] {"m1"});
-
-    fakeExecutor.advanceTime(Duration.ofSeconds(5));
-
-    // Request succeeded since the connection is transient.
+    assertEquals(false, future1.isDone());
+    // Retry is scheduled to be 5 seconds later.
     assertEquals(0L, future1.get().getOffset());
 
+    LOG.info("======CASE II");
+    // Case 2 : Request failed since the error is not transient.
     StatusRuntimeException permanentError = new StatusRuntimeException(Status.INVALID_ARGUMENT);
-
     testBigQueryWrite.addException(permanentError);
     ApiFuture<AppendRowsResponse> future2 = sendTestMessage(writer, new String[] {"m2"});
-
-    // Request failed since the error is not transient.
     try {
       future2.get();
       Assert.fail("This should fail.");
@@ -452,20 +457,82 @@ public class StreamWriterTest {
       assertEquals(permanentError.toString(), e.getCause().getCause().toString());
     }
 
-    // Will only retry certain times before falling out.
+    LOG.info("======CASE III");
+    // Writer needs to be recreated since the previous error is not recoverable.
+    writer =
+        getTestStreamWriterBuilder()
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setDelayThreshold(Duration.ofSeconds(100000))
+                    .setElementCountThreshold(1L)
+                    .build())
+            .build();
+    // Case 3: Failed after retried max retry times.
     testBigQueryWrite.addException(transientError);
     testBigQueryWrite.addException(transientError);
     testBigQueryWrite.addException(transientError);
     testBigQueryWrite.addException(transientError);
     ApiFuture<AppendRowsResponse> future3 = sendTestMessage(writer, new String[] {"m3"});
-    fakeExecutor.advanceTime(Duration.ofSeconds(20));
-
     try {
       future3.get();
       Assert.fail("This should fail.");
     } catch (ExecutionException e) {
       assertEquals(transientError.toString(), e.getCause().getCause().toString());
     }
+  }
+
+  @Test
+  public void testOffset() throws Exception {
+    StreamWriter writer =
+        getTestStreamWriterBuilder()
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(2L)
+                    .build())
+            .build();
+
+    testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(10L).build());
+    testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(13L).build());
+    AppendRowsRequest request1 = createAppendRequest(new String[] {"A"}, 10L);
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(request1);
+    AppendRowsRequest request2 = createAppendRequest(new String[] {"B", "C"}, 11L);
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(request2);
+    AppendRowsRequest request3 = createAppendRequest(new String[] {"E", "F"}, 13L);
+    ApiFuture<AppendRowsResponse> appendFuture3 = writer.append(request3);
+    AppendRowsRequest request4 = createAppendRequest(new String[] {"G"}, 15L);
+    ApiFuture<AppendRowsResponse> appendFuture4 = writer.append(request4);
+    assertEquals(10L, appendFuture1.get().getOffset());
+    assertEquals(11L, appendFuture2.get().getOffset());
+    assertEquals(13L, appendFuture3.get().getOffset());
+    assertEquals(15L, appendFuture4.get().getOffset());
+    writer.shutdown();
+  }
+
+  @Test
+  public void testOffsetMismatch() throws Exception {
+    StreamWriter writer =
+        getTestStreamWriterBuilder()
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(1L)
+                    .build())
+            .build();
+
+    testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(11L).build());
+    AppendRowsRequest request1 = createAppendRequest(new String[] {"A"}, 10L);
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(request1);
+    try {
+      appendFuture1.get();
+      fail("Should throw exception");
+    } catch (Exception e) {
+      assertEquals(
+          "java.lang.IllegalStateException: The append result offset 11 does not match the expected offset 10.",
+          e.getCause().toString());
+    }
+    writer.shutdown();
   }
 
   @Test
@@ -525,7 +592,7 @@ public class StreamWriterTest {
         StreamWriter.Builder.DEFAULT_ELEMENT_COUNT_THRESHOLD,
         builder.batchingSettings.getElementCountThreshold().longValue());
     assertEquals(StreamWriter.Builder.DEFAULT_RETRY_SETTINGS, builder.retrySettings);
-    assertEquals(Duration.ofSeconds(5), builder.retrySettings.getInitialRetryDelay());
+    assertEquals(Duration.ofMillis(100), builder.retrySettings.getInitialRetryDelay());
     assertEquals(3, builder.retrySettings.getMaxAttempts());
     assertEquals(
         StreamWriter.Builder.DEFAULT_TOTAL_TIMEOUT, builder.retrySettings.getTotalTimeout());
@@ -709,7 +776,8 @@ public class StreamWriterTest {
   public void testShutDown() throws Exception {
     ApiFuture apiFuture = EasyMock.createMock(ApiFuture.class);
     StreamWriter writer = EasyMock.createMock(StreamWriter.class);
-    EasyMock.expect(writer.append(createAppendRequest(new String[] {"A"}))).andReturn(apiFuture);
+    EasyMock.expect(writer.append(createAppendRequest(new String[] {"A"}, 0L)))
+        .andReturn(apiFuture);
     EasyMock.expect(writer.awaitTermination(1, TimeUnit.MINUTES)).andReturn(true);
     writer.shutdown();
     EasyMock.expectLastCall().once();

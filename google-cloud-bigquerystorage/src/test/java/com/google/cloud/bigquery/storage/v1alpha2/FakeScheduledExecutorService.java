@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
-
 import org.threeten.bp.Duration;
 import org.threeten.bp.Instant;
 
@@ -82,7 +81,6 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
   @Override
   public ScheduledFuture<?> scheduleWithFixedDelay(
       Runnable command, long initialDelay, long delay, TimeUnit unit) {
-    LOG.info("initial delay" + initialDelay);
     return schedulePendingCallable(
         new PendingCallable<>(
             Duration.ofMillis(unit.toMillis(initialDelay)),
@@ -100,10 +98,18 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
   }
 
   private void work() {
-    Instant cmpTime = Instant.ofEpochMilli(clock.millisTime());
-
     for (; ; ) {
       PendingCallable<?> callable = null;
+      Instant cmpTime = Instant.ofEpochMilli(clock.millisTime());
+      if (!pendingCallables.isEmpty()) {
+        LOG.info(
+            "Going to call: Current time: "
+                + cmpTime.toString()
+                + " Scheduled time: "
+                + pendingCallables.peek().getScheduledTime().toString()
+                + " Creation time:"
+                + pendingCallables.peek().getCreationTime().toString());
+      }
       synchronized (pendingCallables) {
         if (pendingCallables.isEmpty()
             || pendingCallables.peek().getScheduledTime().isAfter(cmpTime)) {
@@ -173,6 +179,7 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
       if (pendingCallables.isEmpty()) {
         return true;
       }
+      LOG.info("Wating on pending callables" + pendingCallables.size());
       pendingCallables.wait(unit.toMillis(timeout));
       return pendingCallables.isEmpty();
     }
@@ -187,6 +194,8 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
   }
 
   <V> ScheduledFuture<V> schedulePendingCallable(PendingCallable<V> callable) {
+    LOG.info(
+        "Schedule pending callable called " + callable.delay + " " + callable.getScheduledTime());
     if (shutdown.get()) {
       throw new IllegalStateException("This executor has been shutdown");
     }
@@ -244,6 +253,10 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
 
     private Instant getScheduledTime() {
       return creationTime.plus(delay);
+    }
+
+    private Instant getCreationTime() {
+      return creationTime;
     }
 
     ScheduledFuture<T> getScheduledFuture() {

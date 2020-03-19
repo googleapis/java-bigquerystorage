@@ -159,7 +159,8 @@ public class ITBigQueryWriteManualClientTest {
     StreamWriter streamWriter =
         StreamWriter.newBuilder(writeStream.getName())
             .setBatchingSettings(
-                BatchingSettings.newBuilder()
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
                     .setRequestByteThreshold(1024 * 1024L) // 1 Mb
                     .setElementCountThreshold(2L)
                     .setDelayThreshold(Duration.ofSeconds(2))
@@ -179,6 +180,7 @@ public class ITBigQueryWriteManualClientTest {
         streamWriter.append(createAppendRequest(writeStream.getName(), new String[] {"ddd"}));
     assertEquals(1, response1.get().getOffset());
     assertEquals(3, response2.get().getOffset());
+    streamWriter.shutdown();
 
     TableResult result =
         bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
@@ -188,7 +190,5 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals("ccc", iter.next().get(0).getStringValue());
     assertEquals("ddd", iter.next().get(0).getStringValue());
     assertEquals(false, iter.hasNext());
-
-    streamWriter.shutdown();
   }
 }

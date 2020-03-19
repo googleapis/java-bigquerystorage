@@ -20,7 +20,6 @@ import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.common.base.Optional;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -83,13 +82,13 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   @Override
   public StreamObserver<AppendRowsRequest> appendRows(
       final StreamObserver<AppendRowsResponse> responseObserver) {
-    LOG.info("appendRows called!!!" + responses.size());
-    Thread.dumpStack();
-    final Response response = responses.remove();
     StreamObserver<AppendRowsRequest> requestObserver =
         new StreamObserver<AppendRowsRequest>() {
           @Override
           public void onNext(AppendRowsRequest value) {
+            LOG.info("Get request:" + value.toString());
+            final Response response = responses.remove();
+            requests.add(value);
             if (responseDelay == Duration.ZERO) {
               sendResponse(response, responseObserver);
             } else {
@@ -121,11 +120,11 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
 
   private void sendResponse(
       Response response, StreamObserver<AppendRowsResponse> responseObserver) {
+    LOG.info("Sending response: " + response.toString());
     if (response.isError()) {
       responseObserver.onError(response.getError());
     } else {
       responseObserver.onNext(response.getResponse());
-      responseObserver.onCompleted();
     }
   }
 
