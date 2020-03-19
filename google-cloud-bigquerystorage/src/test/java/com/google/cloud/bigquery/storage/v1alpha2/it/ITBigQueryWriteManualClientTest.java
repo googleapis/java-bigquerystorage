@@ -228,9 +228,10 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals(1, response2.get().getOffset());
     streamWriter.shutdown();
 
-    // Nothing since rows are not committed.
+    // Nothing showed up since rows are not committed.
     TableResult result =
-        bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+        bigquery.listTableData(
+            tableInfo2.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
     Iterator<FieldValueList> iter = result.getValues().iterator();
     assertEquals(false, iter.hasNext());
 
@@ -250,5 +251,18 @@ public class ITBigQueryWriteManualClientTest {
     LOG.info("Waiting for termination");
     // The awaitTermination always returns false.
     // assertEquals(true, streamWriter.awaitTermination(10, TimeUnit.SECONDS));
+
+    // Data showed up.
+    result =
+        bigquery.listTableData(
+            tableInfo2.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    iter = result.getValues().iterator();
+    assertEquals(
+        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa}, FieldValue{attribute=PRIMITIVE, value=aaa}]}]",
+        iter.next().get(1).getRepeatedValue().toString());
+    assertEquals(
+        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb}, FieldValue{attribute=PRIMITIVE, value=bbb}]}]",
+        iter.next().get(1).getRepeatedValue().toString());
+    assertEquals(false, iter.hasNext());
   }
 }

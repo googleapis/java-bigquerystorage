@@ -52,7 +52,7 @@ import org.threeten.bp.Duration;
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
  *
  * <p>A {@link StreamWrier} provides built-in capabilities to: handle batching of messages;
- * controlling memory utilization (through flowcontrol); automatic connection re-establishment and
+ * controlling memory utilization (through flow control); automatic connection re-establishment and
  * request cleanup (only keeps write schema on first request in the stream).
  *
  * <p>With customizable options that control:
@@ -264,9 +264,9 @@ public class StreamWriter {
       messagesWaiter.waitOnElementCount();
       messagesWaiter.waitOnSizeLimit(inflightBatch.getByteSize());
       responseObserver.addInflightBatch(inflightBatch);
-        if (!clientStream.isSendReady()) {
-          clientStream = bidiStreamingCallable.splitCall(responseObserver);
-        }
+      if (!clientStream.isSendReady()) {
+        clientStream = bidiStreamingCallable.splitCall(responseObserver);
+      }
       clientStream.send(request);
 
       synchronized (messagesWaiter) {
