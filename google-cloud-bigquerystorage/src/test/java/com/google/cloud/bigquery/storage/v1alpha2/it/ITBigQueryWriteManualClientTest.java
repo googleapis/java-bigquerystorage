@@ -19,12 +19,10 @@ package com.google.cloud.bigquery.storage.v1alpha2.it;
 import static org.junit.Assert.assertEquals;
 
 import com.google.api.core.ApiFuture;
-import com.google.api.gax.batching.BatchingSettings;
-import com.google.api.gax.batching.FlowController;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.Schema;
-import com.google.cloud.bigquery.storage.test.Test.FooType;
+import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.cloud.bigquery.storage.v1alpha2.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoSchemaConverter;
@@ -32,7 +30,7 @@ import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
 import com.google.cloud.bigquery.storage.v1alpha2.StreamWriter;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
-import com.google.protobuf.*;
+import com.google.protobuf.Int64Value;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
@@ -48,11 +46,14 @@ public class ITBigQueryWriteManualClientTest {
       Logger.getLogger(ITBigQueryWriteManualClientTest.class.getName());
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
+  private static final String TABLE2 = "complicatedtable";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
 
   private static BigQueryWriteClient client;
   private static TableInfo tableInfo;
+  private static TableInfo tableInfo2;
   private static String tableId;
+  private static String tableId2;
   private static BigQuery bigquery;
 
   @BeforeClass
@@ -73,15 +74,37 @@ public class ITBigQueryWriteManualClientTest {
                         com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
                             .build())))
             .build();
+    com.google.cloud.bigquery.Field.Builder innerTypeFieldBuilder =
+        com.google.cloud.bigquery.Field.newBuilder(
+            "inner_type",
+            LegacySQLTypeName.RECORD,
+            com.google.cloud.bigquery.Field.newBuilder("value", LegacySQLTypeName.STRING)
+                .setMode(Field.Mode.REPEATED)
+                .build());
+
+    tableInfo2 =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, TABLE2),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        Field.newBuilder(
+                                "nested_repeated_type",
+                                LegacySQLTypeName.RECORD,
+                                innerTypeFieldBuilder.setMode(Field.Mode.REPEATED).build())
+                            .setMode(Field.Mode.REPEATED)
+                            .build(),
+                        innerTypeFieldBuilder.setMode(Field.Mode.NULLABLE).build())))
+            .build();
     bigquery.create(tableInfo);
+    bigquery.create(tableInfo2);
     tableId =
         String.format(
             "projects/%s/datasets/%s/tables/%s",
             ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
-    LOG.info(
+    tableId2 =
         String.format(
-            "%s tests running with table: %s",
-            ITBigQueryWriteManualClientTest.class.getSimpleName(), tableId));
+            "projects/%s/datasets/%s/tables/%s",
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE2);
   }
 
   @AfterClass
@@ -111,40 +134,23 @@ public class ITBigQueryWriteManualClientTest {
     return requestBuilder.setProtoRows(dataBuilder.build()).setWriteStream(streamName).build();
   }
 
-  @Test
-  public void testDefaultWrite() throws IOException, InterruptedException, ExecutionException {
-    WriteStream writeStream =
-        client.createWriteStream(
-            CreateWriteStreamRequest.newBuilder()
-                .setParent(tableId)
-                .setWriteStream(
-                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
-                .build());
-    StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build();
+  private AppendRowsRequest.Builder createAppendRequestComplicateType(
+      String streamName, String[] messages) {
+    AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
 
-    AppendRowsRequest request = createAppendRequest(writeStream.getName(), new String[] {"aaa"});
-    ApiFuture<AppendRowsResponse> response = streamWriter.append(request);
-    assertEquals(0, response.get().getOffset());
+    AppendRowsRequest.ProtoData.Builder dataBuilder = AppendRowsRequest.ProtoData.newBuilder();
+    dataBuilder.setWriterSchema(ProtoSchemaConverter.convert(ComplicateType.getDescriptor()));
 
-    streamWriter.shutdown();
-
-    // Settings
-    BatchingSettings batchingSettings = streamWriter.getBatchingSettings();
-    assertEquals(100L, batchingSettings.getElementCountThreshold().longValue());
-    assertEquals(
-        100 * 1024L, // 10 Kb
-        batchingSettings.getRequestByteThreshold().longValue());
-    assertEquals(Duration.ofMillis(1), batchingSettings.getDelayThreshold());
-    assertEquals(true, batchingSettings.getIsEnabled());
-    assertEquals(
-        FlowController.LimitExceededBehavior.Block,
-        batchingSettings.getFlowControlSettings().getLimitExceededBehavior());
-    assertEquals(
-        1000L,
-        batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount().longValue());
-    assertEquals(
-        100 * 1024 * 1024L, // 100 Mb
-        batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes().longValue());
+    ProtoBufProto.ProtoRows.Builder rows = ProtoBufProto.ProtoRows.newBuilder();
+    for (String message : messages) {
+      ComplicateType foo =
+          ComplicateType.newBuilder()
+              .setInnerType(InnerType.newBuilder().addValue(message).addValue(message).build())
+              .build();
+      rows.addSerializedRows(foo.toByteString());
+    }
+    dataBuilder.setRows(rows.build());
+    return requestBuilder.setProtoRows(dataBuilder.build()).setWriteStream(streamName);
   }
 
   @Test
@@ -190,6 +196,56 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals("ccc", iter.next().get(0).getStringValue());
     assertEquals("ddd", iter.next().get(0).getStringValue());
     assertEquals(false, iter.hasNext());
+
+    LOG.info("Waiting for termination");
+    // The awaitTermination always returns false.
+    // assertEquals(true, streamWriter.awaitTermination(10, TimeUnit.SECONDS));
+  }
+
+  @Test
+  public void testComplicateSchema() throws IOException, InterruptedException, ExecutionException {
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(tableId2)
+                .setWriteStream(WriteStream.newBuilder().setType(WriteStream.Type.PENDING).build())
+                .build());
+    StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build();
+
+    LOG.info("Sending two messages");
+    ApiFuture<AppendRowsResponse> response =
+        streamWriter.append(
+            createAppendRequestComplicateType(writeStream.getName(), new String[] {"aaa"})
+                .setOffset(Int64Value.of(0L))
+                .build());
+    assertEquals(0, response.get().getOffset());
+
+    ApiFuture<AppendRowsResponse> response2 =
+        streamWriter.append(
+            createAppendRequestComplicateType(writeStream.getName(), new String[] {"bbb"})
+                .setOffset(Int64Value.of(1L))
+                .build());
+    assertEquals(1, response2.get().getOffset());
+    streamWriter.shutdown();
+
+    // Nothing since rows are not committed.
+    TableResult result =
+        bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    Iterator<FieldValueList> iter = result.getValues().iterator();
+    assertEquals(false, iter.hasNext());
+
+    FinalizeWriteStreamResponse finalizeResponse =
+        client.finalizeWriteStream(
+            FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build());
+    // Finalize row count is not populated.
+    // assertEquals(1, finalizeResponse.getRowCount());
+    BatchCommitWriteStreamsResponse batchCommitWriteStreamsResponse =
+        client.batchCommitWriteStreams(
+            BatchCommitWriteStreamsRequest.newBuilder()
+                .setParent(tableId2)
+                .addWriteStreams(writeStream.getName())
+                .build());
+    assertEquals(true, batchCommitWriteStreamsResponse.hasCommitTime());
 
     LOG.info("Waiting for termination");
     // The awaitTermination always returns false.

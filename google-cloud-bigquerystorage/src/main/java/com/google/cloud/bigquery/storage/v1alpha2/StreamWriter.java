@@ -51,9 +51,9 @@ import org.threeten.bp.Duration;
 /**
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
  *
- * <p>A {@link StreamWrier} provides built-in capabilities to: - handle batching of messages -
- * controlling memory utilization (outstanding requests management) - automatic connection
- * re-establishment - request cleanup
+ * <p>A {@link StreamWrier} provides built-in capabilities to: handle batching of messages;
+ * controlling memory utilization (through flowcontrol); automatic connection re-establishment and
+ * request cleanup (only keeps write schema on first request in the stream).
  *
  * <p>With customizable options that control:
  *
@@ -81,6 +81,9 @@ public class StreamWriter {
   private List<BackgroundResource> backgroundResourceList;
 
   private BigQueryWriteClient stub;
+  BidiStreamingCallable<AppendRowsRequest, AppendRowsResponse> bidiStreamingCallable;
+  ClientStream<AppendRowsRequest> clientStream;
+  private final AppendResponseObserver responseObserver;
 
   private final ScheduledExecutorService executor;
 
@@ -88,9 +91,6 @@ public class StreamWriter {
   private final Waiter messagesWaiter;
   private final AtomicBoolean activeAlarm;
   private ScheduledFuture<?> currentAlarmFuture;
-  BidiStreamingCallable<AppendRowsRequest, AppendRowsResponse> bidiStreamingCallable;
-  ClientStream<AppendRowsRequest> clientStream;
-  private final AppendResponseObserver responseObserver;
 
   private Integer currentRetries = 0;
 
@@ -131,7 +131,7 @@ public class StreamWriter {
     refreshAppend();
   }
 
-  /** Stream which we are writing to. */
+  /** Stream name we are writing to. */
   public String getStreamNameString() {
     return streamName;
   }
@@ -188,22 +188,24 @@ public class StreamWriter {
   }
 
   public void refreshAppend() throws IOException {
-    Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
-    if (stub != null) {
-      stub.shutdown();
-    }
-    backgroundResourceList.remove(stub);
-    stub = BigQueryWriteClient.create(stubSettings);
-    backgroundResourceList.add(stub);
-    backgroundResources = new BackgroundResourceAggregation(backgroundResourceList);
-    messagesBatch.resetAttachSchema();
-    bidiStreamingCallable = stub.appendRowsCallable();
-    clientStream = bidiStreamingCallable.splitCall(responseObserver);
-    try {
-      while (!clientStream.isSendReady()) {
-        Thread.sleep(100);
+    synchronized (this) {
+      Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
+      if (stub != null) {
+        stub.shutdown();
       }
-    } catch (InterruptedException e) {
+      backgroundResourceList.remove(stub);
+      stub = BigQueryWriteClient.create(stubSettings);
+      backgroundResourceList.add(stub);
+      backgroundResources = new BackgroundResourceAggregation(backgroundResourceList);
+      messagesBatch.resetAttachSchema();
+      bidiStreamingCallable = stub.appendRowsCallable();
+      clientStream = bidiStreamingCallable.splitCall(responseObserver);
+      try {
+        while (!clientStream.isSendReady()) {
+          Thread.sleep(100);
+        }
+      } catch (InterruptedException e) {
+      }
     }
   }
 
@@ -525,62 +527,69 @@ public class StreamWriter {
     // Batching options
     public Builder setBatchingSettings(BatchingSettings batchingSettings) {
       Preconditions.checkNotNull(batchingSettings);
+
+      BatchingSettings.Builder builder = batchingSettings.toBuilder();
       Preconditions.checkNotNull(batchingSettings.getElementCountThreshold());
       Preconditions.checkArgument(batchingSettings.getElementCountThreshold() > 0);
       Preconditions.checkNotNull(batchingSettings.getRequestByteThreshold());
       Preconditions.checkArgument(batchingSettings.getRequestByteThreshold() > 0);
+      if (batchingSettings.getRequestByteThreshold() > getApiMaxRequestBytes()) {
+        builder.setRequestByteThreshold(getApiMaxRequestBytes());
+      }
       Preconditions.checkNotNull(batchingSettings.getDelayThreshold());
       Preconditions.checkArgument(batchingSettings.getDelayThreshold().toMillis() > 0);
       if (batchingSettings.getFlowControlSettings() == null) {
-        batchingSettings.toBuilder().setFlowControlSettings(DEFAULT_FLOW_CONTROL_SETTINGS);
-      }
-      if (batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() == null) {
-        batchingSettings
-            .toBuilder()
-            .setFlowControlSettings(
+        builder.setFlowControlSettings(DEFAULT_FLOW_CONTROL_SETTINGS);
+      } else {
+
+        if (batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() == null) {
+          builder.setFlowControlSettings(
+              batchingSettings
+                  .getFlowControlSettings()
+                  .toBuilder()
+                  .setMaxOutstandingElementCount(
+                      DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingElementCount())
+                  .build());
+        } else {
+          Preconditions.checkArgument(
+              batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() > 0);
+          if (batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount()
+              > getApiMaxInflightRequests()) {
+            builder.setFlowControlSettings(
                 batchingSettings
                     .getFlowControlSettings()
                     .toBuilder()
-                    .setMaxOutstandingElementCount(
-                        DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingElementCount())
-                    .build())
-            .build();
-      } else {
-        Preconditions.checkArgument(
-            batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() > 0);
+                    .setMaxOutstandingElementCount(getApiMaxInflightRequests())
+                    .build());
+          }
+        }
+        if (batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() == null) {
+          builder.setFlowControlSettings(
+              batchingSettings
+                  .getFlowControlSettings()
+                  .toBuilder()
+                  .setMaxOutstandingRequestBytes(
+                      DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingRequestBytes())
+                  .build());
+        } else {
+          Preconditions.checkArgument(
+              batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() > 0);
+        }
+        if (batchingSettings.getFlowControlSettings().getLimitExceededBehavior() == null) {
+          builder.setFlowControlSettings(
+              batchingSettings
+                  .getFlowControlSettings()
+                  .toBuilder()
+                  .setLimitExceededBehavior(
+                      DEFAULT_FLOW_CONTROL_SETTINGS.getLimitExceededBehavior())
+                  .build());
+        } else {
+          Preconditions.checkArgument(
+              batchingSettings.getFlowControlSettings().getLimitExceededBehavior()
+                  != FlowController.LimitExceededBehavior.Ignore);
+        }
       }
-      if (batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() == null) {
-        batchingSettings
-            .toBuilder()
-            .setFlowControlSettings(
-                batchingSettings
-                    .getFlowControlSettings()
-                    .toBuilder()
-                    .setMaxOutstandingRequestBytes(
-                        DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingRequestBytes())
-                    .build())
-            .build();
-      } else {
-        Preconditions.checkArgument(
-            batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() > 0);
-      }
-      if (batchingSettings.getFlowControlSettings().getLimitExceededBehavior() == null) {
-        batchingSettings
-            .toBuilder()
-            .setFlowControlSettings(
-                batchingSettings
-                    .getFlowControlSettings()
-                    .toBuilder()
-                    .setLimitExceededBehavior(
-                        DEFAULT_FLOW_CONTROL_SETTINGS.getLimitExceededBehavior())
-                    .build())
-            .build();
-      } else {
-        Preconditions.checkArgument(
-            batchingSettings.getFlowControlSettings().getLimitExceededBehavior()
-                != FlowController.LimitExceededBehavior.Ignore);
-      }
-      this.batchingSettings = batchingSettings;
+      this.batchingSettings = builder.build();
       return this;
     }
 
@@ -686,8 +695,8 @@ public class StreamWriter {
         synchronized (streamWriter.messagesWaiter) {
           streamWriter.messagesWaiter.incrementPendingCount(-1);
           streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
-          streamWriter.messagesWaiter.notifyAll();
         }
+        streamWriter.messagesWaiter.notifyAll();
       }
     }
 
@@ -714,7 +723,9 @@ public class StreamWriter {
                 streamWriter.getRetrySettings().getInitialRetryDelay().toMillis()
                     + Duration.ofSeconds(5).toMillis());
             streamWriter.writeBatch(inflightBatch);
-            streamWriter.currentRetries++;
+            synchronized (streamWriter.currentRetries) {
+              streamWriter.currentRetries++;
+            }
           } else {
             synchronized (streamWriter.currentRetries) {
               streamWriter.currentRetries = 0;
@@ -727,19 +738,21 @@ public class StreamWriter {
           synchronized (streamWriter.messagesWaiter) {
             streamWriter.messagesWaiter.incrementPendingCount(-1);
             streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
-            streamWriter.messagesWaiter.notifyAll();
           }
+          streamWriter.messagesWaiter.notifyAll();
         }
       } else {
         try {
-          streamWriter.currentRetries = 0;
+          synchronized (streamWriter.currentRetries) {
+            streamWriter.currentRetries = 0;
+          }
           inflightBatch.onFailure(t);
         } finally {
           synchronized (streamWriter.messagesWaiter) {
             streamWriter.messagesWaiter.incrementPendingCount(-1);
             streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
-            streamWriter.messagesWaiter.notifyAll();
           }
+          streamWriter.messagesWaiter.notifyAll();
         }
       }
     }

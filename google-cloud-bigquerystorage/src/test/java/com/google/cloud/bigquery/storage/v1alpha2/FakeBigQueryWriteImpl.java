@@ -29,11 +29,10 @@ import java.util.logging.Logger;
 import org.threeten.bp.Duration;
 
 /**
- * A fake implementation of {@link PublisherImplBase}, that can be used to test clients of a Cloud
- * Pub/Sub Publisher.
+ * A fake implementation of {@link BigQueryWriteImplBase} that can acts like server in StreamWriter
+ * unit testing.
  */
 class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
-
   private static final Logger LOG = Logger.getLogger(FakeBigQueryWriteImpl.class.getName());
 
   private final LinkedBlockingQueue<AppendRowsRequest> requests = new LinkedBlockingQueue<>();

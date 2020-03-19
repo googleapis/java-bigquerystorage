@@ -24,6 +24,10 @@ import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import org.threeten.bp.Duration;
 
+/**
+ * A fake implementation of {@link MockGrpcService}, that can be used to test clients of a
+ * StreamWriter. It forwards calls to the real implementation (@link FakeBigQueryWriteImpl}.
+ */
 public class FakeBigQueryWrite implements MockGrpcService {
   private final FakeBigQueryWriteImpl serviceImpl;
 

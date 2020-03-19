@@ -57,20 +57,13 @@ import org.threeten.bp.Duration;
 
 @RunWith(JUnit4.class)
 public class StreamWriterTest {
-
   private static final Logger LOG = Logger.getLogger(StreamWriterTest.class.getName());
-
   private static final String TEST_STREAM = "projects/p/datasets/d/tables/t/streams/s";
-
   private static final ExecutorProvider SINGLE_THREAD_EXECUTOR =
       InstantiatingExecutorProvider.newBuilder().setExecutorThreadCount(1).build();
-
   private static LocalChannelProvider channelProvider;
-
   private FakeScheduledExecutorService fakeExecutor;
-
   private FakeBigQueryWrite testBigQueryWrite;
-
   private static MockServiceHelper serviceHelper;
 
   @Before
@@ -284,7 +277,7 @@ public class StreamWriterTest {
     LOG.info("Wait for termination");
     writer.awaitTermination(10, TimeUnit.SECONDS);
 
-    // Verify the publishes completed
+    // Verify the appends completed
     assertTrue(appendFuture1.isDone());
     assertTrue(appendFuture2.isDone());
     assertEquals(0L, appendFuture1.get().getOffset());
@@ -384,11 +377,13 @@ public class StreamWriterTest {
     t.start();
     assertEquals(true, t.isAlive());
     assertEquals(false, appendFuture1.isDone());
+    // Wait is necessary for response to be scheduled before timer is advanced.
     Thread.sleep(5000L);
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
     // The first requests gets back while the second one is blocked.
     assertEquals(2L, appendFuture1.get().getOffset());
     Thread.sleep(5000L);
+    // Wait is necessary for response to be scheduled before timer is advanced.
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
     t.join();
     writer.shutdown();
@@ -792,7 +787,7 @@ public class StreamWriterTest {
     testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     writer.shutdown();
-    // await always returns false.
+    // TODO: for some reason, await always returns false.
     // assertTrue(writer.awaitTermination(1, TimeUnit.MINUTES));
   }
 

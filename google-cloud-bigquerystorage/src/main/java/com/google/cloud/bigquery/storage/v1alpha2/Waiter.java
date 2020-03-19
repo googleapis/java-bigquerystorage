@@ -80,7 +80,7 @@ class Waiter {
   }
 
   public synchronized void waitOnElementCount() {
-    LOG.fine(
+    LOG.finer(
         "Waiting on element count "
             + this.pendingCount
             + " "
@@ -91,7 +91,7 @@ class Waiter {
   }
 
   public synchronized void waitOnSizeLimit(int incomingSize) {
-    LOG.fine(
+    LOG.finer(
         "Waiting on size limit "
             + (this.pendingSize + incomingSize)
             + " "
