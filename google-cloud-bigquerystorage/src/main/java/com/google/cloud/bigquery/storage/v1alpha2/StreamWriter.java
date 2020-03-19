@@ -264,6 +264,9 @@ public class StreamWriter {
       messagesWaiter.waitOnElementCount();
       messagesWaiter.waitOnSizeLimit(inflightBatch.getByteSize());
       responseObserver.addInflightBatch(inflightBatch);
+        if (!clientStream.isSendReady()) {
+          clientStream = bidiStreamingCallable.splitCall(responseObserver);
+        }
       clientStream.send(request);
 
       synchronized (messagesWaiter) {
@@ -677,7 +680,6 @@ public class StreamWriter {
                   "Request failed",
                   new StatusRuntimeException(Status.fromCodeValue(response.getError().getCode())));
           inflightBatch.onFailure(exception);
-          abortInflightRequests(exception);
         }
         if (inflightBatch.getExpectedOffset() > 0
             && response.getOffset() != inflightBatch.getExpectedOffset()) {
@@ -695,14 +697,14 @@ public class StreamWriter {
         synchronized (streamWriter.messagesWaiter) {
           streamWriter.messagesWaiter.incrementPendingCount(-1);
           streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
+          streamWriter.messagesWaiter.notifyAll();
         }
-        streamWriter.messagesWaiter.notifyAll();
       }
     }
 
     @Override
     public void onComplete() {
-      LOG.fine("OnComplete called");
+      LOG.info("OnComplete called");
     }
 
     @Override
@@ -712,6 +714,10 @@ public class StreamWriter {
       }
       InflightBatch inflightBatch = null;
       synchronized (this.inflightBatches) {
+        if (inflightBatches.isEmpty()) {
+          // The batches could have been aborted.
+          return;
+        }
         inflightBatch = this.inflightBatches.poll();
       }
       if (isRecoverableError(t)) {
@@ -738,8 +744,8 @@ public class StreamWriter {
           synchronized (streamWriter.messagesWaiter) {
             streamWriter.messagesWaiter.incrementPendingCount(-1);
             streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
+            streamWriter.messagesWaiter.notifyAll();
           }
-          streamWriter.messagesWaiter.notifyAll();
         }
       } else {
         try {
@@ -751,8 +757,8 @@ public class StreamWriter {
           synchronized (streamWriter.messagesWaiter) {
             streamWriter.messagesWaiter.incrementPendingCount(-1);
             streamWriter.messagesWaiter.incrementPendingSize(0 - inflightBatch.getByteSize());
+            streamWriter.messagesWaiter.notifyAll();
           }
-          streamWriter.messagesWaiter.notifyAll();
         }
       }
     }
