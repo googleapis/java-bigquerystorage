@@ -531,13 +531,55 @@ public class StreamWriter {
       Preconditions.checkArgument(batchingSettings.getRequestByteThreshold() > 0);
       Preconditions.checkNotNull(batchingSettings.getDelayThreshold());
       Preconditions.checkArgument(batchingSettings.getDelayThreshold().toMillis() > 0);
-      Preconditions.checkArgument(
-          batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() > 0);
-      Preconditions.checkArgument(
-          batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() > 0);
-      Preconditions.checkArgument(
-          batchingSettings.getFlowControlSettings().getLimitExceededBehavior()
-              != FlowController.LimitExceededBehavior.Ignore);
+      if (batchingSettings.getFlowControlSettings() == null) {
+        batchingSettings.toBuilder().setFlowControlSettings(DEFAULT_FLOW_CONTROL_SETTINGS);
+      }
+      if (batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() == null) {
+        batchingSettings
+            .toBuilder()
+            .setFlowControlSettings(
+                batchingSettings
+                    .getFlowControlSettings()
+                    .toBuilder()
+                    .setMaxOutstandingElementCount(
+                        DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingElementCount())
+                    .build())
+            .build();
+      } else {
+        Preconditions.checkArgument(
+            batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() > 0);
+      }
+      if (batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() == null) {
+        batchingSettings
+            .toBuilder()
+            .setFlowControlSettings(
+                batchingSettings
+                    .getFlowControlSettings()
+                    .toBuilder()
+                    .setMaxOutstandingRequestBytes(
+                        DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingRequestBytes())
+                    .build())
+            .build();
+      } else {
+        Preconditions.checkArgument(
+            batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() > 0);
+      }
+      if (batchingSettings.getFlowControlSettings().getLimitExceededBehavior() == null) {
+        batchingSettings
+            .toBuilder()
+            .setFlowControlSettings(
+                batchingSettings
+                    .getFlowControlSettings()
+                    .toBuilder()
+                    .setLimitExceededBehavior(
+                        DEFAULT_FLOW_CONTROL_SETTINGS.getLimitExceededBehavior())
+                    .build())
+            .build();
+      } else {
+        Preconditions.checkArgument(
+            batchingSettings.getFlowControlSettings().getLimitExceededBehavior()
+                != FlowController.LimitExceededBehavior.Ignore);
+      }
       this.batchingSettings = batchingSettings;
       return this;
     }

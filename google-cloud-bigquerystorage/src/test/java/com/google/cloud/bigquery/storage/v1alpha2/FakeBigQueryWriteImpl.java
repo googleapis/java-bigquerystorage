@@ -93,6 +93,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
               sendResponse(response, responseObserver);
             } else {
               final Response responseToSend = response;
+              LOG.info("Schedule a response to be sent at delay");
               executor.schedule(
                   new Runnable() {
                     @Override

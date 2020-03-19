@@ -190,5 +190,9 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals("ccc", iter.next().get(0).getStringValue());
     assertEquals("ddd", iter.next().get(0).getStringValue());
     assertEquals(false, iter.hasNext());
+
+    LOG.info("Waiting for termination");
+    // The awaitTermination always returns false.
+    // assertEquals(true, streamWriter.awaitTermination(10, TimeUnit.SECONDS));
   }
 }
