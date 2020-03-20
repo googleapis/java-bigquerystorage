@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.threeten.bp.Duration;
@@ -154,7 +155,8 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testBatchWrite() throws IOException, InterruptedException, ExecutionException {
+  public void testBatchWriteWithCommittedStream()
+      throws IOException, InterruptedException, ExecutionException {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -203,7 +205,8 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testComplicateSchema() throws IOException, InterruptedException, ExecutionException {
+  public void testComplicateSchemaWithPendingStream()
+      throws IOException, InterruptedException, ExecutionException {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -264,5 +267,48 @@ public class ITBigQueryWriteManualClientTest {
         "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb}, FieldValue{attribute=PRIMITIVE, value=bbb}]}]",
         iter.next().get(1).getRepeatedValue().toString());
     assertEquals(false, iter.hasNext());
+  }
+
+  @Test
+  public void testStreamError() throws IOException, InterruptedException, ExecutionException {
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(tableId)
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+    StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build();
+
+    AppendRowsRequest request = createAppendRequest(writeStream.getName(), new String[] {"aaa"});
+    request
+        .toBuilder()
+        .setProtoRows(request.getProtoRows().toBuilder().clearWriterSchema().build())
+        .build();
+    ApiFuture<AppendRowsResponse> response =
+        streamWriter.append(createAppendRequest(writeStream.getName(), new String[] {"aaa"}));
+    assertEquals(0L, response.get().getOffset());
+    // Send in a bogus stream name should cause in connection error.
+    ApiFuture<AppendRowsResponse> response2 =
+        streamWriter.append(
+            createAppendRequest(writeStream.getName(), new String[] {"aaa"})
+                .toBuilder()
+                .setWriteStream("blah")
+                .build());
+    try {
+      response2.get().getOffset();
+      Assert.fail("Should fail");
+    } catch (ExecutionException e) {
+      assertEquals(
+          true,
+          e.getCause()
+              .getMessage()
+              .startsWith(
+                  "INVALID_ARGUMENT: Stream name `blah` in the request doesn't match the one already specified"));
+    }
+    // We can keep sending requests on the same stream.
+    ApiFuture<AppendRowsResponse> response3 =
+        streamWriter.append(createAppendRequest(writeStream.getName(), new String[] {"aaa"}));
+    assertEquals(1L, response3.get().getOffset());
   }
 }
