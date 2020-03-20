@@ -264,10 +264,9 @@ public class StreamWriter {
       messagesWaiter.waitOnElementCount();
       messagesWaiter.waitOnSizeLimit(inflightBatch.getByteSize());
       responseObserver.addInflightBatch(inflightBatch);
-      if (!clientStream.isSendReady()) {
-        clientStream = bidiStreamingCallable.splitCall(responseObserver);
-      }
+      LOG.info("before send");
       clientStream.send(request);
+      LOG.info("after send");
 
       synchronized (messagesWaiter) {
         messagesWaiter.incrementPendingCount(1);
@@ -379,6 +378,11 @@ public class StreamWriter {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
       this.messageSize = message.getProtoRows().getSerializedSize();
+      if (this.messageSize > getApiMaxRequestBytes()) {
+        throw new StatusRuntimeException(
+            Status.fromCode(Status.Code.FAILED_PRECONDITION)
+                .withDescription("Message exceeded max size limit: " + getApiMaxRequestBytes()));
+      }
     }
   }
 
@@ -675,10 +679,10 @@ public class StreamWriter {
         }
         // TODO: Deal with in stream errors.
         if (response.hasError()) {
-          RuntimeException exception =
-              new RuntimeException(
-                  "Request failed",
-                  new StatusRuntimeException(Status.fromCodeValue(response.getError().getCode())));
+          StatusRuntimeException exception =
+              new StatusRuntimeException(
+                  Status.fromCodeValue(response.getError().getCode())
+                      .withDescription(response.getError().getMessage()));
           inflightBatch.onFailure(exception);
         }
         if (inflightBatch.getExpectedOffset() > 0
@@ -709,6 +713,7 @@ public class StreamWriter {
 
     @Override
     public void onError(Throwable t) {
+      LOG.info("OnError called");
       if (streamWriter.shutdown.get()) {
         return;
       }
@@ -748,11 +753,19 @@ public class StreamWriter {
           }
         }
       } else {
+        LOG.info("Set error response");
         try {
           synchronized (streamWriter.currentRetries) {
             streamWriter.currentRetries = 0;
           }
           inflightBatch.onFailure(t);
+          try {
+            // Establish a new connection.
+            streamWriter.refreshAppend();
+          } catch (IOException e) {
+            LOG.info("Failed to establish a new connection, shutdown writer");
+            streamWriter.shutdown();
+          }
         } finally {
           synchronized (streamWriter.messagesWaiter) {
             streamWriter.messagesWaiter.incrementPendingCount(-1);
