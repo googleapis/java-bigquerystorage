@@ -272,7 +272,9 @@
         <configuration>
           <flattenMode>oss</flattenMode>
           <flattenDependencyMode>all</flattenDependencyMode>
-          <excludeBuildPlugins>true</excludeBuildPlugins>
+          <pomElements>
+            <build>remove</build>
+          </pomElements>
         </configuration>
       </plugin>
 
