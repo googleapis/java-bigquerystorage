@@ -46,7 +46,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import org.apache.commons.lang3.StringUtils;
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -611,8 +610,6 @@ public class StreamWriterTest {
     assertEquals(StreamWriter.Builder.DEFAULT_RETRY_SETTINGS, builder.retrySettings);
     assertEquals(Duration.ofMillis(100), builder.retrySettings.getInitialRetryDelay());
     assertEquals(3, builder.retrySettings.getMaxAttempts());
-    assertEquals(
-        StreamWriter.Builder.DEFAULT_TOTAL_TIMEOUT, builder.retrySettings.getTotalTimeout());
   }
 
   @Test
@@ -792,17 +789,15 @@ public class StreamWriterTest {
   }
 
   @Test
-  public void testShutDown() throws Exception {
-    ApiFuture apiFuture = EasyMock.createMock(ApiFuture.class);
-    StreamWriter writer = EasyMock.createMock(StreamWriter.class);
-    EasyMock.expect(writer.append(createAppendRequest(new String[] {"A"}, 0L)))
-        .andReturn(apiFuture);
-    EasyMock.expect(writer.awaitTermination(1, TimeUnit.MINUTES)).andReturn(true);
-    writer.shutdown();
-    EasyMock.expectLastCall().once();
-    EasyMock.replay(writer);
-    sendTestMessage(writer, new String[] {"A"});
-    writer.shutdown();
-    assertTrue(writer.awaitTermination(1, TimeUnit.MINUTES));
+  public void testClose() throws Exception {
+    StreamWriter writer = getTestStreamWriterBuilder().build();
+    writer.close();
+    try {
+      writer.shutdown();
+      fail("Should throw");
+    } catch (IllegalStateException e) {
+      LOG.info(e.toString());
+      assertEquals("Cannot shut down a writer already shut-down.", e.getMessage());
+    }
   }
 }

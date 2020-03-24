@@ -17,8 +17,6 @@ syntax = "proto2";
 
 package com.google.cloud.bigquery.storage.test;
 
-import "google/protobuf/descriptor.proto";
-
 enum TestEnum {
   TestEnum0 = 0;
   TestEnum1 = 1;

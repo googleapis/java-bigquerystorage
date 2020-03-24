@@ -65,7 +65,7 @@ import org.threeten.bp.Duration;
  * <p>{@link StreamWriter} will use the credentials set on the channel, which uses application
  * default credentials through {@link GoogleCredentials#getApplicationDefault} by default.
  */
-public class StreamWriter {
+public class StreamWriter implements AutoCloseable{
   private static final Logger LOG = Logger.getLogger(StreamWriter.class.getName());
 
   private final String streamName;
@@ -264,15 +264,19 @@ public class StreamWriter {
       messagesWaiter.waitOnElementCount();
       messagesWaiter.waitOnSizeLimit(inflightBatch.getByteSize());
       responseObserver.addInflightBatch(inflightBatch);
-      LOG.info("before send");
       clientStream.send(request);
-      LOG.info("after send");
 
       synchronized (messagesWaiter) {
         messagesWaiter.incrementPendingCount(1);
         messagesWaiter.incrementPendingSize(inflightBatch.getByteSize());
       }
     }
+  }
+
+  @Override
+  public void close() {
+    shutdown();
+    // awaitTermination(1, TimeUnit.MINUTES);
   }
 
   // The batch of messages that is being sent/processed.
@@ -405,7 +409,7 @@ public class StreamWriter {
    */
   public void shutdown() {
     Preconditions.checkState(
-        !shutdown.getAndSet(true), "Cannot shut down a publisher already shut-down.");
+        !shutdown.getAndSet(true), "Cannot shut down a writer already shut-down.");
     if (currentAlarmFuture != null && activeAlarm.getAndSet(false)) {
       currentAlarmFuture.cancel(false);
     }
@@ -460,9 +464,7 @@ public class StreamWriter {
     static final long DEFAULT_ELEMENT_COUNT_THRESHOLD = 100L;
     static final long DEFAULT_REQUEST_BYTES_THRESHOLD = 100 * 1024L; // 100 kB
     static final Duration DEFAULT_DELAY_THRESHOLD = Duration.ofMillis(1);
-    static final Duration DEFAULT_INITIAL_RPC_TIMEOUT = Duration.ofSeconds(5);
-    static final Duration DEFAULT_TOTAL_TIMEOUT = Duration.ofSeconds(600);
-    public static final FlowControlSettings DEFAULT_FLOW_CONTROL_SETTINGS =
+    static final FlowControlSettings DEFAULT_FLOW_CONTROL_SETTINGS =
         FlowControlSettings.newBuilder()
             .setLimitExceededBehavior(FlowController.LimitExceededBehavior.Block)
             .setMaxOutstandingElementCount(1000L)
@@ -477,9 +479,8 @@ public class StreamWriter {
             .build();
     public static final RetrySettings DEFAULT_RETRY_SETTINGS =
         RetrySettings.newBuilder()
-            .setTotalTimeout(DEFAULT_TOTAL_TIMEOUT)
+            .setMaxRetryDelay(Duration.ofSeconds(60))
             .setInitialRetryDelay(Duration.ofMillis(100))
-            .setMaxRetryDelay(Duration.ofSeconds(20))
             .setMaxAttempts(3)
             .build();
     static final boolean DEFAULT_ENABLE_MESSAGE_ORDERING = false;
@@ -730,9 +731,11 @@ public class StreamWriter {
           if (streamWriter.currentRetries < streamWriter.getRetrySettings().getMaxAttempts()
               && !streamWriter.shutdown.get()) {
             streamWriter.refreshAppend();
-            Thread.sleep(
-                streamWriter.getRetrySettings().getInitialRetryDelay().toMillis()
-                    + Duration.ofSeconds(5).toMillis());
+            // Currently there is a bug that it took reconnected stream 5 seconds to pick up
+            // stream count. So wait at least 5 seconds before sending a new request.
+            Thread.sleep(Math.min(
+                streamWriter.getRetrySettings().getInitialRetryDelay().toMillis(),
+                Duration.ofSeconds(5).toMillis()));
             streamWriter.writeBatch(inflightBatch);
             synchronized (streamWriter.currentRetries) {
               streamWriter.currentRetries++;
