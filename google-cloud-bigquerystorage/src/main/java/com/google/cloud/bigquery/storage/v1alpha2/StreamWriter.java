@@ -187,7 +187,11 @@ public class StreamWriter implements AutoCloseable {
     return outstandingAppend.appendResult;
   }
 
-  public void refreshAppend() throws IOException {
+  /**
+   * Re-establishes a stream connection.
+   * @throws IOException
+   */
+  private void refreshAppend() throws IOException {
     synchronized (this) {
       Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
       if (stub != null) {
