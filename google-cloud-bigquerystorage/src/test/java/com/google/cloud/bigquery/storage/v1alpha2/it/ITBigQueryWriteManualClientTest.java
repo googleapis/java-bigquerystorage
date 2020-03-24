@@ -176,18 +176,21 @@ public class ITBigQueryWriteManualClientTest {
             .build()) {
       LOG.info("Sending one message");
       ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(createAppendRequest(writeStream.getName(), new String[]{"aaa"}).build());
+          streamWriter.append(
+              createAppendRequest(writeStream.getName(), new String[] {"aaa"}).build());
       assertEquals(0, response.get().getOffset());
 
       LOG.info("Sending two more messages");
       ApiFuture<AppendRowsResponse> response1 =
           streamWriter.append(
-              createAppendRequest(writeStream.getName(), new String[]{"bbb", "ccc"}).build());
+              createAppendRequest(writeStream.getName(), new String[] {"bbb", "ccc"}).build());
       ApiFuture<AppendRowsResponse> response2 =
-          streamWriter.append(createAppendRequest(writeStream.getName(), new String[]{"ddd"}).build());
+          streamWriter.append(
+              createAppendRequest(writeStream.getName(), new String[] {"ddd"}).build());
       assertEquals(1, response1.get().getOffset());
       assertEquals(3, response2.get().getOffset());
-    } finally {}
+    } finally {
+    }
 
     TableResult result =
         bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
@@ -216,18 +219,19 @@ public class ITBigQueryWriteManualClientTest {
       LOG.info("Sending two messages");
       ApiFuture<AppendRowsResponse> response =
           streamWriter.append(
-              createAppendRequestComplicateType(writeStream.getName(), new String[]{"aaa"})
+              createAppendRequestComplicateType(writeStream.getName(), new String[] {"aaa"})
                   .setOffset(Int64Value.of(0L))
                   .build());
       assertEquals(0, response.get().getOffset());
 
       ApiFuture<AppendRowsResponse> response2 =
           streamWriter.append(
-              createAppendRequestComplicateType(writeStream.getName(), new String[]{"bbb"})
+              createAppendRequestComplicateType(writeStream.getName(), new String[] {"bbb"})
                   .setOffset(Int64Value.of(1L))
                   .build());
       assertEquals(1, response2.get().getOffset());
-    } finally {}
+    } finally {
+    }
 
     // Nothing showed up since rows are not committed.
     TableResult result =
@@ -276,21 +280,22 @@ public class ITBigQueryWriteManualClientTest {
                 .setWriteStream(
                     WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
                 .build());
-    try (
-      StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build()) {
+    try (StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build()) {
 
-      AppendRowsRequest request = createAppendRequest(writeStream.getName(), new String[]{"aaa"}).build();
+      AppendRowsRequest request =
+          createAppendRequest(writeStream.getName(), new String[] {"aaa"}).build();
       request
           .toBuilder()
           .setProtoRows(request.getProtoRows().toBuilder().clearWriterSchema().build())
           .build();
       ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(createAppendRequest(writeStream.getName(), new String[]{"aaa"}).build());
+          streamWriter.append(
+              createAppendRequest(writeStream.getName(), new String[] {"aaa"}).build());
       assertEquals(0L, response.get().getOffset());
       // Send in a bogus stream name should cause in connection error.
       ApiFuture<AppendRowsResponse> response2 =
           streamWriter.append(
-              createAppendRequest(writeStream.getName(), new String[]{"aaa"})
+              createAppendRequest(writeStream.getName(), new String[] {"aaa"})
                   .setWriteStream("blah")
                   .build());
       try {
@@ -306,39 +311,42 @@ public class ITBigQueryWriteManualClientTest {
       }
       // We can keep sending requests on the same stream.
       ApiFuture<AppendRowsResponse> response3 =
-          streamWriter.append(createAppendRequest(writeStream.getName(), new String[]{"aaa"}).build());
+          streamWriter.append(
+              createAppendRequest(writeStream.getName(), new String[] {"aaa"}).build());
       assertEquals(1L, response3.get().getOffset());
     } finally {
     }
   }
 
-	@Test
-	public void testStreamReconnect() throws IOException, InterruptedException, ExecutionException {
-		WriteStream writeStream =
-				client.createWriteStream(
-						CreateWriteStreamRequest.newBuilder()
-								.setParent(tableId)
-								.setWriteStream(
-										WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
-								.build());
-		try (
-				StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build()) {
-			ApiFuture<AppendRowsResponse> response =
-					streamWriter.append(
-							createAppendRequest(writeStream.getName(), new String[]{"aaa"}).setOffset(Int64Value.of(0L)).build());
-			assertEquals(0L, response.get().getOffset());
-		} finally {
-		}
+  @Test
+  public void testStreamReconnect() throws IOException, InterruptedException, ExecutionException {
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(tableId)
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+    try (StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build()) {
+      ApiFuture<AppendRowsResponse> response =
+          streamWriter.append(
+              createAppendRequest(writeStream.getName(), new String[] {"aaa"})
+                  .setOffset(Int64Value.of(0L))
+                  .build());
+      assertEquals(0L, response.get().getOffset());
+    } finally {
+    }
 
-		try (
-				StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build()) {
-			// Currently there is a bug that reconnection must wait 5 seconds to get the real row count.
-			Thread.sleep(5000L);
-			ApiFuture<AppendRowsResponse> response =
-					streamWriter.append(
-							createAppendRequest(writeStream.getName(), new String[]{"bbb"}).setOffset(Int64Value.of(1L)).build());
-			assertEquals(1L, response.get().getOffset());
-		} finally {
-		}
-	}
+    try (StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build()) {
+      // Currently there is a bug that reconnection must wait 5 seconds to get the real row count.
+      Thread.sleep(5000L);
+      ApiFuture<AppendRowsResponse> response =
+          streamWriter.append(
+              createAppendRequest(writeStream.getName(), new String[] {"bbb"})
+                  .setOffset(Int64Value.of(1L))
+                  .build());
+      assertEquals(1L, response.get().getOffset());
+    } finally {
+    }
+  }
 }

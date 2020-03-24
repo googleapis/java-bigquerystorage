@@ -65,7 +65,7 @@ import org.threeten.bp.Duration;
  * <p>{@link StreamWriter} will use the credentials set on the channel, which uses application
  * default credentials through {@link GoogleCredentials#getApplicationDefault} by default.
  */
-public class StreamWriter implements AutoCloseable{
+public class StreamWriter implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(StreamWriter.class.getName());
 
   private final String streamName;
@@ -733,9 +733,10 @@ public class StreamWriter implements AutoCloseable{
             streamWriter.refreshAppend();
             // Currently there is a bug that it took reconnected stream 5 seconds to pick up
             // stream count. So wait at least 5 seconds before sending a new request.
-            Thread.sleep(Math.min(
-                streamWriter.getRetrySettings().getInitialRetryDelay().toMillis(),
-                Duration.ofSeconds(5).toMillis()));
+            Thread.sleep(
+                Math.min(
+                    streamWriter.getRetrySettings().getInitialRetryDelay().toMillis(),
+                    Duration.ofSeconds(5).toMillis()));
             streamWriter.writeBatch(inflightBatch);
             synchronized (streamWriter.currentRetries) {
               streamWriter.currentRetries++;
