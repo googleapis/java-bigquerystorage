@@ -189,6 +189,7 @@ public class StreamWriter implements AutoCloseable {
 
   /**
    * Re-establishes a stream connection.
+   *
    * @throws IOException
    */
   private void refreshAppend() throws IOException {
@@ -204,12 +205,12 @@ public class StreamWriter implements AutoCloseable {
       messagesBatch.resetAttachSchema();
       bidiStreamingCallable = stub.appendRowsCallable();
       clientStream = bidiStreamingCallable.splitCall(responseObserver);
-      try {
-        while (!clientStream.isSendReady()) {
-          Thread.sleep(100);
-        }
-      } catch (InterruptedException e) {
+    }
+    try {
+      while (!clientStream.isSendReady()) {
+        Thread.sleep(10);
       }
+    } catch (InterruptedException expected) {
     }
   }
 
@@ -277,9 +278,12 @@ public class StreamWriter implements AutoCloseable {
     }
   }
 
+  /** Close the stream writer. Shut down all resources. */
   @Override
   public void close() {
     shutdown();
+    // There is some problem waiting for resource to shutdown. So comment this statement out since
+    // it will cause a minute hang.
     // awaitTermination(1, TimeUnit.MINUTES);
   }
 
@@ -536,7 +540,11 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
-    // Batching options
+    /**
+     * Sets the {@code BatchSettings} on the writer.
+     * @param batchingSettings
+     * @return
+     */
     public Builder setBatchingSettings(BatchingSettings batchingSettings) {
       Preconditions.checkNotNull(batchingSettings);
 
@@ -605,6 +613,11 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
+    /**
+     * Sets the {@code RetrySettings} on the writer.
+     * @param retrySettings
+     * @return
+     */
     public Builder setRetrySettings(RetrySettings retrySettings) {
       Preconditions.checkNotNull(retrySettings);
       Preconditions.checkArgument(
@@ -614,6 +627,7 @@ public class StreamWriter implements AutoCloseable {
       this.retrySettings = retrySettings;
       return this;
     }
+
     /** Gives the ability to set a custom executor to be used by the library. */
     public Builder setExecutorProvider(ExecutorProvider executorProvider) {
       this.executorProvider = Preconditions.checkNotNull(executorProvider);
@@ -626,6 +640,7 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
+    /** Builds the {@code StreamWriter}. */
     public StreamWriter build() throws IOException {
       return new StreamWriter(this);
     }
