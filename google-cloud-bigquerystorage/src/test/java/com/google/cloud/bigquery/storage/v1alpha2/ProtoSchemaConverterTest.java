@@ -26,7 +26,7 @@ public class ProtoSchemaConverterTest {
     ProtoBufProto.ProtoSchema protoSchema =
         ProtoSchemaConverter.convert(testProto.getDescriptorForType());
     Assert.assertEquals(
-        "name: \"__S0\"\n"
+        "name: \"__ROOT__\"\n"
             + "field {\n"
             + "  name: \"int32_value\"\n"
             + "  number: 1\n"
@@ -102,7 +102,7 @@ public class ProtoSchemaConverterTest {
     ProtoBufProto.ProtoSchema protoSchema =
         ProtoSchemaConverter.convert(testProto.getDescriptorForType());
     Assert.assertEquals(
-        "name: \"__S0\"\n"
+        "name: \"__ROOT__\"\n"
             + "field {\n"
             + "  name: \"nested_repeated_type\"\n"
             + "  number: 1\n"
