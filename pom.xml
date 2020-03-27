@@ -241,42 +241,42 @@
             <ignoredUnusedDeclaredDependencies>org.objenesis:objenesis</ignoredUnusedDeclaredDependencies>
           </configuration>
         </plugin>
+
+        <!-- flatten maven plugin -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>flatten-maven-plugin</artifactId>
+          <version>1.2.2-SNAPSHOT</version>
+          <executions>
+            <!-- enable flattening -->
+            <execution>
+              <id>flatten</id>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>flatten</goal>
+              </goals>
+            </execution>
+            <!-- ensure proper cleanup -->
+            <execution>
+              <id>flatten.clean</id>
+              <phase>clean</phase>
+              <goals>
+                <goal>clean</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <flattenMode>oss</flattenMode>
+            <flattenDependencyMode>all</flattenDependencyMode>
+            <pomElements>
+              <build>remove</build>
+            </pomElements>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
 
     <plugins>
-      <!-- flatten maven plugin -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>flatten-maven-plugin</artifactId>
-        <version>1.2.2-SNAPSHOT</version>
-        <executions>
-          <!-- enable flattening -->
-          <execution>
-            <id>flatten</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>flatten</goal>
-            </goals>
-          </execution>
-          <!-- ensure proper cleanup -->
-          <execution>
-            <id>flatten.clean</id>
-            <phase>clean</phase>
-            <goals>
-              <goal>clean</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <flattenMode>oss</flattenMode>
-          <flattenDependencyMode>all</flattenDependencyMode>
-          <pomElements>
-            <build>remove</build>
-          </pomElements>
-        </configuration>
-      </plugin>
-
       <!-- ban duplicate class -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -313,7 +313,6 @@
           </dependency>
         </dependencies>
       </plugin>
-
     </plugins>
   </build>
 
