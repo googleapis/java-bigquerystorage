@@ -328,7 +328,7 @@
     <module>grpc-google-cloud-bigquerystorage-v1</module>
     <module>google-cloud-bigquerystorage</module>
     <module>google-cloud-bigquerystorage-bom</module>
-    <module>bigquerystorage-google-cloud-samples</module>
+    <module>samples</module>
   </modules>
 
   <reporting>
