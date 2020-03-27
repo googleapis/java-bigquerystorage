@@ -31,12 +31,8 @@ import java.util.*;
 public class ProtoSchemaConverter {
   private static class StructName {
     public String getName() {
-      if (count == 0) {
-        count++;
-        return "__ROOT__";
-      } else {
-        return "__S" + (count++);
-      }
+      count++;
+      return count == 1 ? "__ROOT__" : "__S" + count;
     }
 
     private int count = 0;
