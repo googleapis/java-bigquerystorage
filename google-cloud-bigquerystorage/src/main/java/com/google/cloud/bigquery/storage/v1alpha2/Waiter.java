@@ -48,12 +48,8 @@ class Waiter {
     this.pendingSize += delta;
   }
 
-<<<<<<< HEAD
   private void wait(String message) {
-=======
-  private void handleOverLimit(String message) {
     boolean interrupted = false;
->>>>>>> 31542b079c2ead0522fb65d0fc6564e4b4ac7ee9
     try {
       LOG.fine("Wait on: " + message);
       wait();
