@@ -498,7 +498,7 @@ public class StreamWriter implements AutoCloseable {
             .setExecutorThreadCount(THREADS_PER_CPU * Runtime.getRuntime().availableProcessors())
             .build();
 
-    String streamName;
+    private String streamName;
     private String endpoint = BigQueryWriteSettings.getDefaultEndpoint();
 
     // Batching options
