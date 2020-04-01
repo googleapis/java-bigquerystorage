@@ -189,7 +189,7 @@ public class ITBigQueryWriteManualClientTest {
               createAppendRequest(writeStream.getName(), new String[] {"ddd"}).build());
       assertEquals(1, response1.get().getOffset());
       assertEquals(3, response2.get().getOffset());
-    } finally {
+    } 
     }
 
     TableResult result =
