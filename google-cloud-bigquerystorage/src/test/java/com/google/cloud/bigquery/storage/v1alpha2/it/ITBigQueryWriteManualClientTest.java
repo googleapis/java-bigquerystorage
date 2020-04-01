@@ -189,12 +189,7 @@ public class ITBigQueryWriteManualClientTest {
               createAppendRequest(writeStream.getName(), new String[] {"ddd"}).build());
       assertEquals(1, response1.get().getOffset());
       assertEquals(3, response2.get().getOffset());
-<<<<<<< HEAD
     }
-=======
-    } 
-   
->>>>>>> 31542b079c2ead0522fb65d0fc6564e4b4ac7ee9
 
     TableResult result =
         bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
