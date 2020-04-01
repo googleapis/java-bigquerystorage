@@ -542,6 +542,7 @@ public class StreamWriter implements AutoCloseable {
 
     /**
      * Sets the {@code BatchSettings} on the writer.
+     *
      * @param batchingSettings
      * @return
      */
@@ -615,6 +616,7 @@ public class StreamWriter implements AutoCloseable {
 
     /**
      * Sets the {@code RetrySettings} on the writer.
+     *
      * @param retrySettings
      * @return
      */
