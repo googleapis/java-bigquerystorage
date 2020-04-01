@@ -49,7 +49,7 @@ class Waiter {
     this.pendingSize += delta;
   }
 
-  private void overLimit(String message) {
+  private void handleOverLimit(String message) {
     boolean interrupted = false;
     try {
       if (this.flowControlSettings.getLimitExceededBehavior()
