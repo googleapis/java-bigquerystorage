@@ -190,7 +190,7 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals(1, response1.get().getOffset());
       assertEquals(3, response2.get().getOffset());
     } 
-    }
+   
 
     TableResult result =
         bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
