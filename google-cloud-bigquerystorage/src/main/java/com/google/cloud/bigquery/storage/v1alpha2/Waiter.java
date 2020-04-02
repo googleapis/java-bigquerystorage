@@ -18,7 +18,9 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.core.InternalApi;
 import com.google.api.gax.batching.FlowControlSettings;
-import com.google.api.gax.batching.FlowController;
+import com.google.api.gax.grpc.GrpcStatusCode;
+import com.google.api.gax.rpc.UnimplementedException;
+import io.grpc.Status;
 import java.util.logging.Logger;
 
 /**
@@ -49,33 +51,33 @@ class Waiter {
     this.pendingSize += delta;
   }
 
-  private void overLimit(String message) {
+  private void wait(String message) {
     boolean interrupted = false;
     try {
-      if (this.flowControlSettings.getLimitExceededBehavior()
-          == FlowController.LimitExceededBehavior.Block) {
-        try {
-          LOG.fine("Wait on: " + message);
-          wait();
-        } catch (InterruptedException e) {
-          // Ignored, uninterruptibly.
-          interrupted = true;
-        }
-      } else if (this.flowControlSettings.getLimitExceededBehavior()
-          == FlowController.LimitExceededBehavior.ThrowException) {
+      LOG.fine("Wait on: " + message);
+      wait();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  private void handleOverLimit(String message) {
+    boolean interrupted = false;
+    switch (this.flowControlSettings.getLimitExceededBehavior()) {
+      case Block:
+        wait(message);
+        break;
+      case ThrowException:
         throw new IllegalStateException("FlowControl limit exceeded: " + message);
-      } else if (this.flowControlSettings.getLimitExceededBehavior()
-          == FlowController.LimitExceededBehavior.Ignore) {
+      case Ignore:
         return;
-      } else {
-        throw new IllegalStateException(
+      default:
+        throw new UnimplementedException(
             "Unknown behavior setting: "
-                + this.flowControlSettings.getLimitExceededBehavior().toString());
-      }
-    } finally {
-      if (interrupted) {
-        Thread.currentThread().interrupt();
-      }
+                + this.flowControlSettings.getLimitExceededBehavior().toString(),
+            null,
+            GrpcStatusCode.of(Status.Code.UNIMPLEMENTED),
+            false);
     }
   }
 
@@ -86,7 +88,7 @@ class Waiter {
             + " "
             + this.flowControlSettings.getMaxOutstandingElementCount());
     while (this.pendingCount >= this.flowControlSettings.getMaxOutstandingElementCount()) {
-      overLimit("Element count");
+      handleOverLimit("Element count");
     }
   }
 
@@ -98,7 +100,7 @@ class Waiter {
             + this.flowControlSettings.getMaxOutstandingRequestBytes());
     while (this.pendingSize + incomingSize
         >= this.flowControlSettings.getMaxOutstandingRequestBytes()) {
-      overLimit("Byte size");
+      handleOverLimit("Byte size");
     }
   }
 

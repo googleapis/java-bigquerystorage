@@ -597,7 +597,6 @@ public class StreamWriterTest {
   @Test
   public void testBuilderParametersAndDefaults() {
     StreamWriter.Builder builder = StreamWriter.newBuilder(TEST_STREAM);
-    assertEquals(TEST_STREAM.toString(), builder.streamName);
     assertEquals(StreamWriter.Builder.DEFAULT_EXECUTOR_PROVIDER, builder.executorProvider);
     assertEquals(
         StreamWriter.Builder.DEFAULT_REQUEST_BYTES_THRESHOLD,
