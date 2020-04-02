@@ -60,10 +60,6 @@
       <artifactId>api-common</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.google.api</groupId>
-      <artifactId>gax</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
     </dependency>
@@ -103,6 +99,10 @@
     <dependency>
       <groupId>org.threeten</groupId>
       <artifactId>threetenbp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
     </dependency>
 
     <!-- Test dependencies -->
