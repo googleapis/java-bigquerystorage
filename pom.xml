@@ -317,6 +317,7 @@
   </build>
 
   <modules>
+    <module>samples</module>
     <module>proto-google-cloud-bigquerystorage-v1alpha2</module>
     <module>proto-google-cloud-bigquerystorage-v1beta1</module>
     <module>proto-google-cloud-bigquerystorage-v1beta2</module>
@@ -327,7 +328,6 @@
     <module>grpc-google-cloud-bigquerystorage-v1</module>
     <module>google-cloud-bigquerystorage</module>
     <module>google-cloud-bigquerystorage-bom</module>
-    <module>samples</module>
   </modules>
 
   <reporting>
