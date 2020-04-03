@@ -77,7 +77,6 @@
     <threeten.version>1.4.2</threeten.version>
     <javax.annotations.version>1.3.2</javax.annotations.version>
     <animal-sniffer.version>1.18</animal-sniffer.version>
-    <opencensus-api.version>0.25.0</opencensus-api.version>
   </properties>
 
   <pluginRepositories>
@@ -155,11 +154,6 @@
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-bigquerystorage</artifactId>
         <version>0.126.1-beta-SNAPSHOT</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
-      </dependency>
-      <dependency>
-        <groupId>io.opencensus</groupId>
-        <artifactId>opencensus-api</artifactId>
-        <version>${opencensus-api.version}</version>
       </dependency>
 
       <dependency>
@@ -317,7 +311,6 @@
   </build>
 
   <modules>
-    <module>samples</module>
     <module>proto-google-cloud-bigquerystorage-v1alpha2</module>
     <module>proto-google-cloud-bigquerystorage-v1beta1</module>
     <module>proto-google-cloud-bigquerystorage-v1beta2</module>
