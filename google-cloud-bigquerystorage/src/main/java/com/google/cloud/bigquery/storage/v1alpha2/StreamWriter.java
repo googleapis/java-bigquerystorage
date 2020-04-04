@@ -778,7 +778,6 @@ public class StreamWriter implements AutoCloseable {
             inflightBatch.onFailure(e);
           }
         } else {
-          LOG.info("Set error response");
           synchronized (streamWriter.currentRetries) {
             streamWriter.currentRetries = 0;
           }
