@@ -475,10 +475,8 @@ public class StreamWriterTest {
     } catch (ExecutionException e) {
       assertEquals(transientError.toString(), e.getCause().getCause().toString());
     }
-    LOG.info("shutting down");
     writer.shutdown();
-    LOG.info("Wait for termination");
-    writer.awaitTermination(1, TimeUnit.MINUTES);
+    assertTrue(writer.awaitTermination(1, TimeUnit.MINUTES));
   }
 
   @Test

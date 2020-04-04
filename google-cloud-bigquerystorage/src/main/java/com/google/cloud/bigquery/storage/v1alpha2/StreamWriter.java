@@ -423,13 +423,10 @@ public class StreamWriter implements AutoCloseable {
       currentAlarmFuture.cancel(false);
     }
     writeAllOutstanding();
-    LOG.info("Wating for complete");
     messagesWaiter.waitComplete();
     if (clientStream.isSendReady()) {
-      LOG.info("close send");
       clientStream.closeSend();
     }
-    LOG.info("stssss");
     backgroundResources.shutdown();
   }
 
