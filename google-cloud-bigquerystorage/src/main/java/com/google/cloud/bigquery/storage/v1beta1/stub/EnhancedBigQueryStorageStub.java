@@ -15,6 +15,8 @@
  */
 package com.google.cloud.bigquery.storage.v1beta1.stub;
 
+import static com.google.cloud.bigquery.storage.v1beta1.BigQueryStorageExceptionFactory.newBigQueryStorageException;
+
 import com.google.api.core.InternalApi;
 import com.google.api.gax.core.BackgroundResource;
 import com.google.api.gax.rpc.ClientContext;
@@ -45,51 +47,55 @@ public class EnhancedBigQueryStorageStub implements BackgroundResource {
   public static EnhancedBigQueryStorageStub create(EnhancedBigQueryStorageStubSettings settings)
       throws IOException {
     // Configure the base settings.
-    BigQueryStorageStubSettings.Builder baseSettingsBuilder =
-        BigQueryStorageStubSettings.newBuilder()
-            .setTransportChannelProvider(settings.getTransportChannelProvider())
-            .setEndpoint(settings.getEndpoint())
-            .setHeaderProvider(settings.getHeaderProvider())
-            .setCredentialsProvider(settings.getCredentialsProvider())
-            .setStreamWatchdogCheckInterval(settings.getStreamWatchdogCheckInterval())
-            .setStreamWatchdogProvider(settings.getStreamWatchdogProvider());
+    try {
+      BigQueryStorageStubSettings.Builder baseSettingsBuilder =
+          BigQueryStorageStubSettings.newBuilder()
+              .setTransportChannelProvider(settings.getTransportChannelProvider())
+              .setEndpoint(settings.getEndpoint())
+              .setHeaderProvider(settings.getHeaderProvider())
+              .setCredentialsProvider(settings.getCredentialsProvider())
+              .setStreamWatchdogCheckInterval(settings.getStreamWatchdogCheckInterval())
+              .setStreamWatchdogProvider(settings.getStreamWatchdogProvider());
 
-    // CreateReadSession is a simple pass-through.
-    baseSettingsBuilder
-        .createReadSessionSettings()
-        .setRetryableCodes(settings.createReadSessionSettings().getRetryableCodes())
-        .setRetrySettings(settings.createReadSessionSettings().getRetrySettings());
+      // CreateReadSession is a simple pass-through.
+      baseSettingsBuilder
+          .createReadSessionSettings()
+          .setRetryableCodes(settings.createReadSessionSettings().getRetryableCodes())
+          .setRetrySettings(settings.createReadSessionSettings().getRetrySettings());
 
-    // ReadRows is a simple pass-through.
-    baseSettingsBuilder
-        .readRowsSettings()
-        .setRetryableCodes(settings.readRowsSettings().getRetryableCodes())
-        .setRetrySettings(settings.readRowsSettings().getRetrySettings())
-        .setResumptionStrategy(settings.readRowsSettings().getResumptionStrategy())
-        .setIdleTimeout(settings.readRowsSettings().getIdleTimeout());
+      // ReadRows is a simple pass-through.
+      baseSettingsBuilder
+          .readRowsSettings()
+          .setRetryableCodes(settings.readRowsSettings().getRetryableCodes())
+          .setRetrySettings(settings.readRowsSettings().getRetrySettings())
+          .setResumptionStrategy(settings.readRowsSettings().getResumptionStrategy())
+          .setIdleTimeout(settings.readRowsSettings().getIdleTimeout());
 
-    // BatchCreateReadSessionStreams is a simple pass-through.
-    baseSettingsBuilder
-        .batchCreateReadSessionStreamsSettings()
-        .setRetryableCodes(settings.batchCreateReadSessionStreamsSettings().getRetryableCodes())
-        .setRetrySettings(settings.batchCreateReadSessionStreamsSettings().getRetrySettings());
+      // BatchCreateReadSessionStreams is a simple pass-through.
+      baseSettingsBuilder
+          .batchCreateReadSessionStreamsSettings()
+          .setRetryableCodes(settings.batchCreateReadSessionStreamsSettings().getRetryableCodes())
+          .setRetrySettings(settings.batchCreateReadSessionStreamsSettings().getRetrySettings());
 
-    // FinalizeStream is a simple pass-through.
-    baseSettingsBuilder
-        .finalizeStreamSettings()
-        .setRetryableCodes(settings.finalizeStreamSettings().getRetryableCodes())
-        .setRetrySettings(settings.finalizeStreamSettings().getRetrySettings());
+      // FinalizeStream is a simple pass-through.
+      baseSettingsBuilder
+          .finalizeStreamSettings()
+          .setRetryableCodes(settings.finalizeStreamSettings().getRetryableCodes())
+          .setRetrySettings(settings.finalizeStreamSettings().getRetrySettings());
 
-    // SplitReadStream is a simple pass-through.
-    baseSettingsBuilder
-        .splitReadStreamSettings()
-        .setRetryableCodes(settings.splitReadStreamSettings().getRetryableCodes())
-        .setRetrySettings(settings.splitReadStreamSettings().getRetrySettings());
+      // SplitReadStream is a simple pass-through.
+      baseSettingsBuilder
+          .splitReadStreamSettings()
+          .setRetryableCodes(settings.splitReadStreamSettings().getRetryableCodes())
+          .setRetrySettings(settings.splitReadStreamSettings().getRetrySettings());
 
-    BigQueryStorageStubSettings baseSettings = baseSettingsBuilder.build();
-    ClientContext clientContext = ClientContext.create(baseSettings);
-    GrpcBigQueryStorageStub stub = new GrpcBigQueryStorageStub(baseSettings, clientContext);
-    return new EnhancedBigQueryStorageStub(stub);
+      BigQueryStorageStubSettings baseSettings = baseSettingsBuilder.build();
+      ClientContext clientContext = ClientContext.create(baseSettings);
+      GrpcBigQueryStorageStub stub = new GrpcBigQueryStorageStub(baseSettings, clientContext);
+      return new EnhancedBigQueryStorageStub(stub);
+    } catch (Exception e) {
+      throw newBigQueryStorageException(e);
+    }
   }
 
   @InternalApi("Visible for testing")
