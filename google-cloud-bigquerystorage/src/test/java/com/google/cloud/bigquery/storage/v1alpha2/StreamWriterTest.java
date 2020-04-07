@@ -124,6 +124,12 @@ public class StreamWriterTest {
   }
 
   @Test
+  public void testTableName() throws Exception {
+    StreamWriter writer = getTestStreamWriterBuilder().build();
+    assertEquals("projects/p/datasets/d/tables/t", writer.getTableNameString());
+  }
+
+  @Test
   public void testAppendByDuration() throws Exception {
     StreamWriter writer =
         getTestStreamWriterBuilder()

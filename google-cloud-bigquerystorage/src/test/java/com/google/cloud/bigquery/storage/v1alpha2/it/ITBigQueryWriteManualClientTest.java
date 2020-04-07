@@ -23,18 +23,19 @@ import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.storage.test.Test.*;
-import com.google.cloud.bigquery.storage.v1alpha2.BigQueryWriteClient;
-import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto;
-import com.google.cloud.bigquery.storage.v1alpha2.ProtoSchemaConverter;
+import com.google.cloud.bigquery.storage.v1alpha2.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
-import com.google.cloud.bigquery.storage.v1alpha2.StreamWriter;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.protobuf.Int64Value;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
+
+import com.google.protobuf.MessageLite;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -155,8 +156,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testBatchWriteWithCommittedStream()
-      throws IOException, InterruptedException, ExecutionException {
+  public void testSWBatchWriteWithCommittedStream() throws Exception {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -202,8 +202,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testComplicateSchemaWithPendingStream()
-      throws IOException, InterruptedException, ExecutionException {
+  public void testSWComplicateSchemaWithPendingStream() throws Exception {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -266,7 +265,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testStreamError() throws IOException, InterruptedException, ExecutionException {
+  public void testSWStreamError() throws Exception {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -313,7 +312,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testStreamReconnect() throws IOException, InterruptedException, ExecutionException {
+  public void testSWStreamReconnect() throws Exception {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -339,6 +338,16 @@ public class ITBigQueryWriteManualClientTest {
                   .setOffset(Int64Value.of(1L))
                   .build());
       assertEquals(1L, response.get().getOffset());
+    }
+  }
+  @Test
+  public void testMultipleDWMultiThread() throws Exception {
+    FooType fa = FooType.newBuilder().setFoo("aaa").build();
+    FooType fb = FooType.newBuilder().setFoo("bbb").build();
+
+    try (DirectWriter writer = DirectWriter.newBuilder(tableId, FooType.getDescriptor()).build()) {
+      ApiFuture<Long> response = writer.append(new ArrayList<>(Arrays.asList((MessageLite)fa, (MessageLite)fb)));
+      assertEquals(0L, response.get().longValue());
     }
   }
 }
