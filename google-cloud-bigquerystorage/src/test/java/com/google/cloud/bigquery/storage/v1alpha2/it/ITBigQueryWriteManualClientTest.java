@@ -28,14 +28,15 @@ import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.protobuf.Int64Value;
+import com.google.protobuf.MessageLite;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
-
-import com.google.protobuf.MessageLite;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -340,14 +341,19 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals(1L, response.get().getOffset());
     }
   }
+
   @Test
   public void testMultipleDWMultiThread() throws Exception {
     FooType fa = FooType.newBuilder().setFoo("aaa").build();
     FooType fb = FooType.newBuilder().setFoo("bbb").build();
-
-    try (DirectWriter writer = DirectWriter.newBuilder(tableId, FooType.getDescriptor()).build()) {
-      ApiFuture<Long> response = writer.append(new ArrayList<>(Arrays.asList((MessageLite)fa, (MessageLite)fb)));
-      assertEquals(0L, response.get().longValue());
+    ExecutorService executor = Executors.newFixedThreadPool(10);
+    for (int i = 0; i < 10; i++) {
+      try (DirectWriter writer =
+          DirectWriter.newBuilder(tableId, FooType.getDescriptor()).build()) {
+        ApiFuture<Long> response =
+            writer.append(new ArrayList<>(Arrays.asList((MessageLite) fa, (MessageLite) fb)));
+        assertEquals(0L, response.get().longValue());
+      }
     }
   }
 }

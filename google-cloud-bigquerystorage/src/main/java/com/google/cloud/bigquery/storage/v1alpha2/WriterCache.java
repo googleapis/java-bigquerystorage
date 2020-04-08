@@ -1,5 +1,6 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import java.util.Date;
 import java.util.Map;
@@ -14,19 +15,18 @@ import org.threeten.bp.Duration;
  * minutes if not used. Code sample: WriterCache cache = WriterCache.getInstance(); StreamWriter
  * writer = cache.getWriter(); // Use... cache.returnWriter(writer);
  */
-public class StreamCache {
-  private static final Logger LOG = Logger.getLogger(StreamCache.class.getName());
+public class WriterCache {
+  private static final Logger LOG = Logger.getLogger(WriterCache.class.getName());
 
-  private static StreamCache instance;
+  private static WriterCache instance;
 
-  private Duration expireTime = Duration.ofSeconds(300);
   private ConcurrentHashMap<String, Map<String, Pair<StreamWriter, Long>>> cacheWithTimeout;
 
   private final BigQueryWriteClient stub;
   private final BigQueryWriteSettings stubSettings;
   private final CleanerThread cleanerThread;
 
-  private StreamCache() throws Exception {
+  private WriterCache(Duration expireTime) throws Exception {
     cacheWithTimeout = new ConcurrentHashMap<>();
     stubSettings = BigQueryWriteSettings.newBuilder().build();
     stub = BigQueryWriteClient.create(stubSettings);
@@ -41,9 +41,17 @@ public class StreamCache {
             });
   }
 
-  public static StreamCache getInstance() throws Exception {
+  public static WriterCache getInstance() throws Exception {
     if (instance == null) {
-      instance = new StreamCache();
+      instance = new WriterCache(Duration.ofMinutes(5));
+    }
+    return instance;
+  }
+
+  @VisibleForTesting
+  public static WriterCache getInstance(Duration expireTime) throws Exception {
+    if (instance == null) {
+      instance = new WriterCache(expireTime);
     }
     return instance;
   }
@@ -120,6 +128,22 @@ public class StreamCache {
   public void returnWriter(StreamWriter writer) {
     synchronized (cacheWithTimeout) {
       addWriterToCache(writer);
+    }
+  }
+
+  public int cachedTableCount() {
+    synchronized (cacheWithTimeout) {
+      return cacheWithTimeout.keySet().size();
+    }
+  }
+
+  public int cachedStreamCount(String tableName) {
+    synchronized (cacheWithTimeout) {
+      if (cacheWithTimeout.contains(tableName)) {
+        return cacheWithTimeout.get(tableName).values().size();
+      } else {
+        return 0;
+      }
     }
   }
 

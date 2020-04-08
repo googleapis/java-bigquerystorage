@@ -46,17 +46,16 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.threeten.bp.Duration;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.threeten.bp.Duration;
 
 /**
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
  *
- * This is to be used to managed streaming write when you are working with PENDING streams or want to explicitly
- * manage offset. In that most common cases when writing with COMMITTED stream without offset, please use a simpler
- * writer {@code DirectWriter}.
+ * <p>This is to be used to managed streaming write when you are working with PENDING streams or
+ * want to explicitly manage offset. In that most common cases when writing with COMMITTED stream
+ * without offset, please use a simpler writer {@code DirectWriter}.
  *
  * <p>A {@link StreamWrier} provides built-in capabilities to: handle batching of messages;
  * controlling memory utilization (through flow control); automatic connection re-establishment and
@@ -75,7 +74,8 @@ import java.util.regex.Pattern;
 public class StreamWriter implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(StreamWriter.class.getName());
 
-  private static String streamPatternString = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/.*";
+  private static String streamPatternString =
+      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/.*";
 
   private static Pattern streamPattern = Pattern.compile(streamPatternString);
 
@@ -119,7 +119,8 @@ public class StreamWriter implements AutoCloseable {
   private StreamWriter(Builder builder) throws Exception {
     Matcher matcher = streamPattern.matcher(builder.streamName);
     if (!matcher.matches()) {
-      throw new InvalidArgumentException(null, GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT), false);
+      throw new InvalidArgumentException(
+          null, GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT), false);
     }
     streamName = builder.streamName;
     tableName = matcher.group(1);
@@ -809,7 +810,7 @@ public class StreamWriter implements AutoCloseable {
           try {
             // Establish a new connection.
             streamWriter.refreshAppend();
-          } catch (IOException e) {
+          } catch (IOException | InterruptedException e) {
             LOG.info("Failed to establish a new connection");
           }
         }
@@ -829,7 +830,7 @@ public class StreamWriter implements AutoCloseable {
     private int batchedBytes;
     private final BatchingSettings batchingSettings;
     private Boolean attachSchema = true;
-    final private String streamName;
+    private final String streamName;
 
     private MessagesBatch(BatchingSettings batchingSettings, String streamName) {
       this.batchingSettings = batchingSettings;
@@ -839,7 +840,8 @@ public class StreamWriter implements AutoCloseable {
 
     // Get all the messages out in a batch.
     private InflightBatch popBatch() {
-      InflightBatch batch = new InflightBatch(messages, batchedBytes, this.streamName, this.attachSchema);
+      InflightBatch batch =
+          new InflightBatch(messages, batchedBytes, this.streamName, this.attachSchema);
       this.attachSchema = false;
       reset();
       return batch;
