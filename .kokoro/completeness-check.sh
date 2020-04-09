@@ -23,8 +23,8 @@ function println() { printf '%s\n' "$(now) $*"; }
 ## Run dependency list completeness check
 function completenessCheck() {
   # cd into dir containing flattened pom
-  cd "$1" || exit
-  echo "checking in dir: $1"
+  cd "$1" || return 1
+  echo "Checking in dir: $1"
 
   # Output dep list with compile scope generated using the original pom
   msg "Generating dependency list using original pom..."
@@ -36,7 +36,7 @@ function completenessCheck() {
 
   # Compare two dependency lists
   msg "Comparing dependency lists..."
-  diff .org-list.txt .new-list.txt >.diff.txt && msg "Success. No diff!" || msg "Diff found. Check .diff.txt file located in $1. Exiting with exit code $?." && exit 1
+  diff .org-list.txt .new-list.txt >.diff.txt && msg "Success. No diff!" && return 0|| msg "Diff found. Check .diff.txt file located in $1. Exiting with exit code $?." && return 1
 
   # cd back to root of git repo
   cd ..

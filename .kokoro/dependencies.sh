@@ -27,6 +27,16 @@ source ${scriptDir}/common.sh
 java -version
 echo $JOB_TYPE
 
+echo "****************** DEPENDENCY LIST COMPLETENESS CHECK *******************"
+source ${scriptDir}/completeness-check.sh
+
+for path in $(find -name ".flattened-pom.xml")
+do
+  dir=$(dirname "$path")
+  # Check flattened pom in each dir that contains it for completeness
+  completenessCheck "$dir"
+done
+
 export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=128m"
 
 # this should run maven enforcer
@@ -36,16 +46,3 @@ retry_with_backoff 3 10 \
     -Dclirr.skip=true
 
 mvn -B dependency:analyze -DfailOnWarning=true
-
-echo "****************** DEPENDENCY LIST COMPLETENESS CHECK *******************"
-source ${scriptDir}/completeness-check.sh
-
-## Locally install artifacts
-mvn verify -DskipTests
-
-for path in $(find -name ".flattened-pom.xml")
-do
-  dir=$(dirname "$path")
-  # Check flattened pom in each dir that contains it for completeness
-  completenessCheck "$dir"
-done
