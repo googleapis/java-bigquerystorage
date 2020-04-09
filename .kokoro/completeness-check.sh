@@ -13,38 +13,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eo pipefail
+#set -eo pipefail
 
-## Get the directory of the build script
-scriptDir=$(realpath $(dirname "${BASH_SOURCE[0]}"))
+## Helper functions
 function now() { date +"%Y-%m-%d %H:%M:%S" | tr -d '\n'; }
 function msg() { println "$*" >&2; }
 function println() { printf '%s\n' "$(now) $*"; }
 
-function cleanup() {
-  rm .org-list.txt .new-list.txt .diff.txt
-}
-
-## cd to the parent directory, i.e. the root of the git repo
-cd ${scriptDir}/..
-
-## Locally install artifacts
-#mvn verify -DskipTests
-
-## Find client directory that continas flattened pom and cd into it
-clientDir=$(find -iname ".flattened-pom.xml" | cut -d"/" -f1-2)
-cd "$clientDir"
-
 ## Run dependency list completeness check
+function completenessCheck() {
+  # cd into dir containing flattened pom
+  cd "$1" || exit
+  echo "checking in dir: $1"
 
-# Output dep list with compile scope generated using the original pom
-msg "Generating dependency list using original pom..."
-mvn dependency:list -f pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:compile' >.org-list.txt
+  # Output dep list with compile scope generated using the original pom
+  msg "Generating dependency list using original pom..."
+  mvn dependency:list -f pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:compile' >.org-list.txt
 
-# Output dep list with compile scope generated using the flattened pom
-msg "Generating dependency list using flattened pom..."
-mvn dependency:list -f .flattened-pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:compile' >.new-list.txt
+  # Output dep list generated using the flattened pom (test scope deps are ommitted)
+  msg "Generating dependency list using flattened pom..."
+  mvn dependency:list -f .flattened-pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.new-list.txt
 
-# Compare two dependency lists
-msg "Comparing dependency lists..."
-diff .org-list.txt .new-list.txt >.diff.txt && (msg "Success. No diff!" && cleanup) || (msg "Diff found: " && cat .diff.txt)
+  # Compare two dependency lists
+  msg "Comparing dependency lists..."
+  diff .org-list.txt .new-list.txt >.diff.txt && msg "Success. No diff!" || msg "Diff found. Check .diff.txt file located in $1. Exiting with exit code $?." && exit 1
+
+  # cd back to root of git repo
+  cd ..
+}
