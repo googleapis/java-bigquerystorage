@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o pipefail
+set -eo pipefail
 
 ## Get the directory of the build script
 scriptDir=$(realpath $(dirname "${BASH_SOURCE[0]}"))
@@ -41,6 +41,7 @@ echo "****************** DEPENDENCY LIST COMPLETENESS CHECK *******************"
 source ${scriptDir}/completeness-check.sh
 
 # Allow failures to continue running the script
+set +e
 error_count=0
 
 for path in $(find -name ".flattened-pom.xml")
