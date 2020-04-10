@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eo pipefail
+set -o pipefail
 
 ## Get the directory of the build script
 scriptDir=$(realpath $(dirname "${BASH_SOURCE[0]}"))
@@ -40,9 +40,24 @@ mvn -B dependency:analyze -DfailOnWarning=true
 echo "****************** DEPENDENCY LIST COMPLETENESS CHECK *******************"
 source ${scriptDir}/completeness-check.sh
 
+# Allow failures to continue running the script
+error_count=0
+
 for path in $(find -name ".flattened-pom.xml")
 do
-  dir=$(dirname "$path")
   # Check flattened pom in each dir that contains it for completeness
+  dir=$(dirname "$path")
+  pushd "$dir"
   completenessCheck "$dir"
+  error_count=$(($error_count + $?))
+  popd
 done
+
+if [[ $error_count == 0 ]]
+then
+  msg "All checks passed."
+  exit 0
+else
+  msg "Errors found. See log statements above."
+  exit 1
+fi

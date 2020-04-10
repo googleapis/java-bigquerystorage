@@ -22,24 +22,22 @@ function println() { printf '%s\n' "$(now) $*"; }
 
 ## Run dependency list completeness check
 function completenessCheck() {
-  # Go into dir containing flattened pom
-  pushd "$1" || return 1
-  echo "Checking in dir: $1"
-
   # Output dep list with compile scope generated using the original pom
   msg "Generating dependency list using original pom..."
-  mvn dependency:list -f pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.org-list.txt || true
+  mvn dependency:list -f pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' | grep -v ':test$' >.org-list.txt || true # continue without error if list is empty
 
   # Output dep list generated using the flattened pom (test scope deps are ommitted)
   msg "Generating dependency list using flattened pom..."
-  mvn dependency:list -f .flattened-pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.new-list.txt || true
+  mvn dependency:list -f .flattened-pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.new-list.txt || true # continue without error if list is empty
 
   # Compare two dependency lists
   msg "Comparing dependency lists..."
-
-  (diff .org-list.txt .new-list.txt >.diff.txt && msg "Success. No diff!" || msg "Diff found. Check .diff.txt file located in $1." && exit 1) || true
-
-  # Go back to root of git repo
-  echo "Going back to the root"
-  popd
+  diff .org-list.txt .new-list.txt >.diff.txt
+  if [[ $? == 0 ]]
+    then
+      msg "Success. No diff!"
+  else
+    msg "Diff found. Check .diff.txt file located in $1."
+    return 1
+  fi
 }
