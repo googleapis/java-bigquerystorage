@@ -15,11 +15,6 @@
 
 # set -eo pipefail
 
-## Helper functionss
-function now() { date +"%Y-%m-%d %H:%M:%S" | tr -d '\n'; }
-function msg() { println "$*" >&2; }
-function println() { printf '%s\n' "$(now) $*"; }
-
 function retry_with_backoff {
     attempts_left=$1
     sleep_seconds=$2
@@ -47,3 +42,8 @@ function retry_with_backoff {
 
     return $exit_code
 }
+
+## Helper functionss
+function now() { date +"%Y-%m-%d %H:%M:%S" | tr -d '\n'; }
+function msg() { println "$*" >&2; }
+function println() { printf '%s\n' "$(now) $*"; }
