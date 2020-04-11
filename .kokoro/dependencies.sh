@@ -38,12 +38,32 @@ retry_with_backoff 3 10 \
 mvn -B dependency:analyze -DfailOnWarning=true
 
 echo "****************** DEPENDENCY LIST COMPLETENESS CHECK *******************"
-source ${scriptDir}/completeness-check.sh
+## Run dependency list completeness check
+function completenessCheck() {
+  # Output dep list with compile scope generated using the original pom
+  msg "Generating dependency list using original pom..."
+  mvn dependency:list -f pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' | grep -v ':test$' >.org-list.txt
+
+  # Output dep list generated using the flattened pom (test scope deps are ommitted)
+  msg "Generating dependency list using flattened pom..."
+  mvn dependency:list -f .flattened-pom.xml -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.new-list.txt
+
+  # Compare two dependency lists
+  msg "Comparing dependency lists..."
+  diff .org-list.txt .new-list.txt >.diff.txt
+  if [[ $? == 0 ]]
+    then
+      msg "Success. No diff!"
+  else
+    msg "Diff found. Check .diff.txt file located in $1."
+    return 1
+  fi
+}
 
 # Allow failures to continue running the script
 set +e
-error_count=0
 
+error_count=0
 for path in $(find -name ".flattened-pom.xml")
 do
   # Check flattened pom in each dir that contains it for completeness
