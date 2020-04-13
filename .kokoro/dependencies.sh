@@ -55,7 +55,9 @@ function completenessCheck() {
     then
       msg "Success. No diff!"
   else
-    msg "Diff found. Check .diff.txt file located in $1."
+    msg "Diff found. See below: "
+    msg "You can also check .diff.txt file located in $1."
+    cat .diff.txt
     return 1
   fi
 }
