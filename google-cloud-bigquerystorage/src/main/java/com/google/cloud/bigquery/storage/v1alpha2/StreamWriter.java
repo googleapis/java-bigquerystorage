@@ -49,6 +49,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.threeten.bp.Duration;
+import org.threeten.bp.Instant;
 
 /**
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
@@ -75,7 +76,7 @@ public class StreamWriter implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(StreamWriter.class.getName());
 
   private static String streamPatternString =
-      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/.*";
+      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
 
   private static Pattern streamPattern = Pattern.compile(streamPatternString);
 
@@ -104,6 +105,9 @@ public class StreamWriter implements AutoCloseable {
   private final AtomicBoolean activeAlarm;
   private ScheduledFuture<?> currentAlarmFuture;
 
+  private Instant createTime;
+  private Duration streamTTL = Duration.ofDays(1);
+
   private Integer currentRetries = 0;
 
   /** The maximum size of one request. Defined by the API. */
@@ -116,11 +120,14 @@ public class StreamWriter implements AutoCloseable {
     return 5000L;
   }
 
-  private StreamWriter(Builder builder) throws Exception {
+  private StreamWriter(Builder builder)
+      throws InvalidArgumentException, IOException, InterruptedException {
     Matcher matcher = streamPattern.matcher(builder.streamName);
     if (!matcher.matches()) {
       throw new InvalidArgumentException(
-          null, GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT), false);
+          new Exception("Invalid stream name: " + builder.streamName),
+          GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
+          false);
     }
     streamName = builder.streamName;
     tableName = matcher.group(1);
@@ -147,6 +154,19 @@ public class StreamWriter implements AutoCloseable {
             .build();
     shutdown = new AtomicBoolean(false);
     refreshAppend();
+    Stream.WriteStream stream =
+        stub.getWriteStream(Storage.GetWriteStreamRequest.newBuilder().setName(streamName).build());
+    createTime =
+        Instant.ofEpochSecond(
+            stream.getCreateTime().getSeconds(), stream.getCreateTime().getNanos());
+    if (stream.getType() == Stream.WriteStream.Type.PENDING && stream.hasCommitTime()) {
+      throw new IllegalStateException(
+          "Cannot write to a stream that is already committed: " + streamName);
+    }
+    if (createTime.plus(streamTTL).compareTo(Instant.now()) < 0) {
+      throw new IllegalStateException(
+          "Cannot write to a stream that is already expired: " + streamName);
+    }
   }
 
   /** Stream name we are writing to. */
@@ -157,6 +177,11 @@ public class StreamWriter implements AutoCloseable {
   /** Table name we are writing to. */
   public String getTableNameString() {
     return tableName;
+  }
+
+  /** Returns if a stream has expired. */
+  public Boolean expired() {
+    return createTime.plus(streamTTL).compareTo(Instant.now()) < 0;
   }
 
   /**
@@ -290,7 +315,6 @@ public class StreamWriter implements AutoCloseable {
   }
 
   private void writeBatch(final InflightBatch inflightBatch) {
-    LOG.info("inflightBatch " + (inflightBatch != null));
     if (inflightBatch != null) {
       AppendRowsRequest request = inflightBatch.getMergedRequest();
       messagesWaiter.waitOnElementCount();
@@ -672,7 +696,7 @@ public class StreamWriter implements AutoCloseable {
     }
 
     /** Builds the {@code StreamWriter}. */
-    public StreamWriter build() throws Exception {
+    public StreamWriter build() throws InvalidArgumentException, IOException, InterruptedException {
       return new StreamWriter(this);
     }
   }

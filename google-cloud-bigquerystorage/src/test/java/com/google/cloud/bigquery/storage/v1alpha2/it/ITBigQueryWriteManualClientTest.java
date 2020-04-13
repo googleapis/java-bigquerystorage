@@ -17,6 +17,8 @@
 package com.google.cloud.bigquery.storage.v1alpha2.it;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.ServiceOptions;
@@ -28,14 +30,10 @@ import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.protobuf.Int64Value;
-import com.google.protobuf.MessageLite;
+import com.google.protobuf.Message;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -342,18 +340,50 @@ public class ITBigQueryWriteManualClientTest {
     }
   }
 
-  @Test
-  public void testMultipleDWMultiThread() throws Exception {
-    FooType fa = FooType.newBuilder().setFoo("aaa").build();
-    FooType fb = FooType.newBuilder().setFoo("bbb").build();
-    ExecutorService executor = Executors.newFixedThreadPool(10);
-    for (int i = 0; i < 10; i++) {
-      try (DirectWriter writer =
-          DirectWriter.newBuilder(tableId, FooType.getDescriptor()).build()) {
-        ApiFuture<Long> response =
-            writer.append(new ArrayList<>(Arrays.asList((MessageLite) fa, (MessageLite) fb)));
-        assertEquals(0L, response.get().longValue());
+  class CallAppend<T extends Message> implements Runnable {
+    List<ApiFuture<Long>> resultList;
+    List<T> messages;
+
+    CallAppend(List<ApiFuture<Long>> resultList, List<T> messages) {
+      this.resultList = resultList;
+      this.messages = messages;
+    }
+
+    @Override
+    public void run() {
+      try {
+        LOG.info("size: " + resultList.size());
+        resultList.add(DirectWriter.<T>append(tableId, messages));
+      } catch (Exception e) {
+        fail("Unexpected Exception: " + e.toString());
       }
     }
+  }
+
+  @Test
+  public void testDirectWrite() throws Exception {
+    final FooType fa = FooType.newBuilder().setFoo("aaa").build();
+    final FooType fb = FooType.newBuilder().setFoo("bbb").build();
+    Set<Long> expectedOffset = new HashSet<>();
+    for (int i = 0; i < 10; i++) {
+      expectedOffset.add(Long.valueOf(i * 2));
+    }
+    ExecutorService executor = Executors.newFixedThreadPool(10);
+    List<Future<Long>> responses = new ArrayList<>();
+    Callable<Long> callable =
+        new Callable<Long>() {
+          @Override
+          public Long call() throws IOException, InterruptedException, ExecutionException {
+            ApiFuture<Long> result = DirectWriter.<FooType>append(tableId, Arrays.asList(fa, fb));
+            return result.get();
+          }
+        };
+    for (int i = 0; i < 10; i++) {
+      responses.add(executor.submit(callable));
+    }
+    for (Future<Long> response : responses) {
+      assertTrue(expectedOffset.remove(response.get()));
+    }
+    assertTrue(expectedOffset.isEmpty());
   }
 }

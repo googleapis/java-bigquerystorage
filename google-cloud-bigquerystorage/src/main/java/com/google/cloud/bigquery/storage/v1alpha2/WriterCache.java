@@ -1,14 +1,30 @@
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
+import com.google.api.gax.grpc.GrpcStatusCode;
+import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import java.util.Date;
-import java.util.Map;
+import com.google.protobuf.Descriptors;
+import io.grpc.Status;
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
-import javafx.util.Pair;
-import org.threeten.bp.Duration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A cache of StreamWriters that can be looked up by Table Name. The entries will expire after 5
@@ -18,45 +34,42 @@ import org.threeten.bp.Duration;
 public class WriterCache {
   private static final Logger LOG = Logger.getLogger(WriterCache.class.getName());
 
-  private static WriterCache instance;
+  private static String tablePatternString = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)";
+  private static Pattern tablePattern = Pattern.compile(tablePatternString);
 
-  private ConcurrentHashMap<String, Map<String, Pair<StreamWriter, Long>>> cacheWithTimeout;
+  private static WriterCache instance;
+  private LRUCache<String, LRUCache<Descriptors.Descriptor, StreamWriter>> writerCache;
+
+  // Maximum number of tables to hold in the cache, once the maxium exceeded, the cache will be
+  // evicted based on least recent used.
+  private static final int MAX_TABLE_ENTRY = 100;
+  private static final int MAX_WRITERS_PER_TABLE = 2;
 
   private final BigQueryWriteClient stub;
-  private final BigQueryWriteSettings stubSettings;
-  private final CleanerThread cleanerThread;
 
-  private WriterCache(Duration expireTime) throws Exception {
-    cacheWithTimeout = new ConcurrentHashMap<>();
-    stubSettings = BigQueryWriteSettings.newBuilder().build();
-    stub = BigQueryWriteClient.create(stubSettings);
-    cleanerThread = new CleanerThread(expireTime.toMillis(), cacheWithTimeout);
-    Executors.newSingleThreadExecutor()
-        .execute(
-            new Runnable() {
-              @Override
-              public void run() {
-                cleanerThread.run();
-              }
-            });
+  private WriterCache(BigQueryWriteClient stub, int maxTableEntry) {
+    this.stub = stub;
+    writerCache =
+        new LRUCache<String, LRUCache<Descriptors.Descriptor, StreamWriter>>(maxTableEntry);
   }
 
-  public static WriterCache getInstance() throws Exception {
+  public static WriterCache getInstance() throws IOException {
     if (instance == null) {
-      instance = new WriterCache(Duration.ofMinutes(5));
+      BigQueryWriteSettings stubSettings = BigQueryWriteSettings.newBuilder().build();
+      BigQueryWriteClient stub = BigQueryWriteClient.create(stubSettings);
+      instance = new WriterCache(stub, MAX_TABLE_ENTRY);
     }
     return instance;
   }
 
+  /** Returns a cache with custom stub used by test. */
   @VisibleForTesting
-  public static WriterCache getInstance(Duration expireTime) throws Exception {
-    if (instance == null) {
-      instance = new WriterCache(expireTime);
-    }
-    return instance;
+  public static WriterCache getTestInstance(BigQueryWriteClient stub, int maxTableEntry) {
+    return new WriterCache(stub, maxTableEntry);
   }
 
-  StreamWriter CreateNewWriter(String tableName) throws Exception {
+  /** Returns an entry with {@code StreamWriter} and expiration time in millis. */
+  private String CreateNewStream(String tableName) {
     Stream.WriteStream stream =
         Stream.WriteStream.newBuilder().setType(Stream.WriteStream.Type.COMMITTED).build();
     stream =
@@ -65,126 +78,168 @@ public class WriterCache {
                 .setParent(tableName)
                 .setWriteStream(stream)
                 .build());
-    LOG.info("Created Write Stream:" + stream.getName());
-    return StreamWriter.newBuilder(stream.getName()).build();
+    LOG.info("Created write stream:" + stream.getName());
+    return stream.getName();
   }
 
-  void addWriterToCache(StreamWriter writer) {
-    Date date = new Date();
-    Pair<StreamWriter, Long> streamEntry = new Pair<>(writer, date.getTime());
-
-    if (!cacheWithTimeout.contains(writer.getTableNameString())) {
-      ConcurrentHashMap<String, Pair<StreamWriter, Long>> tableEntry =
-          new ConcurrentHashMap<String, Pair<StreamWriter, Long>>();
-      tableEntry.put(writer.getStreamNameString(), streamEntry);
-      cacheWithTimeout.put(writer.getTableNameString(), tableEntry);
-    } else {
-      cacheWithTimeout
-          .get(writer.getTableNameString())
-          .put(writer.getStreamNameString(), streamEntry);
-    }
+  StreamWriter CreateNewWriter(String streamName)
+      throws InvalidArgumentException, IOException, InterruptedException {
+    return StreamWriter.newBuilder(streamName)
+        .setChannelProvider(stub.getSettings().getTransportChannelProvider())
+        .setCredentialsProvider(stub.getSettings().getCredentialsProvider())
+        .setExecutorProvider(stub.getSettings().getExecutorProvider())
+        .build();
   }
-
   /**
-   * Gets a writer for a given table from global cache.
+   * Gets a writer for a given table with a given user schema from global cache.
    *
    * @param tableName
+   * @param userSchema
    * @return
    * @throws Exception
    */
-  public StreamWriter getWriter(String tableName) throws Exception {
-    StreamWriter writer;
-    synchronized (cacheWithTimeout) {
-      if (cacheWithTimeout.contains(tableName)) {
-        Map<String, Pair<StreamWriter, Long>> writersForTable = cacheWithTimeout.get(tableName);
-        Preconditions.checkArgument(!writersForTable.isEmpty());
-        writer = writersForTable.remove(0).getKey();
-        if (writersForTable.isEmpty()) {
-          cacheWithTimeout.remove(tableName);
-        }
-      }
-      writer = CreateNewWriter(tableName);
-      synchronized (cacheWithTimeout) {
-        Date date = new Date();
-        Pair<StreamWriter, Long> streamEntry = new Pair<>(writer, date.getTime());
-        if (!cacheWithTimeout.contains(tableName)) {
-          ConcurrentHashMap<String, Pair<StreamWriter, Long>> tableEntry =
-              new ConcurrentHashMap<String, Pair<StreamWriter, Long>>();
-          tableEntry.put(writer.getStreamNameString(), streamEntry);
-          cacheWithTimeout.put(tableName, tableEntry);
+  public StreamWriter getTableWriter(String tableName, Descriptors.Descriptor userSchema)
+      throws InvalidArgumentException, IOException, InterruptedException {
+    Matcher matcher = tablePattern.matcher(tableName);
+    if (!matcher.matches()) {
+      throw new InvalidArgumentException(
+          new Exception("Invalid table name: " + tableName),
+          GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
+          false);
+    }
+
+    String streamName = null;
+    Boolean streamExpired = false;
+    StreamWriter writer = null;
+    LRUCache<Descriptors.Descriptor, StreamWriter> tableEntry = null;
+
+    synchronized (this) {
+      tableEntry = writerCache.get(tableName);
+      if (tableEntry != null) {
+        writer = tableEntry.get(userSchema);
+        if (writer != null && !writer.expired()) {
+          return writer;
         } else {
-          cacheWithTimeout.get(tableName).put(writer.getStreamNameString(), streamEntry);
+          if (writer != null && writer.expired()) {
+            writer.close();
+          }
+          streamName = CreateNewStream(tableName);
+          writer = CreateNewWriter(streamName);
+          // Schema compat check should be done here!
+          tableEntry.put(userSchema, writer);
         }
-      }
-      return writer;
-    }
-  }
-
-  /**
-   * Returns the writer to the cache.
-   *
-   * @param writer
-   */
-  public void returnWriter(StreamWriter writer) {
-    synchronized (cacheWithTimeout) {
-      addWriterToCache(writer);
-    }
-  }
-
-  public int cachedTableCount() {
-    synchronized (cacheWithTimeout) {
-      return cacheWithTimeout.keySet().size();
-    }
-  }
-
-  public int cachedStreamCount(String tableName) {
-    synchronized (cacheWithTimeout) {
-      if (cacheWithTimeout.contains(tableName)) {
-        return cacheWithTimeout.get(tableName).values().size();
       } else {
-        return 0;
+        streamName = CreateNewStream(tableName);
+        tableEntry = new LRUCache<Descriptors.Descriptor, StreamWriter>(MAX_WRITERS_PER_TABLE);
+        writer = CreateNewWriter(streamName);
+        // Schema compat check should be done here!
+        tableEntry.put(userSchema, writer);
+        writerCache.put(tableName, tableEntry);
       }
+    }
+
+    return writer;
+  }
+
+  @VisibleForTesting
+  public int cachedTableCount() {
+    synchronized (writerCache) {
+      return writerCache.getCurrentSize();
     }
   }
 
-  private class CleanerThread extends Thread {
-    private long expiryInMillis;
-    private ConcurrentHashMap<String, Map<String, Pair<StreamWriter, Long>>> timeMap;
+  private static class LRUCache<K, V> {
+    class Node<T, U> {
+      Node<T, U> previous;
+      Node<T, U> next;
+      T key;
+      U value;
 
-    public CleanerThread(
-        long expirationMillis,
-        ConcurrentHashMap<String, Map<String, Pair<StreamWriter, Long>>> timeMap) {
-      this.expiryInMillis = expirationMillis;
-      this.timeMap = timeMap;
-    }
-
-    @Override
-    public void run() {
-      while (true) {
-        cleanMap();
-        try {
-          Thread.sleep(expiryInMillis / 2);
-        } catch (InterruptedException ignored) {
-        }
+      public Node(Node<T, U> previous, Node<T, U> next, T key, U value) {
+        this.previous = previous;
+        this.next = next;
+        this.key = key;
+        this.value = value;
       }
     }
 
-    private void cleanMap() {
-      long currentTime = new Date().getTime();
-      synchronized (timeMap) {
-        for (String tableName : timeMap.keySet()) {
-          Map<String, Pair<StreamWriter, Long>> tableEntry = timeMap.get(tableName);
-          for (String streamName : tableEntry.keySet()) {
-            if (currentTime > (tableEntry.get(streamName).getValue() + expiryInMillis)) {
-              StreamWriter writer = tableEntry.get(streamName).getKey();
-              writer.close();
-              tableEntry.remove(streamName);
-            }
-          }
-          if (tableEntry.isEmpty()) {
-            timeMap.remove(tableName);
-          }
+    private ConcurrentHashMap<K, Node<K, V>> cache;
+    private Node<K, V> leastRecentlyUsed;
+    private Node<K, V> mostRecentlyUsed;
+    private int maxSize;
+    private int currentSize;
+
+    public LRUCache(int maxSize) {
+      this.maxSize = maxSize;
+      this.currentSize = 0;
+      leastRecentlyUsed = new Node<K, V>(null, null, null, null);
+      mostRecentlyUsed = leastRecentlyUsed;
+      cache = new ConcurrentHashMap<K, Node<K, V>>();
+    }
+
+    public int getCurrentSize() {
+      return cache.keySet().size();
+    }
+
+    public V get(K key) {
+      Node<K, V> tempNode = cache.get(key);
+      if (tempNode == null) {
+        return null;
+      }
+      // If MRU leave the list as it is
+      else if (tempNode.key == mostRecentlyUsed.key) {
+        return mostRecentlyUsed.value;
+      }
+
+      // Get the next and previous nodes
+      Node<K, V> nextNode = tempNode.next;
+      Node<K, V> previousNode = tempNode.previous;
+
+      // If at the left-most, we update LRU
+      if (tempNode.key == leastRecentlyUsed.key) {
+        nextNode.previous = null;
+        leastRecentlyUsed = nextNode;
+      }
+
+      // If we are in the middle, we need to update the items before and after our item
+      else if (tempNode.key != mostRecentlyUsed.key) {
+        previousNode.next = nextNode;
+        nextNode.previous = previousNode;
+      }
+
+      // Finally move our item to the MRU
+      tempNode.previous = mostRecentlyUsed;
+      mostRecentlyUsed.next = tempNode;
+      mostRecentlyUsed = tempNode;
+      mostRecentlyUsed.next = null;
+
+      return tempNode.value;
+    }
+
+    public void put(K key, V value) {
+      if (cache.containsKey(key)) {
+        return;
+      }
+
+      // Put the new node at the right-most end of the linked-list
+      Node<K, V> myNode = new Node<K, V>(mostRecentlyUsed, null, key, value);
+      mostRecentlyUsed.next = myNode;
+      cache.put(key, myNode);
+      mostRecentlyUsed = myNode;
+
+      // Delete the left-most entry and update the LRU pointer
+      if (currentSize == maxSize) {
+        cache.remove(leastRecentlyUsed.key);
+        leastRecentlyUsed = leastRecentlyUsed.next;
+        leastRecentlyUsed.previous = null;
+      }
+
+      // Update cache size, for the first added entry update the LRU pointer
+      else if (currentSize < maxSize) {
+        if (currentSize == 0) {
+          leastRecentlyUsed = myNode;
         }
+        currentSize++;
       }
     }
   }
