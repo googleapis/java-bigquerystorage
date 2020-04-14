@@ -82,8 +82,8 @@ public class StreamWriterTest {
         Timestamp.newBuilder().setSeconds(time.getEpochSecond()).setNanos(time.getNano()).build();
     // Add enough GetWriteStream response.
     for (int i = 0; i < 4; i++) {
-	    testBigQueryWrite.addResponse(
-			    Stream.WriteStream.newBuilder().setName(TEST_STREAM).setCreateTime(timestamp).build());
+      testBigQueryWrite.addResponse(
+          Stream.WriteStream.newBuilder().setName(TEST_STREAM).setCreateTime(timestamp).build());
     }
   }
 

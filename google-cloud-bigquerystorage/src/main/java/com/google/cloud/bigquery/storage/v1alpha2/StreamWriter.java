@@ -121,13 +121,10 @@ public class StreamWriter implements AutoCloseable {
   }
 
   private StreamWriter(Builder builder)
-      throws InvalidArgumentException, IOException, InterruptedException {
+      throws IllegalArgumentException, IOException, InterruptedException {
     Matcher matcher = streamPattern.matcher(builder.streamName);
     if (!matcher.matches()) {
-      throw new InvalidArgumentException(
-          new Exception("Invalid stream name: " + builder.streamName),
-          GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
-          false);
+      throw new IllegalArgumentException("Invalid stream name: " + builder.streamName);
     }
     streamName = builder.streamName;
     tableName = matcher.group(1);
@@ -224,7 +221,7 @@ public class StreamWriter implements AutoCloseable {
       setupAlarm();
       if (!batchesToSend.isEmpty()) {
         for (final InflightBatch batch : batchesToSend) {
-          LOG.info("Scheduling a batch for immediate sending.");
+          LOG.fine("Scheduling a batch for immediate sending.");
           writeBatch(batch);
         }
       }
@@ -696,7 +693,7 @@ public class StreamWriter implements AutoCloseable {
     }
 
     /** Builds the {@code StreamWriter}. */
-    public StreamWriter build() throws InvalidArgumentException, IOException, InterruptedException {
+    public StreamWriter build() throws IllegalArgumentException, IOException, InterruptedException {
       return new StreamWriter(this);
     }
   }
