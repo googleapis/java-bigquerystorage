@@ -16,13 +16,13 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.LocalChannelProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
-import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.Timestamp;
@@ -34,6 +34,8 @@ import java.util.concurrent.ExecutionException;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.threeten.bp.Instant;
 
 @RunWith(JUnit4.class)
@@ -46,6 +48,8 @@ public class DirectWriterTest {
   private static MockServiceHelper serviceHelper;
   private BigQueryWriteClient client;
   private LocalChannelProvider channelProvider;
+
+  @Mock private static SchemaCompact schemaCheck;
 
   @BeforeClass
   public static void startStaticServer() {
@@ -71,6 +75,7 @@ public class DirectWriterTest {
             .setCredentialsProvider(NoCredentialsProvider.create())
             .build();
     client = BigQueryWriteClient.create(settings);
+    MockitoAnnotations.initMocks(this);
   }
 
   @After
@@ -106,12 +111,13 @@ public class DirectWriterTest {
 
   @Test
   public void testWriteSuccess() throws Exception {
-    DirectWriter.testSetStub(client, 10);
+    DirectWriter.testSetStub(client, 10, schemaCheck);
     FooType m1 = FooType.newBuilder().setFoo("m1").build();
     FooType m2 = FooType.newBuilder().setFoo("m2").build();
 
     WriterCreationResponseMock(TEST_STREAM, Arrays.asList(Long.valueOf(0L)));
     ApiFuture<Long> ret = DirectWriter.<FooType>append(TEST_TABLE, Arrays.asList(m1, m2));
+    verify(schemaCheck).check(TEST_TABLE, FooType.getDescriptor());
     assertEquals(Long.valueOf(0L), ret.get());
     List<AbstractMessage> actualRequests = mockBigQueryWrite.getRequests();
     Assert.assertEquals(3, actualRequests.size());
@@ -154,6 +160,7 @@ public class DirectWriterTest {
     WriterCreationResponseMock(TEST_STREAM_2, Arrays.asList(Long.valueOf(0L)));
     AllSupportedTypes m3 = AllSupportedTypes.newBuilder().setStringValue("s").build();
     ret = DirectWriter.<AllSupportedTypes>append(TEST_TABLE, Arrays.asList(m3));
+    verify(schemaCheck).check(TEST_TABLE, AllSupportedTypes.getDescriptor());
     assertEquals(Long.valueOf(0L), ret.get());
     dataBuilder = Storage.AppendRowsRequest.ProtoData.newBuilder();
     dataBuilder.setWriterSchema(ProtoSchemaConverter.convert(AllSupportedTypes.getDescriptor()));
@@ -176,21 +183,21 @@ public class DirectWriterTest {
 
   @Test
   public void testWriteBadTableName() throws Exception {
-    DirectWriter.testSetStub(client, 10);
+    DirectWriter.testSetStub(client, 10, schemaCheck);
     FooType m1 = FooType.newBuilder().setFoo("m1").build();
     FooType m2 = FooType.newBuilder().setFoo("m2").build();
 
     try {
       ApiFuture<Long> ret = DirectWriter.<FooType>append("abc", Arrays.asList(m1, m2));
       fail("should fail");
-    } catch (InvalidArgumentException expected) {
-      assertEquals("java.lang.Exception: Invalid table name: abc", expected.getMessage());
+    } catch (IllegalArgumentException expected) {
+      assertEquals("Invalid table name: abc", expected.getMessage());
     }
   }
 
   @Test
   public void testConcurrentAccess() throws Exception {
-    WriterCache cache = WriterCache.getTestInstance(client, 2);
+    WriterCache cache = WriterCache.getTestInstance(client, 2, schemaCheck);
     final FooType m1 = FooType.newBuilder().setFoo("m1").build();
     final FooType m2 = FooType.newBuilder().setFoo("m2").build();
     final List<Long> expectedOffset =

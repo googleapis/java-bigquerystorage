@@ -15,11 +15,8 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import com.google.api.gax.grpc.GrpcStatusCode;
-import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Descriptors;
-import io.grpc.Status;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -46,9 +43,11 @@ public class WriterCache {
   private static final int MAX_WRITERS_PER_TABLE = 2;
 
   private final BigQueryWriteClient stub;
+  private final SchemaCompact compact;
 
-  private WriterCache(BigQueryWriteClient stub, int maxTableEntry) {
+  private WriterCache(BigQueryWriteClient stub, int maxTableEntry, SchemaCompact compact) {
     this.stub = stub;
+    this.compact = compact;
     writerCache =
         new LRUCache<String, LRUCache<Descriptors.Descriptor, StreamWriter>>(maxTableEntry);
   }
@@ -57,15 +56,16 @@ public class WriterCache {
     if (instance == null) {
       BigQueryWriteSettings stubSettings = BigQueryWriteSettings.newBuilder().build();
       BigQueryWriteClient stub = BigQueryWriteClient.create(stubSettings);
-      instance = new WriterCache(stub, MAX_TABLE_ENTRY);
+      instance = new WriterCache(stub, MAX_TABLE_ENTRY, SchemaCompact.getInstance());
     }
     return instance;
   }
 
   /** Returns a cache with custom stub used by test. */
   @VisibleForTesting
-  public static WriterCache getTestInstance(BigQueryWriteClient stub, int maxTableEntry) {
-    return new WriterCache(stub, maxTableEntry);
+  public static WriterCache getTestInstance(
+      BigQueryWriteClient stub, int maxTableEntry, SchemaCompact compact) {
+    return new WriterCache(stub, maxTableEntry, compact);
   }
 
   /** Returns an entry with {@code StreamWriter} and expiration time in millis. */
@@ -83,7 +83,7 @@ public class WriterCache {
   }
 
   StreamWriter CreateNewWriter(String streamName)
-      throws InvalidArgumentException, IOException, InterruptedException {
+      throws IllegalArgumentException, IOException, InterruptedException {
     return StreamWriter.newBuilder(streamName)
         .setChannelProvider(stub.getSettings().getTransportChannelProvider())
         .setCredentialsProvider(stub.getSettings().getCredentialsProvider())
@@ -99,13 +99,10 @@ public class WriterCache {
    * @throws Exception
    */
   public StreamWriter getTableWriter(String tableName, Descriptors.Descriptor userSchema)
-      throws InvalidArgumentException, IOException, InterruptedException {
+      throws IllegalArgumentException, IOException, InterruptedException {
     Matcher matcher = tablePattern.matcher(tableName);
     if (!matcher.matches()) {
-      throw new InvalidArgumentException(
-          new Exception("Invalid table name: " + tableName),
-          GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
-          false);
+      throw new IllegalArgumentException("Invalid table name: " + tableName);
     }
 
     String streamName = null;
@@ -120,19 +117,21 @@ public class WriterCache {
         if (writer != null && !writer.expired()) {
           return writer;
         } else {
+          compact.check(tableName, userSchema);
+
           if (writer != null && writer.expired()) {
             writer.close();
           }
           streamName = CreateNewStream(tableName);
           writer = CreateNewWriter(streamName);
-          // Schema compat check should be done here!
           tableEntry.put(userSchema, writer);
         }
       } else {
+        compact.check(tableName, userSchema);
+
         streamName = CreateNewStream(tableName);
         tableEntry = new LRUCache<Descriptors.Descriptor, StreamWriter>(MAX_WRITERS_PER_TABLE);
         writer = CreateNewWriter(streamName);
-        // Schema compat check should be done here!
         tableEntry.put(userSchema, writer);
         writerCache.put(tableName, tableEntry);
       }

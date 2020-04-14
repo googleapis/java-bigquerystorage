@@ -155,7 +155,8 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testSWBatchWriteWithCommittedStream() throws Exception {
+  public void testBatchWriteWithCommittedStream()
+      throws IOException, InterruptedException, ExecutionException {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -201,7 +202,8 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testSWComplicateSchemaWithPendingStream() throws Exception {
+  public void testComplicateSchemaWithPendingStream()
+      throws IOException, InterruptedException, ExecutionException {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -264,7 +266,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testSWStreamError() throws Exception {
+  public void testStreamError() throws IOException, InterruptedException, ExecutionException {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -311,7 +313,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testSWStreamReconnect() throws Exception {
+  public void testStreamReconnect() throws IOException, InterruptedException, ExecutionException {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -361,7 +363,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testDirectWrite() throws Exception {
+  public void testDirectWrite() throws IOException, InterruptedException, ExecutionException {
     final FooType fa = FooType.newBuilder().setFoo("aaa").build();
     final FooType fb = FooType.newBuilder().setFoo("bbb").build();
     Set<Long> expectedOffset = new HashSet<>();
