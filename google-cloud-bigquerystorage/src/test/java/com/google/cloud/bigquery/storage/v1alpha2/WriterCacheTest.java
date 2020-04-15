@@ -18,12 +18,12 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.*;
 
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.LocalChannelProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
-import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.Timestamp;
@@ -31,10 +31,14 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.threeten.bp.Instant;
 import org.threeten.bp.temporal.ChronoUnit;
 
@@ -54,6 +58,7 @@ public class WriterCacheTest {
 
   private static MockBigQueryWrite mockBigQueryWrite;
   private static MockServiceHelper serviceHelper;
+  @Mock private static SchemaCompact mockSchemaCheck;
   private BigQueryWriteClient client;
   private LocalChannelProvider channelProvider;
 
@@ -81,6 +86,7 @@ public class WriterCacheTest {
             .setCredentialsProvider(NoCredentialsProvider.create())
             .build();
     client = BigQueryWriteClient.create(settings);
+    MockitoAnnotations.initMocks(this);
   }
 
   /** Response mocks for create a new writer */
@@ -110,20 +116,21 @@ public class WriterCacheTest {
 
   @Test
   public void testRejectBadTableName() throws Exception {
-    WriterCache cache = WriterCache.getTestInstance(client, 10);
+    WriterCache cache = WriterCache.getTestInstance(client, 10, mockSchemaCheck);
     try {
       cache.getTableWriter("abc", FooType.getDescriptor());
       fail();
-    } catch (InvalidArgumentException expected) {
-      assertEquals(expected.getMessage(), "java.lang.Exception: Invalid table name: abc");
+    } catch (IllegalArgumentException expected) {
+      assertEquals(expected.getMessage(), "Invalid table name: abc");
     }
   }
 
   @Test
   public void testCreateNewWriter() throws Exception {
-    WriterCache cache = WriterCache.getTestInstance(client, 10);
+    WriterCache cache = WriterCache.getTestInstance(client, 10, mockSchemaCheck);
     WriterCreationResponseMock(TEST_STREAM);
     StreamWriter writer = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor());
     List<AbstractMessage> actualRequests = mockBigQueryWrite.getRequests();
     assertEquals(2, actualRequests.size());
     assertEquals(
@@ -140,7 +147,7 @@ public class WriterCacheTest {
 
   @Test
   public void testWriterExpired() throws Exception {
-    WriterCache cache = WriterCache.getTestInstance(client, 10);
+    WriterCache cache = WriterCache.getTestInstance(client, 10, mockSchemaCheck);
     // Response from CreateWriteStream
     Stream.WriteStream expectedResponse =
         Stream.WriteStream.newBuilder().setName(TEST_STREAM).build();
@@ -170,11 +177,14 @@ public class WriterCacheTest {
 
   @Test
   public void testWriterWithNewSchema() throws Exception {
-    WriterCache cache = WriterCache.getTestInstance(client, 10);
+    WriterCache cache = WriterCache.getTestInstance(client, 10, mockSchemaCheck);
     WriterCreationResponseMock(TEST_STREAM);
     WriterCreationResponseMock(TEST_STREAM_2);
     StreamWriter writer1 = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor());
+
     StreamWriter writer2 = cache.getTableWriter(TEST_TABLE, AllSupportedTypes.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, AllSupportedTypes.getDescriptor());
 
     List<AbstractMessage> actualRequests = mockBigQueryWrite.getRequests();
     assertEquals(4, actualRequests.size());
@@ -190,15 +200,19 @@ public class WriterCacheTest {
 
     // Still able to get the FooType writer.
     StreamWriter writer3 = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor());
     assertEquals(TEST_STREAM, writer3.getStreamNameString());
 
     // Create a writer with a even new schema.
     WriterCreationResponseMock(TEST_STREAM_3);
     WriterCreationResponseMock(TEST_STREAM_4);
     StreamWriter writer4 = cache.getTableWriter(TEST_TABLE, NestedType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, NestedType.getDescriptor());
 
+    LOG.info("blah");
     // This would cause a new stream to be created since the old entry is evicted.
     StreamWriter writer5 = cache.getTableWriter(TEST_TABLE, AllSupportedTypes.getDescriptor());
+    verify(mockSchemaCheck, times(2)).check(TEST_TABLE, AllSupportedTypes.getDescriptor());
     assertEquals(TEST_STREAM_3, writer4.getStreamNameString());
     assertEquals(TEST_STREAM_4, writer5.getStreamNameString());
     assertEquals(1, cache.cachedTableCount());
@@ -206,11 +220,13 @@ public class WriterCacheTest {
 
   @Test
   public void testWriterWithDifferentTable() throws Exception {
-    WriterCache cache = WriterCache.getTestInstance(client, 2);
+    WriterCache cache = WriterCache.getTestInstance(client, 2, mockSchemaCheck);
     WriterCreationResponseMock(TEST_STREAM);
     WriterCreationResponseMock(TEST_STREAM_21);
     StreamWriter writer1 = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
     StreamWriter writer2 = cache.getTableWriter(TEST_TABLE_2, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE_2, FooType.getDescriptor());
 
     List<AbstractMessage> actualRequests = mockBigQueryWrite.getRequests();
     assertEquals(4, actualRequests.size());
@@ -227,15 +243,19 @@ public class WriterCacheTest {
 
     // Still able to get the FooType writer.
     StreamWriter writer3 = cache.getTableWriter(TEST_TABLE_2, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE_2, FooType.getDescriptor());
     Assert.assertEquals(TEST_STREAM_21, writer3.getStreamNameString());
 
     // Create a writer with a even new schema.
     WriterCreationResponseMock(TEST_STREAM_31);
     WriterCreationResponseMock(TEST_STREAM);
     StreamWriter writer4 = cache.getTableWriter(TEST_TABLE_3, NestedType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE_3, NestedType.getDescriptor());
 
     // This would cause a new stream to be created since the old entry is evicted.
-    StreamWriter writer5 = cache.getTableWriter(TEST_TABLE, AllSupportedTypes.getDescriptor());
+    StreamWriter writer5 = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(2)).check(TEST_TABLE, FooType.getDescriptor());
+
     assertEquals(TEST_STREAM_31, writer4.getStreamNameString());
     assertEquals(TEST_STREAM, writer5.getStreamNameString());
     assertEquals(2, cache.cachedTableCount());
@@ -243,13 +263,14 @@ public class WriterCacheTest {
 
   @Test
   public void testConcurrentAccess() throws Exception {
-    final WriterCache cache = WriterCache.getTestInstance(client, 2);
+    final WriterCache cache = WriterCache.getTestInstance(client, 2, mockSchemaCheck);
     // Make sure getting the same table writer in multiple thread only cause create to be called
     // once.
     WriterCreationResponseMock(TEST_STREAM);
+    ExecutorService executor = Executors.newFixedThreadPool(10);
     for (int i = 0; i < 10; i++) {
-      Thread t =
-          new Thread() {
+      executor.execute(
+          new Runnable() {
             @Override
             public void run() {
               try {
@@ -258,8 +279,7 @@ public class WriterCacheTest {
                 fail(e.getMessage());
               }
             }
-          };
-      t.start();
+          });
     }
   }
 }

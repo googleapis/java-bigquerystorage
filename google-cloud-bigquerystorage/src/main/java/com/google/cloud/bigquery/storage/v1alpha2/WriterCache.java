@@ -15,13 +15,11 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import com.google.api.gax.grpc.GrpcStatusCode;
-import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.protobuf.Descriptors;
-import io.grpc.Status;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.protobuf.Descriptors.Descriptor;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,7 +36,7 @@ public class WriterCache {
   private static Pattern tablePattern = Pattern.compile(tablePatternString);
 
   private static WriterCache instance;
-  private LRUCache<String, LRUCache<Descriptors.Descriptor, StreamWriter>> writerCache;
+  private Cache<String, Cache<Descriptor, StreamWriter>> writerCache;
 
   // Maximum number of tables to hold in the cache, once the maxium exceeded, the cache will be
   // evicted based on least recent used.
@@ -46,26 +44,31 @@ public class WriterCache {
   private static final int MAX_WRITERS_PER_TABLE = 2;
 
   private final BigQueryWriteClient stub;
+  private final SchemaCompact compact;
 
-  private WriterCache(BigQueryWriteClient stub, int maxTableEntry) {
+  private WriterCache(BigQueryWriteClient stub, int maxTableEntry, SchemaCompact compact) {
     this.stub = stub;
+    this.compact = compact;
     writerCache =
-        new LRUCache<String, LRUCache<Descriptors.Descriptor, StreamWriter>>(maxTableEntry);
+        CacheBuilder.newBuilder()
+            .maximumSize(maxTableEntry)
+            .<String, Cache<Descriptor, StreamWriter>>build();
   }
 
   public static WriterCache getInstance() throws IOException {
     if (instance == null) {
       BigQueryWriteSettings stubSettings = BigQueryWriteSettings.newBuilder().build();
       BigQueryWriteClient stub = BigQueryWriteClient.create(stubSettings);
-      instance = new WriterCache(stub, MAX_TABLE_ENTRY);
+      instance = new WriterCache(stub, MAX_TABLE_ENTRY, SchemaCompact.getInstance());
     }
     return instance;
   }
 
   /** Returns a cache with custom stub used by test. */
   @VisibleForTesting
-  public static WriterCache getTestInstance(BigQueryWriteClient stub, int maxTableEntry) {
-    return new WriterCache(stub, maxTableEntry);
+  public static WriterCache getTestInstance(
+      BigQueryWriteClient stub, int maxTableEntry, SchemaCompact compact) {
+    return new WriterCache(stub, maxTableEntry, compact);
   }
 
   /** Returns an entry with {@code StreamWriter} and expiration time in millis. */
@@ -83,7 +86,7 @@ public class WriterCache {
   }
 
   StreamWriter CreateNewWriter(String streamName)
-      throws InvalidArgumentException, IOException, InterruptedException {
+      throws IllegalArgumentException, IOException, InterruptedException {
     return StreamWriter.newBuilder(streamName)
         .setChannelProvider(stub.getSettings().getTransportChannelProvider())
         .setCredentialsProvider(stub.getSettings().getCredentialsProvider())
@@ -98,41 +101,41 @@ public class WriterCache {
    * @return
    * @throws Exception
    */
-  public StreamWriter getTableWriter(String tableName, Descriptors.Descriptor userSchema)
-      throws InvalidArgumentException, IOException, InterruptedException {
+  public StreamWriter getTableWriter(String tableName, Descriptor userSchema)
+      throws IllegalArgumentException, IOException, InterruptedException {
     Matcher matcher = tablePattern.matcher(tableName);
     if (!matcher.matches()) {
-      throw new InvalidArgumentException(
-          new Exception("Invalid table name: " + tableName),
-          GrpcStatusCode.of(Status.Code.INVALID_ARGUMENT),
-          false);
+      throw new IllegalArgumentException("Invalid table name: " + tableName);
     }
 
     String streamName = null;
     Boolean streamExpired = false;
     StreamWriter writer = null;
-    LRUCache<Descriptors.Descriptor, StreamWriter> tableEntry = null;
+    Cache<Descriptor, StreamWriter> tableEntry = null;
 
     synchronized (this) {
-      tableEntry = writerCache.get(tableName);
+      tableEntry = writerCache.getIfPresent(tableName);
       if (tableEntry != null) {
-        writer = tableEntry.get(userSchema);
-        if (writer != null && !writer.expired()) {
-          return writer;
-        } else {
-          if (writer != null && writer.expired()) {
+        writer = tableEntry.getIfPresent(userSchema);
+        if (writer != null) {
+          if (!writer.expired()) {
+            return writer;
+          } else {
             writer.close();
           }
-          streamName = CreateNewStream(tableName);
-          writer = CreateNewWriter(streamName);
-          // Schema compat check should be done here!
-          tableEntry.put(userSchema, writer);
         }
-      } else {
+        compact.check(tableName, userSchema);
         streamName = CreateNewStream(tableName);
-        tableEntry = new LRUCache<Descriptors.Descriptor, StreamWriter>(MAX_WRITERS_PER_TABLE);
         writer = CreateNewWriter(streamName);
-        // Schema compat check should be done here!
+        tableEntry.put(userSchema, writer);
+      } else {
+        compact.check(tableName, userSchema);
+        streamName = CreateNewStream(tableName);
+        tableEntry =
+            CacheBuilder.newBuilder()
+                .maximumSize(MAX_WRITERS_PER_TABLE)
+                .<Descriptor, StreamWriter>build();
+        writer = CreateNewWriter(streamName);
         tableEntry.put(userSchema, writer);
         writerCache.put(tableName, tableEntry);
       }
@@ -142,105 +145,9 @@ public class WriterCache {
   }
 
   @VisibleForTesting
-  public int cachedTableCount() {
+  public long cachedTableCount() {
     synchronized (writerCache) {
-      return writerCache.getCurrentSize();
-    }
-  }
-
-  private static class LRUCache<K, V> {
-    class Node<T, U> {
-      Node<T, U> previous;
-      Node<T, U> next;
-      T key;
-      U value;
-
-      public Node(Node<T, U> previous, Node<T, U> next, T key, U value) {
-        this.previous = previous;
-        this.next = next;
-        this.key = key;
-        this.value = value;
-      }
-    }
-
-    private ConcurrentHashMap<K, Node<K, V>> cache;
-    private Node<K, V> leastRecentlyUsed;
-    private Node<K, V> mostRecentlyUsed;
-    private int maxSize;
-    private int currentSize;
-
-    public LRUCache(int maxSize) {
-      this.maxSize = maxSize;
-      this.currentSize = 0;
-      leastRecentlyUsed = new Node<K, V>(null, null, null, null);
-      mostRecentlyUsed = leastRecentlyUsed;
-      cache = new ConcurrentHashMap<K, Node<K, V>>();
-    }
-
-    public int getCurrentSize() {
-      return cache.keySet().size();
-    }
-
-    public V get(K key) {
-      Node<K, V> tempNode = cache.get(key);
-      if (tempNode == null) {
-        return null;
-      }
-      // If MRU leave the list as it is
-      else if (tempNode.key == mostRecentlyUsed.key) {
-        return mostRecentlyUsed.value;
-      }
-
-      // Get the next and previous nodes
-      Node<K, V> nextNode = tempNode.next;
-      Node<K, V> previousNode = tempNode.previous;
-
-      // If at the left-most, we update LRU
-      if (tempNode.key == leastRecentlyUsed.key) {
-        nextNode.previous = null;
-        leastRecentlyUsed = nextNode;
-      }
-
-      // If we are in the middle, we need to update the items before and after our item
-      else if (tempNode.key != mostRecentlyUsed.key) {
-        previousNode.next = nextNode;
-        nextNode.previous = previousNode;
-      }
-
-      // Finally move our item to the MRU
-      tempNode.previous = mostRecentlyUsed;
-      mostRecentlyUsed.next = tempNode;
-      mostRecentlyUsed = tempNode;
-      mostRecentlyUsed.next = null;
-
-      return tempNode.value;
-    }
-
-    public void put(K key, V value) {
-      if (cache.containsKey(key)) {
-        return;
-      }
-
-      // Put the new node at the right-most end of the linked-list
-      Node<K, V> myNode = new Node<K, V>(mostRecentlyUsed, null, key, value);
-      mostRecentlyUsed.next = myNode;
-      cache.put(key, myNode);
-      mostRecentlyUsed = myNode;
-
-      // Delete the left-most entry and update the LRU pointer
-      if (currentSize == maxSize) {
-        cache.remove(leastRecentlyUsed.key);
-        leastRecentlyUsed = leastRecentlyUsed.next;
-        leastRecentlyUsed.previous = null;
-      }
-
-      // Update cache size, for the first added entry update the LRU pointer
-      else if (currentSize < maxSize) {
-        if (currentSize == 0) {
-          leastRecentlyUsed = myNode;
-        }
-        currentSize++;
-      }
+      return writerCache.size();
     }
   }
 }

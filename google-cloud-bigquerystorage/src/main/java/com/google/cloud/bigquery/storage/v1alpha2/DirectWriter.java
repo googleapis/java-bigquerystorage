@@ -98,7 +98,8 @@ public class DirectWriter {
   }
 
   @VisibleForTesting
-  public static void testSetStub(BigQueryWriteClient stub, int maxTableEntry) {
-    cache = WriterCache.getTestInstance(stub, maxTableEntry);
+  public static void testSetStub(
+      BigQueryWriteClient stub, int maxTableEntry, SchemaCompact schemaCheck) {
+    cache = WriterCache.getTestInstance(stub, maxTableEntry, schemaCheck);
   }
 }
