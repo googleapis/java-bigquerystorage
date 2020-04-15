@@ -329,6 +329,7 @@ public class StreamWriter implements AutoCloseable {
   /** Close the stream writer. Shut down all resources. */
   @Override
   public void close() {
+    LOG.info("Closing stream writer");
     shutdown();
     try {
       awaitTermination(1, TimeUnit.MINUTES);

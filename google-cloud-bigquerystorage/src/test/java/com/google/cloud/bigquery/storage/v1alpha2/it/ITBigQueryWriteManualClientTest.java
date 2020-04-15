@@ -17,6 +17,7 @@
 package com.google.cloud.bigquery.storage.v1alpha2.it;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -225,18 +226,30 @@ public class ITBigQueryWriteManualClientTest {
                   .setOffset(Int64Value.of(1L))
                   .build());
       assertEquals(1, response2.get().getOffset());
+
+      // Nothing showed up since rows are not committed.
+      TableResult result =
+          bigquery.listTableData(
+              tableInfo2.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+      Iterator<FieldValueList> iter = result.getValues().iterator();
+      assertEquals(false, iter.hasNext());
+
+      FinalizeWriteStreamResponse finalizeResponse =
+          client.finalizeWriteStream(
+              FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build());
+
+      ApiFuture<AppendRowsResponse> response3 =
+          streamWriter.append(
+              createAppendRequestComplicateType(writeStream.getName(), new String[] {"ccc"})
+                  .setOffset(Int64Value.of(1L))
+                  .build());
+      try {
+        assertEquals(2, response3.get().getOffset());
+        fail("Append to finalized stream should fail.");
+      } catch (Exception expected) {
+        // The exception thrown is not stable. Opened a bug to fix it.
+      }
     }
-
-    // Nothing showed up since rows are not committed.
-    TableResult result =
-        bigquery.listTableData(
-            tableInfo2.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
-    Iterator<FieldValueList> iter = result.getValues().iterator();
-    assertEquals(false, iter.hasNext());
-
-    FinalizeWriteStreamResponse finalizeResponse =
-        client.finalizeWriteStream(
-            FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build());
     // Finalize row count is not populated.
     // assertEquals(1, finalizeResponse.getRowCount());
     BatchCommitWriteStreamsResponse batchCommitWriteStreamsResponse =
@@ -246,23 +259,18 @@ public class ITBigQueryWriteManualClientTest {
                 .addWriteStreams(writeStream.getName())
                 .build());
     assertEquals(true, batchCommitWriteStreamsResponse.hasCommitTime());
-
-    LOG.info("Waiting for termination");
-    // The awaitTermination always returns false.
-    // assertEquals(true, streamWriter.awaitTermination(10, TimeUnit.SECONDS));
-
-    // Data showed up.
-    result =
-        bigquery.listTableData(
-            tableInfo2.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
-    iter = result.getValues().iterator();
+    TableResult queryResult =
+        bigquery.query(
+            QueryJobConfiguration.newBuilder("SELECT * from " + DATASET + '.' + TABLE2).build());
+    Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
+    assertTrue(queryIter.hasNext());
     assertEquals(
         "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa}, FieldValue{attribute=PRIMITIVE, value=aaa}]}]",
-        iter.next().get(1).getRepeatedValue().toString());
+        queryIter.next().get(1).getRepeatedValue().toString());
     assertEquals(
         "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb}, FieldValue{attribute=PRIMITIVE, value=bbb}]}]",
-        iter.next().get(1).getRepeatedValue().toString());
-    assertEquals(false, iter.hasNext());
+        queryIter.next().get(1).getRepeatedValue().toString());
+    assertFalse(queryIter.hasNext());
   }
 
   @Test
@@ -275,7 +283,6 @@ public class ITBigQueryWriteManualClientTest {
                     WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
                 .build());
     try (StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build()) {
-
       AppendRowsRequest request =
           createAppendRequest(writeStream.getName(), new String[] {"aaa"}).build();
       request
@@ -290,18 +297,15 @@ public class ITBigQueryWriteManualClientTest {
       ApiFuture<AppendRowsResponse> response2 =
           streamWriter.append(
               createAppendRequest(writeStream.getName(), new String[] {"aaa"})
-                  .setWriteStream("blah")
+                  .setOffset(Int64Value.of(100L))
                   .build());
       try {
         response2.get().getOffset();
         Assert.fail("Should fail");
       } catch (ExecutionException e) {
         assertEquals(
-            true,
-            e.getCause()
-                .getMessage()
-                .startsWith(
-                    "INVALID_ARGUMENT: Stream name `blah` in the request doesn't match the one already specified"));
+            "OUT_OF_RANGE: The offset is beyond stream, expected offset 1, received 100",
+            e.getCause().getMessage());
       }
       // We can keep sending requests on the same stream.
       ApiFuture<AppendRowsResponse> response3 =
