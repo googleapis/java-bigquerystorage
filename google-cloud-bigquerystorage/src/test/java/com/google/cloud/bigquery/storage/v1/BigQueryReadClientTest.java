@@ -25,6 +25,8 @@ import com.google.api.gax.rpc.ApiClientHeaderProvider;
 import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.rpc.ServerStreamingCallable;
 import com.google.api.gax.rpc.StatusCode;
+import com.google.cloud.bigquery.storage.v1.stub.readrows.BigQueryStorageException;
+import com.google.cloud.bigquery.storage.v1.stub.readrows.BigQueryStorageExceptionFactory;
 import com.google.protobuf.AbstractMessage;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -160,6 +162,33 @@ public class BigQueryReadClientTest {
       Assert.assertTrue(e.getCause() instanceof InvalidArgumentException);
       InvalidArgumentException apiException = (InvalidArgumentException) e.getCause();
       Assert.assertEquals(StatusCode.Code.INVALID_ARGUMENT, apiException.getStatusCode().getCode());
+    }
+  }
+
+  @Test
+  @SuppressWarnings("all")
+  public void readRowsInternalExceptionTest() throws Exception {
+    String message = "Received unexpected EOS on DATA frame from server";
+    StatusRuntimeException exception =
+        new StatusRuntimeException(Status.INTERNAL.withDescription(message));
+    mockBigQueryRead.addException(exception);
+    ReadRowsRequest request = ReadRowsRequest.newBuilder().build();
+
+    MockStreamObserver<ReadRowsResponse> responseObserver = new MockStreamObserver<>();
+
+    ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> callable = client.readRowsCallable();
+    callable.serverStreamingCall(request, responseObserver);
+
+    try {
+      List<ReadRowsResponse> actualResponses = responseObserver.future().get();
+      Assert.fail("No exception thrown");
+    } catch (ExecutionException e) {
+      Assert.assertTrue(e.getCause() instanceof BigQueryStorageException);
+      BigQueryStorageException apiException = (BigQueryStorageException) e.getCause();
+      Assert.assertEquals(
+          BigQueryStorageExceptionFactory.ErrorCode.INTERNAL,
+          BigQueryStorageExceptionFactory.ErrorCode.fromGrpcStatus(Status.fromThrowable(e)));
+      Assert.assertEquals(message, apiException.getMessage());
     }
   }
 }

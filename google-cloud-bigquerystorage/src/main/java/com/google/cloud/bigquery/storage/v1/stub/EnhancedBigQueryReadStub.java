@@ -26,6 +26,7 @@ import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
 import com.google.cloud.bigquery.storage.v1.ReadSession;
 import com.google.cloud.bigquery.storage.v1.SplitReadStreamRequest;
 import com.google.cloud.bigquery.storage.v1.SplitReadStreamResponse;
+import com.google.cloud.bigquery.storage.v1.stub.readrows.ReadRowsRetryCallable;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -82,7 +83,7 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
   }
 
   public ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> readRowsCallable() {
-    return stub.readRowsCallable();
+    return new ReadRowsRetryCallable(stub.readRowsCallable());
   }
 
   public UnaryCallable<SplitReadStreamRequest, SplitReadStreamResponse> splitReadStreamCallable() {
