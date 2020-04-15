@@ -155,7 +155,6 @@ public class BigQueryStorageExceptionFactory {
               if (cause
                   .getMessage()
                   .contains("Received unexpected EOS on DATA frame from server")) {
-                System.out.println();
                 return true;
               }
             }
