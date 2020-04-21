@@ -34,7 +34,24 @@ for version in versions:
       destination_name='bigquerystorage',
   )
 
-java.common_templates(excludes=[
-    #TODO: REMOVE THIS WHEN GRPC FIXES ITS TEMPLATE
-    'google-cloud-bigquerystorage/src/test/java/com/google/cloud/bigquery/storage/v1alpha2/MockBigQueryWriteImpl.java'
-])
+java.common_templates()
+
+# TODO: Remove all below s.replace() logic when upstream correction is made in gapic
+# Remove line added by gapic generator
+s.replace("google-cloud-bigquerystorage/src/test/java/com/google/cloud/bigquery/storage/v1alpha2/MockBigQueryWriteImpl.java",
+          "final Object response = responses.remove();",
+          "")
+
+# Add back lines removed by gapic generator
+s.replace("google-cloud-bigquerystorage/src/test/java/com/google/cloud/bigquery/storage/v1alpha2/MockBigQueryWriteImpl.java",
+          """
+          public void onNext(AppendRowsRequest value) {
+            if (response instanceof AppendRowsResponse) {
+          """,
+          """
+          public void onNext(AppendRowsRequest value) {
+            requests.add(value);
+            final Object response = responses.remove();
+            if (response instanceof AppendRowsResponse) {
+          """
+          )
