@@ -34,4 +34,7 @@ for version in versions:
       destination_name='bigquerystorage',
   )
 
-java.common_templates()
+java.common_templates(excludes=[
+    #TODO: REMOVE THIS WHEN GRPC FIXES ITS TEMPLATE
+    'google-cloud-bigquerystorage/src/test/java/com/google/cloud/bigquery/storage/v1alpha2/MockBigQueryWriteImpl.java'
+])
