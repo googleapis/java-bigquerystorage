@@ -146,7 +146,7 @@ class Waiter {
     }
   }
 
-  public synchronized void waitComplete() {
+  public void waitComplete() {
     lock.lock();
     try {
       while (pendingCount > 0) {
