@@ -479,7 +479,9 @@ public class StreamWriter implements AutoCloseable {
       currentAlarmFuture.cancel(false);
     }
     writeAllOutstanding();
-    messagesWaiter.waitComplete();
+    synchronized (messagesWaiter) {
+      messagesWaiter.waitComplete();
+    }
     if (clientStream.isSendReady()) {
       clientStream.closeSend();
     }

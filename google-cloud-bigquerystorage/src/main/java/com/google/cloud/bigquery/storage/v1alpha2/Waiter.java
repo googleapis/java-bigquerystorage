@@ -68,8 +68,8 @@ class Waiter {
     --pendingCount;
     pendingSize -= messageSize;
     notifyNextAcquires();
-    notifyAll();
     lock.unlock();
+    notifyAll();
   }
 
   public void acquire(long messageSize) throws FlowController.FlowControlException {
@@ -146,18 +146,20 @@ class Waiter {
     }
   }
 
-  public void waitComplete() {
+  public synchronized void waitComplete() {
     lock.lock();
     try {
       while (pendingCount > 0) {
+        lock.unlock();
         try {
-          lock.unlock();
           wait();
-          lock.lock();
         } catch (InterruptedException e) {
           LOG.warning("Interrupted while waiting for completion");
         }
+        lock.lock();
       }
+    } catch (Exception e) {
+      LOG.warning(e.toString());
     } finally {
       lock.unlock();
     }
