@@ -143,6 +143,7 @@ public class WriterCacheTest {
     assertEquals(TEST_TABLE, writer.getTableNameString());
     assertEquals(TEST_STREAM, writer.getStreamNameString());
     assertEquals(1, cache.cachedTableCount());
+    writer.close();
   }
 
   @Test
@@ -165,8 +166,7 @@ public class WriterCacheTest {
             .build();
     mockBigQueryWrite.addResponse(expectedResponse2);
 
-    try {
-      StreamWriter writer = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
+    try (StreamWriter writer = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor())) {
       fail("Should fail");
     } catch (IllegalStateException e) {
       assertEquals(
@@ -216,6 +216,11 @@ public class WriterCacheTest {
     assertEquals(TEST_STREAM_3, writer4.getStreamNameString());
     assertEquals(TEST_STREAM_4, writer5.getStreamNameString());
     assertEquals(1, cache.cachedTableCount());
+    writer1.close();
+    writer2.close();
+    writer3.close();
+    writer4.close();
+    writer5.close();
   }
 
   @Test
@@ -259,6 +264,11 @@ public class WriterCacheTest {
     assertEquals(TEST_STREAM_31, writer4.getStreamNameString());
     assertEquals(TEST_STREAM, writer5.getStreamNameString());
     assertEquals(2, cache.cachedTableCount());
+    writer1.close();
+    writer2.close();
+    writer3.close();
+    writer4.close();
+    writer5.close();
   }
 
   @Test
