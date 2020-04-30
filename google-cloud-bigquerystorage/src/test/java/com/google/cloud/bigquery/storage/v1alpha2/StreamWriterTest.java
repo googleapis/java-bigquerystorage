@@ -135,8 +135,9 @@ public class StreamWriterTest {
 
   @Test
   public void testTableName() throws Exception {
-    StreamWriter writer = getTestStreamWriterBuilder().build();
-    assertEquals("projects/p/datasets/d/tables/t", writer.getTableNameString());
+    try (StreamWriter writer = getTestStreamWriterBuilder().build()) {
+      assertEquals("projects/p/datasets/d/tables/t", writer.getTableNameString());
+    }
   }
 
   @Test
@@ -175,7 +176,7 @@ public class StreamWriterTest {
             .getSerializedRowsCount());
     assertEquals(
         true, testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
-    writer.shutdown();
+    writer.close();
   }
 
   @Test
@@ -228,7 +229,7 @@ public class StreamWriterTest {
             .getSerializedRowsCount());
     assertEquals(
         false, testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
-    writer.shutdown();
+    writer.close();
   }
 
   @Test
@@ -264,7 +265,7 @@ public class StreamWriterTest {
 
     assertEquals(3, testBigQueryWrite.getAppendRequests().size());
 
-    writer.shutdown();
+    writer.close();
   }
 
   @Test
