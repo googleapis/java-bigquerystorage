@@ -35,7 +35,6 @@ for version in versions:
       destination_name='bigquerystorage',
   )
 
-# TODO: remove this when we switch to actions
 java.common_templates(excludes=[
-    '.kokoro/build.bat'
+    '.kokoro/build.bat' # TODO: remove this when we switch to actions
 ])
