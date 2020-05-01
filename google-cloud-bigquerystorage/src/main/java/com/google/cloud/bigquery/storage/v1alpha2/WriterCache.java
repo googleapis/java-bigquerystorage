@@ -145,6 +145,7 @@ public class WriterCache {
     return writer;
   }
 
+  /** Clear the cache and close all the writers in the cache. */
   public void clear() {
     synchronized (this) {
       ConcurrentMap<String, Cache<Descriptor, StreamWriter>> map = writerCache.asMap();

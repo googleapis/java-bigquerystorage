@@ -430,7 +430,8 @@ public class StreamWriterTest {
       try {
         appendFuture2.get();
         Assert.fail("This should fail");
-      } catch (ExecutionException e) {
+      } catch (Exception e) {
+        LOG.info("ControlFlow test exception: " + e.toString());
         assertEquals("The maximum number of batch elements: 1 have been reached.", e.getMessage());
       }
       assertEquals(1L, appendFuture1.get().getOffset());

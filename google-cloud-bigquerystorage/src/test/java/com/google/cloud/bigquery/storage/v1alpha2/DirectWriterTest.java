@@ -33,7 +33,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -206,14 +205,16 @@ public class DirectWriterTest {
 
   @Test
   public void testConcurrentAccess() throws Exception {
-    DirectWriter.testSetStub(client, 10, schemaCheck);
+    DirectWriter.testSetStub(client, 2, schemaCheck);
     final FooType m1 = FooType.newBuilder().setFoo("m1").build();
     final FooType m2 = FooType.newBuilder().setFoo("m2").build();
-    final Set<Long> expectedOffset = Sets.newHashSet(Long.valueOf(0L),
-    Long.valueOf(2L),
-    Long.valueOf(4L),
-    Long.valueOf(8L),
-    Long.valueOf(10L));
+    final Set<Long> expectedOffset =
+        Sets.newHashSet(
+            Long.valueOf(0L),
+            Long.valueOf(2L),
+            Long.valueOf(4L),
+            Long.valueOf(8L),
+            Long.valueOf(10L));
     // Make sure getting the same table writer in multiple thread only cause create to be called
     // once.
     WriterCreationResponseMock(TEST_STREAM, expectedOffset);
