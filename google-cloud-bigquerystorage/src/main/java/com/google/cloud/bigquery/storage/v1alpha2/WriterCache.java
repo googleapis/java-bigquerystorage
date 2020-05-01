@@ -18,6 +18,8 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import com.google.protobuf.Descriptors.Descriptor;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -52,6 +54,15 @@ public class WriterCache {
     writerCache =
         CacheBuilder.newBuilder()
             .maximumSize(maxTableEntry)
+            .removalListener(
+                new RemovalListener<String, Cache<Descriptor, StreamWriter>>() {
+                  @Override
+                  public void onRemoval(
+                      RemovalNotification<String, Cache<Descriptor, StreamWriter>>
+                          removalNotification) {
+                    removalNotification.getValue().invalidateAll();
+                  }
+                })
             .<String, Cache<Descriptor, StreamWriter>>build();
   }
 
@@ -134,6 +145,14 @@ public class WriterCache {
         tableEntry =
             CacheBuilder.newBuilder()
                 .maximumSize(MAX_WRITERS_PER_TABLE)
+                .removalListener(
+                    new RemovalListener<Descriptor, StreamWriter>() {
+                      @Override
+                      public void onRemoval(
+                          RemovalNotification<Descriptor, StreamWriter> removalNotification) {
+                        removalNotification.getValue().close();
+                      }
+                    })
                 .<Descriptor, StreamWriter>build();
         writer = CreateNewWriter(streamName);
         tableEntry.put(userSchema, writer);
