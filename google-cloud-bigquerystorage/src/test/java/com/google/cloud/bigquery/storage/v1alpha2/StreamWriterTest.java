@@ -429,8 +429,14 @@ public class StreamWriterTest {
       try {
         appendFuture2.get();
         Assert.fail("This should fail");
-      } catch (ExecutionException e) {
-        assertEquals("The maximum number of batch elements: 1 have been reached.", e.getMessage());
+      } catch (Exception e) {
+        if (!e.getMessage().equals("The maximum number of batch elements: 1 have been reached.")) {
+          LOG.info("More error info:");
+          e.printStackTrace();
+        }
+        assertEquals(
+            "java.util.concurrent.ExecutionException: The maximum number of batch elements: 1 have been reached.",
+            e.toString());
       }
       assertEquals(1L, appendFuture1.get().getOffset());
     }
