@@ -689,10 +689,6 @@ public class StreamWriter implements AutoCloseable {
      */
     public Builder setRetrySettings(RetrySettings retrySettings) {
       Preconditions.checkNotNull(retrySettings);
-      Preconditions.checkArgument(
-          retrySettings.getTotalTimeout().compareTo(MIN_TOTAL_TIMEOUT) >= 0);
-      Preconditions.checkArgument(
-          retrySettings.getInitialRpcTimeout().compareTo(MIN_RPC_TIMEOUT) >= 0);
       this.retrySettings = retrySettings;
       return this;
     }
