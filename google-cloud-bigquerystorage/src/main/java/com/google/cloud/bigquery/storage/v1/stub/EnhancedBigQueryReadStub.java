@@ -17,7 +17,11 @@ package com.google.cloud.bigquery.storage.v1.stub;
 
 import com.google.api.core.InternalApi;
 import com.google.api.gax.core.BackgroundResource;
+import com.google.api.gax.retrying.ExponentialRetryAlgorithm;
+import com.google.api.gax.retrying.ScheduledRetryingExecutor;
+import com.google.api.gax.retrying.StreamingRetryAlgorithm;
 import com.google.api.gax.rpc.ClientContext;
+import com.google.api.gax.rpc.ServerStreamingCallSettings;
 import com.google.api.gax.rpc.ServerStreamingCallable;
 import com.google.api.gax.rpc.UnaryCallable;
 import com.google.cloud.bigquery.storage.v1.CreateReadSessionRequest;
@@ -26,6 +30,8 @@ import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
 import com.google.cloud.bigquery.storage.v1.ReadSession;
 import com.google.cloud.bigquery.storage.v1.SplitReadStreamRequest;
 import com.google.cloud.bigquery.storage.v1.SplitReadStreamResponse;
+import com.google.cloud.bigquery.storage.v1.stub.readrows.ApiResultRetryAlgorithm;
+import com.google.cloud.bigquery.storage.v1.stub.readrows.ReadRowsRetryingCallable;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +42,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class EnhancedBigQueryReadStub implements BackgroundResource {
   private final GrpcBigQueryReadStub stub;
+  private final BigQueryReadStubSettings stubSettings;
+  private final ClientContext context;
 
   public static EnhancedBigQueryReadStub create(EnhancedBigQueryReadStubSettings settings)
       throws IOException {
@@ -69,12 +77,15 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
     BigQueryReadStubSettings baseSettings = baseSettingsBuilder.build();
     ClientContext clientContext = ClientContext.create(baseSettings);
     GrpcBigQueryReadStub stub = new GrpcBigQueryReadStub(baseSettings, clientContext);
-    return new EnhancedBigQueryReadStub(stub);
+    return new EnhancedBigQueryReadStub(stub, baseSettings, clientContext);
   }
 
   @InternalApi("Visible for testing")
-  EnhancedBigQueryReadStub(GrpcBigQueryReadStub stub) {
+  EnhancedBigQueryReadStub(
+      GrpcBigQueryReadStub stub, BigQueryReadStubSettings stubSettings, ClientContext context) {
     this.stub = stub;
+    this.stubSettings = stubSettings;
+    this.context = context;
   }
 
   public UnaryCallable<CreateReadSessionRequest, ReadSession> createReadSessionCallable() {
@@ -82,7 +93,23 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
   }
 
   public ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> readRowsCallable() {
-    return stub.readRowsCallable();
+    ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> innerCallable =
+        stub.readRowsCallable();
+    ServerStreamingCallSettings<ReadRowsRequest, ReadRowsResponse> callSettings =
+        stubSettings.readRowsSettings();
+    StreamingRetryAlgorithm<Void> retryAlgorithm =
+        new StreamingRetryAlgorithm<>(
+            new ApiResultRetryAlgorithm<Void>(),
+            new ExponentialRetryAlgorithm(callSettings.getRetrySettings(), context.getClock()));
+
+    ScheduledRetryingExecutor<Void> retryingExecutor =
+        new ScheduledRetryingExecutor<>(retryAlgorithm, context.getExecutor());
+
+    return new ReadRowsRetryingCallable(
+        context.getDefaultCallContext(),
+        innerCallable,
+        retryingExecutor,
+        callSettings.getResumptionStrategy());
   }
 
   public UnaryCallable<SplitReadStreamRequest, SplitReadStreamResponse> splitReadStreamCallable() {
