@@ -20,7 +20,6 @@ import com.google.api.core.InternalApi;
 import com.google.api.gax.retrying.ResultRetryAlgorithm;
 import com.google.api.gax.retrying.TimedAttemptSettings;
 import com.google.api.gax.rpc.ApiException;
-import com.google.api.gax.rpc.DeadlineExceededException;
 import io.grpc.Status;
 import org.threeten.bp.Duration;
 
@@ -33,7 +32,7 @@ public class ApiResultRetryAlgorithm<ResponseT> implements ResultRetryAlgorithm<
   @Override
   public TimedAttemptSettings createNextAttempt(
       Throwable prevThrowable, ResponseT prevResponse, TimedAttemptSettings prevSettings) {
-    if (prevThrowable != null && prevThrowable instanceof DeadlineExceededException) {
+    if (prevThrowable != null && isRetryable(prevThrowable)) {
       return TimedAttemptSettings.newBuilder()
           .setGlobalSettings(prevSettings.getGlobalSettings())
           .setRetryDelay(prevSettings.getRetryDelay())
@@ -49,13 +48,18 @@ public class ApiResultRetryAlgorithm<ResponseT> implements ResultRetryAlgorithm<
   @Override
   public boolean shouldRetry(Throwable prevThrowable, ResponseT prevResponse) {
     if (prevThrowable != null) {
-      Status status = Status.fromThrowable(prevThrowable);
-      if (status.getCode() == Status.Code.INTERNAL
-          && status.getDescription() != null
-          && status.getDescription().equals("Received unexpected EOS on DATA frame from server")) {
-        return true;
-      }
+      return isRetryable(prevThrowable);
     }
     return (prevThrowable instanceof ApiException) && ((ApiException) prevThrowable).isRetryable();
+  }
+
+  private boolean isRetryable(Throwable prevThrowable) {
+    Status status = Status.fromThrowable(prevThrowable);
+    if (status.getCode() == Status.Code.INTERNAL
+        && status.getDescription() != null
+        && status.getDescription().equals("Received unexpected EOS on DATA frame from server")) {
+      return true;
+    }
+    return false;
   }
 }
