@@ -245,6 +245,17 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
+   * Flush the rows on a BUFFERED stream, up to the specified offset.
+   *
+   * @param offset Offset to which the rows will be committed to the system.
+   * @throws
+   */
+  public void flush(long offset) {
+    stub.
+
+  }
+
+  /**
    * Re-establishes a stream connection.
    *
    * @throws IOException
