@@ -399,4 +399,28 @@ public class ITBigQueryWriteManualClientTest {
     }
     DirectWriter.clearCache();
   }
+
+  @Test
+  public void testFlushRows() throws IOException, InterruptedException, ExecutionException {
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(tableId)
+                .setWriteStream(WriteStream.newBuilder().setType(WriteStream.Type.BUFFERED).build())
+                .build());
+    try (StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build()) {
+      ApiFuture<AppendRowsResponse> response =
+          streamWriter.append(
+              createAppendRequest(writeStream.getName(), new String[] {"aaa"})
+                  .setOffset(Int64Value.of(0L))
+                  .build());
+      assertEquals(0L, response.get().getOffset());
+      streamWriter.flush(0);
+    }
+    TableResult result =
+        bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    Iterator<FieldValueList> iter = result.getValues().iterator();
+    assertEquals("aaa", iter.next().get(0).getStringValue());
+    assertEquals(false, iter.hasNext());
+  }
 }
