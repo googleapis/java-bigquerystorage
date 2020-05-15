@@ -402,10 +402,21 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testFlushRows() throws IOException, InterruptedException, ExecutionException {
+    String tableName = "BufferTable";
+    TableInfo tableInfo =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, tableName),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .build())))
+            .build();
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
-                .setParent(tableId)
+                .setParent(parent.toString())
                 .setWriteStream(WriteStream.newBuilder().setType(WriteStream.Type.BUFFERED).build())
                 .build());
     try (StreamWriter streamWriter = StreamWriter.newBuilder(writeStream.getName()).build()) {
