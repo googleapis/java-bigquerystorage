@@ -32,15 +32,20 @@ public class ApiResultRetryAlgorithm<ResponseT> implements ResultRetryAlgorithm<
   @Override
   public TimedAttemptSettings createNextAttempt(
       Throwable prevThrowable, ResponseT prevResponse, TimedAttemptSettings prevSettings) {
-    if (prevThrowable != null && isRetryable(prevThrowable)) {
-      return TimedAttemptSettings.newBuilder()
-          .setGlobalSettings(prevSettings.getGlobalSettings())
-          .setRetryDelay(prevSettings.getRetryDelay())
-          .setRpcTimeout(prevSettings.getRpcTimeout())
-          .setRandomizedRetryDelay(DEADLINE_SLEEP_DURATION)
-          .setAttemptCount(prevSettings.getAttemptCount() + 1)
-          .setFirstAttemptStartTimeNanos(prevSettings.getFirstAttemptStartTimeNanos())
-          .build();
+    if (prevThrowable != null) {
+      Status status = Status.fromThrowable(prevThrowable);
+      if (status.getCode() == Status.Code.INTERNAL
+          && status.getDescription() != null
+          && status.getDescription().equals("Received unexpected EOS on DATA frame from server")) {
+        return TimedAttemptSettings.newBuilder()
+            .setGlobalSettings(prevSettings.getGlobalSettings())
+            .setRetryDelay(prevSettings.getRetryDelay())
+            .setRpcTimeout(prevSettings.getRpcTimeout())
+            .setRandomizedRetryDelay(DEADLINE_SLEEP_DURATION)
+            .setAttemptCount(prevSettings.getAttemptCount() + 1)
+            .setFirstAttemptStartTimeNanos(prevSettings.getFirstAttemptStartTimeNanos())
+            .build();
+      }
     }
     return null;
   }
@@ -48,18 +53,13 @@ public class ApiResultRetryAlgorithm<ResponseT> implements ResultRetryAlgorithm<
   @Override
   public boolean shouldRetry(Throwable prevThrowable, ResponseT prevResponse) {
     if (prevThrowable != null) {
-      return isRetryable(prevThrowable);
+      Status status = Status.fromThrowable(prevThrowable);
+      if (status.getCode() == Status.Code.INTERNAL
+          && status.getDescription() != null
+          && status.getDescription().equals("Received unexpected EOS on DATA frame from server")) {
+        return true;
+      }
     }
     return (prevThrowable instanceof ApiException) && ((ApiException) prevThrowable).isRetryable();
-  }
-
-  private boolean isRetryable(Throwable prevThrowable) {
-    Status status = Status.fromThrowable(prevThrowable);
-    if (status.getCode() == Status.Code.INTERNAL
-        && status.getDescription() != null
-        && status.getDescription().equals("Received unexpected EOS on DATA frame from server")) {
-      return true;
-    }
-    return false;
   }
 }

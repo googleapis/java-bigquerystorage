@@ -17,13 +17,20 @@ package com.google.cloud.bigquery.storage.v1.stub;
 
 import com.google.api.core.InternalApi;
 import com.google.api.gax.core.BackgroundResource;
+import com.google.api.gax.grpc.GrpcCallSettings;
+import com.google.api.gax.grpc.GrpcRawCallableFactory;
 import com.google.api.gax.retrying.ExponentialRetryAlgorithm;
 import com.google.api.gax.retrying.ScheduledRetryingExecutor;
 import com.google.api.gax.retrying.StreamingRetryAlgorithm;
+import com.google.api.gax.rpc.Callables;
 import com.google.api.gax.rpc.ClientContext;
+import com.google.api.gax.rpc.RequestParamsExtractor;
 import com.google.api.gax.rpc.ServerStreamingCallSettings;
 import com.google.api.gax.rpc.ServerStreamingCallable;
 import com.google.api.gax.rpc.UnaryCallable;
+import com.google.api.gax.tracing.SpanName;
+import com.google.api.gax.tracing.TracedServerStreamingCallable;
+import com.google.cloud.bigquery.storage.v1.BigQueryReadGrpc;
 import com.google.cloud.bigquery.storage.v1.CreateReadSessionRequest;
 import com.google.cloud.bigquery.storage.v1.ReadRowsRequest;
 import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
@@ -32,7 +39,9 @@ import com.google.cloud.bigquery.storage.v1.SplitReadStreamRequest;
 import com.google.cloud.bigquery.storage.v1.SplitReadStreamResponse;
 import com.google.cloud.bigquery.storage.v1.stub.readrows.ApiResultRetryAlgorithm;
 import com.google.cloud.bigquery.storage.v1.stub.readrows.ReadRowsRetryingCallable;
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,6 +50,8 @@ import java.util.concurrent.TimeUnit;
  * <p>This class is for advanced usage and reflects the underlying API directly.
  */
 public class EnhancedBigQueryReadStub implements BackgroundResource {
+
+  private static final String TRACING_OUTER_CLIENT_NAME = "BigQueryStorage";
   private final GrpcBigQueryReadStub stub;
   private final BigQueryReadStubSettings stubSettings;
   private final ClientContext context;
@@ -94,9 +105,22 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
 
   public ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> readRowsCallable() {
     ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> innerCallable =
-        stub.readRowsCallable();
+        GrpcRawCallableFactory.createServerStreamingCallable(
+            GrpcCallSettings.<ReadRowsRequest, ReadRowsResponse>newBuilder()
+                .setMethodDescriptor(BigQueryReadGrpc.getReadRowsMethod())
+                .setParamsExtractor(
+                    new RequestParamsExtractor<ReadRowsRequest>() {
+                      @Override
+                      public Map<String, String> extract(ReadRowsRequest request) {
+                        return ImmutableMap.of(
+                            "read_stream", String.valueOf(request.getReadStream()));
+                      }
+                    })
+                .build(),
+            stubSettings.readRowsSettings().getRetryableCodes());
     ServerStreamingCallSettings<ReadRowsRequest, ReadRowsResponse> callSettings =
         stubSettings.readRowsSettings();
+
     StreamingRetryAlgorithm<Void> retryAlgorithm =
         new StreamingRetryAlgorithm<>(
             new ApiResultRetryAlgorithm<Void>(),
@@ -105,11 +129,23 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
     ScheduledRetryingExecutor<Void> retryingExecutor =
         new ScheduledRetryingExecutor<>(retryAlgorithm, context.getExecutor());
 
-    return new ReadRowsRetryingCallable(
-        context.getDefaultCallContext(),
-        innerCallable,
-        retryingExecutor,
-        callSettings.getResumptionStrategy());
+    if (context.getStreamWatchdog() != null) {
+      innerCallable = Callables.watched(innerCallable, callSettings, context);
+    }
+
+    ReadRowsRetryingCallable outerCallable =
+        new ReadRowsRetryingCallable(
+            context.getDefaultCallContext(),
+            innerCallable,
+            retryingExecutor,
+            callSettings.getResumptionStrategy());
+
+    ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> traced =
+        new TracedServerStreamingCallable<>(
+            outerCallable,
+            context.getTracerFactory(),
+            SpanName.of(TRACING_OUTER_CLIENT_NAME, "ReadRows"));
+    return traced.withDefaultCallContext(context.getDefaultCallContext());
   }
 
   public UnaryCallable<SplitReadStreamRequest, SplitReadStreamResponse> splitReadStreamCallable() {
