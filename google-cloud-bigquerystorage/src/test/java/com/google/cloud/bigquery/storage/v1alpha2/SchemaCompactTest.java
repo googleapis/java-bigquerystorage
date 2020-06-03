@@ -24,6 +24,7 @@ import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
+import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import java.io.IOException;
 import javax.annotation.Nullable;
 import org.junit.After;
@@ -123,5 +124,12 @@ public class SchemaCompactTest {
     } catch (IllegalArgumentException expected) {
       assertEquals("Invalid table name: blah", expected.getMessage());
     }
+  }
+
+  @Test
+  public void testSupportedTypes() {
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    assertTrue(compact.checkSupportedTypes(SupportedTypes.getDescriptor()));
+    assertFalse(compact.checkSupportedTypes(NonSupportedTypes.getDescriptor()));
   }
 }
