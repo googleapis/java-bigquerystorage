@@ -21,9 +21,13 @@ import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.cloud.bigquery.storage.test.TypeAnnotationProto;
 import com.google.protobuf.Descriptors;
+import com.google.protobuf.DescriptorProtos;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.HashSet;
+import java.util.Arrays;
 
 /**
  * A class that checks the schema compatibility between user schema in proto descriptor and Bigquery
@@ -38,6 +42,21 @@ public class SchemaCompact {
   private static SchemaCompact compact;
   private static String tablePatternString = "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)";
   private static Pattern tablePattern = Pattern.compile(tablePatternString);
+  private static final HashSet<Descriptors.FieldDescriptor.Type> SupportedTypes = new HashSet<>(Arrays.asList(
+      Descriptors.FieldDescriptor.Type.INT32,
+      Descriptors.FieldDescriptor.Type.INT64,
+      Descriptors.FieldDescriptor.Type.UINT32,
+      Descriptors.FieldDescriptor.Type.UINT64,
+      Descriptors.FieldDescriptor.Type.FIXED32,
+      Descriptors.FieldDescriptor.Type.FIXED64,
+      Descriptors.FieldDescriptor.Type.SFIXED32,
+      Descriptors.FieldDescriptor.Type.SFIXED64,
+      Descriptors.FieldDescriptor.Type.FLOAT,
+      Descriptors.FieldDescriptor.Type.DOUBLE,
+      Descriptors.FieldDescriptor.Type.BOOL,
+      Descriptors.FieldDescriptor.Type.BYTES,
+      Descriptors.FieldDescriptor.Type.STRING
+  ));
 
   private SchemaCompact(BigQuery bigquery) {
     this.bigquery = bigquery;
@@ -95,5 +114,52 @@ public class SchemaCompact {
               + " actual: "
               + userSchema.getFields().size());
     }
+  }
+
+  public static boolean hasFormatAnnotation(Descriptors.FieldDescriptor field) {
+    return getFormatAnnotationImpl(field) != TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT;
+  }
+
+  private static TypeAnnotationProto.FieldFormat.Format getFormatAnnotationImpl(Descriptors.FieldDescriptor field) {
+    // Read the format encoding, or if it doesn't exist, the type encoding.
+    if (field.getOptions().hasExtension(TypeAnnotationProto.format)) {
+      return field.getOptions().getExtension(TypeAnnotationProto.format);
+    } else if (field.getOptions().hasExtension(TypeAnnotationProto.type)) {
+      return field.getOptions().getExtension(TypeAnnotationProto.type);
+    } else {
+      return TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT;
+    }
+  }
+
+  public static TypeAnnotationProto.FieldFormat.Format getFormatAnnotation(Descriptors.FieldDescriptor field) {
+    // Read the format (or deprecated type) encoding.
+    TypeAnnotationProto.FieldFormat.Format format = getFormatAnnotationImpl(field);
+
+    TypeAnnotationProto.DeprecatedEncoding.Encoding encodingValue =
+        field.getOptions().getExtension(TypeAnnotationProto.encoding);
+    // If we also have a (valid) deprecated encoding annotation, merge that over
+    // top of the type encoding.  Ignore any invalid encoding annotation.
+    // This exists for backward compatability with existing .proto files only.
+    if (encodingValue == TypeAnnotationProto.DeprecatedEncoding.Encoding.DATE_DECIMAL
+        && format == TypeAnnotationProto.FieldFormat.Format.DATE) {
+      return TypeAnnotationProto.FieldFormat.Format.DATE_DECIMAL;
+    }
+    return format;
+  }
+  
+  /**
+   * Gets a {code SchemaCompact} object with custom BigQuery stub.
+   *
+   * @param userSchema The schema the user provides
+   * @return           True if fields are supported by BQ Schema
+   */
+  public static boolean checkSupportedTypes(Descriptors.Descriptor userSchema) {
+    for (Descriptors.FieldDescriptor field : userSchema.getFields()) {
+        Descriptors.FieldDescriptor.Type fieldType = field.getType();
+        if (!SupportedTypes.contains(fieldType)) {
+            return false;
+        }
+    }
+    return true;
   }
 }
