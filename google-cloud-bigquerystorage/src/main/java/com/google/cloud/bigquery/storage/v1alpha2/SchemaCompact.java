@@ -28,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.HashSet;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * A class that checks the schema compatibility between user schema in proto descriptor and Bigquery
@@ -55,8 +56,12 @@ public class SchemaCompact {
       Descriptors.FieldDescriptor.Type.DOUBLE,
       Descriptors.FieldDescriptor.Type.BOOL,
       Descriptors.FieldDescriptor.Type.BYTES,
-      Descriptors.FieldDescriptor.Type.STRING
+      Descriptors.FieldDescriptor.Type.STRING,
+      Descriptors.FieldDescriptor.Type.MESSAGE,
+      Descriptors.FieldDescriptor.Type.GROUP,
+      Descriptors.FieldDescriptor.Type.ENUM
   ));
+  private static HashSet<Descriptors.Descriptor> allMessageTypes = new HashSet<>();
 
   private SchemaCompact(BigQuery bigquery) {
     this.bigquery = bigquery;
@@ -146,20 +151,68 @@ public class SchemaCompact {
     }
     return format;
   }
-  
+
   /**
-   * Gets a {code SchemaCompact} object with custom BigQuery stub.
    *
-   * @param userSchema The schema the user provides
-   * @return           True if fields are supported by BQ Schema
+   * @param field      A field of a proto schema
+   * @return           True if fieldtype is supported by BQ Schema
    */
-  public static boolean checkSupportedTypes(Descriptors.Descriptor userSchema) {
-    for (Descriptors.FieldDescriptor field : userSchema.getFields()) {
-        Descriptors.FieldDescriptor.Type fieldType = field.getType();
-        if (!SupportedTypes.contains(fieldType)) {
-            return false;
-        }
+  public static boolean isSupportedType(Descriptors.FieldDescriptor field) {
+    Descriptors.FieldDescriptor.Type fieldType = field.getType();
+    if (!SupportedTypes.contains(fieldType)) {
+      return false;
     }
     return true;
+  }
+
+  private static boolean isNestedMessageAccepted(Descriptors.Descriptor message, int level) throws IllegalArgumentException {
+
+    if (level > 15) {
+      throw new IllegalArgumentException("User schema " + message.getFullName() + " is not supported: contains nested messages of greater than 15 levels");
+    }
+
+    if (allMessageTypes.contains(message)) {
+      throw new IllegalArgumentException("User schema " + message.getFullName() + " is not supported: contains nested messages of the same type.");
+    }
+    allMessageTypes.add(message);
+
+    for (Descriptors.Descriptor submessage : message.getNestedTypes()) {
+      if (!isSupportedImpl(submessage, level + 1)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   *
+   * @param field      A field of a proto schema
+   * @return           True if field mode/option is supported
+   */
+  private static boolean isSupportedImpl(Descriptors.Descriptor userSchema, int level) throws IllegalArgumentException {
+    List<Descriptors.OneofDescriptor> oneofs = userSchema.getOneofs();
+
+    if (oneofs.size() > 0) {
+      throw new IllegalArgumentException("User schema " + userSchema.getFullName() + " is not supported: contains oneof fields.");
+    }
+
+    for (Descriptors.FieldDescriptor field : userSchema.getFields()) {
+      if (!isSupportedType(field)) {
+        throw new IllegalArgumentException("User schema " + userSchema.getFullName() + " is not supported: contains " + field.getType() + " field type.");
+      }
+
+      if (field.isMapField()) {
+        throw new IllegalArgumentException("User schema " + userSchema.getFullName() + " is not supported: contains map fields.");
+      }
+    }
+
+    if (!isNestedMessageAccepted(userSchema, level)) {
+      return false;
+    }
+    return true;
+  }
+
+  public static boolean isSupported(Descriptors.Descriptor userSchema) throws IllegalArgumentException {
+    return isSupportedImpl(userSchema, 1);
   }
 }

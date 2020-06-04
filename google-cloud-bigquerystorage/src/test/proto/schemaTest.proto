@@ -25,6 +25,13 @@ message NonSupportedTypes {
   optional sint64 sint64_value = 6;
 }
 
+message NonSupportedOneof {
+  oneof oneof_value {
+     string test1 = 1;
+     string test2 = 2;
+  }
+}
+
 message AllFieldModes {
   optional bool optional_mode = 1;
   required bool required_mode = 2;
