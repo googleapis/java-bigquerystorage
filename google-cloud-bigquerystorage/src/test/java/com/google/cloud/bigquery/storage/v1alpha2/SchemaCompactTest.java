@@ -25,6 +25,7 @@ import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
+import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import javax.annotation.Nullable;
 import org.junit.After;
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
 
 @RunWith(JUnit4.class)
 public class SchemaCompactTest {
@@ -129,7 +131,25 @@ public class SchemaCompactTest {
   @Test
   public void testSupportedTypes() {
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    assertTrue(compact.checkSupportedTypes(SupportedTypes.getDescriptor()));
-    assertFalse(compact.checkSupportedTypes(NonSupportedTypes.getDescriptor()));
+
+    for (Descriptors.FieldDescriptor field : SupportedTypes.getDescriptor().getFields()) {
+      assertTrue(compact.isSupportedType(field));
+    }
+
+    for (Descriptors.FieldDescriptor field : NonSupportedTypes.getDescriptor().getFields()) {
+      assertFalse(compact.isSupportedType(field));
+    }
+  }
+
+  @Test
+  public void testOneof() {
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    Descriptors.Descriptor testOneof = NonSupportedOneof.getDescriptor();
+    try {
+      compact.isSupported(testOneof);
+      fail("Should not be supported: field contains oneof");
+    } catch (IllegalArgumentException expected) {
+      assertEquals("User schema " + testOneof.getFullName() + " is not supported: contains oneof fields.", expected.getMessage());
+    }
   }
 }
