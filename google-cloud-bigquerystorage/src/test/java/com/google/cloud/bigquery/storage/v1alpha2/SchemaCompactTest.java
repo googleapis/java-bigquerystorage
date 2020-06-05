@@ -24,7 +24,6 @@ import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
-import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import javax.annotation.Nullable;
@@ -35,7 +34,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 
 @RunWith(JUnit4.class)
 public class SchemaCompactTest {
@@ -150,9 +148,8 @@ public class SchemaCompactTest {
       fail("Should not be supported: field contains oneof");
     } catch (IllegalArgumentException expected) {
       assertEquals(
-        "User schema " + testOneof.getFullName() + " is not supported: contains oneof fields.",
-        expected.getMessage()
-      );
+          "User schema " + testOneof.getFullName() + " is not supported: contains oneof fields.",
+          expected.getMessage());
     }
   }
 
@@ -165,46 +162,63 @@ public class SchemaCompactTest {
       fail("Should not be supported: field contains map");
     } catch (IllegalArgumentException expected) {
       assertEquals(
-        "User schema " + testMap.getFullName() + " is not supported: contains map fields.",
-        expected.getMessage()
-      );
+          "User schema " + testMap.getFullName() + " is not supported: contains map fields.",
+          expected.getMessage());
     }
   }
 
-  // @Test
-  // public void testNestingGood() {
-  //   SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-  //   assertTrue(compact.isSupported(SupportedNestingLvl1.getDescriptor()));
-  // }
+  @Test
+  public void testNestingGood() {
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    assertTrue(compact.isSupported(SupportedNestingLvl1.getDescriptor()));
+    assertTrue(compact.isSupported(SupportedNestingStacked.getDescriptor()));
+  }
 
   @Test
-  public void testNestingOneLayer() {
+  public void testNestingRecursive() {
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    Descriptors.Descriptor testNesting = NonSupportedNestingLvl1.getDescriptor();
+    Descriptors.Descriptor testNesting = NonSupportedNestingRecursive.getDescriptor();
     try {
       compact.isSupported(testNesting);
       fail("Should not be supported: field contains invalid nesting");
     } catch (IllegalArgumentException expected) {
       assertEquals(
-        "User schema " + testNesting.getFullName() + " is not supported: contains recursively nested types.",
-        expected.getMessage()
-      );
+          "User schema "
+              + testNesting.getFullName()
+              + " is not supported: contains ill-formatted nesting messages.",
+          expected.getMessage());
     }
   }
 
   @Test
-  public void testNestingTwoLayers() {
+  public void testNestingContainsRecursive() {
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    Descriptors.Descriptor testNesting = NonSupportedNestingLvl2.getDescriptor();
+    Descriptors.Descriptor testNesting = NonSupportedNestingContainsRecursive.getDescriptor();
     try {
       compact.isSupported(testNesting);
       fail("Should not be supported: field contains invalid nesting");
     } catch (IllegalArgumentException expected) {
       assertEquals(
-        "User schema " + testNesting.getFullName() + " is not supported: contains recursively nested types.",
-        expected.getMessage()
-      );
+          "User schema "
+              + testNesting.getFullName()
+              + " is not supported: contains ill-formatted nesting messages.",
+          expected.getMessage());
     }
   }
 
+  @Test
+  public void testNestingRecursiveLimit() {
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    Descriptors.Descriptor testNesting = NonSupportedNestingLvl0.getDescriptor();
+    try {
+      compact.isSupported(testNesting);
+      fail("Should not be supported: field contains invalid nesting");
+    } catch (IllegalArgumentException expected) {
+      assertEquals(
+          "User schema "
+              + testNesting.getFullName()
+              + " is not supported: contains ill-formatted nesting messages.",
+          expected.getMessage());
+    }
+  }
 }
