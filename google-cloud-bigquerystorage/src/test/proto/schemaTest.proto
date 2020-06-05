@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package com.google.cloud.bigquery.storage.test;
 
-import "type_annotation.proto";
+import "zetasql/public/proto/type_annotation.proto";
 
 message SupportedTypes {
   optional int32 int32_value = 1;
@@ -38,31 +38,27 @@ message SupportedNestingLvl1 {
 }
 
 message SupportedNestingLvl2 {
-  optional SupportedNestingLvl3 nesting_value = 1;
+  optional int32 test_int = 1;
 }
 
-message SupportedNestingLvl3 {
-  optional SupportedTypes test_supported = 1;
+message SupportedNestingStacked {
+  optional int32 test_int = 1;
+  optional SupportedNestingLvl1 nesting_value1 = 2;
+  optional SupportedNestingLvl1 nesting_value2 = 3;
 }
 
 message NonSupportedMap {
   map<int32, int32> map_value = 1;
 }
 
-message NonSupportedNestingLvl1 {
+message NonSupportedNestingRecursive {
   optional int32 int_value = 1;
-  optional NonSupportedNestingLvl1 nesting_value = 2;
+  optional NonSupportedNestingRecursive nesting_value = 2;
 }
 
-message NonSupportedNestingLvl2 {
+message NonSupportedNestingContainsRecursive {
   optional int32 int_value = 1;
-  optional NonSupportedNestingLvl1 nesting_value = 2;
-}
-
-message NonSupportedNestingLvl2_1 {
-  optional int32 int_value = 1;
-  optional NonSupportedNestingLvl1 nesting_value = 2;
-  optional NonSupportedNestingLvl1 nesting_value2 = 3;
+  optional NonSupportedNestingRecursive nesting_value = 2;
 }
 
 message AllFieldModes {
@@ -74,4 +70,72 @@ message AllFieldModes {
 message TestExtensions {
   required int32 extension_test = 1  [ (zetasql.format)=DATE ];
   required int32 no_extension = 2;
+}
+
+message NonSupportedNestingLvl0 {
+  optional NonSupportedNestingLvl1 test1 = 1;
+}
+
+message NonSupportedNestingLvl1 {
+  optional NonSupportedNestingLvl2 test1 = 1;
+}
+
+message NonSupportedNestingLvl2 {
+  optional NonSupportedNestingLvl3 test1 = 1;
+}
+
+message NonSupportedNestingLvl3 {
+  optional NonSupportedNestingLvl4 test1 = 1;
+}
+
+message NonSupportedNestingLvl4 {
+  optional NonSupportedNestingLvl5 test1 = 1;
+}
+
+message NonSupportedNestingLvl5 {
+  optional NonSupportedNestingLvl6 test1 = 1;
+}
+
+message NonSupportedNestingLvl6 {
+  optional NonSupportedNestingLvl7 test1 = 1;
+}
+
+message NonSupportedNestingLvl7 {
+  optional NonSupportedNestingLvl8 test1 = 1;
+}
+
+message NonSupportedNestingLvl8 {
+  optional NonSupportedNestingLvl9 test1 = 1;
+}
+
+message NonSupportedNestingLvl9 {
+  optional NonSupportedNestingLvl10 test1 = 1;
+}
+
+message NonSupportedNestingLvl10 {
+  optional NonSupportedNestingLvl11 test1 = 1;
+}
+
+message NonSupportedNestingLvl11 {
+  optional NonSupportedNestingLvl12 test1 = 1;
+}
+
+message NonSupportedNestingLvl12 {
+  optional NonSupportedNestingLvl13 test1 = 1;
+}
+
+message NonSupportedNestingLvl13 {
+  optional NonSupportedNestingLvl14 test1 = 1;
+}
+
+message NonSupportedNestingLvl14 {
+  optional NonSupportedNestingLvl15 test1 = 1;
+}
+
+message NonSupportedNestingLvl15 {
+  optional NonSupportedNestingLvl16 test1 = 1;
+}
+
+message NonSupportedNestingLvl16 {
+  optional int32 test1 = 1;
 }
