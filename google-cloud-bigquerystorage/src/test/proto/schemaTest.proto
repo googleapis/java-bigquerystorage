@@ -32,6 +32,39 @@ message NonSupportedOneof {
   }
 }
 
+message SupportedNestingLvl1 {
+  optional SupportedTypes test_supported = 1;
+  optional SupportedNestingLvl2 nesting_value = 2;
+}
+
+message SupportedNestingLvl2 {
+  optional SupportedNestingLvl3 nesting_value = 1;
+}
+
+message SupportedNestingLvl3 {
+  optional SupportedTypes test_supported = 1;
+}
+
+message NonSupportedMap {
+  map<int32, int32> map_value = 1;
+}
+
+message NonSupportedNestingLvl1 {
+  optional int32 int_value = 1;
+  optional NonSupportedNestingLvl1 nesting_value = 2;
+}
+
+message NonSupportedNestingLvl2 {
+  optional int32 int_value = 1;
+  optional NonSupportedNestingLvl1 nesting_value = 2;
+}
+
+message NonSupportedNestingLvl2_1 {
+  optional int32 int_value = 1;
+  optional NonSupportedNestingLvl1 nesting_value = 2;
+  optional NonSupportedNestingLvl1 nesting_value2 = 3;
+}
+
 message AllFieldModes {
   optional bool optional_mode = 1;
   required bool required_mode = 2;

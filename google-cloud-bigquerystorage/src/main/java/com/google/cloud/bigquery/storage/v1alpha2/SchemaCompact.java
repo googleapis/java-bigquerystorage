@@ -43,7 +43,8 @@ public class SchemaCompact {
   private static SchemaCompact compact;
   private static String tablePatternString = "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)";
   private static Pattern tablePattern = Pattern.compile(tablePatternString);
-  private static final HashSet<Descriptors.FieldDescriptor.Type> SupportedTypes = new HashSet<>(Arrays.asList(
+  private static final HashSet<Descriptors.FieldDescriptor.Type> SupportedTypes = new HashSet<>(
+    Arrays.asList(
       Descriptors.FieldDescriptor.Type.INT32,
       Descriptors.FieldDescriptor.Type.INT64,
       Descriptors.FieldDescriptor.Type.UINT32,
@@ -60,8 +61,8 @@ public class SchemaCompact {
       Descriptors.FieldDescriptor.Type.MESSAGE,
       Descriptors.FieldDescriptor.Type.GROUP,
       Descriptors.FieldDescriptor.Type.ENUM
-  ));
-  private static HashSet<Descriptors.Descriptor> allMessageTypes = new HashSet<>();
+    )
+  );
 
   private SchemaCompact(BigQuery bigquery) {
     this.bigquery = bigquery;
@@ -121,22 +122,42 @@ public class SchemaCompact {
     }
   }
 
+  /**
+   * Checks if the field has a format annotation.
+   *
+   * @param field
+   * @return          True if feld has a format annotation
+   */
   public static boolean hasFormatAnnotation(Descriptors.FieldDescriptor field) {
     return getFormatAnnotationImpl(field) != TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT;
   }
 
-  private static TypeAnnotationProto.FieldFormat.Format getFormatAnnotationImpl(Descriptors.FieldDescriptor field) {
-    // Read the format encoding, or if it doesn't exist, the type encoding.
-    if (field.getOptions().hasExtension(TypeAnnotationProto.format)) {
-      return field.getOptions().getExtension(TypeAnnotationProto.format);
-    } else if (field.getOptions().hasExtension(TypeAnnotationProto.type)) {
-      return field.getOptions().getExtension(TypeAnnotationProto.type);
-    } else {
-      return TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT;
-    }
+  /**
+   * Retrieves format annotation for a field
+   *
+   * @param field
+   * @return          Retrieves the format annotation according to TypeAnnotationProto.
+   */
+  private static TypeAnnotationProto.FieldFormat.Format getFormatAnnotationImpl(
+    Descriptors.FieldDescriptor field) {
+      // Read the format encoding, or if it doesn't exist, the type encoding.
+      if (field.getOptions().hasExtension(TypeAnnotationProto.format)) {
+        return field.getOptions().getExtension(TypeAnnotationProto.format);
+      } else if (field.getOptions().hasExtension(TypeAnnotationProto.type)) {
+        return field.getOptions().getExtension(TypeAnnotationProto.type);
+      } else {
+        return TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT;
+      }
   }
 
-  public static TypeAnnotationProto.FieldFormat.Format getFormatAnnotation(Descriptors.FieldDescriptor field) {
+  /**
+   * Retrieves format annotation for a field while also dealing with depracated values.
+   *
+   * @param field
+   * @return          Retrieves the format annotation according to TypeAnnotationProto.
+   */
+  public static TypeAnnotationProto.FieldFormat.Format getFormatAnnotation(
+    Descriptors.FieldDescriptor field) {
     // Read the format (or deprecated type) encoding.
     TypeAnnotationProto.FieldFormat.Format format = getFormatAnnotationImpl(field);
 
@@ -154,7 +175,7 @@ public class SchemaCompact {
 
   /**
    *
-   * @param field      A field of a proto schema
+   * @param field
    * @return           True if fieldtype is supported by BQ Schema
    */
   public static boolean isSupportedType(Descriptors.FieldDescriptor field) {
@@ -165,54 +186,106 @@ public class SchemaCompact {
     return true;
   }
 
-  private static boolean isNestedMessageAccepted(Descriptors.Descriptor message, int level) throws IllegalArgumentException {
+  /**
+   * Method that checks for proper nesting (no recursive protos) and supported types.
+   *
+   * @param message
+   * @param level               Keeps track of current level of nesting.
+   * @param allMessageTypes     Keeps track of all message types seen, and make sure they don't
+                                repeat as recursive protos are not supported.
+   * @return                    True if fieldtype is supported by BQ Schema
+   * @throws IllegalArgumentException if message is invalid
+   */
+  private static boolean isNestedMessageAccepted(
+    Descriptors.Descriptor message, int level,HashSet<Descriptors.Descriptor> allMessageTypes)
+      throws IllegalArgumentException {
 
     if (level > 15) {
-      throw new IllegalArgumentException("User schema " + message.getFullName() + " is not supported: contains nested messages of greater than 15 levels");
+      throw new IllegalArgumentException(
+        "User schema "
+          + message.getFullName()
+          + " is not supported: contains nested messages of greater than 15 levels"
+      );
     }
 
     if (allMessageTypes.contains(message)) {
-      throw new IllegalArgumentException("User schema " + message.getFullName() + " is not supported: contains nested messages of the same type.");
+      return false;
     }
     allMessageTypes.add(message);
+    return isSupportedImpl(message, level + 1, allMessageTypes);
+  }
 
-    for (Descriptors.Descriptor submessage : message.getNestedTypes()) {
-      if (!isSupportedImpl(submessage, level + 1)) {
-        return false;
+  /**
+   * Actual implementation that checks if a user schema is supported.
+   *
+   * @param field
+   * @param level                 Keeps track of current level of nesting.
+   * @param allMessageTypes       Keeps track of all message types seen, and make sure they don't
+                                  repeat as recursive protos are not supported.
+   * @return                      True if field type and option is supported
+   * @throws IllegalArgumentException if schema is invalid
+   */
+  private static boolean isSupportedImpl(
+    Descriptors.Descriptor userSchema, int level, HashSet<Descriptors.Descriptor> allMessageTypes)
+      throws IllegalArgumentException {
+
+    // for (Descriptors.Descriptor des : allMessageTypes) {
+    //   System.out.println(des.getFullName());
+    // }
+    // System.out.println();
+    List<Descriptors.OneofDescriptor> oneofs = userSchema.getOneofs();
+    if (oneofs.size() > 0) {
+      throw new IllegalArgumentException(
+        "User schema "
+          + userSchema.getFullName()
+          + " is not supported: contains oneof fields."
+      );
+    }
+
+    for (Descriptors.FieldDescriptor field : userSchema.getFields()) {
+      if (!isSupportedType(field)) {
+        throw new IllegalArgumentException(
+          "User schema "
+            + userSchema.getFullName()
+            + " is not supported: contains "
+            + field.getType()
+            + " field type."
+        );
+      }
+
+      if (field.isMapField()) {
+        throw new IllegalArgumentException(
+          "User schema "
+          + userSchema.getFullName()
+          + " is not supported: contains map fields.");
+      }
+
+      if (field.getType().equals(Descriptors.FieldDescriptor.Type.MESSAGE) || field.getType().equals(Descriptors.FieldDescriptor.Type.GROUP)) {
+        if (!isNestedMessageAccepted(field.getMessageType(), level + 1, allMessageTypes)) {
+          return false;
+        }
       }
     }
     return true;
   }
 
   /**
+   * Checks if userSchema is supported
    *
-   * @param field      A field of a proto schema
-   * @return           True if field mode/option is supported
+   * @param userSchema
+   * @return                      True if userSchema is supported
+   * @throws IllegalArgumentException if schema is invalid
    */
-  private static boolean isSupportedImpl(Descriptors.Descriptor userSchema, int level) throws IllegalArgumentException {
-    List<Descriptors.OneofDescriptor> oneofs = userSchema.getOneofs();
-
-    if (oneofs.size() > 0) {
-      throw new IllegalArgumentException("User schema " + userSchema.getFullName() + " is not supported: contains oneof fields.");
-    }
-
-    for (Descriptors.FieldDescriptor field : userSchema.getFields()) {
-      if (!isSupportedType(field)) {
-        throw new IllegalArgumentException("User schema " + userSchema.getFullName() + " is not supported: contains " + field.getType() + " field type.");
-      }
-
-      if (field.isMapField()) {
-        throw new IllegalArgumentException("User schema " + userSchema.getFullName() + " is not supported: contains map fields.");
-      }
-    }
-
-    if (!isNestedMessageAccepted(userSchema, level)) {
-      return false;
+  public static boolean isSupported(Descriptors.Descriptor userSchema) throws IllegalArgumentException {
+    HashSet<Descriptors.Descriptor> allMessageTypes = new HashSet<>();
+    int startingLevel = 1;
+    allMessageTypes.add(userSchema);
+    if (!isSupportedImpl(userSchema, startingLevel, allMessageTypes)) {
+      throw new IllegalArgumentException(
+        "User schema "
+        + userSchema.getFullName()
+        + " is not supported: contains recursively nested types.");
     }
     return true;
-  }
-
-  public static boolean isSupported(Descriptors.Descriptor userSchema) throws IllegalArgumentException {
-    return isSupportedImpl(userSchema, 1);
   }
 }
