@@ -22,8 +22,6 @@ import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Descriptors;
-import com.google.zetasql.ProtoType;
-import com.google.zetasql.TypeAnnotationProto;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
