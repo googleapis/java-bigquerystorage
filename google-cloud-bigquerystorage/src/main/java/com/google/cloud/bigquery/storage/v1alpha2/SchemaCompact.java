@@ -151,12 +151,12 @@ public class SchemaCompact {
       throws IllegalArgumentException {
 
     if (allMessageTypes.size() > 15) {
-      throw new IllegalArgumentException(
-          "User schema " + message.getFullName() + " is not supported: contains nested messages of more than 15 levels.");
+      return false;
     }
 
     if (allMessageTypes.contains(message)) {
-      return false;
+      throw new IllegalArgumentException(
+          "User schema " + message.getFullName() + " is not supported: contains recursively nested messages.");
     }
     allMessageTypes.add(message);
     boolean result = isSupportedImpl(message, allMessageTypes);
@@ -177,15 +177,6 @@ public class SchemaCompact {
   private static boolean isSupportedImpl(
       Descriptors.Descriptor userSchema, HashSet<Descriptors.Descriptor> allMessageTypes)
       throws IllegalArgumentException {
-
-    // List<Descriptors.OneofDescriptor> oneofs = userSchema.getOneofs();
-    // if (oneofs.size() > 0) {
-    //   for (Descriptors.OneofDescriptor oneof : oneofs) {
-    //     for (Descriptors.FieldDescriptor field : oneof.getFields()) {
-    //       System.out.println(field.getFullName() + ": "+ field.getType());
-    //     }
-    //   }
-    // }
 
     for (Descriptors.FieldDescriptor field : userSchema.getFields()) {
       if (!isSupportedType(field)) {
@@ -219,7 +210,7 @@ public class SchemaCompact {
    * @return True if userSchema is supported
    * @throws IllegalArgumentException if schema is invalid
    */
-  public static boolean isSupported(Descriptors.Descriptor userSchema)
+  public static void isSupported(Descriptors.Descriptor userSchema)
       throws IllegalArgumentException {
     HashSet<Descriptors.Descriptor> allMessageTypes = new HashSet<>();
     allMessageTypes.add(userSchema);
@@ -227,9 +218,8 @@ public class SchemaCompact {
       throw new IllegalArgumentException(
           "User schema "
               + userSchema.getFullName()
-              + " is not supported: contains ill-formatted nesting messages.");
+              + " is not supported: contains nested messages of more than 15 levels.");
     }
-    return true;
   }
 
   public static boolean isCompatibleWithBQInteger(
@@ -442,6 +432,7 @@ public class SchemaCompact {
   private boolean isProtoCompatibleWithBQImpl (
     Descriptors.Descriptor protoSchema, Schema BQSchema, boolean allowUnknownFields, boolean topLevel)
     throws IllegalArgumentException {
+      isSupported(protoSchema);
 
       int matchedFields = 0;
       HashMap<String, Descriptors.FieldDescriptor> protoFieldMap = new HashMap<>();
