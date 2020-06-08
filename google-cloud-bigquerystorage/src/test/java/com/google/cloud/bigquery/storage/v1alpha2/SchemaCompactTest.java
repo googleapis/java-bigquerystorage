@@ -141,21 +141,6 @@ public class SchemaCompactTest {
   }
 
   @Test
-  public void testOneof() {
-    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    Descriptors.Descriptor testOneof = NonSupportedOneof.getDescriptor();
-    compact.isSupported(testOneof);
-    // try {
-    //   compact.isSupported(testOneof);
-    //   fail("Should not be supported: field contains oneof");
-    // } catch (IllegalArgumentException expected) {
-    //   assertEquals(
-    //       "User schema " + testOneof.getFullName() + " is not supported: contains oneof fields.",
-    //       expected.getMessage());
-    // }
-  }
-
-  @Test
   public void testMap() {
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
     Descriptors.Descriptor testMap = NonSupportedMap.getDescriptor();
@@ -225,7 +210,182 @@ public class SchemaCompactTest {
   }
 
   @Test
-  public void testCompatibleWithBQInteger() {
-    
+  public void testProtoMoreFields() {
+    TableDefinition definition =
+        new TableDefinition() {
+          @Override
+          public Type getType() {
+            return null;
+          }
+
+          @Nullable
+          @Override
+          public Schema getSchema() {
+            return Schema.of(Field.of("int32_value", LegacySQLTypeName.INTEGER));
+          }
+
+          @Override
+          public Builder toBuilder() {
+            return null;
+          }
+        };
+    when(mockBigqueryTable.getDefinition()).thenReturn(definition);
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+
+    try {
+      compact.isProtoCompatibleWithBQ(SupportedTypes.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      fail("Should fail: proto has more fields and allowUnknownFields flag is false.");
+    } catch (IllegalArgumentException expected) {
+      assertEquals(
+          "Proto schema has "
+            + SupportedTypes.getDescriptor().getFields().size()
+            + " fields, while BQ schema has "
+            + 1
+            + " fields.",
+          expected.getMessage());
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
   }
+
+  @Test
+  public void testProtoFieldOptionsRepeated() {
+    TableDefinition definition =
+        new TableDefinition() {
+          @Override
+          public Type getType() {
+            return null;
+          }
+
+          @Nullable
+          @Override
+          public Schema getSchema() {
+            return Schema.of(Field.newBuilder("repeated_mode", LegacySQLTypeName.INTEGER).setMode(Field.Mode.REPEATED).build());
+          }
+
+          @Override
+          public Builder toBuilder() {
+            return null;
+          }
+        };
+    when(mockBigqueryTable.getDefinition()).thenReturn(definition);
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    assertTrue(compact.isProtoCompatibleWithBQ(RepeatedTestSuccess.getDescriptor(), "projects/p/datasets/d/tables/t", false));
+
+    try {
+      compact.isProtoCompatibleWithBQ(RepeatedTestFailOptional.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      fail("Should fail: BQ schema is repeated, but proto is optional.");
+    } catch (IllegalArgumentException expected) {
+      assertEquals(
+            "Given proto field repeated_mode is not repeated but Big Query field repeated_mode is.",
+            expected.getMessage());
+    }
+
+
+    try {
+      compact.isProtoCompatibleWithBQ(RepeatedTestFailRequired.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      fail("Should fail: BQ schema is repeated, but proto is required.");
+    } catch (IllegalArgumentException expected) {
+      assertEquals(
+            "Given proto field repeated_mode is not repeated but Big Query field repeated_mode is.",
+            expected.getMessage());
+    }
+    verify(mockBigquery, times(3)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(3)).getDefinition();
+  }
+
+  @Test
+  public void testProtoFieldOptionsRequired() {
+    TableDefinition definition =
+        new TableDefinition() {
+          @Override
+          public Type getType() {
+            return null;
+          }
+
+          @Nullable
+          @Override
+          public Schema getSchema() {
+            return Schema.of(Field.newBuilder("required_mode", LegacySQLTypeName.INTEGER).setMode(Field.Mode.REQUIRED).build());
+          }
+
+          @Override
+          public Builder toBuilder() {
+            return null;
+          }
+        };
+    when(mockBigqueryTable.getDefinition()).thenReturn(definition);
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    assertTrue(compact.isProtoCompatibleWithBQ(RequiredTestSuccess.getDescriptor(), "projects/p/datasets/d/tables/t", false));
+
+    try {
+      compact.isProtoCompatibleWithBQ(RequiredTestFailExistence.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      fail("Should fail: BQ schema is required, but proto does not have this field.");
+    } catch (IllegalArgumentException expected) {
+      assertEquals(
+            "The required Big Query field required_mode is missing in the proto schema.",
+            expected.getMessage());
+    }
+
+    try {
+      compact.isProtoCompatibleWithBQ(RequiredTestFailOptional.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      fail("Should fail: BQ schema is repeated, but proto is optional.");
+    } catch (IllegalArgumentException expected) {
+      assertEquals(
+            "Given proto field required_mode is not required but Big Query field required_mode is.",
+            expected.getMessage());
+    }
+
+
+    try {
+      compact.isProtoCompatibleWithBQ(RequiredTestFailRepeated.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      fail("Should fail: BQ schema is required, but proto is repeated.");
+    } catch (IllegalArgumentException expected) {
+      assertEquals(
+            "Given proto field required_mode is not required but Big Query field required_mode is.",
+            expected.getMessage());
+    }
+    verify(mockBigquery, times(4)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(4)).getDefinition();
+  }
+
+  @Test
+  public void testProtoFieldOptionsOptional() {
+    TableDefinition definition =
+        new TableDefinition() {
+          @Override
+          public Type getType() {
+            return null;
+          }
+
+          @Nullable
+          @Override
+          public Schema getSchema() {
+            return Schema.of(Field.newBuilder("optional_mode", LegacySQLTypeName.INTEGER).setMode(Field.Mode.NULLABLE).build());
+          }
+
+          @Override
+          public Builder toBuilder() {
+            return null;
+          }
+        };
+    when(mockBigqueryTable.getDefinition()).thenReturn(definition);
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    assertTrue(compact.isProtoCompatibleWithBQ(OptionalTestSuccessOptional.getDescriptor(), "projects/p/datasets/d/tables/t", false));
+    assertTrue(compact.isProtoCompatibleWithBQ(OptionalTestSuccessRequired.getDescriptor(), "projects/p/datasets/d/tables/t", false));
+
+    try {
+      compact.isProtoCompatibleWithBQ(OptionalTestFailRepeated.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      fail("Should fail: BQ schema is nullable, but proto field is repeated.");
+    } catch (IllegalArgumentException expected) {
+      assertEquals(
+            "Given proto field optional_mode is repeated but Big Query field optional_mode is optional.",
+            expected.getMessage());
+    }
+
+    verify(mockBigquery, times(3)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(3)).getDefinition();
+  }
+
+
 }
