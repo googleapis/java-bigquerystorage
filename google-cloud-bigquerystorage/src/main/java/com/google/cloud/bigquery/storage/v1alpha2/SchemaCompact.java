@@ -26,6 +26,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Descriptors;
 import com.google.zetasql.TypeAnnotationProto;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -394,10 +395,45 @@ public class SchemaCompact {
         return false;
   }
 
-  public boolean isProtoCompatibleWithBQ (
-    Descriptors.Descriptor protoSchema, Schema BQSchema, boolean allowUnknownFields)
+  private boolean isProtoFieldModeCompatibleWithBQFieldMode(
+    Descriptors.FieldDescriptor protoField, Field BQField)
     throws IllegalArgumentException {
+
+    switch(BQField.getMode()) {
+      case REPEATED:
+        if (!protoField.isRepeated()) {
+          throw new IllegalArgumentException("Given proto field " +
+                                              protoField.getName() +
+                                              " is not repeated but Big Query field " +
+                                              BQField.getName() + " is.");
+        }
+        break;
+      case REQUIRED:
+        if (!protoField.isRequired()) {
+          throw new IllegalArgumentException("Given proto field " +
+                                              protoField.getName() +
+                                              " is not required but Big Query field " +
+                                              BQField.getName() + " is.");
+        }
+        break;
+      case NULLABLE:
+        if (protoField.isRepeated()) {
+          throw new IllegalArgumentException("Given proto field " +
+                                              protoField.getName() +
+                                              " is repeated but Big Query field " +
+                                              BQField.getName() + " is optional.");
+        }
+        break;
+    }
+    return true;
+  }
+
+  private boolean isProtoCompatibleWithBQImpl (
+    Descriptors.Descriptor protoSchema, Schema BQSchema, boolean allowUnknownFields, boolean topLevel)
+    throws IllegalArgumentException {
+
       int matchedFields = 0;
+      HashMap<String, Descriptors.FieldDescriptor> protoFieldMap = new HashMap<>();
 
       List<Descriptors.FieldDescriptor> protoFields = protoSchema.getFields();
       List<Field> BQFields = BQSchema.getFields();
@@ -413,11 +449,44 @@ public class SchemaCompact {
         }
       }
 
-      // for (Field field : BQFields) {
-      //
-      // }
+      for (Descriptors.FieldDescriptor field : protoFields) {
+        protoFieldMap.put(field.getName().toLowerCase(), field);
+      }
 
+      for (Field field : BQFields) {
+        String fieldName = field.getName().toLowerCase();
+        Descriptors.FieldDescriptor protoField = null;
+        if (protoFieldMap.containsKey(fieldName)) {
+          protoField = protoFieldMap.get(fieldName);
+        }
+
+        if (protoField == null && field.getMode() == Field.Mode.REQUIRED) {
+          throw new IllegalArgumentException("The required Big Query field " + field.getName() + " is missing in the proto schema.");
+        }
+
+        if (protoField == null) {
+          continue;
+        }
+        isProtoFieldModeCompatibleWithBQFieldMode(protoField, field);
+        matchedFields++;
+      }
+
+      if (matchedFields == 0 && topLevel) {
+        throw new IllegalArgumentException ("There is no matching fields found for the proto schema " +
+                                         protoSchema.getName() +
+                                         " and the table schema " +
+                                         BQSchema);
+      }
       return true;
+  }
+
+  public boolean isProtoCompatibleWithBQ(
+    Descriptors.Descriptor protoSchema, String BQTableName, boolean allowUnknownFields)
+    throws IllegalArgumentException {
+
+    Table table = bigquery.getTable(getTableId(BQTableName));
+    Schema BQSchema = table.getDefinition().getSchema();
+    return isProtoCompatibleWithBQImpl(protoSchema, BQSchema, allowUnknownFields, true);
   }
 
 }

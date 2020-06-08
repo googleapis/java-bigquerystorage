@@ -39,6 +39,46 @@ message OneofRecurisve {
   }
 }
 
+message RepeatedTestSuccess {
+  repeated int32 repeated_mode = 1;
+}
+
+message RepeatedTestFailOptional {
+  optional int32 repeated_mode = 1;
+}
+
+message RepeatedTestFailRequired {
+  required int32 repeated_mode = 1;
+}
+
+message RequiredTestSuccess {
+  required int32 required_mode = 1;
+}
+
+message RequiredTestFailExistence {
+  optional int32 no_required_mode = 1;
+}
+
+message RequiredTestFailOptional {
+  optional int32 required_mode = 1;
+}
+
+message RequiredTestFailRepeated {
+  repeated int32 required_mode = 1;
+}
+
+message OptionalTestSuccessRequired {
+  required int32 optional_mode = 1;
+}
+
+message OptionalTestSuccessOptional {
+  optional int32 optional_mode = 1;
+}
+
+message OptionalTestFailRepeated {
+  repeated int32 optional_mode = 1;
+}
+
 message SupportedNestingLvl1 {
   optional SupportedTypes test_supported = 1;
   optional SupportedNestingLvl2 nesting_value = 2;
@@ -66,12 +106,6 @@ message NonSupportedNestingRecursive {
 message NonSupportedNestingContainsRecursive {
   optional int32 int_value = 1;
   optional NonSupportedNestingRecursive nesting_value = 2;
-}
-
-message AllFieldModes {
-  optional bool optional_mode = 1;
-  required bool required_mode = 2;
-  repeated bool repeated_mode = 3;
 }
 
 message TestExtensions {
