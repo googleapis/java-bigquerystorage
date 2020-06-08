@@ -39,43 +39,43 @@ message OneofRecurisve {
   }
 }
 
-message RepeatedTestSuccess {
+message ProtoRepeatedBQRepeated {
   repeated int32 repeated_mode = 1;
 }
 
-message RepeatedTestFailOptional {
+message ProtoOptionalBQRepeated {
   optional int32 repeated_mode = 1;
 }
 
-message RepeatedTestFailRequired {
+message ProtoRequiredBQRepeated {
   required int32 repeated_mode = 1;
 }
 
-message RequiredTestSuccess {
+message ProtoRequiredBQRequired  {
   required int32 required_mode = 1;
 }
 
-message RequiredTestFailExistence {
+message ProtoNoneBQRequired {
   optional int32 no_required_mode = 1;
 }
 
-message RequiredTestFailOptional {
+message ProtoOptionalBQRequired {
   optional int32 required_mode = 1;
 }
 
-message RequiredTestFailRepeated {
+message ProtoRepeatedBQRequired {
   repeated int32 required_mode = 1;
 }
 
-message OptionalTestSuccessRequired {
-  required int32 optional_mode = 1;
-}
-
-message OptionalTestSuccessOptional {
+message ProtoOptionalBQOptional {
   optional int32 optional_mode = 1;
 }
 
-message OptionalTestFailRepeated {
+message ProtoRequiredBQOptional{
+  required int32 optional_mode = 1;
+}
+
+message ProtoRepeatedBQOptional {
   repeated int32 optional_mode = 1;
 }
 
