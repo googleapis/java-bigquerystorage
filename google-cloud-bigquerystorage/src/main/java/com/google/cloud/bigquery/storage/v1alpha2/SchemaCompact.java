@@ -64,15 +64,6 @@ public class SchemaCompact {
               Descriptors.FieldDescriptor.Type.GROUP,
               Descriptors.FieldDescriptor.Type.ENUM));
 
-  private class ExactMatch {
-    private boolean exactMatch = true;
-    public void setExactMatch(boolean exactMatch) {
-      this.exactMatch = exactMatch;
-    }
-    public boolean getExactMatch() {
-      return this.exactMatch;
-    }
-  }
 
   private SchemaCompact(BigQuery bigquery) {
     this.bigquery = bigquery;
@@ -241,10 +232,10 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQInteger(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
       if (field == Descriptors.FieldDescriptor.Type.INT64 ||
           field == Descriptors.FieldDescriptor.Type.SFIXED64) {
-          exactMatch.setExactMatch(true);
+
           return true;
       }
 
@@ -253,7 +244,7 @@ public class SchemaCompact {
           field == Descriptors.FieldDescriptor.Type.FIXED32 ||
           field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
           field == Descriptors.FieldDescriptor.Type.ENUM) {
-          exactMatch.setExactMatch(false);
+
           return true;
       }
 
@@ -261,14 +252,14 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQFloat(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
       if (field == Descriptors.FieldDescriptor.Type.FLOAT) {
-          exactMatch.setExactMatch(true);
+
           return true;
       }
 
       if (field == Descriptors.FieldDescriptor.Type.DOUBLE) {
-          exactMatch.setExactMatch(false);
+
           return true;
       }
 
@@ -277,9 +268,8 @@ public class SchemaCompact {
 
 
   public static boolean isCompatibleWithBQBool(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
       if (field == Descriptors.FieldDescriptor.Type.BOOL) {
-          exactMatch.setExactMatch(true);
           return true;
       }
 
@@ -291,25 +281,22 @@ public class SchemaCompact {
           field == Descriptors.FieldDescriptor.Type.FIXED64 ||
           field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
           field == Descriptors.FieldDescriptor.Type.SFIXED64) {
-          exactMatch.setExactMatch(false);
           return true;
       }
       return false;
   }
 
   public static boolean isCompatibleWithBQStringAndBytes(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
       if (field == Descriptors.FieldDescriptor.Type.BYTES ||
           field == Descriptors.FieldDescriptor.Type.STRING) {
-        exactMatch.setExactMatch(true);
         return true;
       }
       return false;
   }
 
   public static boolean isCompatibleWithBQNumeric(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
-      exactMatch.setExactMatch(false);
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
       if (field == Descriptors.FieldDescriptor.Type.INT32 ||
           field == Descriptors.FieldDescriptor.Type.INT64 ||
           field == Descriptors.FieldDescriptor.Type.UINT32 ||
@@ -331,24 +318,20 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQTimeStamp(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
-        if (isCompatibleWithBQInteger(field, format, exactMatch) &&
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
+        if (isCompatibleWithBQInteger(field, format) &&
             (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
              format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_MICROS ||
              format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_MILLIS  ||
              format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_SECONDS)) {
-            if (format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_MICROS) {
-              exactMatch.setExactMatch(true);
-            } else {
-              exactMatch.setExactMatch(false);
-            }
+
             return true;
         }
         return false;
   }
 
   public static boolean isCompatibleWithBQDate(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
         if ((field == Descriptors.FieldDescriptor.Type.INT32 ||
              field == Descriptors.FieldDescriptor.Type.INT64 ||
              field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
@@ -357,42 +340,36 @@ public class SchemaCompact {
              format == TypeAnnotationProto.FieldFormat.Format.DATE ||
              format == TypeAnnotationProto.FieldFormat.Format.DATE_DECIMAL)) {
 
-            if (format == TypeAnnotationProto.FieldFormat.Format.DATE) {
-              exactMatch.setExactMatch(true);
-            } else {
-              exactMatch.setExactMatch(false);
-            }
             return true;
         }
         return false;
   }
 
   public static boolean isCompatibleWithBQTime(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
         if ((field == Descriptors.FieldDescriptor.Type.INT64 ||
              field == Descriptors.FieldDescriptor.Type.SFIXED64) &&
             (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
              format == TypeAnnotationProto.FieldFormat.Format.TIME_MICROS)) {
-            exactMatch.setExactMatch(true);
+
             return true;
         }
         return false;
   }
 
   public static boolean isCompatibleWithBQDateTime(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
         if ((field == Descriptors.FieldDescriptor.Type.INT64 ||
              field == Descriptors.FieldDescriptor.Type.SFIXED64) &&
             (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
              format == TypeAnnotationProto.FieldFormat.Format.DATETIME_MICROS)) {
-            exactMatch.setExactMatch(true);
             return true;
         }
         return false;
   }
 
   public static boolean isCompatibleWithBQRecord(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
         if (field == Descriptors.FieldDescriptor.Type.MESSAGE ||
             field == Descriptors.FieldDescriptor.Type.GROUP) {
             // TODO: Check if the underlying message is supported
@@ -402,27 +379,26 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQGeography(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
         if (field == Descriptors.FieldDescriptor.Type.BYTES &&
             (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
              format == TypeAnnotationProto.FieldFormat.Format.ST_GEOGRAPHY_ENCODED)) {
-            exactMatch.setExactMatch(false);
             return true;
         }
         return false;
   }
 
   public static boolean isCompatibleWithBQBigNumeric(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
         // TODO: Not implemented in cpp
         return false;
   }
 
   public boolean isProtoCompatibleWithBQ (
-    Descriptors.Descriptor protoSchema, Schema BQSchema, boolean allowUnknownFields, ExactMatch exactMatch)
+    Descriptors.Descriptor protoSchema, Schema BQSchema, boolean allowUnknownFields)
     throws IllegalArgumentException {
       int matchedFields = 0;
-      exactMatch.setExactMatch(true);
+
       List<Descriptors.FieldDescriptor> protoFields = protoSchema.getFields();
       List<Field> BQFields = BQSchema.getFields();
 
@@ -434,14 +410,12 @@ public class SchemaCompact {
                   + " fields, while BQ schema has "
                   + BQFields.size()
                   + " fields.");
-        } else {
-          exactMatch.setExactMatch(false);
         }
       }
 
-      for (Field field : BQFields) {
-
-      }
+      // for (Field field : BQFields) {
+      //
+      // }
 
       return true;
   }
