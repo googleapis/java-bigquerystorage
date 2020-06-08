@@ -27,8 +27,15 @@ message NonSupportedTypes {
 
 message NonSupportedOneof {
   oneof oneof_value {
-     string test1 = 1;
-     string test2 = 2;
+    string test1 = 1;
+    OneofRecurisve test2 = 2;
+  }
+}
+
+message OneofRecurisve {
+  oneof oneof_value2 {
+    string test3 = 3;
+    string test4 = 4;
   }
 }
 

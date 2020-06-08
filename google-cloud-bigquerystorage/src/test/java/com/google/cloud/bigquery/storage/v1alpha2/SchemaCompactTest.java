@@ -143,14 +143,15 @@ public class SchemaCompactTest {
   public void testOneof() {
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
     Descriptors.Descriptor testOneof = NonSupportedOneof.getDescriptor();
-    try {
-      compact.isSupported(testOneof);
-      fail("Should not be supported: field contains oneof");
-    } catch (IllegalArgumentException expected) {
-      assertEquals(
-          "User schema " + testOneof.getFullName() + " is not supported: contains oneof fields.",
-          expected.getMessage());
-    }
+    compact.isSupported(testOneof);
+    // try {
+    //   compact.isSupported(testOneof);
+    //   fail("Should not be supported: field contains oneof");
+    // } catch (IllegalArgumentException expected) {
+    //   assertEquals(
+    //       "User schema " + testOneof.getFullName() + " is not supported: contains oneof fields.",
+    //       expected.getMessage());
+    // }
   }
 
   @Test
@@ -212,13 +213,18 @@ public class SchemaCompactTest {
     Descriptors.Descriptor testNesting = NonSupportedNestingLvl0.getDescriptor();
     try {
       compact.isSupported(testNesting);
-      fail("Should not be supported: field contains invalid nesting");
+      fail("Should not be supported: contains nested messages of more than 15 levels.");
     } catch (IllegalArgumentException expected) {
       assertEquals(
           "User schema "
               + testNesting.getFullName()
-              + " is not supported: contains ill-formatted nesting messages.",
+              + " is not supported: contains nested messages of more than 15 levels.",
           expected.getMessage());
     }
+  }
+
+  @Test
+  public void testCompatibleWithBQInteger() {
+    
   }
 }

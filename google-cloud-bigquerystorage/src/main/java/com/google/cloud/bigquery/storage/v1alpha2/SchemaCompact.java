@@ -16,12 +16,15 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.Field;
+import com.google.cloud.bigquery.FieldList;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Descriptors;
+import com.google.zetasql.TypeAnnotationProto;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -60,6 +63,16 @@ public class SchemaCompact {
               Descriptors.FieldDescriptor.Type.MESSAGE,
               Descriptors.FieldDescriptor.Type.GROUP,
               Descriptors.FieldDescriptor.Type.ENUM));
+
+  private class ExactMatch {
+    private boolean exactMatch = true;
+    public void setExactMatch(boolean exactMatch) {
+      this.exactMatch = exactMatch;
+    }
+    public boolean getExactMatch() {
+      return this.exactMatch;
+    }
+  }
 
   private SchemaCompact(BigQuery bigquery) {
     this.bigquery = bigquery;
@@ -146,7 +159,8 @@ public class SchemaCompact {
       throws IllegalArgumentException {
 
     if (allMessageTypes.size() > 15) {
-      return false;
+      throw new IllegalArgumentException(
+          "User schema " + message.getFullName() + " is not supported: contains nested messages of more than 15 levels.");
     }
 
     if (allMessageTypes.contains(message)) {
@@ -172,11 +186,14 @@ public class SchemaCompact {
       Descriptors.Descriptor userSchema, HashSet<Descriptors.Descriptor> allMessageTypes)
       throws IllegalArgumentException {
 
-    List<Descriptors.OneofDescriptor> oneofs = userSchema.getOneofs();
-    if (oneofs.size() > 0) {
-      throw new IllegalArgumentException(
-          "User schema " + userSchema.getFullName() + " is not supported: contains oneof fields.");
-    }
+    // List<Descriptors.OneofDescriptor> oneofs = userSchema.getOneofs();
+    // if (oneofs.size() > 0) {
+    //   for (Descriptors.OneofDescriptor oneof : oneofs) {
+    //     for (Descriptors.FieldDescriptor field : oneof.getFields()) {
+    //       System.out.println(field.getFullName() + ": "+ field.getType());
+    //     }
+    //   }
+    // }
 
     for (Descriptors.FieldDescriptor field : userSchema.getFields()) {
       if (!isSupportedType(field)) {
@@ -222,4 +239,211 @@ public class SchemaCompact {
     }
     return true;
   }
+
+  public static boolean isCompatibleWithBQInteger(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+      if (field == Descriptors.FieldDescriptor.Type.INT64 ||
+          field == Descriptors.FieldDescriptor.Type.SFIXED64) {
+          exactMatch.setExactMatch(true);
+          return true;
+      }
+
+      if (field == Descriptors.FieldDescriptor.Type.INT32 ||
+          field == Descriptors.FieldDescriptor.Type.UINT32 ||
+          field == Descriptors.FieldDescriptor.Type.FIXED32 ||
+          field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
+          field == Descriptors.FieldDescriptor.Type.ENUM) {
+          exactMatch.setExactMatch(false);
+          return true;
+      }
+
+      return false;
+  }
+
+  public static boolean isCompatibleWithBQFloat(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+      if (field == Descriptors.FieldDescriptor.Type.FLOAT) {
+          exactMatch.setExactMatch(true);
+          return true;
+      }
+
+      if (field == Descriptors.FieldDescriptor.Type.DOUBLE) {
+          exactMatch.setExactMatch(false);
+          return true;
+      }
+
+      return false;
+  }
+
+
+  public static boolean isCompatibleWithBQBool(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+      if (field == Descriptors.FieldDescriptor.Type.BOOL) {
+          exactMatch.setExactMatch(true);
+          return true;
+      }
+
+      if (field == Descriptors.FieldDescriptor.Type.INT32 ||
+          field == Descriptors.FieldDescriptor.Type.INT64 ||
+          field == Descriptors.FieldDescriptor.Type.UINT32 ||
+          field == Descriptors.FieldDescriptor.Type.UINT64 ||
+          field == Descriptors.FieldDescriptor.Type.FIXED32 ||
+          field == Descriptors.FieldDescriptor.Type.FIXED64 ||
+          field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
+          field == Descriptors.FieldDescriptor.Type.SFIXED64) {
+          exactMatch.setExactMatch(false);
+          return true;
+      }
+      return false;
+  }
+
+  public static boolean isCompatibleWithBQStringAndBytes(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+      if (field == Descriptors.FieldDescriptor.Type.BYTES ||
+          field == Descriptors.FieldDescriptor.Type.STRING) {
+        exactMatch.setExactMatch(true);
+        return true;
+      }
+      return false;
+  }
+
+  public static boolean isCompatibleWithBQNumeric(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+      exactMatch.setExactMatch(false);
+      if (field == Descriptors.FieldDescriptor.Type.INT32 ||
+          field == Descriptors.FieldDescriptor.Type.INT64 ||
+          field == Descriptors.FieldDescriptor.Type.UINT32 ||
+          field == Descriptors.FieldDescriptor.Type.UINT64 ||
+          field == Descriptors.FieldDescriptor.Type.FIXED32 ||
+          field == Descriptors.FieldDescriptor.Type.FIXED64 ||
+          field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
+          field == Descriptors.FieldDescriptor.Type.SFIXED64) {
+          return true;
+      }
+
+      if (field == Descriptors.FieldDescriptor.Type.BYTES &&
+          (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
+           format == TypeAnnotationProto.FieldFormat.Format.NUMERIC)) {
+          return true;
+      }
+
+      return false;
+  }
+
+  public static boolean isCompatibleWithBQTimeStamp(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+        if (isCompatibleWithBQInteger(field, format, exactMatch) &&
+            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
+             format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_MICROS ||
+             format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_MILLIS  ||
+             format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_SECONDS)) {
+            if (format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_MICROS) {
+              exactMatch.setExactMatch(true);
+            } else {
+              exactMatch.setExactMatch(false);
+            }
+            return true;
+        }
+        return false;
+  }
+
+  public static boolean isCompatibleWithBQDate(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+        if ((field == Descriptors.FieldDescriptor.Type.INT32 ||
+             field == Descriptors.FieldDescriptor.Type.INT64 ||
+             field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
+             field == Descriptors.FieldDescriptor.Type.SFIXED64) &&
+            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
+             format == TypeAnnotationProto.FieldFormat.Format.DATE ||
+             format == TypeAnnotationProto.FieldFormat.Format.DATE_DECIMAL)) {
+
+            if (format == TypeAnnotationProto.FieldFormat.Format.DATE) {
+              exactMatch.setExactMatch(true);
+            } else {
+              exactMatch.setExactMatch(false);
+            }
+            return true;
+        }
+        return false;
+  }
+
+  public static boolean isCompatibleWithBQTime(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+        if ((field == Descriptors.FieldDescriptor.Type.INT64 ||
+             field == Descriptors.FieldDescriptor.Type.SFIXED64) &&
+            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
+             format == TypeAnnotationProto.FieldFormat.Format.TIME_MICROS)) {
+            exactMatch.setExactMatch(true);
+            return true;
+        }
+        return false;
+  }
+
+  public static boolean isCompatibleWithBQDateTime(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+        if ((field == Descriptors.FieldDescriptor.Type.INT64 ||
+             field == Descriptors.FieldDescriptor.Type.SFIXED64) &&
+            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
+             format == TypeAnnotationProto.FieldFormat.Format.DATETIME_MICROS)) {
+            exactMatch.setExactMatch(true);
+            return true;
+        }
+        return false;
+  }
+
+  public static boolean isCompatibleWithBQRecord(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+        if (field == Descriptors.FieldDescriptor.Type.MESSAGE ||
+            field == Descriptors.FieldDescriptor.Type.GROUP) {
+            // TODO: Check if the underlying message is supported
+            return true;
+        }
+        return false;
+  }
+
+  public static boolean isCompatibleWithBQGeography(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+        if (field == Descriptors.FieldDescriptor.Type.BYTES &&
+            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
+             format == TypeAnnotationProto.FieldFormat.Format.ST_GEOGRAPHY_ENCODED)) {
+            exactMatch.setExactMatch(false);
+            return true;
+        }
+        return false;
+  }
+
+  public static boolean isCompatibleWithBQBigNumeric(
+    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format, ExactMatch exactMatch) {
+        // TODO: Not implemented in cpp
+        return false;
+  }
+
+  public boolean isProtoCompatibleWithBQ (
+    Descriptors.Descriptor protoSchema, Schema BQSchema, boolean allowUnknownFields, ExactMatch exactMatch)
+    throws IllegalArgumentException {
+      int matchedFields = 0;
+      exactMatch.setExactMatch(true);
+      List<Descriptors.FieldDescriptor> protoFields = protoSchema.getFields();
+      List<Field> BQFields = BQSchema.getFields();
+
+      if (protoFields.size() > BQFields.size()) {
+        if (!allowUnknownFields) {
+          throw new IllegalArgumentException(
+              "Proto schema has "
+                  + protoFields.size()
+                  + " fields, while BQ schema has "
+                  + BQFields.size()
+                  + " fields.");
+        } else {
+          exactMatch.setExactMatch(false);
+        }
+      }
+
+      for (Field field : BQFields) {
+
+      }
+
+      return true;
+  }
+
 }
