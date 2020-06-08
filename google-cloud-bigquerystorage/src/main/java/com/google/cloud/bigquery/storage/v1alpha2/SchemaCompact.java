@@ -427,6 +427,17 @@ public class SchemaCompact {
     }
     return true;
   }
+  private boolean isProtoFieldTypeCompatibleWithBQFieldType(
+    Descriptors.FieldDescriptor protoField, Field BQField)
+    throws IllegalArgumentException {
+
+    // TypeAnnotationProto.FieldFormat.Format annotation = Prototype.getAnnotation
+    // switch(BQField.getType()) {
+    //   case INTEGER:
+    //     if
+    // }
+    return true;
+  }
 
   private boolean isProtoCompatibleWithBQImpl (
     Descriptors.Descriptor protoSchema, Schema BQSchema, boolean allowUnknownFields, boolean topLevel)

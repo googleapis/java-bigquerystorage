@@ -270,10 +270,10 @@ public class SchemaCompactTest {
         };
     when(mockBigqueryTable.getDefinition()).thenReturn(definition);
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    assertTrue(compact.isProtoCompatibleWithBQ(RepeatedTestSuccess.getDescriptor(), "projects/p/datasets/d/tables/t", false));
+    assertTrue(compact.isProtoCompatibleWithBQ(ProtoRepeatedBQRepeated.getDescriptor(), "projects/p/datasets/d/tables/t", false));
 
     try {
-      compact.isProtoCompatibleWithBQ(RepeatedTestFailOptional.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      compact.isProtoCompatibleWithBQ(ProtoOptionalBQRepeated.getDescriptor(), "projects/p/datasets/d/tables/t", false);
       fail("Should fail: BQ schema is repeated, but proto is optional.");
     } catch (IllegalArgumentException expected) {
       assertEquals(
@@ -283,7 +283,7 @@ public class SchemaCompactTest {
 
 
     try {
-      compact.isProtoCompatibleWithBQ(RepeatedTestFailRequired.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      compact.isProtoCompatibleWithBQ(ProtoRequiredBQRepeated.getDescriptor(), "projects/p/datasets/d/tables/t", false);
       fail("Should fail: BQ schema is repeated, but proto is required.");
     } catch (IllegalArgumentException expected) {
       assertEquals(
@@ -316,10 +316,10 @@ public class SchemaCompactTest {
         };
     when(mockBigqueryTable.getDefinition()).thenReturn(definition);
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    assertTrue(compact.isProtoCompatibleWithBQ(RequiredTestSuccess.getDescriptor(), "projects/p/datasets/d/tables/t", false));
+    assertTrue(compact.isProtoCompatibleWithBQ(ProtoRequiredBQRequired.getDescriptor(), "projects/p/datasets/d/tables/t", false));
 
     try {
-      compact.isProtoCompatibleWithBQ(RequiredTestFailExistence.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      compact.isProtoCompatibleWithBQ(ProtoNoneBQRequired.getDescriptor(), "projects/p/datasets/d/tables/t", false);
       fail("Should fail: BQ schema is required, but proto does not have this field.");
     } catch (IllegalArgumentException expected) {
       assertEquals(
@@ -328,8 +328,8 @@ public class SchemaCompactTest {
     }
 
     try {
-      compact.isProtoCompatibleWithBQ(RequiredTestFailOptional.getDescriptor(), "projects/p/datasets/d/tables/t", false);
-      fail("Should fail: BQ schema is repeated, but proto is optional.");
+      compact.isProtoCompatibleWithBQ(ProtoOptionalBQRequired.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      fail("Should fail: BQ schema is required, but proto is optional.");
     } catch (IllegalArgumentException expected) {
       assertEquals(
             "Given proto field required_mode is not required but Big Query field required_mode is.",
@@ -338,7 +338,7 @@ public class SchemaCompactTest {
 
 
     try {
-      compact.isProtoCompatibleWithBQ(RequiredTestFailRepeated.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      compact.isProtoCompatibleWithBQ(ProtoRepeatedBQRequired.getDescriptor(), "projects/p/datasets/d/tables/t", false);
       fail("Should fail: BQ schema is required, but proto is repeated.");
     } catch (IllegalArgumentException expected) {
       assertEquals(
@@ -371,11 +371,11 @@ public class SchemaCompactTest {
         };
     when(mockBigqueryTable.getDefinition()).thenReturn(definition);
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    assertTrue(compact.isProtoCompatibleWithBQ(OptionalTestSuccessOptional.getDescriptor(), "projects/p/datasets/d/tables/t", false));
-    assertTrue(compact.isProtoCompatibleWithBQ(OptionalTestSuccessRequired.getDescriptor(), "projects/p/datasets/d/tables/t", false));
+    assertTrue(compact.isProtoCompatibleWithBQ(ProtoOptionalBQOptional.getDescriptor(), "projects/p/datasets/d/tables/t", false));
+    assertTrue(compact.isProtoCompatibleWithBQ(ProtoRequiredBQOptional.getDescriptor(), "projects/p/datasets/d/tables/t", false));
 
     try {
-      compact.isProtoCompatibleWithBQ(OptionalTestFailRepeated.getDescriptor(), "projects/p/datasets/d/tables/t", false);
+      compact.isProtoCompatibleWithBQ(ProtoRepeatedBQOptional.getDescriptor(), "projects/p/datasets/d/tables/t", false);
       fail("Should fail: BQ schema is nullable, but proto field is repeated.");
     } catch (IllegalArgumentException expected) {
       assertEquals(
