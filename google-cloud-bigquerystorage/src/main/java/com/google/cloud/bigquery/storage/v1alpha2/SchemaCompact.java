@@ -18,12 +18,14 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldList;
+import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Descriptors;
+import com.google.zetasql.ProtoType;
 import com.google.zetasql.TypeAnnotationProto;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -226,7 +228,6 @@ public class SchemaCompact {
     Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
       if (field == Descriptors.FieldDescriptor.Type.INT64 ||
           field == Descriptors.FieldDescriptor.Type.SFIXED64) {
-
           return true;
       }
 
@@ -235,7 +236,6 @@ public class SchemaCompact {
           field == Descriptors.FieldDescriptor.Type.FIXED32 ||
           field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
           field == Descriptors.FieldDescriptor.Type.ENUM) {
-
           return true;
       }
 
@@ -245,15 +245,12 @@ public class SchemaCompact {
   public static boolean isCompatibleWithBQFloat(
     Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
       if (field == Descriptors.FieldDescriptor.Type.FLOAT) {
-
           return true;
       }
 
       if (field == Descriptors.FieldDescriptor.Type.DOUBLE) {
-
           return true;
       }
-
       return false;
   }
 
@@ -385,10 +382,13 @@ public class SchemaCompact {
         return false;
   }
 
-  private boolean isProtoFieldModeCompatibleWithBQFieldMode(
+  private void protoFieldModeIsCompatibleWithBQFieldMode(
     Descriptors.FieldDescriptor protoField, Field BQField)
     throws IllegalArgumentException {
-
+    if (BQField.getMode() == null) {
+      throw new IllegalArgumentException("Big query schema contains invalid field option for " +
+                                          BQField.getName() + ".");
+    }
     switch(BQField.getMode()) {
       case REPEATED:
         if (!protoField.isRepeated()) {
@@ -415,18 +415,30 @@ public class SchemaCompact {
         }
         break;
     }
-    return true;
   }
-  private boolean isProtoFieldTypeCompatibleWithBQFieldType(
+
+  private void protoFieldTypeIsCompatibleWithBQFieldType(
     Descriptors.FieldDescriptor protoField, Field BQField)
     throws IllegalArgumentException {
 
-    // TypeAnnotationProto.FieldFormat.Format annotation = Prototype.getAnnotation
-    // switch(BQField.getType()) {
-    //   case INTEGER:
-    //     if
-    // }
-    return true;
+    TypeAnnotationProto.FieldFormat.Format protoAnnotation = ProtoType.getFormatAnnotation(protoField);
+    LegacySQLTypeName BQType = BQField.getType();
+    Descriptors.FieldDescriptor.Type protoType = protoField.getType();
+    boolean match = false;
+    if (BQType == LegacySQLTypeName.BYTES || BQType == LegacySQLTypeName.STRING) {
+      match = isCompatibleWithBQStringAndBytes(protoType, protoAnnotation);
+    }
+
+    else if(BQType == LegacySQLTypeName.INTEGER) {
+      match = isCompatibleWithBQInteger(protoType, protoAnnotation);
+    }
+
+    if (!match) {
+      throw new IllegalArgumentException("The proto field " +
+                                          protoField.getName() +
+                                          " does not have a matching type with the big query field " +
+                                          BQField.getName() + ".");
+    }
   }
 
   private boolean isProtoCompatibleWithBQImpl (
@@ -455,30 +467,32 @@ public class SchemaCompact {
         protoFieldMap.put(field.getName().toLowerCase(), field);
       }
 
-      for (Field field : BQFields) {
-        String fieldName = field.getName().toLowerCase();
+      for (Field BQField : BQFields) {
+        String fieldName = BQField.getName().toLowerCase();
         Descriptors.FieldDescriptor protoField = null;
         if (protoFieldMap.containsKey(fieldName)) {
           protoField = protoFieldMap.get(fieldName);
         }
 
-        if (protoField == null && field.getMode() == Field.Mode.REQUIRED) {
-          throw new IllegalArgumentException("The required Big Query field " + field.getName() + " is missing in the proto schema.");
+        if (protoField == null && BQField.getMode() == Field.Mode.REQUIRED) {
+          throw new IllegalArgumentException("The required Big Query field " + BQField.getName() + " is missing in the proto schema.");
         }
 
         if (protoField == null) {
           continue;
         }
-        isProtoFieldModeCompatibleWithBQFieldMode(protoField, field);
+
+        protoFieldModeIsCompatibleWithBQFieldMode(protoField, BQField);
+        protoFieldTypeIsCompatibleWithBQFieldType(protoField, BQField);
         matchedFields++;
       }
 
       if (matchedFields == 0 && topLevel) {
         throw new IllegalArgumentException ("There is no matching fields found for the proto schema " +
                                          protoSchema.getName() +
-                                         " and the table schema " +
-                                         BQSchema);
+                                         " and the BQ table schema");
       }
+
       return true;
   }
 
