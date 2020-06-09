@@ -25,19 +25,75 @@ message NonSupportedTypes {
   optional sint64 sint64_value = 6;
 }
 
-message NonSupportedOneof {
-  oneof oneof_value {
-    string test1 = 1;
-    OneofRecurisve test2 = 2;
+message Int32Type {
+  optional int32 test_field_type = 1;
+}
+
+message Int64Type {
+  optional int64 test_field_type = 1;
+}
+
+message UInt32Type {
+  optional uint32 test_field_type = 1;
+}
+
+message UInt64Type {
+  optional uint64 test_field_type = 1;
+}
+
+message Fixed32Type {
+  optional fixed32 test_field_type = 1;
+}
+
+message Fixed64Type {
+  optional fixed64 test_field_type = 1;
+}
+
+message SFixed32Type {
+  optional sfixed32 test_field_type = 1;
+}
+
+message SFixed64Type {
+  optional sfixed64 test_field_type = 1;
+}
+
+message FloatType {
+  optional float test_field_type = 1;
+}
+
+message DoubleType {
+  optional double test_field_type = 1;
+}
+
+message BoolType {
+  optional bool test_field_type = 1;
+}
+
+message BytesType {
+  optional bytes test_field_type = 1;
+}
+
+message StringType {
+  optional string test_field_type = 1;
+}
+
+message EnumType {
+  enum EnumTest {
+    test1 = 0;
+  }
+  optional EnumTest test_field_type = 1;
+}
+
+message MessageType {
+  optional EnumType test_field_type = 1;
+}
+
+message GroupType {
+  optional group Test_field_type = 1 {
+    required string test1 = 2;
   }
 }
 
-message OneofRecurisve {
-  oneof oneof_value2 {
-    string test3 = 3;
-    string test4 = 4;
-  }
-}
 
 message ProtoRepeatedBQRepeated {
   repeated int32 repeated_mode = 1;
@@ -77,6 +133,10 @@ message ProtoRequiredBQOptional{
 
 message ProtoRepeatedBQOptional {
   repeated int32 optional_mode = 1;
+}
+
+message ProtoCompatibleWithBQInt {
+  optional int32 optional_mode = 1;
 }
 
 message SupportedNestingLvl1 {
