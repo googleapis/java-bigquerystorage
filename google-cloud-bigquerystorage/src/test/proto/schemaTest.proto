@@ -88,10 +88,26 @@ message MessageType {
 
 message GroupType {
   optional group Test_field_type = 1 {
-    optional string what_field_type = 2;
+    optional string test_field_type = 2;
   }
 }
 
+message MessageTypeMismatch {
+  optional MismatchLvl0 mismatchlvl0 = 1;
+}
+
+message MismatchLvl0 {
+  optional MismatchLvl1 mismatchlvl1 = 1;
+}
+
+message MismatchLvl1 {
+  optional string test_field_type = 1;
+}
+
+message TopLevelMatch {
+  optional string match = 1;
+  optional MismatchLvl1 mismatch = 2;
+}
 
 message ProtoRepeatedBQRepeated {
   repeated int32 repeated_mode = 1;

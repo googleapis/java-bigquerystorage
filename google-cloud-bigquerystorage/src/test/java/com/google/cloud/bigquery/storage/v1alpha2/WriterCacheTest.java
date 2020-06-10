@@ -131,7 +131,7 @@ public class WriterCacheTest {
     WriterCache cache = WriterCache.getTestInstance(client, 10, mockSchemaCheck);
     WriterCreationResponseMock(TEST_STREAM);
     StreamWriter writer = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
-    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor(), false);
     List<AbstractMessage> actualRequests = mockBigQueryWrite.getRequests();
     assertEquals(2, actualRequests.size());
     assertEquals(
@@ -184,10 +184,10 @@ public class WriterCacheTest {
     WriterCreationResponseMock(TEST_STREAM);
     WriterCreationResponseMock(TEST_STREAM_2);
     StreamWriter writer1 = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
-    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor(), false);
 
     StreamWriter writer2 = cache.getTableWriter(TEST_TABLE, AllSupportedTypes.getDescriptor());
-    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, AllSupportedTypes.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, AllSupportedTypes.getDescriptor(), false);
 
     List<AbstractMessage> actualRequests = mockBigQueryWrite.getRequests();
     assertEquals(4, actualRequests.size());
@@ -203,19 +203,19 @@ public class WriterCacheTest {
 
     // Still able to get the FooType writer.
     StreamWriter writer3 = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
-    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor(), false);
     assertEquals(TEST_STREAM, writer3.getStreamNameString());
 
     // Create a writer with a even new schema.
     WriterCreationResponseMock(TEST_STREAM_3);
     WriterCreationResponseMock(TEST_STREAM_4);
     StreamWriter writer4 = cache.getTableWriter(TEST_TABLE, NestedType.getDescriptor());
-    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, NestedType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, NestedType.getDescriptor(), false);
 
     LOG.info("blah");
     // This would cause a new stream to be created since the old entry is evicted.
     StreamWriter writer5 = cache.getTableWriter(TEST_TABLE, AllSupportedTypes.getDescriptor());
-    verify(mockSchemaCheck, times(2)).check(TEST_TABLE, AllSupportedTypes.getDescriptor());
+    verify(mockSchemaCheck, times(2)).check(TEST_TABLE, AllSupportedTypes.getDescriptor(), false);
     assertEquals(TEST_STREAM_3, writer4.getStreamNameString());
     assertEquals(TEST_STREAM_4, writer5.getStreamNameString());
     assertEquals(1, cache.cachedTableCount());
@@ -229,8 +229,8 @@ public class WriterCacheTest {
     WriterCreationResponseMock(TEST_STREAM_21);
     StreamWriter writer1 = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
     StreamWriter writer2 = cache.getTableWriter(TEST_TABLE_2, FooType.getDescriptor());
-    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor());
-    verify(mockSchemaCheck, times(1)).check(TEST_TABLE_2, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE, FooType.getDescriptor(), false);
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE_2, FooType.getDescriptor(), false);
 
     List<AbstractMessage> actualRequests = mockBigQueryWrite.getRequests();
     assertEquals(4, actualRequests.size());
@@ -247,18 +247,18 @@ public class WriterCacheTest {
 
     // Still able to get the FooType writer.
     StreamWriter writer3 = cache.getTableWriter(TEST_TABLE_2, FooType.getDescriptor());
-    verify(mockSchemaCheck, times(1)).check(TEST_TABLE_2, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE_2, FooType.getDescriptor(), false);
     Assert.assertEquals(TEST_STREAM_21, writer3.getStreamNameString());
 
     // Create a writer with a even new schema.
     WriterCreationResponseMock(TEST_STREAM_31);
     WriterCreationResponseMock(TEST_STREAM);
     StreamWriter writer4 = cache.getTableWriter(TEST_TABLE_3, NestedType.getDescriptor());
-    verify(mockSchemaCheck, times(1)).check(TEST_TABLE_3, NestedType.getDescriptor());
+    verify(mockSchemaCheck, times(1)).check(TEST_TABLE_3, NestedType.getDescriptor(), false);
 
     // This would cause a new stream to be created since the old entry is evicted.
     StreamWriter writer5 = cache.getTableWriter(TEST_TABLE, FooType.getDescriptor());
-    verify(mockSchemaCheck, times(2)).check(TEST_TABLE, FooType.getDescriptor());
+    verify(mockSchemaCheck, times(2)).check(TEST_TABLE, FooType.getDescriptor(), false);
 
     assertEquals(TEST_STREAM_31, writer4.getStreamNameString());
     assertEquals(TEST_STREAM, writer5.getStreamNameString());

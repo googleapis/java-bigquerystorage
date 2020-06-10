@@ -136,12 +136,12 @@ public class WriterCache {
             writer.close();
           }
         }
-        compact.check(tableName, userSchema);
+        compact.check(tableName, userSchema, false);
         streamName = CreateNewStream(tableName);
         writer = CreateNewWriter(streamName);
         tableEntry.put(userSchema, writer);
       } else {
-        compact.check(tableName, userSchema);
+        compact.check(tableName, userSchema, false);
         streamName = CreateNewStream(tableName);
         tableEntry =
             CacheBuilder.newBuilder()

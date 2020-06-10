@@ -17,7 +17,6 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Field;
-import com.google.cloud.bigquery.FieldList;
 import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.Table;
@@ -33,9 +32,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A class that checks the schema compatibility between user schema in proto descriptor and Bigquery
- * table schema. If this check is passed, then user can write to BigQuery table using the user
- * schema, otherwise the write will fail.
+ * A class that checks the schema compatibility between Proto schema in proto descriptor and
+ * Bigquery table schema. If this check is passed, then user can write to BigQuery table using the
+ * user schema, otherwise the write will fail.
  *
  * <p>The implementation as of now is not complete, which measn, if this check passed, there is
  * still a possbility of writing will fail.
@@ -64,7 +63,6 @@ public class SchemaCompact {
               Descriptors.FieldDescriptor.Type.MESSAGE,
               Descriptors.FieldDescriptor.Type.GROUP,
               Descriptors.FieldDescriptor.Type.ENUM));
-
 
   private SchemaCompact(BigQuery bigquery) {
     this.bigquery = bigquery;
@@ -103,25 +101,65 @@ public class SchemaCompact {
   }
 
   /**
-   * Checks if the userSchema is compatible with the table's current schema for writing. The current
-   * implementatoin is not complete. If the check failed, the write couldn't succeed.
+   * Checks if proto schema is supported.
    *
-   * @param tableName The name of the table to write to.
-   * @param userSchema The schema user uses to append data.
-   * @throws IllegalArgumentException the check failed.
+   * @param protoSchema
+   * @return True if protoSchema is supported
+   * @throws IllegalArgumentException if schema is invalid
    */
-  public void check(String tableName, Descriptors.Descriptor userSchema)
+  public static void isSupported(Descriptors.Descriptor protoSchema)
       throws IllegalArgumentException {
-    Table table = bigquery.getTable(getTableId(tableName));
-    Schema schema = table.getDefinition().getSchema();
-    // TODO: We only have very limited check here. More checks to be added.
-    if (schema.getFields().size() != userSchema.getFields().size()) {
+    HashSet<Descriptors.Descriptor> allMessageTypes = new HashSet<>();
+    allMessageTypes.add(protoSchema);
+    String protoSchemaName = protoSchema.getName();
+    if (!isSupportedImpl(protoSchema, allMessageTypes, protoSchemaName)) {
       throw new IllegalArgumentException(
-          "User schema doesn't have expected field number with BigQuery table schema, expected: "
-              + schema.getFields().size()
-              + " actual: "
-              + userSchema.getFields().size());
+          "Proto schema "
+              + protoSchemaName
+              + " is not supported: contains nested messages of more than 15 levels.");
     }
+  }
+
+  /**
+   * Actual implementation that checks if a proto schema is supported.
+   *
+   * @param protoSchema
+   * @param allMessageTypes Keeps track of all message types seen, and make sure they don't repeat
+   *     as recursive protos are not supported.
+   * @param protoScope Debugging purposes to show error if messages are nested.
+   * @return True if field type and option is supported
+   * @throws IllegalArgumentException if schema is invalid
+   */
+  private static boolean isSupportedImpl(
+      Descriptors.Descriptor protoSchema,
+      HashSet<Descriptors.Descriptor> allMessageTypes,
+      String protoScope)
+      throws IllegalArgumentException {
+
+    for (Descriptors.FieldDescriptor field : protoSchema.getFields()) {
+      String currentProtoScope = protoScope + "." + field.getName();
+      if (!isSupportedType(field)) {
+        throw new IllegalArgumentException(
+            "Proto schema "
+                + currentProtoScope
+                + " is not supported: contains "
+                + field.getType()
+                + " field type.");
+      }
+
+      if (field.isMapField()) {
+        throw new IllegalArgumentException(
+            "Proto schema " + currentProtoScope + " is not supported: is a map field.");
+      }
+
+      if (field.getType().equals(Descriptors.FieldDescriptor.Type.MESSAGE)
+          || field.getType().equals(Descriptors.FieldDescriptor.Type.GROUP)) {
+        if (!isNestedMessageAccepted(field.getMessageType(), allMessageTypes, currentProtoScope)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   /**
@@ -147,7 +185,9 @@ public class SchemaCompact {
    * @throws IllegalArgumentException if message is invalid
    */
   private static boolean isNestedMessageAccepted(
-      Descriptors.Descriptor message, HashSet<Descriptors.Descriptor> allMessageTypes)
+      Descriptors.Descriptor message,
+      HashSet<Descriptors.Descriptor> allMessageTypes,
+      String protoScope)
       throws IllegalArgumentException {
 
     if (allMessageTypes.size() > 15) {
@@ -156,360 +196,357 @@ public class SchemaCompact {
 
     if (allMessageTypes.contains(message)) {
       throw new IllegalArgumentException(
-          "User schema " + message.getFullName() + " is not supported: contains recursively nested messages.");
+          "Proto schema " + protoScope + " is not supported: is a recursively nested message.");
     }
     allMessageTypes.add(message);
-    boolean result = isSupportedImpl(message, allMessageTypes);
+    boolean result = isSupportedImpl(message, allMessageTypes, protoScope);
     allMessageTypes.remove(message);
     return result;
   }
 
-  /**
-   * Actual implementation that checks if a user schema is supported.
-   *
-   * @param field
-   * @param level Keeps track of current level of nesting.
-   * @param allMessageTypes Keeps track of all message types seen, and make sure they don't repeat
-   *     as recursive protos are not supported.
-   * @return True if field type and option is supported
-   * @throws IllegalArgumentException if schema is invalid
-   */
-  private static boolean isSupportedImpl(
-      Descriptors.Descriptor userSchema, HashSet<Descriptors.Descriptor> allMessageTypes)
-      throws IllegalArgumentException {
-
-    for (Descriptors.FieldDescriptor field : userSchema.getFields()) {
-      if (!isSupportedType(field)) {
-        throw new IllegalArgumentException(
-            "User schema "
-                + userSchema.getFullName()
-                + " is not supported: contains "
-                + field.getType()
-                + " field type.");
-      }
-
-      if (field.isMapField()) {
-        throw new IllegalArgumentException(
-            "User schema " + userSchema.getFullName() + " is not supported: contains map fields.");
-      }
-
-      if (field.getType().equals(Descriptors.FieldDescriptor.Type.MESSAGE)
-          || field.getType().equals(Descriptors.FieldDescriptor.Type.GROUP)) {
-        if (!isNestedMessageAccepted(field.getMessageType(), allMessageTypes)) {
-          return false;
-        }
-      }
+  private static boolean isCompatibleWithBQBool(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.BOOL
+        || field == Descriptors.FieldDescriptor.Type.INT32
+        || field == Descriptors.FieldDescriptor.Type.INT64
+        || field == Descriptors.FieldDescriptor.Type.UINT32
+        || field == Descriptors.FieldDescriptor.Type.UINT64
+        || field == Descriptors.FieldDescriptor.Type.FIXED32
+        || field == Descriptors.FieldDescriptor.Type.FIXED64
+        || field == Descriptors.FieldDescriptor.Type.SFIXED32
+        || field == Descriptors.FieldDescriptor.Type.SFIXED64) {
+      return true;
     }
-    return true;
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQBytes(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.BYTES) {
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQDate(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.INT32
+        || field == Descriptors.FieldDescriptor.Type.INT64
+        || field == Descriptors.FieldDescriptor.Type.SFIXED32
+        || field == Descriptors.FieldDescriptor.Type.SFIXED64) {
+
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQDatetime(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.INT64
+        || field == Descriptors.FieldDescriptor.Type.SFIXED64) {
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQFloat(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.FLOAT) {
+      return true;
+    }
+    if (field == Descriptors.FieldDescriptor.Type.DOUBLE) {
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQGeography(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.BYTES) {
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQInteger(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.INT64
+        || field == Descriptors.FieldDescriptor.Type.SFIXED64
+        || field == Descriptors.FieldDescriptor.Type.INT32
+        || field == Descriptors.FieldDescriptor.Type.UINT32
+        || field == Descriptors.FieldDescriptor.Type.FIXED32
+        || field == Descriptors.FieldDescriptor.Type.SFIXED32
+        || field == Descriptors.FieldDescriptor.Type.ENUM) {
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQNumeric(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.INT32
+        || field == Descriptors.FieldDescriptor.Type.INT64
+        || field == Descriptors.FieldDescriptor.Type.UINT32
+        || field == Descriptors.FieldDescriptor.Type.UINT64
+        || field == Descriptors.FieldDescriptor.Type.FIXED32
+        || field == Descriptors.FieldDescriptor.Type.FIXED64
+        || field == Descriptors.FieldDescriptor.Type.SFIXED32
+        || field == Descriptors.FieldDescriptor.Type.SFIXED64) {
+      return true;
+    }
+
+    if (field == Descriptors.FieldDescriptor.Type.BYTES) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQRecord(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.MESSAGE
+        || field == Descriptors.FieldDescriptor.Type.GROUP) {
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQString(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.STRING
+        || field == Descriptors.FieldDescriptor.Type.ENUM) {
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQTime(Descriptors.FieldDescriptor.Type field) {
+    if (field == Descriptors.FieldDescriptor.Type.INT64
+        || field == Descriptors.FieldDescriptor.Type.SFIXED64) {
+
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isCompatibleWithBQTimestamp(Descriptors.FieldDescriptor.Type field) {
+    if (isCompatibleWithBQInteger(field)) {
+      return true;
+    }
+    return false;
   }
 
   /**
-   * Checks if userSchema is supported
+   * Checks if proto field option is compatible with BQ field mode.
    *
-   * @param userSchema
-   * @return True if userSchema is supported
-   * @throws IllegalArgumentException if schema is invalid
+   * @param protoField
+   * @param BQField
+   * @param protoScope Debugging purposes to show error if messages are nested.
+   * @param BQScope Debugging purposes to show error if messages are nested.
+   * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
    */
-  public static void isSupported(Descriptors.Descriptor userSchema)
-      throws IllegalArgumentException {
-    HashSet<Descriptors.Descriptor> allMessageTypes = new HashSet<>();
-    allMessageTypes.add(userSchema);
-    if (!isSupportedImpl(userSchema, allMessageTypes)) {
-      throw new IllegalArgumentException(
-          "User schema "
-              + userSchema.getFullName()
-              + " is not supported: contains nested messages of more than 15 levels.");
-    }
-  }
-
-  public static boolean isCompatibleWithBQBool(
-    Descriptors.FieldDescriptor.Type field) {
-      if (field == Descriptors.FieldDescriptor.Type.BOOL ||
-          field == Descriptors.FieldDescriptor.Type.INT32 ||
-          field == Descriptors.FieldDescriptor.Type.INT64 ||
-          field == Descriptors.FieldDescriptor.Type.UINT32 ||
-          field == Descriptors.FieldDescriptor.Type.UINT64 ||
-          field == Descriptors.FieldDescriptor.Type.FIXED32 ||
-          field == Descriptors.FieldDescriptor.Type.FIXED64 ||
-          field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
-          field == Descriptors.FieldDescriptor.Type.SFIXED64) {
-          return true;
-      }
-
-      return false;
-  }
-
-  public static boolean isCompatibleWithBQBytes(
-    Descriptors.FieldDescriptor.Type field) {
-      if (field == Descriptors.FieldDescriptor.Type.BYTES) {
-        return true;
-      }
-      return false;
-  }
-
-  public static boolean isCompatibleWithBQDate(
-    Descriptors.FieldDescriptor.Type field) {
-        if (field == Descriptors.FieldDescriptor.Type.INT32 ||
-            field == Descriptors.FieldDescriptor.Type.INT64 ||
-            field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
-            field == Descriptors.FieldDescriptor.Type.SFIXED64) {
-
-            return true;
-        }
-        return false;
-  }
-
-  public static boolean isCompatibleWithBQDatetime(
-    Descriptors.FieldDescriptor.Type field) {
-        if (field == Descriptors.FieldDescriptor.Type.INT64 ||
-             field == Descriptors.FieldDescriptor.Type.SFIXED64) {
-            return true;
-        }
-        return false;
-  }
-
-  public static boolean isCompatibleWithBQFloat(
-    Descriptors.FieldDescriptor.Type field) {
-      if (field == Descriptors.FieldDescriptor.Type.FLOAT) {
-          return true;
-      }
-      if (field == Descriptors.FieldDescriptor.Type.DOUBLE) {
-          return true;
-      }
-      return false;
-  }
-
-  public static boolean isCompatibleWithBQGeography(
-    Descriptors.FieldDescriptor.Type field) {
-        if (field == Descriptors.FieldDescriptor.Type.BYTES) {
-            return true;
-        }
-        return false;
-  }
-
-  public static boolean isCompatibleWithBQInteger(
-    Descriptors.FieldDescriptor.Type field) {
-      if (field == Descriptors.FieldDescriptor.Type.INT64 ||
-          field == Descriptors.FieldDescriptor.Type.SFIXED64 ||
-          field == Descriptors.FieldDescriptor.Type.INT32 ||
-          field == Descriptors.FieldDescriptor.Type.UINT32 ||
-          field == Descriptors.FieldDescriptor.Type.FIXED32 ||
-          field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
-          field == Descriptors.FieldDescriptor.Type.ENUM) {
-          return true;
-      }
-      return false;
-  }
-
-  public static boolean isCompatibleWithBQNumeric(
-    Descriptors.FieldDescriptor.Type field) {
-      if (field == Descriptors.FieldDescriptor.Type.INT32 ||
-          field == Descriptors.FieldDescriptor.Type.INT64 ||
-          field == Descriptors.FieldDescriptor.Type.UINT32 ||
-          field == Descriptors.FieldDescriptor.Type.UINT64 ||
-          field == Descriptors.FieldDescriptor.Type.FIXED32 ||
-          field == Descriptors.FieldDescriptor.Type.FIXED64 ||
-          field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
-          field == Descriptors.FieldDescriptor.Type.SFIXED64) {
-          return true;
-      }
-
-      if (field == Descriptors.FieldDescriptor.Type.BYTES) {
-          return true;
-      }
-
-      return false;
-  }
-
-  public static boolean isCompatibleWithBQRecord(
-    Descriptors.FieldDescriptor.Type field) {
-        if (field == Descriptors.FieldDescriptor.Type.MESSAGE ||
-            field == Descriptors.FieldDescriptor.Type.GROUP) {
-            return true;
-        }
-        return false;
-  }
-
-  public static boolean isCompatibleWithBQString(
-    Descriptors.FieldDescriptor.Type field) {
-      if (field == Descriptors.FieldDescriptor.Type.STRING ||
-          field == Descriptors.FieldDescriptor.Type.ENUM) {
-        return true;
-      }
-      return false;
-  }
-
-  public static boolean isCompatibleWithBQTime(
-    Descriptors.FieldDescriptor.Type field) {
-        if (field == Descriptors.FieldDescriptor.Type.INT64 ||
-            field == Descriptors.FieldDescriptor.Type.SFIXED64) {
-
-            return true;
-        }
-        return false;
-  }
-
-  public static boolean isCompatibleWithBQTimestamp(
-    Descriptors.FieldDescriptor.Type field) {
-        if (isCompatibleWithBQInteger(field)) {
-            return true;
-        }
-        return false;
-  }
-
   private void protoFieldModeIsCompatibleWithBQFieldMode(
-    Descriptors.FieldDescriptor protoField, Field BQField)
-    throws IllegalArgumentException {
+      Descriptors.FieldDescriptor protoField, Field BQField, String protoScope, String BQScope)
+      throws IllegalArgumentException {
     if (BQField.getMode() == null) {
-      throw new IllegalArgumentException("Big query schema contains invalid field option for " +
-                                          BQField.getName() + ".");
+      throw new IllegalArgumentException(
+          "Big query schema contains invalid field option for " + BQScope + ".");
     }
-    switch(BQField.getMode()) {
+    switch (BQField.getMode()) {
       case REPEATED:
         if (!protoField.isRepeated()) {
-          throw new IllegalArgumentException("Given proto field " +
-                                              protoField.getName() +
-                                              " is not repeated but Big Query field " +
-                                              BQField.getName() + " is.");
+          throw new IllegalArgumentException(
+              "Given proto field "
+                  + protoScope
+                  + " is not repeated but Big Query field "
+                  + BQScope
+                  + " is.");
         }
         break;
       case REQUIRED:
         if (!protoField.isRequired()) {
-          throw new IllegalArgumentException("Given proto field " +
-                                              protoField.getName() +
-                                              " is not required but Big Query field " +
-                                              BQField.getName() + " is.");
+          throw new IllegalArgumentException(
+              "Given proto field "
+                  + protoScope
+                  + " is not required but Big Query field "
+                  + BQScope
+                  + " is.");
         }
         break;
       case NULLABLE:
         if (protoField.isRepeated()) {
-          throw new IllegalArgumentException("Given proto field " +
-                                              protoField.getName() +
-                                              " is repeated but Big Query field " +
-                                              BQField.getName() + " is optional.");
+          throw new IllegalArgumentException(
+              "Given proto field "
+                  + protoScope
+                  + " is repeated but Big Query field "
+                  + BQScope
+                  + " is optional.");
         }
         break;
     }
   }
-
+  /**
+   * Checks if proto field type is compatible with BQ field type.
+   *
+   * @param protoField
+   * @param BQField
+   * @param allowUnknownFields
+   * @param protoScope Debugging purposes to show error if messages are nested.
+   * @param BQScope Debugging purposes to show error if messages are nested.
+   * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
+   */
   private void protoFieldTypeIsCompatibleWithBQFieldType(
-    Descriptors.FieldDescriptor protoField, Field BQField, boolean allowUnknownFields, boolean topLevel)
-    throws IllegalArgumentException {
+      Descriptors.FieldDescriptor protoField,
+      Field BQField,
+      boolean allowUnknownFields,
+      String protoScope,
+      String BQScope)
+      throws IllegalArgumentException {
 
     LegacySQLTypeName BQType = BQField.getType();
     Descriptors.FieldDescriptor.Type protoType = protoField.getType();
 
     boolean match = false;
 
-    if(BQType == LegacySQLTypeName.BOOLEAN) {
+    if (BQType == LegacySQLTypeName.BOOLEAN) {
       match = isCompatibleWithBQBool(protoType);
-    }
-    else if (BQType == LegacySQLTypeName.BYTES) {
+    } else if (BQType == LegacySQLTypeName.BYTES) {
       match = isCompatibleWithBQBytes(protoType);
-    }
-    else if(BQType == LegacySQLTypeName.DATE) {
+    } else if (BQType == LegacySQLTypeName.DATE) {
       match = isCompatibleWithBQDate(protoType);
-    }
-    else if(BQType == LegacySQLTypeName.DATETIME) {
+    } else if (BQType == LegacySQLTypeName.DATETIME) {
       match = isCompatibleWithBQDatetime(protoType);
-    }
-    else if(BQType == LegacySQLTypeName.FLOAT) {
+    } else if (BQType == LegacySQLTypeName.FLOAT) {
       match = isCompatibleWithBQFloat(protoType);
-    }
-    else if(BQType == LegacySQLTypeName.GEOGRAPHY) {
+    } else if (BQType == LegacySQLTypeName.GEOGRAPHY) {
       match = isCompatibleWithBQGeography(protoType);
-    }
-    else if(BQType == LegacySQLTypeName.INTEGER) {
+    } else if (BQType == LegacySQLTypeName.INTEGER) {
       match = isCompatibleWithBQInteger(protoType);
-    }
-    else if(BQType == LegacySQLTypeName.NUMERIC) {
+    } else if (BQType == LegacySQLTypeName.NUMERIC) {
       match = isCompatibleWithBQNumeric(protoType);
-    }
-    else if(BQType == LegacySQLTypeName.RECORD) {
+    } else if (BQType == LegacySQLTypeName.RECORD) {
       match = isCompatibleWithBQRecord(protoType);
       if (match) {
-        isProtoCompatibleWithBQImpl(protoField.getMessageType(), Schema.of(BQField.getSubFields()), allowUnknownFields, false);
+        isProtoCompatibleWithBQ(
+            protoField.getMessageType(),
+            Schema.of(BQField.getSubFields()),
+            allowUnknownFields,
+            protoScope,
+            BQScope,
+            false);
       }
-    }
-    else if(BQType == LegacySQLTypeName.STRING) {
+    } else if (BQType == LegacySQLTypeName.STRING) {
       match = isCompatibleWithBQString(protoType);
-    }
-    else if(BQType == LegacySQLTypeName.TIME) {
+    } else if (BQType == LegacySQLTypeName.TIME) {
       match = isCompatibleWithBQTime(protoType);
-    }
-    else if(BQType == LegacySQLTypeName.TIMESTAMP) {
+    } else if (BQType == LegacySQLTypeName.TIMESTAMP) {
       match = isCompatibleWithBQTimestamp(protoType);
     }
     if (!match) {
-      throw new IllegalArgumentException("The proto field " +
-                                          protoField.getName() +
-                                          " does not have a matching type with the big query field " +
-                                          BQField.getName() + ".");
+      throw new IllegalArgumentException(
+          "The proto field "
+              + protoScope
+              + " does not have a matching type with the big query field "
+              + BQScope
+              + ".");
     }
   }
 
+  /**
+   * Checks if proto schema is compatible with BQ schema.
+   *
+   * @param protoSchema
+   * @param BQSchema
+   * @param allowUnknownFields
+   * @param protoScope Debugging purposes to show error if messages are nested.
+   * @param BQScope Debugging purposes to show error if messages are nested.
+   * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
+   */
+  private void isProtoCompatibleWithBQ(
+      Descriptors.Descriptor protoSchema,
+      Schema BQSchema,
+      boolean allowUnknownFields,
+      String protoScope,
+      String BQScope,
+      boolean topLevel)
+      throws IllegalArgumentException {
 
-  private boolean isProtoCompatibleWithBQImpl (
-    Descriptors.Descriptor protoSchema, Schema BQSchema, boolean allowUnknownFields, boolean topLevel)
-    throws IllegalArgumentException {
+    int matchedFields = 0;
+    HashMap<String, Descriptors.FieldDescriptor> protoFieldMap = new HashMap<>();
+    List<Descriptors.FieldDescriptor> protoFields = protoSchema.getFields();
+    List<Field> BQFields = BQSchema.getFields();
 
-      int matchedFields = 0;
-      HashMap<String, Descriptors.FieldDescriptor> protoFieldMap = new HashMap<>();
+    if (protoFields.size() > BQFields.size()) {
+      if (!allowUnknownFields) {
+        throw new IllegalArgumentException(
+            "Proto schema "
+                + protoScope
+                + " has "
+                + +protoFields.size()
+                + " fields, while BQ schema "
+                + BQScope
+                + " has "
+                + BQFields.size()
+                + " fields.");
+      }
+    }
+    // Use hashmap to map from lowercased name to appropriate field to account for casing difference
+    for (Descriptors.FieldDescriptor field : protoFields) {
+      protoFieldMap.put(field.getName().toLowerCase(), field);
+    }
 
-      List<Descriptors.FieldDescriptor> protoFields = protoSchema.getFields();
-      List<Field> BQFields = BQSchema.getFields();
-
-      if (protoFields.size() > BQFields.size()) {
-        if (!allowUnknownFields) {
-          throw new IllegalArgumentException(
-              "Proto schema has "
-                  + protoFields.size()
-                  + " fields, while BQ schema has "
-                  + BQFields.size()
-                  + " fields.");
-        }
+    for (Field BQField : BQFields) {
+      String fieldName = BQField.getName().toLowerCase();
+      Descriptors.FieldDescriptor protoField = null;
+      if (protoFieldMap.containsKey(fieldName)) {
+        protoField = protoFieldMap.get(fieldName);
       }
 
-      for (Descriptors.FieldDescriptor field : protoFields) {
-        protoFieldMap.put(field.getName().toLowerCase(), field);
+      String currentBQScope = BQScope + "." + BQField.getName();
+      if (protoField == null && BQField.getMode() == Field.Mode.REQUIRED) {
+        throw new IllegalArgumentException(
+            "The required Big Query field "
+                + currentBQScope
+                + " is missing in the proto schema "
+                + protoScope
+                + ".");
       }
 
-      for (Field BQField : BQFields) {
-        String fieldName = BQField.getName().toLowerCase();
-        Descriptors.FieldDescriptor protoField = null;
-        if (protoFieldMap.containsKey(fieldName)) {
-          protoField = protoFieldMap.get(fieldName);
-        }
-
-        if (protoField == null && BQField.getMode() == Field.Mode.REQUIRED) {
-          throw new IllegalArgumentException("The required Big Query field " + BQField.getName() + " is missing in the proto schema.");
-        }
-
-        if (protoField == null) {
-          continue;
-        }
-
-        protoFieldModeIsCompatibleWithBQFieldMode(protoField, BQField);
-        protoFieldTypeIsCompatibleWithBQFieldType(protoField, BQField, allowUnknownFields, false);
-        matchedFields++;
+      if (protoField == null) {
+        continue;
       }
+      String currentProtoScope = protoScope + "." + protoField.getName();
+      protoFieldModeIsCompatibleWithBQFieldMode(
+          protoField, BQField, currentProtoScope, currentBQScope);
+      protoFieldTypeIsCompatibleWithBQFieldType(
+          protoField, BQField, allowUnknownFields, currentProtoScope, currentBQScope);
+      matchedFields++;
+    }
 
-      if (matchedFields == 0 && topLevel) {
-        throw new IllegalArgumentException ("There is no matching fields found for the proto schema " +
-                                         protoSchema.getName() +
-                                         " and the BQ table schema");
-      }
-      return true;
+    if (matchedFields == 0 && topLevel) {
+      throw new IllegalArgumentException(
+          "There is no matching fields found for the proto schema "
+              + protoScope
+              + " and the BQ table schema "
+              + BQScope
+              + ".");
+    }
   }
 
-  public boolean isProtoCompatibleWithBQ(
-    Descriptors.Descriptor protoSchema, String BQTableName, boolean allowUnknownFields)
-    throws IllegalArgumentException {
+  /**
+   * Checks if proto schema is compatible with BQ schema after retrieving BQ schema by BQTableName.
+   *
+   * @param protoSchema
+   * @param BQSchema
+   * @param allowUnknownFields
+   * @param protoScope Debugging purposes to show error if messages are nested.
+   * @param BQScope Debugging purposes to show error if messages are nested.
+   * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
+   */
+  public void check(
+      String BQTableName, Descriptors.Descriptor protoSchema, boolean allowUnknownFields)
+      throws IllegalArgumentException {
 
     Table table = bigquery.getTable(getTableId(BQTableName));
     Schema BQSchema = table.getDefinition().getSchema();
+    String protoSchemaName = protoSchema.getName();
     isSupported(protoSchema);
-    return isProtoCompatibleWithBQImpl(protoSchema, BQSchema, allowUnknownFields, true);
+    isProtoCompatibleWithBQ(
+        protoSchema,
+        BQSchema,
+        allowUnknownFields,
+        protoSchemaName,
+        getTableId(BQTableName).getTable(),
+        true);
   }
-
 }

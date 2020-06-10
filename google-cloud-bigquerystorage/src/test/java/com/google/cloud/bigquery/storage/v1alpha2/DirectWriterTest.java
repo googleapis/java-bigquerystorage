@@ -121,7 +121,7 @@ public class DirectWriterTest {
 
     WriterCreationResponseMock(TEST_STREAM, Sets.newHashSet(Long.valueOf(0L)));
     ApiFuture<Long> ret = DirectWriter.<FooType>append(TEST_TABLE, Arrays.asList(m1, m2));
-    verify(schemaCheck).check(TEST_TABLE, FooType.getDescriptor());
+    verify(schemaCheck).check(TEST_TABLE, FooType.getDescriptor(), false);
     assertEquals(Long.valueOf(0L), ret.get());
     List<AbstractMessage> actualRequests = mockBigQueryWrite.getRequests();
     Assert.assertEquals(3, actualRequests.size());
@@ -164,7 +164,7 @@ public class DirectWriterTest {
     WriterCreationResponseMock(TEST_STREAM_2, Sets.newHashSet(Long.valueOf(0L)));
     AllSupportedTypes m3 = AllSupportedTypes.newBuilder().setStringValue("s").build();
     ret = DirectWriter.<AllSupportedTypes>append(TEST_TABLE, Arrays.asList(m3));
-    verify(schemaCheck).check(TEST_TABLE, AllSupportedTypes.getDescriptor());
+    verify(schemaCheck).check(TEST_TABLE, AllSupportedTypes.getDescriptor(), false);
     assertEquals(Long.valueOf(0L), ret.get());
     dataBuilder = Storage.AppendRowsRequest.ProtoData.newBuilder();
     dataBuilder.setWriterSchema(ProtoSchemaConverter.convert(AllSupportedTypes.getDescriptor()));
