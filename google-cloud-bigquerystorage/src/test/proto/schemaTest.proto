@@ -2,8 +2,6 @@ syntax = "proto2";
 
 package com.google.cloud.bigquery.storage.test;
 
-import "zetasql/public/proto/type_annotation.proto";
-
 message SupportedTypes {
   optional int32 int32_value = 1;
   optional int64 int64_value = 2;
@@ -166,11 +164,6 @@ message NonSupportedNestingRecursive {
 message NonSupportedNestingContainsRecursive {
   optional int32 int_value = 1;
   optional NonSupportedNestingRecursive nesting_value = 2;
-}
-
-message TestExtensions {
-  required int32 extension_test = 1  [ (zetasql.format)=DATE ];
-  required int32 no_extension = 2;
 }
 
 message NonSupportedNestingLvl0 {

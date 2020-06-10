@@ -223,7 +223,7 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQInteger(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
+    Descriptors.FieldDescriptor.Type field) {
       if (field == Descriptors.FieldDescriptor.Type.INT64 ||
           field == Descriptors.FieldDescriptor.Type.SFIXED64) {
           return true;
@@ -241,7 +241,7 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQFloat(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
+    Descriptors.FieldDescriptor.Type field) {
       if (field == Descriptors.FieldDescriptor.Type.FLOAT) {
           return true;
       }
@@ -254,7 +254,7 @@ public class SchemaCompact {
 
 
   public static boolean isCompatibleWithBQBool(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
+    Descriptors.FieldDescriptor.Type field) {
       if (field == Descriptors.FieldDescriptor.Type.BOOL) {
           return true;
       }
@@ -272,17 +272,25 @@ public class SchemaCompact {
       return false;
   }
 
-  public static boolean isCompatibleWithBQStringAndBytes(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
-      if (field == Descriptors.FieldDescriptor.Type.BYTES ||
-          field == Descriptors.FieldDescriptor.Type.STRING) {
+  public static boolean isCompatibleWithBQBytes(
+    Descriptors.FieldDescriptor.Type field) {
+      if (field == Descriptors.FieldDescriptor.Type.BYTES) {
+        return true;
+      }
+      return false;
+  }
+
+  public static boolean isCompatibleWithBQString(
+    Descriptors.FieldDescriptor.Type field) {
+      if (field == Descriptors.FieldDescriptor.Type.STRING ||
+          field == Descriptors.FieldDescriptor.Type.ENUM) {
         return true;
       }
       return false;
   }
 
   public static boolean isCompatibleWithBQNumeric(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
+    Descriptors.FieldDescriptor.Type field) {
       if (field == Descriptors.FieldDescriptor.Type.INT32 ||
           field == Descriptors.FieldDescriptor.Type.INT64 ||
           field == Descriptors.FieldDescriptor.Type.UINT32 ||
@@ -294,9 +302,7 @@ public class SchemaCompact {
           return true;
       }
 
-      if (field == Descriptors.FieldDescriptor.Type.BYTES &&
-          (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
-           format == TypeAnnotationProto.FieldFormat.Format.NUMERIC)) {
+      if (field == Descriptors.FieldDescriptor.Type.BYTES) {
           return true;
       }
 
@@ -304,27 +310,19 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQTimeStamp(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
-        if (isCompatibleWithBQInteger(field, format) &&
-            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
-             format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_MICROS ||
-             format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_MILLIS  ||
-             format == TypeAnnotationProto.FieldFormat.Format.TIMESTAMP_SECONDS)) {
-
+    Descriptors.FieldDescriptor.Type field) {
+        if (isCompatibleWithBQInteger(field)) {
             return true;
         }
         return false;
   }
 
   public static boolean isCompatibleWithBQDate(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
-        if ((field == Descriptors.FieldDescriptor.Type.INT32 ||
-             field == Descriptors.FieldDescriptor.Type.INT64 ||
-             field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
-             field == Descriptors.FieldDescriptor.Type.SFIXED64) &&
-            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
-             format == TypeAnnotationProto.FieldFormat.Format.DATE ||
-             format == TypeAnnotationProto.FieldFormat.Format.DATE_DECIMAL)) {
+    Descriptors.FieldDescriptor.Type field) {
+        if (field == Descriptors.FieldDescriptor.Type.INT32 ||
+            field == Descriptors.FieldDescriptor.Type.INT64 ||
+            field == Descriptors.FieldDescriptor.Type.SFIXED32 ||
+            field == Descriptors.FieldDescriptor.Type.SFIXED64) {
 
             return true;
         }
@@ -332,11 +330,9 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQTime(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
-        if ((field == Descriptors.FieldDescriptor.Type.INT64 ||
-             field == Descriptors.FieldDescriptor.Type.SFIXED64) &&
-            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
-             format == TypeAnnotationProto.FieldFormat.Format.TIME_MICROS)) {
+    Descriptors.FieldDescriptor.Type field) {
+        if (field == Descriptors.FieldDescriptor.Type.INT64 ||
+            field == Descriptors.FieldDescriptor.Type.SFIXED64) {
 
             return true;
         }
@@ -344,18 +340,16 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQDateTime(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
-        if ((field == Descriptors.FieldDescriptor.Type.INT64 ||
-             field == Descriptors.FieldDescriptor.Type.SFIXED64) &&
-            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
-             format == TypeAnnotationProto.FieldFormat.Format.DATETIME_MICROS)) {
+    Descriptors.FieldDescriptor.Type field) {
+        if (field == Descriptors.FieldDescriptor.Type.INT64 ||
+             field == Descriptors.FieldDescriptor.Type.SFIXED64) {
             return true;
         }
         return false;
   }
 
   public static boolean isCompatibleWithBQRecord(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
+    Descriptors.FieldDescriptor.Type field) {
         if (field == Descriptors.FieldDescriptor.Type.MESSAGE ||
             field == Descriptors.FieldDescriptor.Type.GROUP) {
             // TODO: Check if the underlying message is supported
@@ -365,17 +359,15 @@ public class SchemaCompact {
   }
 
   public static boolean isCompatibleWithBQGeography(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
-        if (field == Descriptors.FieldDescriptor.Type.BYTES &&
-            (format == TypeAnnotationProto.FieldFormat.Format.DEFAULT_FORMAT ||
-             format == TypeAnnotationProto.FieldFormat.Format.ST_GEOGRAPHY_ENCODED)) {
+    Descriptors.FieldDescriptor.Type field) {
+        if (field == Descriptors.FieldDescriptor.Type.BYTES) {
             return true;
         }
         return false;
   }
 
   public static boolean isCompatibleWithBQBigNumeric(
-    Descriptors.FieldDescriptor.Type field, TypeAnnotationProto.FieldFormat.Format format) {
+    Descriptors.FieldDescriptor.Type field) {
         // TODO: Not implemented in cpp
         return false;
   }
@@ -419,17 +411,26 @@ public class SchemaCompact {
     Descriptors.FieldDescriptor protoField, Field BQField)
     throws IllegalArgumentException {
 
-    TypeAnnotationProto.FieldFormat.Format protoAnnotation = ProtoType.getFormatAnnotation(protoField);
     LegacySQLTypeName BQType = BQField.getType();
     Descriptors.FieldDescriptor.Type protoType = protoField.getType();
+
     boolean match = false;
-    if (BQType == LegacySQLTypeName.BYTES || BQType == LegacySQLTypeName.STRING) {
-      match = isCompatibleWithBQStringAndBytes(protoType, protoAnnotation);
+    if (BQType == LegacySQLTypeName.BYTES) {
+      match = isCompatibleWithBQBytes(protoType);
+    }
+
+    else if(BQType == LegacySQLTypeName.STRING) {
+      match = isCompatibleWithBQString(protoType);
     }
 
     else if(BQType == LegacySQLTypeName.INTEGER) {
-      match = isCompatibleWithBQInteger(protoType, protoAnnotation);
+      match = isCompatibleWithBQInteger(protoType);
     }
+
+    else if(BQType == LegacySQLTypeName.FLOAT) {
+      match = isCompatibleWithBQFloat(protoType);
+    }
+
 
     if (!match) {
       throw new IllegalArgumentException("The proto field " +
@@ -490,7 +491,6 @@ public class SchemaCompact {
                                          protoSchema.getName() +
                                          " and the BQ table schema");
       }
-
       return true;
   }
 
