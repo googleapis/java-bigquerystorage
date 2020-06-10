@@ -472,7 +472,7 @@ public class SchemaCompact {
             "Proto schema "
                 + protoScope
                 + " has "
-                + +protoFields.size()
+                + protoFields.size()
                 + " fields, while BQ schema "
                 + BQScope
                 + " has "

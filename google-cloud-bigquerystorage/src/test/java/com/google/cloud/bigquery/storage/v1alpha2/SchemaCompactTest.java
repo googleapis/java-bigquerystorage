@@ -78,31 +78,17 @@ public class SchemaCompactTest {
 
   @Test
   public void testSuccess() throws Exception {
-    customizeSchema(Schema.of(Field.of("Foo", LegacySQLTypeName.STRING)));
+    customizeSchema(
+        Schema.of(
+            Field.newBuilder("Foo", LegacySQLTypeName.STRING)
+                .setMode(Field.Mode.NULLABLE)
+                .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
     compact.check("projects/p/datasets/d/tables/t", FooType.getDescriptor(), false);
     verify(mockBigquery, times(1)).getTable(any(TableId.class));
     verify(mockBigqueryTable, times(1)).getDefinition();
   }
 
-  @Test
-  public void testFailed() throws Exception {
-    customizeSchema(
-        Schema.of(
-            Field.of("Foo", LegacySQLTypeName.STRING), Field.of("Bar", LegacySQLTypeName.STRING)));
-    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    try {
-      compact.check("projects/p/datasets/d/tables/t", FooType.getDescriptor(), false);
-      fail("should fail");
-    } catch (IllegalArgumentException expected) {
-      assertEquals(
-          "Proto schema doesn't have expected field number with BigQuery table schema, expected: 2 actual: 1",
-          expected.getMessage());
-    }
-    verify(mockBigquery, times(1)).getTable(any(TableId.class));
-    verify(mockBigqueryTable, times(1)).getDefinition();
-  }
-  //
   @Test
   public void testBadTableName() throws Exception {
     try {
