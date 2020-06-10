@@ -83,12 +83,12 @@ message EnumType {
 }
 
 message MessageType {
-  optional EnumType test_field_type = 1;
+  optional StringType test_field_type = 1;
 }
 
 message GroupType {
   optional group Test_field_type = 1 {
-    required string test1 = 2;
+    optional string what_field_type = 2;
   }
 }
 
