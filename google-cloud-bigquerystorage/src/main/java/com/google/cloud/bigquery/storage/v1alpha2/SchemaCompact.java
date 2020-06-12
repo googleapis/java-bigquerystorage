@@ -450,6 +450,7 @@ public class SchemaCompact {
    * @param allowUnknownFields
    * @param protoScope Debugging purposes to show error if messages are nested.
    * @param BQScope Debugging purposes to show error if messages are nested.
+   * @param topLevel True if this is the root level of proto (in terms of nested messages)
    * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
    */
   private void isProtoCompatibleWithBQ(
@@ -526,27 +527,40 @@ public class SchemaCompact {
   /**
    * Checks if proto schema is compatible with BQ schema after retrieving BQ schema by BQTableName.
    *
+   * @param BQTableName         Must include project_id, dataset_id, and table_id in the form that
+                                matches the regex "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)"
    * @param protoSchema
-   * @param BQSchema
-   * @param allowUnknownFields
-   * @param protoScope Debugging purposes to show error if messages are nested.
-   * @param BQScope Debugging purposes to show error if messages are nested.
+   * @param allowUnknownFields  Flag indicating proto can have unknown fields.
    * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
    */
   public void check(
       String BQTableName, Descriptors.Descriptor protoSchema, boolean allowUnknownFields)
       throws IllegalArgumentException {
-
     Table table = bigquery.getTable(getTableId(BQTableName));
     Schema BQSchema = table.getDefinition().getSchema();
-    String protoSchemaName = protoSchema.getName();
     isSupported(protoSchema);
     isProtoCompatibleWithBQ(
         protoSchema,
         BQSchema,
         allowUnknownFields,
-        protoSchemaName,
+        protoSchema.getName(),
         getTableId(BQTableName).getTable(),
         true);
+  }
+
+  /**
+   * Checks if proto schema is compatible with BQ schema after retrieving BQ schema by BQTableName.
+   * Assumes allowUnknownFields is false.
+   *
+   * @param BQTableName         Must include project_id, dataset_id, and table_id in the form that
+                                matches the regex "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)"
+   * @param protoSchema
+   * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
+   */
+  public void check(
+      String BQTableName, Descriptors.Descriptor protoSchema)
+      throws IllegalArgumentException {
+
+    check(BQTableName, protoSchema, false);
   }
 }
