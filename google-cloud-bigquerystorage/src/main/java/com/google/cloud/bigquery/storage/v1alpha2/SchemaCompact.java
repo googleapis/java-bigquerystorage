@@ -65,6 +65,7 @@ public class SchemaCompact {
               Descriptors.FieldDescriptor.Type.ENUM));
 
   private SchemaCompact(BigQuery bigquery) {
+    // TODO: Add functionality that allows SchemaCompact to build schemas.
     this.bigquery = bigquery;
   }
 
@@ -397,40 +398,52 @@ public class SchemaCompact {
     Descriptors.FieldDescriptor.Type protoType = protoField.getType();
 
     boolean match = false;
-
-    if (BQType == LegacySQLTypeName.BOOLEAN) {
-      match = isCompatibleWithBQBool(protoType);
-    } else if (BQType == LegacySQLTypeName.BYTES) {
-      match = isCompatibleWithBQBytes(protoType);
-    } else if (BQType == LegacySQLTypeName.DATE) {
-      match = isCompatibleWithBQDate(protoType);
-    } else if (BQType == LegacySQLTypeName.DATETIME) {
-      match = isCompatibleWithBQDatetime(protoType);
-    } else if (BQType == LegacySQLTypeName.FLOAT) {
-      match = isCompatibleWithBQFloat(protoType);
-    } else if (BQType == LegacySQLTypeName.GEOGRAPHY) {
-      match = isCompatibleWithBQGeography(protoType);
-    } else if (BQType == LegacySQLTypeName.INTEGER) {
-      match = isCompatibleWithBQInteger(protoType);
-    } else if (BQType == LegacySQLTypeName.NUMERIC) {
-      match = isCompatibleWithBQNumeric(protoType);
-    } else if (BQType == LegacySQLTypeName.RECORD) {
-      match = isCompatibleWithBQRecord(protoType);
-      if (match) {
-        isProtoCompatibleWithBQ(
-            protoField.getMessageType(),
-            Schema.of(BQField.getSubFields()),
-            allowUnknownFields,
-            protoScope,
-            BQScope,
-            false);
-      }
-    } else if (BQType == LegacySQLTypeName.STRING) {
-      match = isCompatibleWithBQString(protoType);
-    } else if (BQType == LegacySQLTypeName.TIME) {
-      match = isCompatibleWithBQTime(protoType);
-    } else if (BQType == LegacySQLTypeName.TIMESTAMP) {
-      match = isCompatibleWithBQTimestamp(protoType);
+    switch (BQType.toString()) {
+      case "BOOLEAN":
+        match = isCompatibleWithBQBool(protoType);
+        break;
+      case "BYTES":
+        match = isCompatibleWithBQBytes(protoType);
+        break;
+      case "DATE":
+        match = isCompatibleWithBQDate(protoType);
+        break;
+      case "DATETIME":
+        match = isCompatibleWithBQDatetime(protoType);
+        break;
+      case "FLOAT":
+        match = isCompatibleWithBQFloat(protoType);
+        break;
+      case "GEOGRAPHY":
+        match = isCompatibleWithBQGeography(protoType);
+        break;
+      case "INTEGER":
+        match = isCompatibleWithBQInteger(protoType);
+        break;
+      case "NUMERIC":
+        match = isCompatibleWithBQNumeric(protoType);
+        break;
+      case "RECORD":
+        match = isCompatibleWithBQRecord(protoType);
+        if (match) {
+          isProtoCompatibleWithBQ(
+              protoField.getMessageType(),
+              Schema.of(BQField.getSubFields()),
+              allowUnknownFields,
+              protoScope,
+              BQScope,
+              false);
+        }
+        break;
+      case "STRING":
+        match = isCompatibleWithBQString(protoType);
+        break;
+      case "TIME":
+        match = isCompatibleWithBQTime(protoType);
+        break;
+      case "TIMESTAMP":
+        match = isCompatibleWithBQTimestamp(protoType);
+        break;
     }
     if (!match) {
       throw new IllegalArgumentException(
@@ -536,16 +549,12 @@ public class SchemaCompact {
   public void check(
       String BQTableName, Descriptors.Descriptor protoSchema, boolean allowUnknownFields)
       throws IllegalArgumentException {
-    Table table = bigquery.getTable(getTableId(BQTableName));
+    TableId tableId = getTableId(BQTableName);
+    Table table = bigquery.getTable(tableId);
     Schema BQSchema = table.getDefinition().getSchema();
     isSupported(protoSchema);
     isProtoCompatibleWithBQ(
-        protoSchema,
-        BQSchema,
-        allowUnknownFields,
-        protoSchema.getName(),
-        getTableId(BQTableName).getTable(),
-        true);
+        protoSchema, BQSchema, allowUnknownFields, protoSchema.getName(), tableId.getTable(), true);
   }
 
   /**
