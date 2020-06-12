@@ -527,10 +527,10 @@ public class SchemaCompact {
   /**
    * Checks if proto schema is compatible with BQ schema after retrieving BQ schema by BQTableName.
    *
-   * @param BQTableName         Must include project_id, dataset_id, and table_id in the form that
-                                matches the regex "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)"
+   * @param BQTableName Must include project_id, dataset_id, and table_id in the form that matches
+   *     the regex "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)"
    * @param protoSchema
-   * @param allowUnknownFields  Flag indicating proto can have unknown fields.
+   * @param allowUnknownFields Flag indicating proto can have unknown fields.
    * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
    */
   public void check(
@@ -552,13 +552,12 @@ public class SchemaCompact {
    * Checks if proto schema is compatible with BQ schema after retrieving BQ schema by BQTableName.
    * Assumes allowUnknownFields is false.
    *
-   * @param BQTableName         Must include project_id, dataset_id, and table_id in the form that
-                                matches the regex "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)"
+   * @param BQTableName Must include project_id, dataset_id, and table_id in the form that matches
+   *     the regex "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)"
    * @param protoSchema
    * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
    */
-  public void check(
-      String BQTableName, Descriptors.Descriptor protoSchema)
+  public void check(String BQTableName, Descriptors.Descriptor protoSchema)
       throws IllegalArgumentException {
 
     check(BQTableName, protoSchema, false);
