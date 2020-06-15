@@ -25,9 +25,11 @@ import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Descriptors;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,25 +46,29 @@ public class SchemaCompact {
   private static SchemaCompact compact;
   private static String tablePatternString = "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)";
   private static Pattern tablePattern = Pattern.compile(tablePatternString);
-  private static final HashSet<Descriptors.FieldDescriptor.Type> SupportedTypes =
-      new HashSet<>(
-          Arrays.asList(
-              Descriptors.FieldDescriptor.Type.INT32,
-              Descriptors.FieldDescriptor.Type.INT64,
-              Descriptors.FieldDescriptor.Type.UINT32,
-              Descriptors.FieldDescriptor.Type.UINT64,
-              Descriptors.FieldDescriptor.Type.FIXED32,
-              Descriptors.FieldDescriptor.Type.FIXED64,
-              Descriptors.FieldDescriptor.Type.SFIXED32,
-              Descriptors.FieldDescriptor.Type.SFIXED64,
-              Descriptors.FieldDescriptor.Type.FLOAT,
-              Descriptors.FieldDescriptor.Type.DOUBLE,
-              Descriptors.FieldDescriptor.Type.BOOL,
-              Descriptors.FieldDescriptor.Type.BYTES,
-              Descriptors.FieldDescriptor.Type.STRING,
-              Descriptors.FieldDescriptor.Type.MESSAGE,
-              Descriptors.FieldDescriptor.Type.GROUP,
-              Descriptors.FieldDescriptor.Type.ENUM));
+  private static final int NestingLimit = 15;
+  // private static Set<Descriptors.FieldDescriptor.Type> SupportedTypesHashSet =
+
+  private static Set SupportedTypes =
+      Collections.unmodifiableSet(
+          new HashSet<>(
+              Arrays.asList(
+                  Descriptors.FieldDescriptor.Type.INT32,
+                  Descriptors.FieldDescriptor.Type.INT64,
+                  Descriptors.FieldDescriptor.Type.UINT32,
+                  Descriptors.FieldDescriptor.Type.UINT64,
+                  Descriptors.FieldDescriptor.Type.FIXED32,
+                  Descriptors.FieldDescriptor.Type.FIXED64,
+                  Descriptors.FieldDescriptor.Type.SFIXED32,
+                  Descriptors.FieldDescriptor.Type.SFIXED64,
+                  Descriptors.FieldDescriptor.Type.FLOAT,
+                  Descriptors.FieldDescriptor.Type.DOUBLE,
+                  Descriptors.FieldDescriptor.Type.BOOL,
+                  Descriptors.FieldDescriptor.Type.BYTES,
+                  Descriptors.FieldDescriptor.Type.STRING,
+                  Descriptors.FieldDescriptor.Type.MESSAGE,
+                  Descriptors.FieldDescriptor.Type.GROUP,
+                  Descriptors.FieldDescriptor.Type.ENUM)));
 
   private SchemaCompact(BigQuery bigquery) {
     // TODO: Add functionality that allows SchemaCompact to build schemas.
@@ -102,68 +108,6 @@ public class SchemaCompact {
   }
 
   /**
-   * Checks if proto schema is supported.
-   *
-   * @param protoSchema
-   * @return True if protoSchema is supported
-   * @throws IllegalArgumentException if schema is invalid
-   */
-  public static void isSupported(Descriptors.Descriptor protoSchema)
-      throws IllegalArgumentException {
-    HashSet<Descriptors.Descriptor> allMessageTypes = new HashSet<>();
-    allMessageTypes.add(protoSchema);
-    String protoSchemaName = protoSchema.getName();
-    if (!isSupportedImpl(protoSchema, allMessageTypes, protoSchemaName)) {
-      throw new IllegalArgumentException(
-          "Proto schema "
-              + protoSchemaName
-              + " is not supported: contains nested messages of more than 15 levels.");
-    }
-  }
-
-  /**
-   * Actual implementation that checks if a proto schema is supported.
-   *
-   * @param protoSchema
-   * @param allMessageTypes Keeps track of all message types seen, and make sure they don't repeat
-   *     as recursive protos are not supported.
-   * @param protoScope Debugging purposes to show error if messages are nested.
-   * @return True if field type and option is supported
-   * @throws IllegalArgumentException if schema is invalid
-   */
-  private static boolean isSupportedImpl(
-      Descriptors.Descriptor protoSchema,
-      HashSet<Descriptors.Descriptor> allMessageTypes,
-      String protoScope)
-      throws IllegalArgumentException {
-
-    for (Descriptors.FieldDescriptor field : protoSchema.getFields()) {
-      String currentProtoScope = protoScope + "." + field.getName();
-      if (!isSupportedType(field)) {
-        throw new IllegalArgumentException(
-            "Proto schema "
-                + currentProtoScope
-                + " is not supported: contains "
-                + field.getType()
-                + " field type.");
-      }
-
-      if (field.isMapField()) {
-        throw new IllegalArgumentException(
-            "Proto schema " + currentProtoScope + " is not supported: is a map field.");
-      }
-
-      if (field.getType().equals(Descriptors.FieldDescriptor.Type.MESSAGE)
-          || field.getType().equals(Descriptors.FieldDescriptor.Type.GROUP)) {
-        if (!isNestedMessageAccepted(field.getMessageType(), allMessageTypes, currentProtoScope)) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  /**
    * @param field
    * @return True if fieldtype is supported by BQ Schema
    */
@@ -173,36 +117,6 @@ public class SchemaCompact {
       return false;
     }
     return true;
-  }
-
-  /**
-   * Method that checks for proper nesting (no recursive protos) and supported types.
-   *
-   * @param message
-   * @param level Keeps track of current level of nesting.
-   * @param allMessageTypes Keeps track of all message types seen, and make sure they don't repeat
-   *     as recursive protos are not supported.
-   * @return True if fieldtype is supported by BQ Schema
-   * @throws IllegalArgumentException if message is invalid
-   */
-  private static boolean isNestedMessageAccepted(
-      Descriptors.Descriptor message,
-      HashSet<Descriptors.Descriptor> allMessageTypes,
-      String protoScope)
-      throws IllegalArgumentException {
-
-    if (allMessageTypes.size() > 15) {
-      return false;
-    }
-
-    if (allMessageTypes.contains(message)) {
-      throw new IllegalArgumentException(
-          "Proto schema " + protoScope + " is not supported: is a recursively nested message.");
-    }
-    allMessageTypes.add(message);
-    boolean result = isSupportedImpl(message, allMessageTypes, protoScope);
-    allMessageTypes.remove(message);
-    return result;
   }
 
   private static boolean isCompatibleWithBQBool(Descriptors.FieldDescriptor.Type field) {
@@ -384,6 +298,8 @@ public class SchemaCompact {
    * @param allowUnknownFields
    * @param protoScope Debugging purposes to show error if messages are nested.
    * @param BQScope Debugging purposes to show error if messages are nested.
+   * @param allMessageTypes Keeps track of all current protos to avoid recursively nested protos.
+   * @param rootProtoName Debugging purposes for nested level > 15.
    * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
    */
   private void protoFieldTypeIsCompatibleWithBQFieldType(
@@ -391,12 +307,13 @@ public class SchemaCompact {
       Field BQField,
       boolean allowUnknownFields,
       String protoScope,
-      String BQScope)
+      String BQScope,
+      HashSet<Descriptors.Descriptor> allMessageTypes,
+      String rootProtoName)
       throws IllegalArgumentException {
 
     LegacySQLTypeName BQType = BQField.getType();
     Descriptors.FieldDescriptor.Type protoType = protoField.getType();
-
     boolean match = false;
     switch (BQType.toString()) {
       case "BOOLEAN":
@@ -424,16 +341,32 @@ public class SchemaCompact {
         match = isCompatibleWithBQNumeric(protoType);
         break;
       case "RECORD":
-        match = isCompatibleWithBQRecord(protoType);
-        if (match) {
-          isProtoCompatibleWithBQ(
-              protoField.getMessageType(),
-              Schema.of(BQField.getSubFields()),
-              allowUnknownFields,
-              protoScope,
-              BQScope,
-              false);
+        if (allMessageTypes.size() > NestingLimit) {
+          throw new IllegalArgumentException(
+              "Proto schema "
+                  + rootProtoName
+                  + " is not supported: contains nested messages of more than 15 levels.");
         }
+        match = isCompatibleWithBQRecord(protoType);
+        if (!match) {
+          break;
+        }
+        Descriptors.Descriptor message = protoField.getMessageType();
+        if (allMessageTypes.contains(message)) {
+          throw new IllegalArgumentException(
+              "Proto schema " + protoScope + " is not supported: is a recursively nested message.");
+        }
+        allMessageTypes.add(message);
+        isProtoCompatibleWithBQ(
+            protoField.getMessageType(),
+            Schema.of(BQField.getSubFields()),
+            allowUnknownFields,
+            protoScope,
+            BQScope,
+            false,
+            allMessageTypes,
+            rootProtoName);
+        allMessageTypes.remove(message);
         break;
       case "STRING":
         match = isCompatibleWithBQString(protoType);
@@ -464,6 +397,8 @@ public class SchemaCompact {
    * @param protoScope Debugging purposes to show error if messages are nested.
    * @param BQScope Debugging purposes to show error if messages are nested.
    * @param topLevel True if this is the root level of proto (in terms of nested messages)
+   * @param allMessageTypes Keeps track of all current protos to avoid recursively nested protos.
+   * @param rootProtoName Debugging purposes for nested level > 15.
    * @throws IllegalArgumentException if proto field type is incompatible with BQ field type.
    */
   private void isProtoCompatibleWithBQ(
@@ -472,7 +407,9 @@ public class SchemaCompact {
       boolean allowUnknownFields,
       String protoScope,
       String BQScope,
-      boolean topLevel)
+      boolean topLevel,
+      HashSet<Descriptors.Descriptor> allMessageTypes,
+      String rootProtoName)
       throws IllegalArgumentException {
 
     int matchedFields = 0;
@@ -515,15 +452,32 @@ public class SchemaCompact {
                 + protoScope
                 + ".");
       }
-
       if (protoField == null) {
         continue;
       }
       String currentProtoScope = protoScope + "." + protoField.getName();
+      if (!isSupportedType(protoField)) {
+        throw new IllegalArgumentException(
+            "Proto schema "
+                + currentProtoScope
+                + " is not supported: contains "
+                + protoField.getType()
+                + " field type.");
+      }
+      if (protoField.isMapField()) {
+        throw new IllegalArgumentException(
+            "Proto schema " + currentProtoScope + " is not supported: is a map field.");
+      }
       protoFieldModeIsCompatibleWithBQFieldMode(
           protoField, BQField, currentProtoScope, currentBQScope);
       protoFieldTypeIsCompatibleWithBQFieldType(
-          protoField, BQField, allowUnknownFields, currentProtoScope, currentBQScope);
+          protoField,
+          BQField,
+          allowUnknownFields,
+          currentProtoScope,
+          currentBQScope,
+          allMessageTypes,
+          rootProtoName);
       matchedFields++;
     }
 
@@ -552,9 +506,18 @@ public class SchemaCompact {
     TableId tableId = getTableId(BQTableName);
     Table table = bigquery.getTable(tableId);
     Schema BQSchema = table.getDefinition().getSchema();
-    isSupported(protoSchema);
+    String protoSchemaName = protoSchema.getName();
+    HashSet<Descriptors.Descriptor> allMessageTypes = new HashSet<>();
+    allMessageTypes.add(protoSchema);
     isProtoCompatibleWithBQ(
-        protoSchema, BQSchema, allowUnknownFields, protoSchema.getName(), tableId.getTable(), true);
+        protoSchema,
+        BQSchema,
+        allowUnknownFields,
+        protoSchemaName,
+        tableId.getTable(),
+        true,
+        allMessageTypes,
+        protoSchemaName);
   }
 
   /**

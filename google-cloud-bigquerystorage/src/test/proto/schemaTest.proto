@@ -154,18 +154,18 @@ message ProtoCompatibleWithBQInt {
 }
 
 message SupportedNestingLvl1 {
-  optional SupportedTypes test_supported = 1;
+  optional int32 int_value = 1;
   optional SupportedNestingLvl2 nesting_value = 2;
 }
 
 message SupportedNestingLvl2 {
-  optional int32 test_int = 1;
+  optional int32 int_value = 1;
 }
 
 message SupportedNestingStacked {
   optional int32 test_int = 1;
-  optional SupportedNestingLvl1 nesting_value1 = 2;
-  optional SupportedNestingLvl1 nesting_value2 = 3;
+  optional SupportedNestingLvl2 nesting_value1 = 2;
+  optional SupportedNestingLvl2 nesting_value2 = 3;
 }
 
 message NonSupportedMap {
@@ -173,7 +173,6 @@ message NonSupportedMap {
 }
 
 message NonSupportedNestingRecursive {
-  optional int32 int_value = 1;
   optional NonSupportedNestingRecursive nesting_value = 2;
 }
 
@@ -248,4 +247,9 @@ message NonSupportedNestingLvl15 {
 
 message NonSupportedNestingLvl16 {
   optional int32 test1 = 1;
+}
+
+message AllowUnknownUnsupportedFields {
+  optional NonSupportedMap map_value = 1;
+  optional string string_value = 2;
 }

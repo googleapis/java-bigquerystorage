@@ -114,66 +114,194 @@ public class SchemaCompactTest {
 
   @Test
   public void testMap() {
+    customizeSchema(
+        Schema.of(
+            Field.newBuilder("map_value", LegacySQLTypeName.INTEGER)
+                .setMode(Field.Mode.NULLABLE)
+                .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
     Descriptors.Descriptor testMap = NonSupportedMap.getDescriptor();
     String protoName = testMap.getName() + ".map_value";
     try {
-      compact.isSupported(testMap);
+      compact.check("projects/p/datasets/d/tables/t", testMap, false);
       fail("Should not be supported: field contains map");
     } catch (IllegalArgumentException expected) {
       assertEquals(
           "Proto schema " + protoName + " is not supported: is a map field.",
           expected.getMessage());
     }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
   }
 
   @Test
-  public void testNestingGood() {
+  public void testNestingSupportedSimple() {
+    Field BQSupportedNestingLvl2 =
+        Field.newBuilder("int_value", LegacySQLTypeName.INTEGER)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    customizeSchema(
+        Schema.of(
+            Field.newBuilder("int_value", LegacySQLTypeName.INTEGER)
+                .setMode(Field.Mode.NULLABLE)
+                .build(),
+            Field.newBuilder("nesting_value", LegacySQLTypeName.RECORD, BQSupportedNestingLvl2)
+                .setMode(Field.Mode.NULLABLE)
+                .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    Descriptors.Descriptor testNesting = SupportedNestingLvl1.getDescriptor();
     try {
-      compact.isSupported(SupportedNestingLvl1.getDescriptor());
-      compact.isSupported(SupportedNestingStacked.getDescriptor());
+      compact.check("projects/p/datasets/d/tables/t", testNesting, false);
     } catch (Exception e) {
       fail(e.getMessage());
     }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
   }
 
   @Test
-  public void testNestingRecursive() {
+  public void testNestingSupportedStacked() {
+    Field BQSupportedNestingLvl2 =
+        Field.newBuilder("int_value", LegacySQLTypeName.INTEGER)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    customizeSchema(
+        Schema.of(
+            Field.newBuilder("int_value", LegacySQLTypeName.INTEGER)
+                .setMode(Field.Mode.NULLABLE)
+                .build(),
+            Field.newBuilder("nesting_value1", LegacySQLTypeName.RECORD, BQSupportedNestingLvl2)
+                .setMode(Field.Mode.NULLABLE)
+                .build(),
+            Field.newBuilder("nesting_value2", LegacySQLTypeName.RECORD, BQSupportedNestingLvl2)
+                .setMode(Field.Mode.NULLABLE)
+                .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    Descriptors.Descriptor testNesting = NonSupportedNestingRecursive.getDescriptor();
-    String protoName = testNesting.getName() + ".nesting_value";
+    Descriptors.Descriptor testNesting = SupportedNestingStacked.getDescriptor();
     try {
-      compact.isSupported(testNesting);
-      fail("Should not be supported: field contains invalid nesting");
-    } catch (IllegalArgumentException expected) {
-      assertEquals(
-          "Proto schema " + protoName + " is not supported: is a recursively nested message.",
-          expected.getMessage());
+      compact.check("projects/p/datasets/d/tables/t", testNesting, false);
+    } catch (Exception e) {
+      fail(e.getMessage());
     }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
   }
 
+  /*
+   * This is not the "exact" test, as BigQuery fields cannot be recursive. Instead, this test uses
+   * two DIFFERENT records with the same name to simulate recursive protos (protos can't have the
+   * same name anyways unless they are the same proto).
+   */
   @Test
   public void testNestingContainsRecursive() {
+    Field BQNonSupportedNestingRecursive =
+        Field.newBuilder(
+                "nesting_value",
+                LegacySQLTypeName.RECORD,
+                Field.newBuilder("int_value", LegacySQLTypeName.INTEGER)
+                    .setMode(Field.Mode.NULLABLE)
+                    .build())
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+
+    customizeSchema(
+        Schema.of(
+            Field.newBuilder("int_value", LegacySQLTypeName.INTEGER)
+                .setMode(Field.Mode.NULLABLE)
+                .build(),
+            Field.newBuilder(
+                    "nesting_value", LegacySQLTypeName.RECORD, BQNonSupportedNestingRecursive)
+                .setMode(Field.Mode.NULLABLE)
+                .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
     Descriptors.Descriptor testNesting = NonSupportedNestingContainsRecursive.getDescriptor();
-    String protoName = testNesting.getName() + ".nesting_value.nesting_value";
     try {
-      compact.isSupported(testNesting);
-      fail("Should not be supported: field contains invalid nesting");
+      compact.check("projects/p/datasets/d/tables/t", testNesting, false);
+      fail("Should not be supported: contains nested messages of more than 15 levels.");
     } catch (IllegalArgumentException expected) {
       assertEquals(
-          "Proto schema " + protoName + " is not supported: is a recursively nested message.",
+          "Proto schema "
+              + testNesting.getName()
+              + ".nesting_value.nesting_value is not supported: is a recursively nested message.",
           expected.getMessage());
     }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
   }
 
   @Test
   public void testNestingRecursiveLimit() {
+    Field NonSupportedNestingLvl16 =
+        Field.newBuilder("test1", LegacySQLTypeName.INTEGER).setMode(Field.Mode.NULLABLE).build();
+    Field NonSupportedNestingLvl15 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl16)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl14 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl15)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl13 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl14)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl12 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl13)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl11 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl12)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl10 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl11)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl9 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl10)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl8 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl9)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl7 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl8)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl6 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl7)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl5 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl6)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl4 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl5)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl3 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl4)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl2 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl3)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    Field NonSupportedNestingLvl1 =
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl2)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    customizeSchema(
+        Schema.of(
+            Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl1)
+                .setMode(Field.Mode.NULLABLE)
+                .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
     Descriptors.Descriptor testNesting = NonSupportedNestingLvl0.getDescriptor();
     try {
-      compact.isSupported(testNesting);
+      compact.check("projects/p/datasets/d/tables/t", testNesting, false);
       fail("Should not be supported: contains nested messages of more than 15 levels.");
     } catch (IllegalArgumentException expected) {
       assertEquals(
@@ -182,6 +310,8 @@ public class SchemaCompactTest {
               + " is not supported: contains nested messages of more than 15 levels.",
           expected.getMessage());
     }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
   }
 
   @Test
@@ -530,7 +660,7 @@ public class SchemaCompactTest {
                 .setMode(Field.Mode.NULLABLE)
                 .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    HashSet<Descriptors.Descriptor> integerCompatible =
+    HashSet<Descriptors.Descriptor> compatible =
         new HashSet<>(
             Arrays.asList(
                 Int32Type.getDescriptor(),
@@ -542,7 +672,7 @@ public class SchemaCompactTest {
                 EnumType.getDescriptor()));
 
     for (Descriptors.Descriptor descriptor : type_descriptors) {
-      if (integerCompatible.contains(descriptor)) {
+      if (compatible.contains(descriptor)) {
         compact.check("projects/p/datasets/d/tables/t", descriptor, false);
       } else {
         try {
@@ -569,7 +699,7 @@ public class SchemaCompactTest {
                 .setMode(Field.Mode.NULLABLE)
                 .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    HashSet<Descriptors.Descriptor> integerCompatible =
+    HashSet<Descriptors.Descriptor> compatible =
         new HashSet<>(
             Arrays.asList(
                 Int32Type.getDescriptor(),
@@ -583,7 +713,7 @@ public class SchemaCompactTest {
                 BytesType.getDescriptor()));
 
     for (Descriptors.Descriptor descriptor : type_descriptors) {
-      if (integerCompatible.contains(descriptor)) {
+      if (compatible.contains(descriptor)) {
         compact.check("projects/p/datasets/d/tables/t", descriptor, false);
       } else {
         try {
@@ -727,11 +857,11 @@ public class SchemaCompactTest {
                 .setMode(Field.Mode.NULLABLE)
                 .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    HashSet<Descriptors.Descriptor> integerCompatible =
+    HashSet<Descriptors.Descriptor> compatible =
         new HashSet<>(Arrays.asList(Int64Type.getDescriptor(), SFixed64Type.getDescriptor()));
 
     for (Descriptors.Descriptor descriptor : type_descriptors) {
-      if (integerCompatible.contains(descriptor)) {
+      if (compatible.contains(descriptor)) {
         compact.check("projects/p/datasets/d/tables/t", descriptor, false);
       } else {
         try {
@@ -758,7 +888,7 @@ public class SchemaCompactTest {
                 .setMode(Field.Mode.NULLABLE)
                 .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
-    HashSet<Descriptors.Descriptor> integerCompatible =
+    HashSet<Descriptors.Descriptor> compatible =
         new HashSet<>(
             Arrays.asList(
                 Int32Type.getDescriptor(),
@@ -770,7 +900,7 @@ public class SchemaCompactTest {
                 EnumType.getDescriptor()));
 
     for (Descriptors.Descriptor descriptor : type_descriptors) {
-      if (integerCompatible.contains(descriptor)) {
+      if (compatible.contains(descriptor)) {
         compact.check("projects/p/datasets/d/tables/t", descriptor, false);
       } else {
         try {
@@ -830,6 +960,20 @@ public class SchemaCompactTest {
                 .build()));
     SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
     compact.check("projects/p/datasets/d/tables/t", TopLevelMatch.getDescriptor(), false);
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testAllowUnknownUnsupportedFields() {
+    customizeSchema(
+        Schema.of(
+            Field.newBuilder("string_value", LegacySQLTypeName.STRING)
+                .setMode(Field.Mode.NULLABLE)
+                .build()));
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    compact.check(
+        "projects/p/datasets/d/tables/t", AllowUnknownUnsupportedFields.getDescriptor(), true);
     verify(mockBigquery, times(1)).getTable(any(TableId.class));
     verify(mockBigqueryTable, times(1)).getDefinition();
   }
