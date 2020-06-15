@@ -43,23 +43,24 @@ public class SchemaCompactTest {
   @Mock private BigQuery mockBigquery;
   @Mock private Table mockBigqueryTable;
   Descriptors.Descriptor[] type_descriptors = {
-      Int32Type.getDescriptor(),
-      Int64Type.getDescriptor(),
-      UInt32Type.getDescriptor(),
-      UInt64Type.getDescriptor(),
-      Fixed32Type.getDescriptor(),
-      Fixed64Type.getDescriptor(),
-      SFixed32Type.getDescriptor(),
-      SFixed64Type.getDescriptor(),
-      FloatType.getDescriptor(),
-      DoubleType.getDescriptor(),
-      BoolType.getDescriptor(),
-      BytesType.getDescriptor(),
-      StringType.getDescriptor(),
-      EnumType.getDescriptor(),
-      MessageType.getDescriptor(),
-      GroupType.getDescriptor()
-    };
+    Int32Type.getDescriptor(),
+    Int64Type.getDescriptor(),
+    UInt32Type.getDescriptor(),
+    UInt64Type.getDescriptor(),
+    Fixed32Type.getDescriptor(),
+    Fixed64Type.getDescriptor(),
+    SFixed32Type.getDescriptor(),
+    SFixed64Type.getDescriptor(),
+    FloatType.getDescriptor(),
+    DoubleType.getDescriptor(),
+    BoolType.getDescriptor(),
+    BytesType.getDescriptor(),
+    StringType.getDescriptor(),
+    EnumType.getDescriptor(),
+    MessageType.getDescriptor(),
+    GroupType.getDescriptor()
+  };
+
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
