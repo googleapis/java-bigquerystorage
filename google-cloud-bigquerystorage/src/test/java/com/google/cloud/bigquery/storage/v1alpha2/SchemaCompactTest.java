@@ -996,4 +996,17 @@ public class SchemaCompactTest {
     verify(mockBigquery, times(1)).getTable(any(TableId.class));
     verify(mockBigqueryTable, times(1)).getDefinition();
   }
+
+  @Test
+  public void testLowerCase() {
+    customizeSchema(
+        Schema.of(
+            Field.newBuilder("tEsT_fIeLd_TyPe", LegacySQLTypeName.STRING)
+                .setMode(Field.Mode.NULLABLE)
+                .build()));
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
+    compact.check("projects/p/datasets/d/tables/t", StringType.getDescriptor(), true);
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
 }
