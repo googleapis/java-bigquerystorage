@@ -426,7 +426,6 @@ public class ITBigQueryWriteManualClientTest {
       responses.add(executor.submit(callable));
     }
     for (Future<Long> response : responses) {
-      // response.get();
       try {
         response.get();
       } catch (ExecutionException e) {
