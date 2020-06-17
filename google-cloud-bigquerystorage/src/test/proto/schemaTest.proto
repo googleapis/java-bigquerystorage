@@ -253,3 +253,7 @@ message AllowUnknownUnsupportedFields {
   optional NonSupportedMap map_value = 1;
   optional string string_value = 2;
 }
+
+message FakeFooType {
+  optional int32 foo = 1;
+}

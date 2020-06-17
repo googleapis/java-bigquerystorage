@@ -26,6 +26,7 @@ import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.storage.test.Test.*;
+import com.google.cloud.bigquery.storage.test.SchemaTest.FakeFooType;
 import com.google.cloud.bigquery.storage.v1alpha2.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
@@ -73,7 +74,7 @@ public class ITBigQueryWriteManualClientTest {
                 TableId.of(DATASET, TABLE),
                 StandardTableDefinition.of(
                     Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING).setMode(Field.Mode.NULLABLE)
                             .build())))
             .build();
     com.google.cloud.bigquery.Field.Builder innerTypeFieldBuilder =
@@ -391,6 +392,44 @@ public class ITBigQueryWriteManualClientTest {
       assertTrue(expectedOffset.remove(response.get()));
     }
     assertTrue(expectedOffset.isEmpty());
+    executor.shutdown();
+    try {
+      executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+    } catch (InterruptedException e) {
+      LOG.info(e.toString());
+    }
+    DirectWriter.clearCache();
+  }
+
+  @Test
+  public void testDirectWriteFail() throws IOException, InterruptedException, ExecutionException {
+    final FakeFooType fa = FakeFooType.newBuilder().setFoo(100).build();
+    Set<Long> expectedOffset = new HashSet<>();
+    for (int i = 0; i < 10; i++) {
+      expectedOffset.add(Long.valueOf(i));
+    }
+    ExecutorService executor = Executors.newFixedThreadPool(10);
+    List<Future<Long>> responses = new ArrayList<>();
+    Callable<Long> callable =
+        new Callable<Long>() {
+          @Override
+          public Long call() throws IOException, InterruptedException, ExecutionException, IllegalArgumentException {
+            ApiFuture<Long> result = DirectWriter.<FakeFooType>append(tableId, Arrays.asList(fa));
+            return result.get();
+          }
+        };
+
+    for (int i = 0; i < 10; i++) {
+      responses.add(executor.submit(callable));
+    }
+    for (Future<Long> response : responses) {
+      // response.get();
+      try {
+        response.get();
+      } catch (ExecutionException e){
+        assertEquals("The proto field FakeFooType.foo does not have a matching type with the big query field testtable.foo.", e.getCause().getMessage());
+      }
+    }
     executor.shutdown();
     try {
       executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
