@@ -25,8 +25,8 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.Schema;
-import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.FakeFooType;
+import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.cloud.bigquery.storage.v1alpha2.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
@@ -74,7 +74,8 @@ public class ITBigQueryWriteManualClientTest {
                 TableId.of(DATASET, TABLE),
                 StandardTableDefinition.of(
                     Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING).setMode(Field.Mode.NULLABLE)
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .setMode(Field.Mode.NULLABLE)
                             .build())))
             .build();
     com.google.cloud.bigquery.Field.Builder innerTypeFieldBuilder =
@@ -413,7 +414,9 @@ public class ITBigQueryWriteManualClientTest {
     Callable<Long> callable =
         new Callable<Long>() {
           @Override
-          public Long call() throws IOException, InterruptedException, ExecutionException, IllegalArgumentException {
+          public Long call()
+              throws IOException, InterruptedException, ExecutionException,
+                  IllegalArgumentException {
             ApiFuture<Long> result = DirectWriter.<FakeFooType>append(tableId, Arrays.asList(fa));
             return result.get();
           }
@@ -426,8 +429,10 @@ public class ITBigQueryWriteManualClientTest {
       // response.get();
       try {
         response.get();
-      } catch (ExecutionException e){
-        assertEquals("The proto field FakeFooType.foo does not have a matching type with the big query field testtable.foo.", e.getCause().getMessage());
+      } catch (ExecutionException e) {
+        assertEquals(
+            "The proto field FakeFooType.foo does not have a matching type with the big query field testtable.foo.",
+            e.getCause().getMessage());
       }
     }
     executor.shutdown();
