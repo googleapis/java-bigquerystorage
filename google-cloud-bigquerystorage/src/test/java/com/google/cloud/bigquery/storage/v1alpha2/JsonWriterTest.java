@@ -79,12 +79,8 @@ public class JsonWriterTest {
   public void testSuccess() throws Exception {
     Field NonSupportedNestingLvl16 =
         Field.newBuilder("test1", LegacySQLTypeName.INTEGER).setMode(Field.Mode.NULLABLE).build();
-    Field NonSupportedNestingLvl15 =
-        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl16)
-            .setMode(Field.Mode.NULLABLE)
-            .build();
     Field NonSupportedNestingLvl14 =
-        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl15)
+        Field.newBuilder("test1", LegacySQLTypeName.RECORD, NonSupportedNestingLvl16)
             .setMode(Field.Mode.NULLABLE)
             .build();
     Field NonSupportedNestingLvl13 =
@@ -151,7 +147,7 @@ public class JsonWriterTest {
     json.put("bytes", "Bytearray");
     JsonWriter writer = JsonWriter.getInstance(mockBigquery);
     Descriptor descriptor = writer.append("projects/p/datasets/d/tables/t", json);
-    SchemaCompatibilit compact = SchemaCompatibilit.getInstance(mockBigquery);
+    SchemaCompact compact = SchemaCompact.getInstance(mockBigquery);
     compact.check("projects/p/datasets/d/tables/t", descriptor);
     verify(mockBigquery, times(2)).getTable(any(TableId.class));
     verify(mockBigqueryTable, times(2)).getDefinition();

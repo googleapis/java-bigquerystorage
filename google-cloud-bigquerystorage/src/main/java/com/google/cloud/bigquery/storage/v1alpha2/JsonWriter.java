@@ -120,10 +120,8 @@ public class JsonWriter {
         Schema BQSchema = table.getDefinition().getSchema();
         String BQSchemaName = tableId.getTable();
         Descriptor descriptor = BQSchemaToProtoSchema(BQSchema, BQSchemaName, BQSchemaName);
-        // System.out.println(descriptor.getName());
-        testPrint(descriptor, descriptor.getName());
+        // testPrint(descriptor, descriptor.getName());
         return descriptor;
-        //
       }
 
   private void testPrint(Descriptor descriptor, String scope) {
@@ -184,7 +182,7 @@ public class JsonWriter {
       String fieldName = BQField.getName();
       Field.Mode mode = BQField.getMode();
       return FieldDescriptorProto.newBuilder()
-                                 .setName("aaa")
+                                 .setName(fieldName)
                                  .setTypeName(scope)
                                  .setLabel((FieldDescriptorProto.Label) modeMap.get(mode))
                                  .setNumber(index)
