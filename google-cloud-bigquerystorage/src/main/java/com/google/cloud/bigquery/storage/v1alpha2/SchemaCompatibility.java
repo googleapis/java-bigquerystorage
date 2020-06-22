@@ -205,9 +205,9 @@ public class SchemaCompatibility {
     if (field == Descriptors.FieldDescriptor.Type.BYTES) {
       return true;
     }
-    
-    if (field == Descriptors.FieldDescriptor.Type.FLOAT ||
-        field == Descriptors.FieldDescriptor.Type.DOUBLE) {
+
+    if (field == Descriptors.FieldDescriptor.Type.FLOAT
+        || field == Descriptors.FieldDescriptor.Type.DOUBLE) {
       return true;
     }
 
