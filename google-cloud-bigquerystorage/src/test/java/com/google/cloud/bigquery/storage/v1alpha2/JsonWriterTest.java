@@ -50,19 +50,27 @@ public class JsonWriterTest {
   @Mock private Table mockBigqueryTable;
 
   private static Map<LegacySQLTypeName, Descriptor> typeMap = Collections.unmodifiableMap(new HashMap<LegacySQLTypeName, Descriptor>() {{
-        // put(LegacySQLTypeName.BOOLEAN, BoolType.getDescriptor());
-        // put(LegacySQLTypeName.BYTES, BytesType.getDescriptor());
-        // put(LegacySQLTypeName.DATE, Int64Type.getDescriptor());
-        // put(LegacySQLTypeName.DATETIME, Int64Type.getDescriptor());
-        // put(LegacySQLTypeName.FLOAT, DoubleType.getDescriptor());
-        // put(LegacySQLTypeName.GEOGRAPHY, BytesType.getDescriptor());
-        // put(LegacySQLTypeName.INTEGER, Int64Type.getDescriptor());
-        put(LegacySQLTypeName.NUMERIC, DoubleType.getDescriptor());
-        // put(LegacySQLTypeName.RECORD, FieldDescriptorProto.Type.TYPE_MESSAGE);
-        // put(LegacySQLTypeName.STRING, StringType.getDescriptor());
-        // put(LegacySQLTypeName.TIME, Int64Type.getDescriptor());
-        // put(LegacySQLTypeName.TIMESTAMP, Int64Type.getDescriptor());
+        put(LegacySQLTypeName.BOOLEAN, BoolType.getDescriptor());
+        put(LegacySQLTypeName.BYTES, BytesType.getDescriptor());
+        put(LegacySQLTypeName.DATE, Int64Type.getDescriptor());
+        put(LegacySQLTypeName.DATETIME, Int64Type.getDescriptor());
+        put(LegacySQLTypeName.FLOAT, DoubleType.getDescriptor());
+        put(LegacySQLTypeName.GEOGRAPHY, BytesType.getDescriptor());
+        put(LegacySQLTypeName.INTEGER, Int64Type.getDescriptor());
+        // put(LegacySQLTypeName.NUMERIC, DoubleType.getDescriptor());
+        put(LegacySQLTypeName.STRING, StringType.getDescriptor());
+        put(LegacySQLTypeName.TIME, Int64Type.getDescriptor());
+        put(LegacySQLTypeName.TIMESTAMP, Int64Type.getDescriptor());
     }});
+
+  private Descriptor[] protoDescriptors =  {
+    BoolType.getDescriptor(),
+    BytesType.getDescriptor(),
+    Int64Type.getDescriptor(),
+    DoubleType.getDescriptor(),
+    StringType.getDescriptor(),
+    MessageType.getDescriptor()
+  };
 
   @Before
   public void setUp() throws IOException {
@@ -109,26 +117,30 @@ public class JsonWriterTest {
    }
  }
 
-  private boolean descriptorsEqual(Descriptor convertedProto, Descriptor originalProto) {
+  private void descriptorsEqual(Descriptor convertedProto, Descriptor originalProto)
+    throws IllegalArgumentException {
     for (FieldDescriptor convertedField : convertedProto.getFields()) {
       FieldDescriptor originalField = originalProto.findFieldByName(convertedField.getName());
       if (originalField == null) {
-        return false;
+        throw new IllegalArgumentException("Descriptors are not equal! Field not found.");
       }
       FieldDescriptor.Type convertedType = convertedField.getType();
       FieldDescriptor.Type originalType = originalField.getType();
       if (convertedType != originalType) {
-        return false;
+        throw new IllegalArgumentException("Descriptors are not equal! Type not equal.");
       }
-      if (convertedType == FieldDescriptor.Type.MESSAGE && !descriptorsEqual(convertedField.getMessageType(), originalField.getMessageType())) {
-        return false;
+      if (convertedType == FieldDescriptor.Type.MESSAGE)
+        try {
+          descriptorsEqual(convertedField.getMessageType(), originalField.getMessageType());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(e);
+        }
       }
-    }
-    return true;
   }
 
   @Test
-  public void testBQToProtoSimpleTypes() throws Exception{
+  public void testBQToProtoSimpleTypes() throws Exception {
+    // TODO: fix numeric when PR is accepted
     for (Map.Entry<LegacySQLTypeName, Descriptor> entry : typeMap.entrySet()) {
       customizeSchema(
           Schema.of(Field.newBuilder("test_field_type", entry.getKey())
@@ -137,22 +149,290 @@ public class JsonWriterTest {
         JsonWriter writer = JsonWriter.getInstance(mockBigquery);
         Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
         SchemaCompatibility compact = SchemaCompatibility.getInstance(mockBigquery);
-        try {
-          compact.check("projects/p/datasets/d/tables/t", descriptor);
-        } catch (IllegalArgumentException e) {
-          // System.out.println(entry.getKey());
-          // System.out.println(entry.getValue());
-          System.out.println(e);
-          testPrint(descriptor, "");
-          testPrint(entry.getValue(), "");
-        }
-
-        // if (!descriptorsEqual(descriptor, entry.getValue())) {
-        //   fail("Should match!");
-        // }
-
+        compact.check("projects/p/datasets/d/tables/t", descriptor);
+        descriptorsEqual(descriptor, entry.getValue());
     }
-    verify(mockBigquery, times(2)).getTable(any(TableId.class));
-    verify(mockBigqueryTable, times(2)).getDefinition();
+    verify(mockBigquery, times(20)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(20)).getDefinition();
+  }
+
+  @Test
+  public void testBQBoolean() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.BOOLEAN)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != BoolType.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQBytes() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.BYTES)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != BytesType.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQDate() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.DATE)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != Int64Type.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQDatetime() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.DATETIME)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != Int64Type.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQFloat() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.FLOAT)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != DoubleType.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQGeography() throws Exception {
+
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.GEOGRAPHY)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != BytesType.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQInteger() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.INTEGER)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != Int64Type.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQString() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.STRING)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != StringType.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQTime() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.TIME)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != Int64Type.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQTimestamp() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.TIMESTAMP)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != Int64Type.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  @Test
+  public void testBQRecord() throws Exception {
+    Field StringType =
+        Field.newBuilder("test_field_type", LegacySQLTypeName.STRING)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.RECORD, StringType)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    for (int i = 0; i < protoDescriptors.length; i++) {
+        Descriptor protoDescriptor = protoDescriptors[i];
+        if (protoDescriptor != MessageType.getDescriptor()) {
+          try {
+            descriptorsEqual(descriptor, protoDescriptors[i]);
+          } catch (IllegalArgumentException e) {
+            assertEquals(e.getMessage(), "Descriptors are not equal! Type not equal.");
+          }
+        }
+        else {
+          descriptorsEqual(descriptor, protoDescriptors[i]);
+        }
+    }
+    verify(mockBigquery, times(1)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(1)).getDefinition();
   }
 }

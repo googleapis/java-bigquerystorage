@@ -121,18 +121,7 @@ public class JsonWriter {
         String BQSchemaName = tableId.getTable();
         // Descriptor descriptor = BQSchemaToProtoSchema(BQSchema, BQSchemaName, BQSchemaName);
         // return descriptor;
-      }
-
-  // private void testPrint(Descriptor descriptor, String scope) {
-  //   for (FieldDescriptor field : descriptor.getFields()) {
-  //     if (field.getType() == FieldDescriptor.Type.MESSAGE) {
-  //       System.out.println(field.getName());
-  //       testPrint(field.getMessageType(), scope + field.getName());
-  //     } else {
-  //       System.out.println(field.getName());
-  //     }
-  //   }
-  // }
+  }
 
   public Descriptor BQSchemaToProtoSchema(String tableName)
     throws IllegalArgumentException, Descriptors.DescriptorValidationException {
@@ -140,26 +129,27 @@ public class JsonWriter {
       Table table = bigquery.getTable(tableId);
       Schema BQSchema = table.getDefinition().getSchema();
       String BQSchemaName = tableId.getTable();
-      Descriptor descriptor = BQSchemaToProtoSchemaImpl(BQSchema, BQSchemaName, BQSchemaName);
+      Descriptor descriptor = BQSchemaToProtoSchemaImpl(BQSchema, BQSchemaName);
       return descriptor;
   }
+
   /**
-   * Checks if the userSchema is compatible with the table's current schema for writing. The current
-   * implementatoin is not complete. If the check failed, the write couldn't succeed.
+   * Converts a BQ schema to a proto Schema by mapping BQ fields to proto fields, then constructing
+   * the message through DescriptorProtos.
    *
-   * @param tableName The name of the table to write to.
-   * @param userSchema The schema user uses to append data.
-   * @throws IllegalArgumentException the check failed.
+   * @param BQSchema        BQ schema that is to be converted to a protobuf descriptor.
+   * @param scope           Used to construct FieldDescriptorProtos.
+   * @throws Descriptors.DescriptorValidationException if descriptor cannot be constructed.
    */
-  private Descriptor BQSchemaToProtoSchemaImpl(Schema BQSchema, String BQSchemaName, String scope)
-      throws IllegalArgumentException, Descriptors.DescriptorValidationException {
+  private Descriptor BQSchemaToProtoSchemaImpl(Schema BQSchema, String scope)
+      throws Descriptors.DescriptorValidationException {
       List<FileDescriptor> dependenciesList = new ArrayList<FileDescriptor>();
       List<FieldDescriptorProto> fields = new ArrayList<FieldDescriptorProto>();
       int index = 1;
       for (Field BQField : BQSchema.getFields()) {
         if (BQField.getType() == LegacySQLTypeName.RECORD) {
           String currentScope = scope + BQField.getName();
-          dependenciesList.add(BQSchemaToProtoSchemaImpl(Schema.of(BQField.getSubFields()), BQField.getName(), currentScope).getFile());
+          dependenciesList.add(BQSchemaToProtoSchemaImpl(Schema.of(BQField.getSubFields()), currentScope).getFile());
           fields.add(BQRecordToProtoMessage(BQField, index++, currentScope));
         } else {
           fields.add(BQFieldToProtoField(BQField, index++));
@@ -174,7 +164,12 @@ public class JsonWriter {
       return descriptor;
   }
 
-
+  /**
+   * Constructs a FieldDescriptorProto for simple BQ fields.
+   *
+   * @param BQField       BQ Field used to construct a FieldDescriptorProto
+   * @param index       Index for protobuf fields.
+   */
   private FieldDescriptorProto BQFieldToProtoField(Field BQField, int index) {
       String fieldName = BQField.getName();
       Field.Mode mode = BQField.getMode();
@@ -186,6 +181,13 @@ public class JsonWriter {
                                  .build();
   }
 
+  /**
+   * Constructs a FieldDescriptorProto for a record type BQ field.
+   *
+   * @param BQField     BQ Field used to construct a FieldDescriptorProto
+   * @param index       Index for protobuf fields.
+   * @param scope       Need scope to prevent naming issues (same name, but different message)
+   */
   private FieldDescriptorProto BQRecordToProtoMessage(Field BQField, int index, String scope) {
       String fieldName = BQField.getName();
       Field.Mode mode = BQField.getMode();
