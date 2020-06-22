@@ -113,28 +113,36 @@ public class JsonWriter {
     return TableId.of(matcher.group(1), matcher.group(2), matcher.group(3));
   }
 
-  public Descriptor append(String tableName, JSONObject json)
+  public void append(String tableName, JSONObject json)
       throws IOException, InterruptedException, InvalidArgumentException, Descriptors.DescriptorValidationException {
         TableId tableId = getTableId(tableName);
         Table table = bigquery.getTable(tableId);
         Schema BQSchema = table.getDefinition().getSchema();
         String BQSchemaName = tableId.getTable();
-        Descriptor descriptor = BQSchemaToProtoSchema(BQSchema, BQSchemaName, BQSchemaName);
-        // testPrint(descriptor, descriptor.getName());
-        return descriptor;
+        // Descriptor descriptor = BQSchemaToProtoSchema(BQSchema, BQSchemaName, BQSchemaName);
+        // return descriptor;
       }
 
-  private void testPrint(Descriptor descriptor, String scope) {
-    for (FieldDescriptor field : descriptor.getFields()) {
-      if (field.getType() == FieldDescriptor.Type.MESSAGE) {
-        System.out.println(field.getName());
-        testPrint(field.getMessageType(), scope + field.getName());
-      } else {
-        System.out.println(field.getName());
-      }
-    }
+  // private void testPrint(Descriptor descriptor, String scope) {
+  //   for (FieldDescriptor field : descriptor.getFields()) {
+  //     if (field.getType() == FieldDescriptor.Type.MESSAGE) {
+  //       System.out.println(field.getName());
+  //       testPrint(field.getMessageType(), scope + field.getName());
+  //     } else {
+  //       System.out.println(field.getName());
+  //     }
+  //   }
+  // }
+
+  public Descriptor BQSchemaToProtoSchema(String tableName)
+    throws IllegalArgumentException, Descriptors.DescriptorValidationException {
+      TableId tableId = getTableId(tableName);
+      Table table = bigquery.getTable(tableId);
+      Schema BQSchema = table.getDefinition().getSchema();
+      String BQSchemaName = tableId.getTable();
+      Descriptor descriptor = BQSchemaToProtoSchemaImpl(BQSchema, BQSchemaName, BQSchemaName);
+      return descriptor;
   }
-
   /**
    * Checks if the userSchema is compatible with the table's current schema for writing. The current
    * implementatoin is not complete. If the check failed, the write couldn't succeed.
@@ -143,7 +151,7 @@ public class JsonWriter {
    * @param userSchema The schema user uses to append data.
    * @throws IllegalArgumentException the check failed.
    */
-  public Descriptor BQSchemaToProtoSchema(Schema BQSchema, String BQSchemaName, String scope)
+  private Descriptor BQSchemaToProtoSchemaImpl(Schema BQSchema, String BQSchemaName, String scope)
       throws IllegalArgumentException, Descriptors.DescriptorValidationException {
       List<FileDescriptor> dependenciesList = new ArrayList<FileDescriptor>();
       List<FieldDescriptorProto> fields = new ArrayList<FieldDescriptorProto>();
@@ -151,7 +159,7 @@ public class JsonWriter {
       for (Field BQField : BQSchema.getFields()) {
         if (BQField.getType() == LegacySQLTypeName.RECORD) {
           String currentScope = scope + BQField.getName();
-          dependenciesList.add(BQSchemaToProtoSchema(Schema.of(BQField.getSubFields()), BQField.getName(), currentScope).getFile());
+          dependenciesList.add(BQSchemaToProtoSchemaImpl(Schema.of(BQField.getSubFields()), BQField.getName(), currentScope).getFile());
           fields.add(BQRecordToProtoMessage(BQField, index++, currentScope));
         } else {
           fields.add(BQFieldToProtoField(BQField, index++));
