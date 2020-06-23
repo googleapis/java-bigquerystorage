@@ -4,9 +4,9 @@
 proto-google-cloud-bigquerystorage-v1alpha2:0.100.0:0.100.0
 proto-google-cloud-bigquerystorage-v1beta1:0.100.0:0.100.0
 proto-google-cloud-bigquerystorage-v1beta2:0.100.0:0.100.0
-proto-google-cloud-bigquerystorage-v1:0.100.0:0.100.0
+proto-google-cloud-bigquerystorage-v1:1.0.0:1.0.0
 grpc-google-cloud-bigquerystorage-v1alpha2:0.100.0:0.100.0
 grpc-google-cloud-bigquerystorage-v1beta1:0.100.0:0.100.0
 grpc-google-cloud-bigquerystorage-v1beta2:0.100.0:0.100.0
-grpc-google-cloud-bigquerystorage-v1:0.100.0:0.100.0
-google-cloud-bigquerystorage:0.135.0-beta:0.135.0-beta
+grpc-google-cloud-bigquerystorage-v1:1.0.0:1.0.0
+google-cloud-bigquerystorage:1.0.0:1.0.0
