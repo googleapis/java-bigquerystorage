@@ -29,6 +29,9 @@ import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Message;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +46,7 @@ import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 @RunWith(JUnit4.class)
 public class JsonWriterTest {
@@ -182,7 +186,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQBytes() throws Exception {
+  public void testBQBytesDescriptor() throws Exception {
     customizeSchema(
         Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.BYTES)
                        .setMode(Field.Mode.NULLABLE)
@@ -207,7 +211,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQDate() throws Exception {
+  public void testBQDateDescriptor() throws Exception {
     customizeSchema(
         Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.DATE)
                        .setMode(Field.Mode.NULLABLE)
@@ -232,7 +236,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQDatetime() throws Exception {
+  public void testBQDatetimeDescriptor() throws Exception {
     customizeSchema(
         Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.DATETIME)
                        .setMode(Field.Mode.NULLABLE)
@@ -257,7 +261,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQFloat() throws Exception {
+  public void testBQFloatDescriptor() throws Exception {
     customizeSchema(
         Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.FLOAT)
                        .setMode(Field.Mode.NULLABLE)
@@ -282,7 +286,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQGeography() throws Exception {
+  public void testBQGeographyDescriptor() throws Exception {
 
     customizeSchema(
         Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.GEOGRAPHY)
@@ -308,7 +312,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQInteger() throws Exception {
+  public void testBQIntegerDescriptor() throws Exception {
     customizeSchema(
         Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.INTEGER)
                        .setMode(Field.Mode.NULLABLE)
@@ -333,7 +337,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQString() throws Exception {
+  public void testBQStringDescriptor() throws Exception {
     customizeSchema(
         Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.STRING)
                        .setMode(Field.Mode.NULLABLE)
@@ -358,7 +362,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQTime() throws Exception {
+  public void testBQTimeDescriptor() throws Exception {
     customizeSchema(
         Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.TIME)
                        .setMode(Field.Mode.NULLABLE)
@@ -383,7 +387,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQTimestamp() throws Exception {
+  public void testBQTimestampDescriptor() throws Exception {
     customizeSchema(
         Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.TIMESTAMP)
                        .setMode(Field.Mode.NULLABLE)
@@ -408,7 +412,7 @@ public class JsonWriterTest {
   }
 
   @Test
-  public void testBQRecord() throws Exception {
+  public void testBQRecordDescriptor() throws Exception {
     Field StringType =
         Field.newBuilder("test_field_type", LegacySQLTypeName.STRING)
             .setMode(Field.Mode.NULLABLE)
@@ -434,5 +438,120 @@ public class JsonWriterTest {
     }
     verify(mockBigquery, times(1)).getTable(any(TableId.class));
     verify(mockBigqueryTable, times(1)).getDefinition();
+  }
+
+  private boolean testProtobufJsonEquality(DynamicMessage proto, JSONObject json) {
+    for (Map.Entry<FieldDescriptor, java.lang.Object> entry : proto.getAllFields().entrySet()) {
+      FieldDescriptor key = entry.getKey();
+      String fieldName = key.getName();
+      java.lang.Object value = entry.getValue();
+      if (value instanceof DynamicMessage) {
+        if (!testProtobufJsonEquality((DynamicMessage) value, json.getJSONObject(fieldName))) {
+          return false;
+        }
+      }
+      boolean match = true;
+      switch (key.getType()) {
+        case BOOL:
+          match = (Boolean)value == json.getBoolean(fieldName);
+          break;
+        case BYTES:
+          match = Arrays.equals((byte[])value, json.getString(fieldName).getBytes());
+          break;
+        case INT64:
+          match = (long)value == json.getInt(fieldName);
+          break;
+        case STRING:
+          match = ((String)value).equals(json.getString(fieldName));
+          break;
+        case DOUBLE:
+          match = (double)value == json.getNumber(fieldName).doubleValue();
+          break;
+      }
+      if (!match) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @Test
+  public void testBQRecordJsonSimple() throws Exception {
+    Field StringType =
+        Field.newBuilder("test_field_type", LegacySQLTypeName.STRING)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    customizeSchema(
+        Schema.of(Field.newBuilder("test_field_type", LegacySQLTypeName.RECORD, StringType)
+                       .setMode(Field.Mode.NULLABLE)
+                       .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+    JSONObject json = new JSONObject();
+    JSONObject stringType = new JSONObject();
+    stringType.put("test_field_type", "hello");
+    json.put("test_field_type", stringType);
+
+    DynamicMessage msg = writer.append("projects/p/datasets/d/tables/t", json);
+    assertTrue(testProtobufJsonEquality(msg, json));
+    verify(mockBigquery, times(2)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(2)).getDefinition();
+  }
+
+  @Test
+  public void testBQRecordJsonComplex() throws Exception {
+    Field bqBytes = Field.newBuilder("bytes", LegacySQLTypeName.BYTES)
+          .setMode(Field.Mode.NULLABLE)
+          .build();
+    Field bqInt = Field.newBuilder("int", LegacySQLTypeName.INTEGER)
+          .setMode(Field.Mode.NULLABLE)
+          .build();
+    Field record1 = Field.newBuilder("record1", LegacySQLTypeName.RECORD, bqInt)
+          .setMode(Field.Mode.NULLABLE)
+          .build();
+
+    Field record = Field.newBuilder("record", LegacySQLTypeName.RECORD, bqInt, bqBytes, record1)
+            .setMode(Field.Mode.NULLABLE)
+            .build();
+    customizeSchema(
+        Schema.of(record,
+                  Field.newBuilder("float", LegacySQLTypeName.FLOAT)
+                        .setMode(Field.Mode.NULLABLE)
+                        .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+
+    JSONObject jsonRecord1 = new JSONObject();
+    jsonRecord1.put("int", 2048);
+    JSONObject jsonRecord = new JSONObject();
+    jsonRecord.put("int", 1024);
+    jsonRecord.put("bytes", "testing");
+    jsonRecord.put("record1", jsonRecord1);
+    JSONObject json = new JSONObject();
+    json.put("record", jsonRecord);
+    json.put("float", 1.23);
+
+    DynamicMessage msg = writer.append("projects/p/datasets/d/tables/t", json);
+    assertTrue(testProtobufJsonEquality(msg, json));
+    verify(mockBigquery, times(2)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(2)).getDefinition();
+  }
+
+  @Test
+  public void testBQRecordJsonRepeatedSimple() throws Exception {
+    customizeSchema(
+        Schema.of(Field.newBuilder("float", LegacySQLTypeName.FLOAT)
+                        .setMode(Field.Mode.REPEATED)
+                        .build()));
+    JsonWriter writer = JsonWriter.getInstance(mockBigquery);
+    Descriptor descriptor = writer.BQSchemaToProtoSchema("projects/p/datasets/d/tables/t");
+
+    JSONObject json = new JSONObject();
+    double[] doubleArr = {1.1, 2.2, 3.3, 4.4, 5.5};
+    json.put("float", new JSONArray(doubleArr));
+    DynamicMessage msg = writer.append("projects/p/datasets/d/tables/t", json);
+    assertTrue(testProtobufJsonEquality(msg, json));
+    verify(mockBigquery, times(2)).getTable(any(TableId.class));
+    verify(mockBigqueryTable, times(2)).getDefinition();
   }
 }

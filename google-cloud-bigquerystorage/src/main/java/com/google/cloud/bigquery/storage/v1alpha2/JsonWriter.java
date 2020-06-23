@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.json.JSONException;
 import java.io.IOException;
 import com.google.api.gax.rpc.InvalidArgumentException;
@@ -113,14 +114,11 @@ public class JsonWriter {
     return TableId.of(matcher.group(1), matcher.group(2), matcher.group(3));
   }
 
-  public void append(String tableName, JSONObject json)
+  public DynamicMessage append(String tableName, JSONObject json)
       throws IOException, InterruptedException, InvalidArgumentException, Descriptors.DescriptorValidationException {
-        TableId tableId = getTableId(tableName);
-        Table table = bigquery.getTable(tableId);
-        Schema BQSchema = table.getDefinition().getSchema();
-        String BQSchemaName = tableId.getTable();
-        // Descriptor descriptor = BQSchemaToProtoSchema(BQSchema, BQSchemaName, BQSchemaName);
-        // return descriptor;
+        Descriptor descriptor = BQSchemaToProtoSchema(tableName);
+        DynamicMessage dm = createProto(descriptor, json, "origin");
+        return dm;
   }
 
   public Descriptor BQSchemaToProtoSchema(String tableName)
@@ -201,59 +199,148 @@ public class JsonWriter {
 
   private DynamicMessage createProto(Descriptors.Descriptor protoSchema, JSONObject json, String jsonScope)
     throws IllegalArgumentException{
-      // List<DynamicMessage> protoRows = new ArrayList<DynamicMessage>();
-      // protoRows.add(createProto(myDescriptor, json, BQSchemaName));
     DynamicMessage.Builder protoMsg = DynamicMessage.newBuilder(protoSchema);
 
     for (Descriptors.FieldDescriptor field : protoSchema.getFields()) {
       String fieldName = field.getName();
       String currentScope = jsonScope + "." + fieldName;
+
       if (!json.has(fieldName)) {
-        throw new IllegalArgumentException("JSONObject does not have the field " + currentScope +  ".");
+        if (field.isRequired()) {
+          throw new IllegalArgumentException("JSONObject does not have the field " + currentScope +  ".");
+        }
+        else {
+          continue;
+        }
       }
-      switch(field.getType().toString()) {
-        case "BOOL":
-          try {
-            protoMsg.setField(protoSchema.findFieldByName(fieldName), new Boolean(json.getBoolean(fieldName)));
-          } catch (JSONException e) {
-            throw new IllegalArgumentException(currentScope + " is not a boolean value.");
-          }
-          break;
-        case "BYTES":
-          try {
-            protoMsg.setField(protoSchema.findFieldByName(fieldName), json.getString(fieldName).getBytes());
-          } catch (JSONException e) {
-            throw new IllegalArgumentException(currentScope + " is not a string value.");
-          }
-          break;
-        case "INT64":
-          try {
-            protoMsg.setField(protoSchema.findFieldByName(fieldName), new Long(json.getInt(fieldName)));
-          } catch (JSONException e) {
-            throw new IllegalArgumentException(currentScope + " is not a integer value.");
-          }
-          break;
-        case "STRING":
-          try {
-            protoMsg.setField(protoSchema.findFieldByName(fieldName), json.getString(fieldName));
-          } catch (JSONException e) {
-            throw new IllegalArgumentException(currentScope + " is not a string value.");
-          }
-          break;
-        case "DOUBLE":
-          try {
-            protoMsg.setField(protoSchema.findFieldByName(fieldName), new Double(json.getNumber(fieldName).doubleValue()));
-          } catch (JSONException e) {
-            throw new IllegalArgumentException(currentScope + " is not a double value.");
-          }
-          break;
-        case "MESSAGE":
-          // Need to do some recursive construction
-          break;
-        default:
-          System.out.println(field.getType().toString());
+
+      if (!field.isRepeated()) {
+        fillField(protoMsg, field, json, currentScope);
+      }
+      else {
+        fillRepeatedField(protoMsg, field, json, currentScope);
       }
     }
     return protoMsg.build();
+  }
+
+  private void fillField(DynamicMessage.Builder protoMsg, Descriptors.FieldDescriptor field, JSONObject json, String currentScope)
+    throws IllegalArgumentException {
+
+    String fieldName = field.getName();
+    switch(field.getType().toString()) {
+      case "BOOL":
+        try {
+          protoMsg.setField(field, new Boolean(json.getBoolean(fieldName)));
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a boolean value.");
+        }
+        break;
+      case "BYTES":
+        try {
+          protoMsg.setField(field, json.getString(fieldName).getBytes());
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a string value.");
+        }
+        break;
+      case "INT64":
+        try {
+          protoMsg.setField(field, new Long(json.getInt(fieldName)));
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a integer value.");
+        }
+        break;
+      case "STRING":
+        try {
+          protoMsg.setField(field, json.getString(fieldName));
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a string value.");
+        }
+        break;
+      case "DOUBLE":
+        try {
+          protoMsg.setField(field, new Double(json.getNumber(fieldName).doubleValue()));
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a double value.");
+        }
+        break;
+      case "MESSAGE":
+        Message.Builder message = protoMsg.newBuilderForField(field);
+        try {
+          protoMsg.setField(field, createProto(field.getMessageType(), json.getJSONObject(fieldName), currentScope));
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a JSONObject.");
+        }
+        break;
+    }
+  }
+
+  private void fillRepeatedField(DynamicMessage.Builder protoMsg, Descriptors.FieldDescriptor field, JSONObject json, String currentScope)
+    throws IllegalArgumentException {
+    String fieldName = field.getName();
+    JSONArray jsonArray;
+    try {
+      jsonArray = json.getJSONArray(fieldName);
+    } catch (JSONException e) {
+      throw new IllegalArgumentException(currentScope + " is not a JSONArray.");
+    }
+
+    switch(field.getType().toString()) {
+      case "BOOL":
+        try {
+          for (int i = 0; i < jsonArray.length(); i++) {
+            protoMsg.addRepeatedField(field, new Boolean(jsonArray.getBoolean(i)));
+          }
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a boolean value.");
+        }
+        break;
+      case "BYTES":
+        try {
+          for (int i = 0; i < jsonArray.length(); i++) {
+            protoMsg.addRepeatedField(field, jsonArray.getString(i).getBytes());
+          }
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a string value.");
+        }
+        break;
+      case "INT64":
+        try {
+          for (int i = 0; i < jsonArray.length(); i++) {
+            protoMsg.addRepeatedField(field, new Long(jsonArray.getInt(i)));
+          }
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a integer value.");
+        }
+        break;
+      case "STRING":
+        try {
+          for (int i = 0; i < jsonArray.length(); i++) {
+            protoMsg.addRepeatedField(field, jsonArray.getString(i));
+          }
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a string value.");
+        }
+        break;
+      case "DOUBLE":
+        try {
+          for (int i = 0; i < jsonArray.length(); i++) {
+            protoMsg.addRepeatedField(field, new Double(jsonArray.getNumber(i).doubleValue()));
+          }
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a double value.");
+        }
+        break;
+      case "MESSAGE":
+        try {
+          for (int i = 0; i < jsonArray.length(); i++) {
+            Message.Builder message = protoMsg.newBuilderForField(field);
+            protoMsg.addRepeatedField(field, createProto(field.getMessageType(), jsonArray.getJSONObject(i), currentScope));
+          }
+        } catch (JSONException e) {
+          throw new IllegalArgumentException(currentScope + " is not a JSONObject.");
+        }
+        break;
+    }
   }
 }
