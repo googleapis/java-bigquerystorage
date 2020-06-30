@@ -16,9 +16,6 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.gax.rpc.InvalidArgumentException;
-import com.google.cloud.bigquery.Field;
-import com.google.cloud.bigquery.LegacySQLTypeName;
-import com.google.cloud.bigquery.Schema;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
@@ -48,43 +45,44 @@ import org.json.JSONObject;
 public class JsonToProtoConverter {
   private static Map modeMap =
       Collections.unmodifiableMap(
-          new HashMap<Field.Mode, FieldDescriptorProto.Label>() {
+          new HashMap<Table.TableFieldSchema.Mode, FieldDescriptorProto.Label>() {
             {
-              put(Field.Mode.NULLABLE, FieldDescriptorProto.Label.LABEL_OPTIONAL);
-              put(Field.Mode.REPEATED, FieldDescriptorProto.Label.LABEL_REPEATED);
-              put(Field.Mode.REQUIRED, FieldDescriptorProto.Label.LABEL_REQUIRED);
+              put(Table.TableFieldSchema.Mode.NULLABLE, FieldDescriptorProto.Label.LABEL_OPTIONAL);
+              put(Table.TableFieldSchema.Mode.REPEATED, FieldDescriptorProto.Label.LABEL_REPEATED);
+              put(Table.TableFieldSchema.Mode.REQUIRED, FieldDescriptorProto.Label.LABEL_REQUIRED);
             }
           });
   private static Map typeMap =
       Collections.unmodifiableMap(
-          new HashMap<LegacySQLTypeName, FieldDescriptorProto.Type>() {
+          new HashMap<Table.TableFieldSchema.Type, FieldDescriptorProto.Type>() {
             {
-              put(LegacySQLTypeName.BOOLEAN, FieldDescriptorProto.Type.TYPE_BOOL);
-              put(LegacySQLTypeName.BYTES, FieldDescriptorProto.Type.TYPE_BYTES);
-              put(LegacySQLTypeName.DATE, FieldDescriptorProto.Type.TYPE_INT64);
-              put(LegacySQLTypeName.DATETIME, FieldDescriptorProto.Type.TYPE_INT64);
-              put(LegacySQLTypeName.FLOAT, FieldDescriptorProto.Type.TYPE_DOUBLE);
-              put(LegacySQLTypeName.GEOGRAPHY, FieldDescriptorProto.Type.TYPE_BYTES);
-              put(LegacySQLTypeName.INTEGER, FieldDescriptorProto.Type.TYPE_INT64);
-              put(LegacySQLTypeName.NUMERIC, FieldDescriptorProto.Type.TYPE_DOUBLE);
-              put(LegacySQLTypeName.RECORD, FieldDescriptorProto.Type.TYPE_MESSAGE);
-              put(LegacySQLTypeName.STRING, FieldDescriptorProto.Type.TYPE_STRING);
-              put(LegacySQLTypeName.TIME, FieldDescriptorProto.Type.TYPE_INT64);
-              put(LegacySQLTypeName.TIMESTAMP, FieldDescriptorProto.Type.TYPE_INT64);
+              put(Table.TableFieldSchema.Type.BOOL, FieldDescriptorProto.Type.TYPE_BOOL);
+              put(Table.TableFieldSchema.Type.BYTES, FieldDescriptorProto.Type.TYPE_BYTES);
+              put(Table.TableFieldSchema.Type.DATE, FieldDescriptorProto.Type.TYPE_INT64);
+              put(Table.TableFieldSchema.Type.DATETIME, FieldDescriptorProto.Type.TYPE_INT64);
+              put(Table.TableFieldSchema.Type.DOUBLE, FieldDescriptorProto.Type.TYPE_DOUBLE);
+              put(Table.TableFieldSchema.Type.GEOGRAPHY, FieldDescriptorProto.Type.TYPE_BYTES);
+              put(Table.TableFieldSchema.Type.INT64, FieldDescriptorProto.Type.TYPE_INT64);
+              put(Table.TableFieldSchema.Type.NUMERIC, FieldDescriptorProto.Type.TYPE_DOUBLE);
+              put(Table.TableFieldSchema.Type.STRING, FieldDescriptorProto.Type.TYPE_STRING);
+              put(Table.TableFieldSchema.Type.STRUCT, FieldDescriptorProto.Type.TYPE_MESSAGE);
+              put(Table.TableFieldSchema.Type.TIME, FieldDescriptorProto.Type.TYPE_INT64);
+              put(Table.TableFieldSchema.Type.TIMESTAMP, FieldDescriptorProto.Type.TYPE_INT64);
             }
           });
 
-  public static DynamicMessage BQSchemaToProtoMessage(Schema BQSchema, JSONObject json)
+  public static DynamicMessage BQTableSchemaToProtoMessage(
+      Table.TableSchema BQTableSchema, JSONObject json)
       throws IOException, InterruptedException, InvalidArgumentException,
           Descriptors.DescriptorValidationException {
-    Descriptor descriptor = BQSchemaToProtoSchema(BQSchema);
-    DynamicMessage protoMsg = protoSchematoProtoMessage(descriptor, json, "");
+    Descriptor descriptor = BQTableSchemaToProtoSchema(BQTableSchema);
+    DynamicMessage protoMsg = protoSchemaToProtoMessage(descriptor, json);
     return protoMsg;
   }
 
-  public static Descriptor BQSchemaToProtoSchema(Schema BQSchema)
+  public static Descriptor BQTableSchemaToProtoSchema(Table.TableSchema BQTableSchema)
       throws IllegalArgumentException, Descriptors.DescriptorValidationException {
-    Descriptor descriptor = BQSchemaToProtoSchemaImpl(BQSchema, "root");
+    Descriptor descriptor = BQTableSchemaToProtoSchemaImpl(BQTableSchema, "root");
     return descriptor;
   }
 
@@ -92,23 +90,29 @@ public class JsonToProtoConverter {
    * Converts a BQ schema to a proto Schema by mapping BQ fields to proto fields, then constructing
    * the message through DescriptorProtos.
    *
-   * @param BQSchema BQ schema that is to be converted to a protobuf descriptor.
+   * @param BQTableSchema BQ schema that is to be converted to a protobuf descriptor.
    * @param scope Used to construct FieldDescriptorProtos.
    * @throws Descriptors.DescriptorValidationException if descriptor cannot be constructed.
    */
-  private static Descriptor BQSchemaToProtoSchemaImpl(Schema BQSchema, String scope)
+  private static Descriptor BQTableSchemaToProtoSchemaImpl(
+      Table.TableSchema BQTableSchema, String scope)
       throws Descriptors.DescriptorValidationException {
     List<FileDescriptor> dependenciesList = new ArrayList<FileDescriptor>();
     List<FieldDescriptorProto> fields = new ArrayList<FieldDescriptorProto>();
     int index = 1;
-    for (Field BQField : BQSchema.getFields()) {
-      if (BQField.getType() == LegacySQLTypeName.RECORD) {
-        String currentScope = scope + BQField.getName();
+    for (Table.TableFieldSchema BQTableField : BQTableSchema.getFieldsList()) {
+      if (BQTableField.getType() == Table.TableFieldSchema.Type.STRUCT) {
+        String currentScope = scope + BQTableField.getName();
         dependenciesList.add(
-            BQSchemaToProtoSchemaImpl(Schema.of(BQField.getSubFields()), currentScope).getFile());
-        fields.add(BQRecordToProtoMessage(BQField, index++, currentScope));
+            BQTableSchemaToProtoSchemaImpl(
+                    Table.TableSchema.newBuilder()
+                        .addAllFields(BQTableField.getFieldsList())
+                        .build(),
+                    currentScope)
+                .getFile());
+        fields.add(BQStructToProtoMessage(BQTableField, index++, currentScope));
       } else {
-        fields.add(BQFieldToProtoField(BQField, index++));
+        fields.add(BQTableFieldToProtoField(BQTableField, index++));
       }
     }
     FileDescriptor[] dependenciesArray = new FileDescriptor[dependenciesList.size()];
@@ -126,31 +130,32 @@ public class JsonToProtoConverter {
   /**
    * Constructs a FieldDescriptorProto for simple BQ fields.
    *
-   * @param BQField BQ Field used to construct a FieldDescriptorProto
+   * @param BQTableField BQ Field used to construct a FieldDescriptorProto
    * @param index Index for protobuf fields.
    */
-  private static FieldDescriptorProto BQFieldToProtoField(Field BQField, int index) {
-    String fieldName = BQField.getName();
-    Field.Mode mode = BQField.getMode();
+  private static FieldDescriptorProto BQTableFieldToProtoField(
+      Table.TableFieldSchema BQTableField, int index) {
+    String fieldName = BQTableField.getName();
+    Table.TableFieldSchema.Mode mode = BQTableField.getMode();
     return FieldDescriptorProto.newBuilder()
         .setName(fieldName)
-        .setType((FieldDescriptorProto.Type) typeMap.get(BQField.getType()))
+        .setType((FieldDescriptorProto.Type) typeMap.get(BQTableField.getType()))
         .setLabel((FieldDescriptorProto.Label) modeMap.get(mode))
         .setNumber(index)
         .build();
   }
 
   /**
-   * Constructs a FieldDescriptorProto for a record type BQ field.
+   * Constructs a FieldDescriptorProto for a Struct type BQ field.
    *
-   * @param BQField BQ Field used to construct a FieldDescriptorProto
+   * @param BQTableField BQ Field used to construct a FieldDescriptorProto
    * @param index Index for protobuf fields.
    * @param scope Need scope to prevent naming issues (same name, but different message)
    */
-  private static FieldDescriptorProto BQRecordToProtoMessage(
-      Field BQField, int index, String scope) {
-    String fieldName = BQField.getName();
-    Field.Mode mode = BQField.getMode();
+  private static FieldDescriptorProto BQStructToProtoMessage(
+      Table.TableFieldSchema BQTableField, int index, String scope) {
+    String fieldName = BQTableField.getName();
+    Table.TableFieldSchema.Mode mode = BQTableField.getMode();
     return FieldDescriptorProto.newBuilder()
         .setName(fieldName)
         .setTypeName(scope)
@@ -159,7 +164,12 @@ public class JsonToProtoConverter {
         .build();
   }
 
-  private static DynamicMessage protoSchematoProtoMessage(
+  public static DynamicMessage protoSchemaToProtoMessage(
+      Descriptors.Descriptor protoSchema, JSONObject json) throws IllegalArgumentException {
+    return protoSchemaToProtoMessageImpl(protoSchema, json, "");
+  }
+
+  private static DynamicMessage protoSchemaToProtoMessageImpl(
       Descriptors.Descriptor protoSchema, JSONObject json, String jsonScope)
       throws IllegalArgumentException {
     DynamicMessage.Builder protoMsg = DynamicMessage.newBuilder(protoSchema);
@@ -248,7 +258,7 @@ public class JsonToProtoConverter {
         try {
           protoMsg.setField(
               field,
-              protoSchematoProtoMessage(
+              protoSchemaToProtoMessageImpl(
                   field.getMessageType(), json.getJSONObject(fieldName), currentScope));
         } catch (JSONException e) {
           throw new IllegalArgumentException(
@@ -338,7 +348,7 @@ public class JsonToProtoConverter {
             Message.Builder message = protoMsg.newBuilderForField(field);
             protoMsg.addRepeatedField(
                 field,
-                protoSchematoProtoMessage(
+                protoSchemaToProtoMessageImpl(
                     field.getMessageType(), jsonArray.getJSONObject(i), currentScope));
           } catch (JSONException e) {
             throw new IllegalArgumentException(

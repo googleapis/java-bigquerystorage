@@ -110,6 +110,8 @@ public class StreamWriter implements AutoCloseable {
 
   private Integer currentRetries = 0;
 
+  private Table.TableSchema tableSchema;
+
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
@@ -160,6 +162,7 @@ public class StreamWriter implements AutoCloseable {
     refreshAppend();
     Stream.WriteStream stream =
         stub.getWriteStream(Storage.GetWriteStreamRequest.newBuilder().setName(streamName).build());
+    tableSchema = stream.getTableSchema();
     createTime =
         Instant.ofEpochSecond(
             stream.getCreateTime().getSeconds(), stream.getCreateTime().getNanos());
@@ -171,6 +174,10 @@ public class StreamWriter implements AutoCloseable {
       throw new IllegalStateException(
           "Cannot write to a stream that is already expired: " + streamName);
     }
+  }
+
+  public Table.TableSchema getTableSchema() {
+    return tableSchema;
   }
 
   /** Stream name we are writing to. */
