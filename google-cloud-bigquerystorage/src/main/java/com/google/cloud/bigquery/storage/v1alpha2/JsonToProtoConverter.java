@@ -16,6 +16,9 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.gax.rpc.InvalidArgumentException;
+import com.google.cloud.bigquery.Field;
+import com.google.cloud.bigquery.LegacySQLTypeName;
+import com.google.cloud.bigquery.Schema;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
@@ -43,7 +46,7 @@ import org.json.JSONObject;
  * still a possbility of writing will fail.
  */
 public class JsonToProtoConverter {
-  private static Map modeMap =
+  private static Map BQTableSchemaModeMap =
       Collections.unmodifiableMap(
           new HashMap<Table.TableFieldSchema.Mode, FieldDescriptorProto.Label>() {
             {
@@ -52,7 +55,7 @@ public class JsonToProtoConverter {
               put(Table.TableFieldSchema.Mode.REQUIRED, FieldDescriptorProto.Label.LABEL_REQUIRED);
             }
           });
-  private static Map typeMap =
+  private static Map BQTableSchemaTypeMap =
       Collections.unmodifiableMap(
           new HashMap<Table.TableFieldSchema.Type, FieldDescriptorProto.Type>() {
             {
@@ -70,12 +73,47 @@ public class JsonToProtoConverter {
               put(Table.TableFieldSchema.Type.TIMESTAMP, FieldDescriptorProto.Type.TYPE_INT64);
             }
           });
+  private static Map BQSchemaModeMap =
+      Collections.unmodifiableMap(
+          new HashMap<Field.Mode, FieldDescriptorProto.Label>() {
+            {
+              put(Field.Mode.NULLABLE, FieldDescriptorProto.Label.LABEL_OPTIONAL);
+              put(Field.Mode.REPEATED, FieldDescriptorProto.Label.LABEL_REPEATED);
+              put(Field.Mode.REQUIRED, FieldDescriptorProto.Label.LABEL_REQUIRED);
+            }
+          });
+  private static Map BQSchemaTypeMap =
+      Collections.unmodifiableMap(
+          new HashMap<LegacySQLTypeName, FieldDescriptorProto.Type>() {
+            {
+              put(LegacySQLTypeName.BOOLEAN, FieldDescriptorProto.Type.TYPE_BOOL);
+              put(LegacySQLTypeName.BYTES, FieldDescriptorProto.Type.TYPE_BYTES);
+              put(LegacySQLTypeName.DATE, FieldDescriptorProto.Type.TYPE_INT64);
+              put(LegacySQLTypeName.DATETIME, FieldDescriptorProto.Type.TYPE_INT64);
+              put(LegacySQLTypeName.FLOAT, FieldDescriptorProto.Type.TYPE_DOUBLE);
+              put(LegacySQLTypeName.GEOGRAPHY, FieldDescriptorProto.Type.TYPE_BYTES);
+              put(LegacySQLTypeName.INTEGER, FieldDescriptorProto.Type.TYPE_INT64);
+              put(LegacySQLTypeName.NUMERIC, FieldDescriptorProto.Type.TYPE_DOUBLE);
+              put(LegacySQLTypeName.RECORD, FieldDescriptorProto.Type.TYPE_MESSAGE);
+              put(LegacySQLTypeName.STRING, FieldDescriptorProto.Type.TYPE_STRING);
+              put(LegacySQLTypeName.TIME, FieldDescriptorProto.Type.TYPE_INT64);
+              put(LegacySQLTypeName.TIMESTAMP, FieldDescriptorProto.Type.TYPE_INT64);
+            }
+          });
 
   public static DynamicMessage BQTableSchemaToProtoMessage(
       Table.TableSchema BQTableSchema, JSONObject json)
       throws IOException, InterruptedException, InvalidArgumentException,
           Descriptors.DescriptorValidationException {
     Descriptor descriptor = BQTableSchemaToProtoSchema(BQTableSchema);
+    DynamicMessage protoMsg = protoSchemaToProtoMessage(descriptor, json);
+    return protoMsg;
+  }
+
+  public static DynamicMessage BQSchemaToProtoMessage(Schema BQSchema, JSONObject json)
+      throws IOException, InterruptedException, InvalidArgumentException,
+          Descriptors.DescriptorValidationException {
+    Descriptor descriptor = BQSchemaToProtoSchema(BQSchema);
     DynamicMessage protoMsg = protoSchemaToProtoMessage(descriptor, json);
     return protoMsg;
   }
@@ -139,8 +177,8 @@ public class JsonToProtoConverter {
     Table.TableFieldSchema.Mode mode = BQTableField.getMode();
     return FieldDescriptorProto.newBuilder()
         .setName(fieldName)
-        .setType((FieldDescriptorProto.Type) typeMap.get(BQTableField.getType()))
-        .setLabel((FieldDescriptorProto.Label) modeMap.get(mode))
+        .setType((FieldDescriptorProto.Type) BQTableSchemaTypeMap.get(BQTableField.getType()))
+        .setLabel((FieldDescriptorProto.Label) BQTableSchemaModeMap.get(mode))
         .setNumber(index)
         .build();
   }
@@ -159,7 +197,75 @@ public class JsonToProtoConverter {
     return FieldDescriptorProto.newBuilder()
         .setName(fieldName)
         .setTypeName(scope)
-        .setLabel((FieldDescriptorProto.Label) modeMap.get(mode))
+        .setLabel((FieldDescriptorProto.Label) BQTableSchemaModeMap.get(mode))
+        .setNumber(index)
+        .build();
+  }
+
+  public static Descriptor BQSchemaToProtoSchema(Schema BQSchema)
+      throws IllegalArgumentException, Descriptors.DescriptorValidationException {
+    Descriptor descriptor = BQSchemaToProtoSchemaImpl(BQSchema, "root");
+    return descriptor;
+  }
+
+  private static Descriptor BQSchemaToProtoSchemaImpl(Schema BQSchema, String scope)
+      throws Descriptors.DescriptorValidationException {
+    List<FileDescriptor> dependenciesList = new ArrayList<FileDescriptor>();
+    List<FieldDescriptorProto> fields = new ArrayList<FieldDescriptorProto>();
+    int index = 1;
+    for (Field BQField : BQSchema.getFields()) {
+      if (BQField.getType() == LegacySQLTypeName.RECORD) {
+        String currentScope = scope + BQField.getName();
+        dependenciesList.add(
+            BQSchemaToProtoSchemaImpl(Schema.of(BQField.getSubFields()), currentScope).getFile());
+        fields.add(BQRecordToProtoMessage(BQField, index++, currentScope));
+      } else {
+        fields.add(BQFieldToProtoField(BQField, index++));
+      }
+    }
+    FileDescriptor[] dependenciesArray = new FileDescriptor[dependenciesList.size()];
+    dependenciesArray = dependenciesList.toArray(dependenciesArray);
+    DescriptorProto descriptorProto =
+        DescriptorProto.newBuilder().setName(scope).addAllField(fields).build();
+    FileDescriptorProto fileDescriptorProto =
+        FileDescriptorProto.newBuilder().addMessageType(descriptorProto).build();
+    FileDescriptor fileDescriptor =
+        FileDescriptor.buildFrom(fileDescriptorProto, dependenciesArray);
+    Descriptor descriptor = fileDescriptor.findMessageTypeByName(scope);
+    return descriptor;
+  }
+  /**
+   * Constructs a FieldDescriptorProto for simple BQ fields.
+   *
+   * @param BQField BQ Field used to construct a FieldDescriptorProto
+   * @param index Index for protobuf fields.
+   */
+  private static FieldDescriptorProto BQFieldToProtoField(Field BQField, int index) {
+    String fieldName = BQField.getName();
+    Field.Mode mode = BQField.getMode();
+    return FieldDescriptorProto.newBuilder()
+        .setName(fieldName)
+        .setType((FieldDescriptorProto.Type) BQSchemaTypeMap.get(BQField.getType()))
+        .setLabel((FieldDescriptorProto.Label) BQSchemaModeMap.get(mode))
+        .setNumber(index)
+        .build();
+  }
+
+  /**
+   * Constructs a FieldDescriptorProto for a record type BQ field.
+   *
+   * @param BQField BQ Field used to construct a FieldDescriptorProto
+   * @param index Index for protobuf fields.
+   * @param scope Need scope to prevent naming issues (same name, but different message)
+   */
+  private static FieldDescriptorProto BQRecordToProtoMessage(
+      Field BQField, int index, String scope) {
+    String fieldName = BQField.getName();
+    Field.Mode mode = BQField.getMode();
+    return FieldDescriptorProto.newBuilder()
+        .setName(fieldName)
+        .setTypeName(scope)
+        .setLabel((FieldDescriptorProto.Label) BQSchemaModeMap.get(mode))
         .setNumber(index)
         .build();
   }

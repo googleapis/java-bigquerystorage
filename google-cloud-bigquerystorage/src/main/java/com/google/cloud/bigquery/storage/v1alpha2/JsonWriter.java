@@ -16,6 +16,10 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.core.*;
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.Schema;
+import com.google.cloud.bigquery.Table;
+import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoRows;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
@@ -26,25 +30,31 @@ import com.google.protobuf.Message;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class JsonWriter {
   private static final Logger LOG = Logger.getLogger(JsonWriter.class.getName());
-  private Table.TableSchema BQTableSchema;
+  private static String tablePatternString = "projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)";
+  private static Pattern tablePattern = Pattern.compile(tablePatternString);
+  private com.google.cloud.bigquery.storage.v1alpha2.Table.TableSchema BQTableSchema;
+  private Schema BQTableInitialSchema;
   private StreamWriter streamWriter;
   private Descriptors.Descriptor descriptor;
 
-  // public JsonWriter(StreamWriter.Builder builder) {
-  //   this.streamWriter = builder.build();
-  //   this.BQTableSchema = streamWriter.getTableSchema();
-  //   descriptor = JsonToProtoConverter.BQTableSchemaToProtoSchema(BQTableSchema);
-  // }
+  public StreamWriter getStreamWriter() {
+    return this.streamWriter;
+  }
 
-  public JsonWriter(StreamWriter streamWriter) throws Descriptors.DescriptorValidationException {
+  public JsonWriter(StreamWriter streamWriter, BigQuery bigQuery)
+      throws Descriptors.DescriptorValidationException {
     this.streamWriter = streamWriter;
-    this.BQTableSchema = streamWriter.getTableSchema();
-    descriptor = JsonToProtoConverter.BQTableSchemaToProtoSchema(BQTableSchema);
+    TableId tableId = getTableId(streamWriter.getTableNameString());
+    Table table = bigQuery.getTable(tableId);
+    BQTableInitialSchema = table.getDefinition().getSchema();
+    descriptor = JsonToProtoConverter.BQSchemaToProtoSchema(BQTableInitialSchema);
   }
 
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonRows, long offset)
@@ -53,8 +63,9 @@ public class JsonWriter {
     for (int i = 0; i < jsonRows.length(); i++) {
       java.lang.Object jsonObject = jsonRows.get(i);
       if (jsonObject instanceof JSONObject) {
-        protoRows.add(
-            JsonToProtoConverter.protoSchemaToProtoMessage(descriptor, (JSONObject) jsonObject));
+        DynamicMessage msg =
+            JsonToProtoConverter.protoSchemaToProtoMessage(descriptor, (JSONObject) jsonObject);
+        protoRows.add(msg);
       } else {
         throw new IllegalArgumentException(
             "Illegal JSON Formatting: JSON input is not a JSONArray of JSONObjects.");
@@ -82,5 +93,17 @@ public class JsonWriter {
 
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonRows) throws IllegalArgumentException {
     return append(jsonRows, -1);
+  }
+
+  private TableId getTableId(String tableName) {
+    Matcher matcher = tablePattern.matcher(tableName);
+    if (!matcher.matches() || matcher.groupCount() != 3) {
+      throw new IllegalArgumentException("Invalid table name: " + tableName);
+    }
+    return TableId.of(matcher.group(1), matcher.group(2), matcher.group(3));
+  }
+
+  public void close() {
+    this.streamWriter.close();
   }
 }
