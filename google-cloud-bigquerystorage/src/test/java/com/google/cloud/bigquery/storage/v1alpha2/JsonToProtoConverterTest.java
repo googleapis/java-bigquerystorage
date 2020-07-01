@@ -39,7 +39,7 @@ public class JsonToProtoConverterTest {
               .put(Table.TableFieldSchema.Type.DOUBLE, DoubleType.getDescriptor())
               .put(Table.TableFieldSchema.Type.GEOGRAPHY, BytesType.getDescriptor())
               .put(Table.TableFieldSchema.Type.INT64, Int64Type.getDescriptor())
-              .put(Table.TableFieldSchema.Type.NUMERIC, StringType.getDescriptor())
+              .put(Table.TableFieldSchema.Type.NUMERIC, BytesType.getDescriptor())
               .put(Table.TableFieldSchema.Type.STRING, StringType.getDescriptor())
               .put(Table.TableFieldSchema.Type.TIME, Int64Type.getDescriptor())
               .put(Table.TableFieldSchema.Type.TIMESTAMP, Int64Type.getDescriptor())
