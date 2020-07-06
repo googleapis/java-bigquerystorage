@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class converts a BQ table schema to protobuf descriptor. The mapping between field types and field modes are shown in the ImmutableMaps below.
+ * This class converts a BQ table schema to protobuf descriptor. The mapping between field types and
+ * field modes are shown in the ImmutableMaps below.
  */
 public class BQTableSchemaToProtoSchema {
   private static ImmutableMap<Table.TableFieldSchema.Mode, FieldDescriptorProto.Label>
