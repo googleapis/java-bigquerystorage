@@ -60,9 +60,10 @@ public class BQTableSchemaToProtoDescriptorTest {
       // Check type
       assertEquals(convertedType, originalType);
       // Check mode
-      assertEquals(originalField.isRepeated(), convertedField.isRepeated());
-      assertEquals(originalField.isRequired(), convertedField.isRequired());
-      assertEquals(originalField.isOptional(), convertedField.isOptional());
+      assertTrue(
+          (originalField.isRepeated() == convertedField.isRepeated())
+              || (originalField.isRequired() == convertedField.isRequired())
+              || (originalField.isOptional() == convertedField.isOptional()));
       if (convertedType == FieldDescriptor.Type.MESSAGE) {
         // Recursively check nested messages
         isDescriptorEqual(convertedField.getMessageType(), originalField.getMessageType());
@@ -82,7 +83,8 @@ public class BQTableSchemaToProtoDescriptorTest {
               .build();
       Table.TableSchema tableSchema =
           Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
-      Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
+      Descriptor descriptor =
+          BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoSchema(tableSchema);
       isDescriptorEqual(descriptor, entry.getValue());
     }
   }
@@ -104,7 +106,8 @@ public class BQTableSchemaToProtoDescriptorTest {
             .build();
     Table.TableSchema tableSchema =
         Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
-    Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
+    Descriptor descriptor =
+        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoSchema(tableSchema);
     isDescriptorEqual(descriptor, MessageType.getDescriptor());
   }
 
@@ -137,7 +140,8 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(1, NestingLvl1)
             .addFields(2, NestingLvl2)
             .build();
-    Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
+    Descriptor descriptor =
+        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoSchema(tableSchema);
     isDescriptorEqual(descriptor, NestingStackedLvl0.getDescriptor());
   }
 
@@ -167,7 +171,8 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(1, repeated)
             .addFields(2, optional)
             .build();
-    Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
+    Descriptor descriptor =
+        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoSchema(tableSchema);
     isDescriptorEqual(descriptor, OptionTest.getDescriptor());
   }
 }
