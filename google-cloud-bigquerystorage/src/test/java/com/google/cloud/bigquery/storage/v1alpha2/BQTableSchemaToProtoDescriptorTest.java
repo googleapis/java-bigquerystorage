@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class JsonToProtoConverterTest {
+public class BQTableSchemaToProtoDescriptorTest {
   // This is a map between the Table.TableFieldSchema.Type and the descriptor it is supposed to
   // produce. The produced descriptor will be used to check against the entry values here.
   private static ImmutableMap<Table.TableFieldSchema.Type, Descriptor>
