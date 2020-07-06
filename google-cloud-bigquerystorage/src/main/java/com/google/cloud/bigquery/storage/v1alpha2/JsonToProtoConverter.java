@@ -26,12 +26,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A class that checks the schema compatibility between user schema in proto descriptor and Bigquery
- * table schema. If this check is passed, then user can write to BigQuery table using the user
- * schema, otherwise the write will fail.
+ * This class can convert Json data to protobuf messages given a protobuf descriptor.
+ * The data types will be mapped as shown in the table below. 
+ * Some rules to follow:
+ *     - If field is required in protobuf, then it must be present in the json data
+ *     - If field is optional in protobuf, then it is optional in the json data.
+ *     - The casing must match between protobuf field names and json key names.
+ *     - If there are more json fields than protobuf fields, the allowUnknownFields flag must be set to true.
+ *     - There can be more fields in protobuf fields as long as they are optional.
  *
- * <p>The implementation as of now is not complete, which measn, if this check passed, there is
- * still a possbility of writing will fail.
+ * This class also provides a converter from a BQ table schema to protobuf descriptor.
+ * It will follow the following mapping:
+ *     BQ Type -> Protobuf Type -> Json Data Type
+ *     BOOL       TYPE_BOOL        Boolean
+ *     BYTES      TYPE_BYTES       String
+ *     DATE       TYPE_INT64       Number [byte, short, int, long]
+ *     DATETIME   TYPE_INT64       Number [byte, short, int, long]
+ *     DOUBLE     TYPE_DOUBLE      Number [float, double]
+ *     GEOGRAPHY  TYPE_BYTES       String
+ *     INT64      TYPE_INT64       Number [byte, short, int, long]
+ *     NUMERIC    TYPE_BYTES       String
+ *     STRING     TYPE_STRING      String
+ *     STRUCT     TYPE_MESSAGE     JSONObject
+ *     TIME       TYPE_INT64       Number [byte, short, int, long]
+ *     TIMESTAMP  TYPE_INT64       Number [byte, short, int, long]
  */
 public class JsonToProtoConverter {
   private static ImmutableMap<Table.TableFieldSchema.Mode, FieldDescriptorProto.Label>
@@ -64,10 +82,9 @@ public class JsonToProtoConverter {
    * @param BQTableSchema
    * @throws Descriptors.DescriptorValidationException
    */
-  public static Descriptor BQTableSchemaToProtoSchema(Table.TableSchema BQTableSchema)
+  public static Descriptor ConvertBQTableSchemaToProtoSchema(Table.TableSchema BQTableSchema)
       throws Descriptors.DescriptorValidationException {
-    Descriptor descriptor = BQTableSchemaToProtoSchemaImpl(BQTableSchema, "root");
-    return descriptor;
+    return ConvertBQTableSchemaToProtoSchemaImpl(BQTableSchema, "root");
   }
 
   /**
@@ -78,7 +95,7 @@ public class JsonToProtoConverter {
    *     descriptor.
    * @throws Descriptors.DescriptorValidationException
    */
-  private static Descriptor BQTableSchemaToProtoSchemaImpl(
+  private static Descriptor ConvertBQTableSchemaToProtoSchemaImpl(
       Table.TableSchema BQTableSchema, String scope)
       throws Descriptors.DescriptorValidationException {
     List<FileDescriptor> dependenciesList = new ArrayList<FileDescriptor>();
@@ -88,15 +105,15 @@ public class JsonToProtoConverter {
       if (BQTableField.getType() == Table.TableFieldSchema.Type.STRUCT) {
         String currentScope = scope + BQTableField.getName();
         dependenciesList.add(
-            BQTableSchemaToProtoSchemaImpl(
+            ConvertBQTableSchemaToProtoSchemaImpl(
                     Table.TableSchema.newBuilder()
                         .addAllFields(BQTableField.getFieldsList())
                         .build(),
                     currentScope)
                 .getFile());
-        fields.add(BQStructToProtoMessage(BQTableField, index++, currentScope));
+        fields.add(ConvertBQStructToProtoMessage(BQTableField, index++, currentScope));
       } else {
-        fields.add(BQTableFieldToProtoField(BQTableField, index++));
+        fields.add(ConvertBQTableFieldToProtoField(BQTableField, index++));
       }
     }
     FileDescriptor[] dependenciesArray = new FileDescriptor[dependenciesList.size()];
@@ -117,7 +134,7 @@ public class JsonToProtoConverter {
    * @param BQTableField BQ Field used to construct a FieldDescriptorProto
    * @param index Index for protobuf fields.
    */
-  private static FieldDescriptorProto BQTableFieldToProtoField(
+  private static FieldDescriptorProto ConvertBQTableFieldToProtoField(
       Table.TableFieldSchema BQTableField, int index) {
     String fieldName = BQTableField.getName();
     Table.TableFieldSchema.Mode mode = BQTableField.getMode();
@@ -136,7 +153,7 @@ public class JsonToProtoConverter {
    * @param index Index for protobuf fields.
    * @param scope Need scope to prevent naming issues
    */
-  private static FieldDescriptorProto BQStructToProtoMessage(
+  private static FieldDescriptorProto ConvertBQStructToProtoMessage(
       Table.TableFieldSchema BQTableField, int index, String scope) {
     String fieldName = BQTableField.getName();
     Table.TableFieldSchema.Mode mode = BQTableField.getMode();

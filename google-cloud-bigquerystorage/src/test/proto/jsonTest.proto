@@ -1,0 +1,24 @@
+syntax = "proto2";
+
+package com.google.cloud.bigquery.storage.test;
+
+message NestingLvl1 {
+  optional int64 test_int = 1;
+  optional NestingLvl2 nesting_value = 2;
+}
+
+message NestingLvl2 {
+  optional int64 test_int = 1;
+}
+
+message NestingStackedLvl0 {
+  optional int64 test_int = 1;
+  repeated NestingLvl1 nesting_value1 = 2;
+  optional NestingLvl2 nesting_value = 3;
+}
+
+message OptionTest {
+  optional int64 test_optional = 1;
+  required int64 test_required = 2;
+  repeated int64 test_repeated = 3;
+}

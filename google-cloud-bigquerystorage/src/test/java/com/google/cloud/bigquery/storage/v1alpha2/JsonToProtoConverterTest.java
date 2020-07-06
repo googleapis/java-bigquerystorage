@@ -19,6 +19,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
+import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -29,8 +30,9 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class JsonToProtoConverterTest {
+  // This is a map between the Table.TableFieldSchema.Type and the descriptor it is supposed to produce. The produced descriptor will be used to check against the entry values here.
   private static ImmutableMap<Table.TableFieldSchema.Type, Descriptor>
-      BQTableTypeToProtoDescriptor =
+      BQTableTypeToCorrectProtoDescriptorTest =
           new ImmutableMap.Builder<Table.TableFieldSchema.Type, Descriptor>()
               .put(Table.TableFieldSchema.Type.BOOL, BoolType.getDescriptor())
               .put(Table.TableFieldSchema.Type.BYTES, BytesType.getDescriptor())
@@ -45,30 +47,32 @@ public class JsonToProtoConverterTest {
               .put(Table.TableFieldSchema.Type.TIMESTAMP, Int64Type.getDescriptor())
               .build();
 
-  private boolean isDescriptorEqual(Descriptor convertedProto, Descriptor originalProto) {
+  private void isDescriptorEqual(Descriptor convertedProto, Descriptor originalProto) {
+    // Check same number of fields
+    assertEquals(convertedProto.getFields().size(), originalProto.getFields().size());
     for (FieldDescriptor convertedField : convertedProto.getFields()) {
       FieldDescriptor originalField = originalProto.findFieldByName(convertedField.getName());
-      if (originalField == null) {
-        return false;
-      }
+      // Check name
+      assertNotNull(originalField);
       FieldDescriptor.Type convertedType = convertedField.getType();
       FieldDescriptor.Type originalType = originalField.getType();
-      if (convertedType != originalType) {
-        return false;
-      }
+      // Check type
+      assertEquals(convertedType, originalType);
+      // Check mode
+      assertEquals(originalField.isRepeated(), convertedField.isRepeated());
+      assertEquals(originalField.isRequired(), convertedField.isRequired());
+      assertEquals(originalField.isOptional(), convertedField.isOptional());
       if (convertedType == FieldDescriptor.Type.MESSAGE) {
-        if (!isDescriptorEqual(convertedField.getMessageType(), originalField.getMessageType())) {
-          return false;
-        }
+        // Recursively check nested messages
+        isDescriptorEqual(convertedField.getMessageType(), originalField.getMessageType());
       }
     }
-    return true;
   }
 
   @Test
   public void testBQTableSchemaToProtoDescriptorSimpleTypes() throws Exception {
     for (Map.Entry<Table.TableFieldSchema.Type, Descriptor> entry :
-        BQTableTypeToProtoDescriptor.entrySet()) {
+        BQTableTypeToCorrectProtoDescriptorTest.entrySet()) {
       Table.TableFieldSchema tableFieldSchema =
           Table.TableFieldSchema.newBuilder()
               .setType(entry.getKey())
@@ -77,13 +81,13 @@ public class JsonToProtoConverterTest {
               .build();
       Table.TableSchema tableSchema =
           Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
-      Descriptor descriptor = JsonToProtoConverter.BQTableSchemaToProtoSchema(tableSchema);
-      assertTrue(isDescriptorEqual(descriptor, entry.getValue()));
+      Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
+      isDescriptorEqual(descriptor, entry.getValue());
     }
   }
 
   @Test
-  public void testBQTableSchemaToProtoDescriptorComplex() throws Exception {
+  public void testBQTableSchemaToProtoDescriptorStructSimple() throws Exception {
     Table.TableFieldSchema StringType =
         Table.TableFieldSchema.newBuilder()
             .setType(Table.TableFieldSchema.Type.STRING)
@@ -99,7 +103,62 @@ public class JsonToProtoConverterTest {
             .build();
     Table.TableSchema tableSchema =
         Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
-    Descriptor descriptor = JsonToProtoConverter.BQTableSchemaToProtoSchema(tableSchema);
-    assertTrue(isDescriptorEqual(descriptor, MessageType.getDescriptor()));
+    Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
+    isDescriptorEqual(descriptor, MessageType.getDescriptor());
+  }
+
+  @Test
+  public void testBQTableSchemaToProtoDescriptorStructComplex() throws Exception {
+    Table.TableFieldSchema test_int =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.INT64)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("test_int")
+            .build();
+    Table.TableFieldSchema NestingLvl2 =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.STRUCT)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .addFields(0, test_int)
+            .setName("nesting_value")
+            .build();
+    Table.TableFieldSchema NestingLvl1 =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.STRUCT)
+            .setMode(Table.TableFieldSchema.Mode.REPEATED)
+            .addFields(0, test_int)
+            .addFields(1, NestingLvl2)
+            .setName("nesting_value1")
+            .build();
+    Table.TableSchema tableSchema =
+        Table.TableSchema.newBuilder().addFields(0, test_int).addFields(1, NestingLvl1).addFields(2, NestingLvl2).build();
+    Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
+    isDescriptorEqual(descriptor, NestingStackedLvl0.getDescriptor());
+  }
+
+  @Test
+  public void testBQTableSchemaToProtoDescriptorOptions() throws Exception {
+      Table.TableFieldSchema required =
+          Table.TableFieldSchema.newBuilder()
+              .setType(Table.TableFieldSchema.Type.INT64)
+              .setMode(Table.TableFieldSchema.Mode.REQUIRED)
+              .setName("test_required")
+              .build();
+      Table.TableFieldSchema repeated =
+          Table.TableFieldSchema.newBuilder()
+              .setType(Table.TableFieldSchema.Type.INT64)
+              .setMode(Table.TableFieldSchema.Mode.REPEATED)
+              .setName("test_repeated")
+              .build();
+      Table.TableFieldSchema optional =
+          Table.TableFieldSchema.newBuilder()
+              .setType(Table.TableFieldSchema.Type.INT64)
+              .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+              .setName("test_optional")
+              .build();
+      Table.TableSchema tableSchema =
+          Table.TableSchema.newBuilder().addFields(0, required).addFields(1, repeated).addFields(2, optional).build();
+      Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
+      isDescriptorEqual(descriptor, OptionTest.getDescriptor());
   }
 }
