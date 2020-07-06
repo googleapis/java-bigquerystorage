@@ -60,9 +60,9 @@ public class BQTableSchemaToProtoDescriptor {
    * @param BQTableSchema
    * @throws Descriptors.DescriptorValidationException
    */
-  public static Descriptor ConvertBQTableSchemaToProtoSchema(Table.TableSchema BQTableSchema)
+  public static Descriptor ConvertBQTableSchemaToProtoDescriptor(Table.TableSchema BQTableSchema)
       throws Descriptors.DescriptorValidationException {
-    return ConvertBQTableSchemaToProtoSchemaImpl(BQTableSchema, "root");
+    return ConvertBQTableSchemaToProtoDescriptorImpl(BQTableSchema, "root");
   }
 
   /**
@@ -73,7 +73,7 @@ public class BQTableSchemaToProtoDescriptor {
    *     descriptor.
    * @throws Descriptors.DescriptorValidationException
    */
-  private static Descriptor ConvertBQTableSchemaToProtoSchemaImpl(
+  private static Descriptor ConvertBQTableSchemaToProtoDescriptorImpl(
       Table.TableSchema BQTableSchema, String scope)
       throws Descriptors.DescriptorValidationException {
     List<FileDescriptor> dependenciesList = new ArrayList<FileDescriptor>();
@@ -83,7 +83,7 @@ public class BQTableSchemaToProtoDescriptor {
       if (BQTableField.getType() == Table.TableFieldSchema.Type.STRUCT) {
         String currentScope = scope + BQTableField.getName();
         dependenciesList.add(
-            ConvertBQTableSchemaToProtoSchemaImpl(
+            ConvertBQTableSchemaToProtoDescriptorImpl(
                     Table.TableSchema.newBuilder()
                         .addAllFields(BQTableField.getFieldsList())
                         .build(),

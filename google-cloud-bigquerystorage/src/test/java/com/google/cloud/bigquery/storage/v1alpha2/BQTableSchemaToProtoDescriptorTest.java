@@ -84,7 +84,7 @@ public class BQTableSchemaToProtoDescriptorTest {
       Table.TableSchema tableSchema =
           Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
       Descriptor descriptor =
-          BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoSchema(tableSchema);
+          BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
       isDescriptorEqual(descriptor, entry.getValue());
     }
   }
@@ -107,7 +107,7 @@ public class BQTableSchemaToProtoDescriptorTest {
     Table.TableSchema tableSchema =
         Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
     Descriptor descriptor =
-        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoSchema(tableSchema);
+        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
     isDescriptorEqual(descriptor, MessageType.getDescriptor());
   }
 
@@ -141,7 +141,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(2, NestingLvl2)
             .build();
     Descriptor descriptor =
-        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoSchema(tableSchema);
+        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
     isDescriptorEqual(descriptor, NestingStackedLvl0.getDescriptor());
   }
 
@@ -172,7 +172,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(2, optional)
             .build();
     Descriptor descriptor =
-        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoSchema(tableSchema);
+        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
     isDescriptorEqual(descriptor, OptionTest.getDescriptor());
   }
 }
