@@ -26,30 +26,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class can convert Json data to protobuf messages given a protobuf descriptor.
- * The data types will be mapped as shown in the table below. 
- * Some rules to follow:
- *     - If field is required in protobuf, then it must be present in the json data
- *     - If field is optional in protobuf, then it is optional in the json data.
- *     - The casing must match between protobuf field names and json key names.
- *     - If there are more json fields than protobuf fields, the allowUnknownFields flag must be set to true.
- *     - There can be more fields in protobuf fields as long as they are optional.
+ * This class can convert Json data to protobuf messages given a protobuf descriptor. The data types
+ * will be mapped as shown in the table below. Some rules to follow: - If field is required in
+ * protobuf, then it must be present in the json data - If field is optional in protobuf, then it is
+ * optional in the json data. - The casing must match between protobuf field names and json key
+ * names. - If there are more json fields than protobuf fields, the allowUnknownFields flag must be
+ * set to true. - There can be more fields in protobuf fields as long as they are optional.
  *
- * This class also provides a converter from a BQ table schema to protobuf descriptor.
- * It will follow the following mapping:
- *     BQ Type -> Protobuf Type -> Json Data Type
- *     BOOL       TYPE_BOOL        Boolean
- *     BYTES      TYPE_BYTES       String
- *     DATE       TYPE_INT64       Number [byte, short, int, long]
- *     DATETIME   TYPE_INT64       Number [byte, short, int, long]
- *     DOUBLE     TYPE_DOUBLE      Number [float, double]
- *     GEOGRAPHY  TYPE_BYTES       String
- *     INT64      TYPE_INT64       Number [byte, short, int, long]
- *     NUMERIC    TYPE_BYTES       String
- *     STRING     TYPE_STRING      String
- *     STRUCT     TYPE_MESSAGE     JSONObject
- *     TIME       TYPE_INT64       Number [byte, short, int, long]
- *     TIMESTAMP  TYPE_INT64       Number [byte, short, int, long]
+ * <p>This class also provides a converter from a BQ table schema to protobuf descriptor. It will
+ * follow the following mapping: BQ Type -> Protobuf Type -> Json Data Type BOOL TYPE_BOOL Boolean
+ * BYTES TYPE_BYTES String DATE TYPE_INT64 Number [byte, short, int, long] DATETIME TYPE_INT64
+ * Number [byte, short, int, long] DOUBLE TYPE_DOUBLE Number [float, double] GEOGRAPHY TYPE_BYTES
+ * String INT64 TYPE_INT64 Number [byte, short, int, long] NUMERIC TYPE_BYTES String STRING
+ * TYPE_STRING String STRUCT TYPE_MESSAGE JSONObject TIME TYPE_INT64 Number [byte, short, int, long]
+ * TIMESTAMP TYPE_INT64 Number [byte, short, int, long]
  */
 public class JsonToProtoConverter {
   private static ImmutableMap<Table.TableFieldSchema.Mode, FieldDescriptorProto.Label>

@@ -18,8 +18,8 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
+import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -30,7 +30,8 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class JsonToProtoConverterTest {
-  // This is a map between the Table.TableFieldSchema.Type and the descriptor it is supposed to produce. The produced descriptor will be used to check against the entry values here.
+  // This is a map between the Table.TableFieldSchema.Type and the descriptor it is supposed to
+  // produce. The produced descriptor will be used to check against the entry values here.
   private static ImmutableMap<Table.TableFieldSchema.Type, Descriptor>
       BQTableTypeToCorrectProtoDescriptorTest =
           new ImmutableMap.Builder<Table.TableFieldSchema.Type, Descriptor>()
@@ -131,34 +132,42 @@ public class JsonToProtoConverterTest {
             .setName("nesting_value1")
             .build();
     Table.TableSchema tableSchema =
-        Table.TableSchema.newBuilder().addFields(0, test_int).addFields(1, NestingLvl1).addFields(2, NestingLvl2).build();
+        Table.TableSchema.newBuilder()
+            .addFields(0, test_int)
+            .addFields(1, NestingLvl1)
+            .addFields(2, NestingLvl2)
+            .build();
     Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
     isDescriptorEqual(descriptor, NestingStackedLvl0.getDescriptor());
   }
 
   @Test
   public void testBQTableSchemaToProtoDescriptorOptions() throws Exception {
-      Table.TableFieldSchema required =
-          Table.TableFieldSchema.newBuilder()
-              .setType(Table.TableFieldSchema.Type.INT64)
-              .setMode(Table.TableFieldSchema.Mode.REQUIRED)
-              .setName("test_required")
-              .build();
-      Table.TableFieldSchema repeated =
-          Table.TableFieldSchema.newBuilder()
-              .setType(Table.TableFieldSchema.Type.INT64)
-              .setMode(Table.TableFieldSchema.Mode.REPEATED)
-              .setName("test_repeated")
-              .build();
-      Table.TableFieldSchema optional =
-          Table.TableFieldSchema.newBuilder()
-              .setType(Table.TableFieldSchema.Type.INT64)
-              .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-              .setName("test_optional")
-              .build();
-      Table.TableSchema tableSchema =
-          Table.TableSchema.newBuilder().addFields(0, required).addFields(1, repeated).addFields(2, optional).build();
-      Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
-      isDescriptorEqual(descriptor, OptionTest.getDescriptor());
+    Table.TableFieldSchema required =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.INT64)
+            .setMode(Table.TableFieldSchema.Mode.REQUIRED)
+            .setName("test_required")
+            .build();
+    Table.TableFieldSchema repeated =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.INT64)
+            .setMode(Table.TableFieldSchema.Mode.REPEATED)
+            .setName("test_repeated")
+            .build();
+    Table.TableFieldSchema optional =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.INT64)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("test_optional")
+            .build();
+    Table.TableSchema tableSchema =
+        Table.TableSchema.newBuilder()
+            .addFields(0, required)
+            .addFields(1, repeated)
+            .addFields(2, optional)
+            .build();
+    Descriptor descriptor = JsonToProtoConverter.ConvertBQTableSchemaToProtoSchema(tableSchema);
+    isDescriptorEqual(descriptor, OptionTest.getDescriptor());
   }
 }
