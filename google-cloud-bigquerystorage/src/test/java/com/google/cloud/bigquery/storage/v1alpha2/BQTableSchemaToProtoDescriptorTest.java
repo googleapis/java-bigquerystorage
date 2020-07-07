@@ -23,6 +23,7 @@ import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,131 +49,232 @@ public class BQTableSchemaToProtoDescriptorTest {
               .put(Table.TableFieldSchema.Type.TIMESTAMP, Int64Type.getDescriptor())
               .build();
 
+  // Creates mapping from descriptor to how many times it was reused.
+  private void mapDescriptorToCount(Descriptor descriptor, HashMap<String, Integer> map) {
+    for (FieldDescriptor field : descriptor.getFields()) {
+      if (field.getType() == FieldDescriptor.Type.MESSAGE) {
+        Descriptor subDescriptor = field.getMessageType();
+        String messageName = subDescriptor.getName();
+        if (map.containsKey(messageName)) {
+          map.put(messageName, map.get(messageName) + 1);
+        } else {
+          map.put(messageName, 1);
+        }
+        mapDescriptorToCount(subDescriptor, map);
+      }
+    }
+  }
+
   private void isDescriptorEqual(Descriptor convertedProto, Descriptor originalProto) {
     // Check same number of fields
     assertEquals(convertedProto.getFields().size(), originalProto.getFields().size());
     for (FieldDescriptor convertedField : convertedProto.getFields()) {
+      // Check field name
       FieldDescriptor originalField = originalProto.findFieldByName(convertedField.getName());
-      // Check name
       assertNotNull(originalField);
+      // Check type
       FieldDescriptor.Type convertedType = convertedField.getType();
       FieldDescriptor.Type originalType = originalField.getType();
-      // Check type
       assertEquals(convertedType, originalType);
       // Check mode
       assertTrue(
           (originalField.isRepeated() == convertedField.isRepeated())
-              || (originalField.isRequired() == convertedField.isRequired())
-              || (originalField.isOptional() == convertedField.isOptional()));
+              && (originalField.isRequired() == convertedField.isRequired())
+              && (originalField.isOptional() == convertedField.isOptional()));
+      // Recursively check nested messages
       if (convertedType == FieldDescriptor.Type.MESSAGE) {
-        // Recursively check nested messages
         isDescriptorEqual(convertedField.getMessageType(), originalField.getMessageType());
       }
     }
   }
 
   @Test
-  public void testBQTableSchemaToProtoDescriptorSimpleTypes() throws Exception {
+  public void testSimpleTypes() throws Exception {
     for (Map.Entry<Table.TableFieldSchema.Type, Descriptor> entry :
         BQTableTypeToCorrectProtoDescriptorTest.entrySet()) {
-      Table.TableFieldSchema tableFieldSchema =
+      final Table.TableFieldSchema tableFieldSchema =
           Table.TableFieldSchema.newBuilder()
               .setType(entry.getKey())
               .setMode(Table.TableFieldSchema.Mode.NULLABLE)
               .setName("test_field_type")
               .build();
-      Table.TableSchema tableSchema =
+      final Table.TableSchema tableSchema =
           Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
-      Descriptor descriptor =
+      final Descriptor descriptor =
           BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
       isDescriptorEqual(descriptor, entry.getValue());
     }
   }
 
   @Test
-  public void testBQTableSchemaToProtoDescriptorStructSimple() throws Exception {
-    Table.TableFieldSchema StringType =
+  public void testStructSimple() throws Exception {
+    final Table.TableFieldSchema StringType =
         Table.TableFieldSchema.newBuilder()
             .setType(Table.TableFieldSchema.Type.STRING)
             .setMode(Table.TableFieldSchema.Mode.NULLABLE)
             .setName("test_field_type")
             .build();
-    Table.TableFieldSchema tableFieldSchema =
+    final Table.TableFieldSchema tableFieldSchema =
         Table.TableFieldSchema.newBuilder()
             .setType(Table.TableFieldSchema.Type.STRUCT)
             .setMode(Table.TableFieldSchema.Mode.NULLABLE)
             .setName("test_field_type")
             .addFields(0, StringType)
             .build();
-    Table.TableSchema tableSchema =
+    final Table.TableSchema tableSchema =
         Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
-    Descriptor descriptor =
+    final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
     isDescriptorEqual(descriptor, MessageType.getDescriptor());
   }
 
   @Test
-  public void testBQTableSchemaToProtoDescriptorStructComplex() throws Exception {
-    Table.TableFieldSchema test_int =
+  public void testStructComplex() throws Exception {
+    final Table.TableFieldSchema test_int =
         Table.TableFieldSchema.newBuilder()
             .setType(Table.TableFieldSchema.Type.INT64)
             .setMode(Table.TableFieldSchema.Mode.NULLABLE)
             .setName("test_int")
             .build();
-    Table.TableFieldSchema NestingLvl2 =
+    final Table.TableFieldSchema test_string =
         Table.TableFieldSchema.newBuilder()
-            .setType(Table.TableFieldSchema.Type.STRUCT)
-            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-            .addFields(0, test_int)
-            .setName("nesting_value")
-            .build();
-    Table.TableFieldSchema NestingLvl1 =
-        Table.TableFieldSchema.newBuilder()
-            .setType(Table.TableFieldSchema.Type.STRUCT)
+            .setType(Table.TableFieldSchema.Type.STRING)
             .setMode(Table.TableFieldSchema.Mode.REPEATED)
-            .addFields(0, test_int)
-            .addFields(1, NestingLvl2)
-            .setName("nesting_value1")
+            .setName("test_string")
             .build();
-    Table.TableSchema tableSchema =
+    final Table.TableFieldSchema test_bytes =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.BYTES)
+            .setMode(Table.TableFieldSchema.Mode.REQUIRED)
+            .setName("test_bytes")
+            .build();
+    final Table.TableFieldSchema test_bool =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.BOOL)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("test_bool")
+            .build();
+    final Table.TableFieldSchema test_double =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.DOUBLE)
+            .setMode(Table.TableFieldSchema.Mode.REPEATED)
+            .setName("test_double")
+            .build();
+    final Table.TableFieldSchema ComplexLvl2 =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.STRUCT)
+            .setMode(Table.TableFieldSchema.Mode.REQUIRED)
+            .addFields(0, test_int)
+            .setName("complexLvl2")
+            .build();
+    final Table.TableFieldSchema ComplexLvl1 =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.STRUCT)
+            .setMode(Table.TableFieldSchema.Mode.REQUIRED)
+            .addFields(0, test_int)
+            .addFields(1, ComplexLvl2)
+            .setName("complexLvl1")
+            .build();
+    final Table.TableSchema tableSchema =
         Table.TableSchema.newBuilder()
             .addFields(0, test_int)
-            .addFields(1, NestingLvl1)
-            .addFields(2, NestingLvl2)
+            .addFields(1, test_string)
+            .addFields(2, test_bytes)
+            .addFields(3, test_bool)
+            .addFields(4, test_double)
+            .addFields(5, ComplexLvl1)
+            .addFields(6, ComplexLvl2)
             .build();
-    Descriptor descriptor =
+    final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
-    isDescriptorEqual(descriptor, NestingStackedLvl0.getDescriptor());
+    isDescriptorEqual(descriptor, ComplexRoot.getDescriptor());
   }
 
   @Test
-  public void testBQTableSchemaToProtoDescriptorOptions() throws Exception {
-    Table.TableFieldSchema required =
+  public void testOptions() throws Exception {
+    final Table.TableFieldSchema required =
         Table.TableFieldSchema.newBuilder()
             .setType(Table.TableFieldSchema.Type.INT64)
             .setMode(Table.TableFieldSchema.Mode.REQUIRED)
             .setName("test_required")
             .build();
-    Table.TableFieldSchema repeated =
+    final Table.TableFieldSchema repeated =
         Table.TableFieldSchema.newBuilder()
             .setType(Table.TableFieldSchema.Type.INT64)
             .setMode(Table.TableFieldSchema.Mode.REPEATED)
             .setName("test_repeated")
             .build();
-    Table.TableFieldSchema optional =
+    final Table.TableFieldSchema optional =
         Table.TableFieldSchema.newBuilder()
             .setType(Table.TableFieldSchema.Type.INT64)
             .setMode(Table.TableFieldSchema.Mode.NULLABLE)
             .setName("test_optional")
             .build();
-    Table.TableSchema tableSchema =
+    final Table.TableSchema tableSchema =
         Table.TableSchema.newBuilder()
             .addFields(0, required)
             .addFields(1, repeated)
             .addFields(2, optional)
             .build();
-    Descriptor descriptor =
+    final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
     isDescriptorEqual(descriptor, OptionTest.getDescriptor());
+  }
+
+  @Test
+  public void testDescriptorReuseDuringCreation() throws Exception {
+    final Table.TableFieldSchema test_int =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.INT64)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("test_int")
+            .build();
+    final Table.TableFieldSchema reuse_lvl2 =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.STRUCT)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("reuse_lvl2")
+            .addFields(0, test_int)
+            .build();
+    final Table.TableFieldSchema reuse_lvl1 =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.STRUCT)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("reuse_lvl1")
+            .addFields(0, test_int)
+            .addFields(0, reuse_lvl2)
+            .build();
+    final Table.TableFieldSchema reuse_lvl1_1 =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.STRUCT)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("reuse_lvl1_1")
+            .addFields(0, test_int)
+            .addFields(0, reuse_lvl2)
+            .build();
+    final Table.TableFieldSchema reuse_lvl1_2 =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.STRUCT)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("reuse_lvl1_2")
+            .addFields(0, test_int)
+            .addFields(0, reuse_lvl2)
+            .build();
+    final Table.TableSchema tableSchema =
+        Table.TableSchema.newBuilder()
+            .addFields(0, reuse_lvl1)
+            .addFields(1, reuse_lvl1_1)
+            .addFields(2, reuse_lvl1_2)
+            .build();
+    final Descriptor descriptor =
+        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
+    HashMap<String, Integer> descriptorToCount = new HashMap<String, Integer>();
+    mapDescriptorToCount(descriptor, descriptorToCount);
+    assertEquals(descriptorToCount.size(), 2);
+    assertTrue(descriptorToCount.containsKey("root__reuse_lvl1"));
+    assertEquals(descriptorToCount.get("root__reuse_lvl1").intValue(), 3);
+    assertTrue(descriptorToCount.containsKey("root__reuse_lvl1__reuse_lvl2"));
+    assertEquals(descriptorToCount.get("root__reuse_lvl1__reuse_lvl2").intValue(), 3);
+    isDescriptorEqual(descriptor, ReuseRoot.getDescriptor());
   }
 }

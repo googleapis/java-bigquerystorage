@@ -15,6 +15,7 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
@@ -23,11 +24,12 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FileDescriptor;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
- * This class converts a BQ table schema to protobuf descriptor. The mapping between field types and
- * field modes are shown in the ImmutableMaps below.
+ * Converts a BQ table schema to protobuf descriptor. The mapping between field types and field
+ * modes are shown in the ImmutableMaps below.
  */
 public class BQTableSchemaToProtoDescriptor {
   private static ImmutableMap<Table.TableFieldSchema.Mode, FieldDescriptorProto.Label>
@@ -62,11 +64,12 @@ public class BQTableSchemaToProtoDescriptor {
    */
   public static Descriptor ConvertBQTableSchemaToProtoDescriptor(Table.TableSchema BQTableSchema)
       throws Descriptors.DescriptorValidationException {
-    return ConvertBQTableSchemaToProtoDescriptorImpl(BQTableSchema, "root");
+    return ConvertBQTableSchemaToProtoDescriptorImpl(
+        BQTableSchema, "root", new HashMap<ImmutableList<Table.TableFieldSchema>, Descriptor>());
   }
 
   /**
-   * Implementation that converts a Table.TableSchema to a Descriptors.Descriptor object.
+   * Converts a Table.TableSchema to a Descriptors.Descriptor object.
    *
    * @param BQTableSchema
    * @param scope Keeps track of current scope to prevent repeated naming while constructing
@@ -74,22 +77,32 @@ public class BQTableSchemaToProtoDescriptor {
    * @throws Descriptors.DescriptorValidationException
    */
   private static Descriptor ConvertBQTableSchemaToProtoDescriptorImpl(
-      Table.TableSchema BQTableSchema, String scope)
+      Table.TableSchema BQTableSchema,
+      String scope,
+      HashMap<ImmutableList<Table.TableFieldSchema>, Descriptor> dependencyMap)
       throws Descriptors.DescriptorValidationException {
     List<FileDescriptor> dependenciesList = new ArrayList<FileDescriptor>();
     List<FieldDescriptorProto> fields = new ArrayList<FieldDescriptorProto>();
     int index = 1;
     for (Table.TableFieldSchema BQTableField : BQTableSchema.getFieldsList()) {
       if (BQTableField.getType() == Table.TableFieldSchema.Type.STRUCT) {
-        String currentScope = scope + BQTableField.getName();
-        dependenciesList.add(
-            ConvertBQTableSchemaToProtoDescriptorImpl(
-                    Table.TableSchema.newBuilder()
-                        .addAllFields(BQTableField.getFieldsList())
-                        .build(),
-                    currentScope)
-                .getFile());
-        fields.add(ConvertBQStructToProtoMessage(BQTableField, index++, currentScope));
+        ImmutableList<Table.TableFieldSchema> fieldList =
+            ImmutableList.copyOf(BQTableField.getFieldsList());
+        String currentScope = scope + "__" + BQTableField.getName();
+        if (dependencyMap.containsKey(fieldList)) {
+          Descriptor descriptor = dependencyMap.get(fieldList);
+          dependenciesList.add(descriptor.getFile());
+          fields.add(ConvertBQStructToProtoMessage(BQTableField, index++, descriptor.getName()));
+        } else {
+          Descriptor descriptor =
+              ConvertBQTableSchemaToProtoDescriptorImpl(
+                  Table.TableSchema.newBuilder().addAllFields(fieldList).build(),
+                  currentScope,
+                  dependencyMap);
+          dependenciesList.add(descriptor.getFile());
+          dependencyMap.put(fieldList, descriptor);
+          fields.add(ConvertBQStructToProtoMessage(BQTableField, index++, currentScope));
+        }
       } else {
         fields.add(ConvertBQTableFieldToProtoField(BQTableField, index++));
       }
