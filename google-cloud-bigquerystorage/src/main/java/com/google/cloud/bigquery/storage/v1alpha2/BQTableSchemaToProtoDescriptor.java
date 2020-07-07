@@ -74,6 +74,7 @@ public class BQTableSchemaToProtoDescriptor {
    * @param BQTableSchema
    * @param scope Keeps track of current scope to prevent repeated naming while constructing
    *     descriptor.
+   * @param dependencyMap Stores already constructed descriptors to prevent reconstruction
    * @throws Descriptors.DescriptorValidationException
    */
   private static Descriptor ConvertBQTableSchemaToProtoDescriptorImpl(
