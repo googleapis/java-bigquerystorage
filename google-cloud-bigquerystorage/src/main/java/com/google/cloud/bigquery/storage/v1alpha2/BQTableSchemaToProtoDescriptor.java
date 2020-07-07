@@ -86,14 +86,14 @@ public class BQTableSchemaToProtoDescriptor {
     List<FieldDescriptorProto> fields = new ArrayList<FieldDescriptorProto>();
     int index = 1;
     for (Table.TableFieldSchema BQTableField : BQTableSchema.getFieldsList()) {
+      String currentScope = scope + "__" + BQTableField.getName();
       if (BQTableField.getType() == Table.TableFieldSchema.Type.STRUCT) {
         ImmutableList<Table.TableFieldSchema> fieldList =
             ImmutableList.copyOf(BQTableField.getFieldsList());
-        String currentScope = scope + "__" + BQTableField.getName();
         if (dependencyMap.containsKey(fieldList)) {
           Descriptor descriptor = dependencyMap.get(fieldList);
           dependenciesList.add(descriptor.getFile());
-          fields.add(ConvertBQStructToProtoMessage(BQTableField, index++, descriptor.getName()));
+          fields.add(ConvertBQTableFieldToProtoField(BQTableField, index++, descriptor.getName()));
         } else {
           Descriptor descriptor =
               ConvertBQTableSchemaToProtoDescriptorImpl(
@@ -102,10 +102,10 @@ public class BQTableSchemaToProtoDescriptor {
                   dependencyMap);
           dependenciesList.add(descriptor.getFile());
           dependencyMap.put(fieldList, descriptor);
-          fields.add(ConvertBQStructToProtoMessage(BQTableField, index++, currentScope));
+          fields.add(ConvertBQTableFieldToProtoField(BQTableField, index++, currentScope));
         }
       } else {
-        fields.add(ConvertBQTableFieldToProtoField(BQTableField, index++));
+        fields.add(ConvertBQTableFieldToProtoField(BQTableField, index++, currentScope));
       }
     }
     FileDescriptor[] dependenciesArray = new FileDescriptor[dependenciesList.size()];
@@ -121,37 +121,27 @@ public class BQTableSchemaToProtoDescriptor {
   }
 
   /**
-   * Constructs a FieldDescriptorProto for non-struct BQ fields.
+   * Converts a BQTableField to ProtoField
    *
    * @param BQTableField BQ Field used to construct a FieldDescriptorProto
    * @param index Index for protobuf fields.
+   * @param scope used to name descriptors
    */
   private static FieldDescriptorProto ConvertBQTableFieldToProtoField(
-      Table.TableFieldSchema BQTableField, int index) {
-    String fieldName = BQTableField.getName();
+      Table.TableFieldSchema BQTableField, int index, String scope) {
     Table.TableFieldSchema.Mode mode = BQTableField.getMode();
+    String fieldName = BQTableField.getName();
+    if (BQTableField.getType() == Table.TableFieldSchema.Type.STRUCT) {
+      return FieldDescriptorProto.newBuilder()
+          .setName(fieldName)
+          .setTypeName(scope)
+          .setLabel((FieldDescriptorProto.Label) BQTableSchemaModeMap.get(mode))
+          .setNumber(index)
+          .build();
+    }
     return FieldDescriptorProto.newBuilder()
         .setName(fieldName)
         .setType((FieldDescriptorProto.Type) BQTableSchemaTypeMap.get(BQTableField.getType()))
-        .setLabel((FieldDescriptorProto.Label) BQTableSchemaModeMap.get(mode))
-        .setNumber(index)
-        .build();
-  }
-
-  /**
-   * Constructs a FieldDescriptorProto for a Struct type BQ field.
-   *
-   * @param BQTableField BQ Field used to construct a FieldDescriptorProto
-   * @param index Index for protobuf fields.
-   * @param scope Need scope to prevent naming issues
-   */
-  private static FieldDescriptorProto ConvertBQStructToProtoMessage(
-      Table.TableFieldSchema BQTableField, int index, String scope) {
-    String fieldName = BQTableField.getName();
-    Table.TableFieldSchema.Mode mode = BQTableField.getMode();
-    return FieldDescriptorProto.newBuilder()
-        .setName(fieldName)
-        .setTypeName(scope)
         .setLabel((FieldDescriptorProto.Label) BQTableSchemaModeMap.get(mode))
         .setNumber(index)
         .build();
