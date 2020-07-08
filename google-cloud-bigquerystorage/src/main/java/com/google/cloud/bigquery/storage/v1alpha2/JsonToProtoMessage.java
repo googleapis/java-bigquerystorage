@@ -200,7 +200,7 @@ public class JsonToProtoMessage {
                   allowUnknownFields));
         } catch (JSONException e) {
           throw new IllegalArgumentException(
-              "JSONObject does not have an object field at " + currentScope + ".");
+              "JSONObject does not have a object field at " + currentScope + ".");
         }
         break;
     }
@@ -229,7 +229,7 @@ public class JsonToProtoMessage {
       jsonArray = json.getJSONArray(fieldName);
     } catch (JSONException e) {
       throw new IllegalArgumentException(
-          "JSONObject does not have an array field at " + currentScope + ".");
+          "JSONObject does not have a array field at " + currentScope + ".");
     }
 
     switch (field.getType()) {
@@ -332,12 +332,7 @@ public class JsonToProtoMessage {
                     allowUnknownFields));
           } catch (JSONException e) {
             throw new IllegalArgumentException(
-                "JSONObject does not have an object field at "
-                    + currentScope
-                    + "["
-                    + i
-                    + "]"
-                    + ".");
+                "JSONObject does not have a object field at " + currentScope + "[" + i + "]" + ".");
           }
         }
         break;

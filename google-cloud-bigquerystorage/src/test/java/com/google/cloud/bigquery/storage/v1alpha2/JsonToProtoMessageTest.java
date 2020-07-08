@@ -18,6 +18,7 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -34,33 +35,73 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class JsonToProtoMessageTest {
-  private static ImmutableMap<Descriptor, String> SimpleDescriptorsToDebugMessageTest =
+  private static ImmutableMap<Descriptor, String> AllTypesToDebugMessageTest =
       new ImmutableMap.Builder<Descriptor, String>()
           .put(BoolType.getDescriptor(), "boolean")
           .put(BytesType.getDescriptor(), "string")
           .put(Int64Type.getDescriptor(), "int64")
           .put(DoubleType.getDescriptor(), "double")
           .put(StringType.getDescriptor(), "string")
+          .put(RepeatedType.getDescriptor(), "array")
+          .put(ObjectType.getDescriptor(), "object")
+          .build();
+
+  private static ImmutableMap<Descriptor, String> AllRepeatedTypesToDebugMessageTest =
+      new ImmutableMap.Builder<Descriptor, String>()
+          .put(RepeatedBool.getDescriptor(), "boolean")
+          .put(RepeatedBytes.getDescriptor(), "string")
+          .put(RepeatedInt64.getDescriptor(), "int64")
+          .put(RepeatedDouble.getDescriptor(), "double")
+          .put(RepeatedObject.getDescriptor(), "object")
           .build();
 
   private static JSONObject[] simpleJSONObjects = {
     new JSONObject().put("test_field_type", 123),
     new JSONObject().put("test_field_type", 1.23),
     new JSONObject().put("test_field_type", true),
-    new JSONObject().put("test_field_type", "test")
+    new JSONObject().put("test_field_type", "test"),
+    new JSONObject().put("test_field_type", new JSONArray("[1, 2, 3]")),
+    new JSONObject().put("test_field_type", new JSONObject().put("test_int", 1))
   };
 
-  // private static JSONObject[] simpleJSONArrays = {
-  //   new JSONObject()
-  //       .put(
-  //           "test_field_type",
-  //           new JSONArray(new Long[] {Long.MAX_VALUE, Long.MIN_VALUE, Integer.MAX_VALUE,
-  // Integer.MIN_VALUE, Short.MAX_VALUE, Short.MIN_VALUE, Byte.MAX_VALUE, Byte.MIN_VALUE, 0})),
-  //   new JSONObject().put("test_field_type", new JSONArray(new Double[]{Double.MAX_VALUE,
-  // Double.MIN_VALUE})),
-  //   new JSONObject().put("test_field_type", new JSONArray("[true, false]")),
-  //   new JSONObject().put("test_field_type", new JSONArray("[hello, test]"))
-  // };
+  private static JSONObject[] simpleJSONArrays = {
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new Long[] {
+                  Long.MAX_VALUE,
+                  Long.MIN_VALUE,
+                  (long) Integer.MAX_VALUE,
+                  (long) Integer.MIN_VALUE,
+                  (long) Short.MAX_VALUE,
+                  (long) Short.MIN_VALUE,
+                  (long) Byte.MAX_VALUE,
+                  (long) Byte.MIN_VALUE,
+                  0L
+                })),
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new Double[] {
+                  Double.MAX_VALUE,
+                  Double.MIN_VALUE,
+                  (double) Float.MAX_VALUE,
+                  (double) Float.MIN_VALUE
+                })),
+    new JSONObject().put("test_repeated", new JSONArray(new Boolean[] {true, false})),
+    new JSONObject().put("test_repeated", new JSONArray(new String[] {"hello", "test"})),
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new JSONObject[] {
+                  new JSONObject().put("test_int", 1),
+                  new JSONObject().put("test_int", 2),
+                  new JSONObject().put("test_int", 3)
+                }))
+  };
 
   private void isProtoJsonEqual(DynamicMessage proto, JSONObject json) {
     for (Map.Entry<FieldDescriptor, java.lang.Object> entry : proto.getAllFields().entrySet()) {
@@ -144,8 +185,8 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
-  public void testSimpleTypes() throws Exception {
-    for (Map.Entry<Descriptor, String> entry : SimpleDescriptorsToDebugMessageTest.entrySet()) {
+  public void testAllTypes() throws Exception {
+    for (Map.Entry<Descriptor, String> entry : AllTypesToDebugMessageTest.entrySet()) {
       int success = 0;
       for (JSONObject json : simpleJSONObjects) {
         try {
@@ -164,7 +205,28 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
-  public void testBQSchemaToProtobufferStructSimple() throws Exception {
+  public void testRepeatedWithLimits() throws Exception {
+    for (Map.Entry<Descriptor, String> entry : AllRepeatedTypesToDebugMessageTest.entrySet()) {
+      int success = 0;
+      for (JSONObject json : simpleJSONArrays) {
+        try {
+          DynamicMessage protoMsg =
+              JsonToProtoMessage.convertJsonToProtoMessage(entry.getKey(), json);
+          success += 1;
+        } catch (IllegalArgumentException e) {
+          assertEquals(
+              e.getMessage(),
+              "JSONObject does not have a "
+                  + entry.getValue()
+                  + " field at root.test_repeated[0].");
+        }
+      }
+      assertEquals(1, success);
+    }
+  }
+
+  @Test
+  public void testStructSimple() throws Exception {
     JSONObject stringType = new JSONObject();
     stringType.put("test_field_type", "test");
     JSONObject json = new JSONObject();
@@ -176,7 +238,7 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
-  public void testBQSchemaToProtobufferStructSimpleFail() throws Exception {
+  public void testStructSimpleFail() throws Exception {
     JSONObject stringType = new JSONObject();
     stringType.put("test_field_type", 1);
     JSONObject json = new JSONObject();
@@ -191,173 +253,51 @@ public class JsonToProtoMessageTest {
     }
   }
 
-  // @Test
-  // public void testBQSchemaToProtobufferStructComplex() throws Exception {
-  //   Table.TableFieldSchema bqBytes =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.BYTES)
-  //           .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-  //           .setName("bytes")
-  //           .build();
-  //   Table.TableFieldSchema bqInt =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.INT64)
-  //           .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-  //           .setName("int")
-  //           .build();
-  //   Table.TableFieldSchema record1 =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.STRUCT)
-  //           .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-  //           .setName("record1")
-  //           .addFields(0, bqInt)
-  //           .build();
-  //   Table.TableFieldSchema record =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.STRUCT)
-  //           .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-  //           .setName("record")
-  //           .addFields(0, bqInt)
-  //           .addFields(1, bqBytes)
-  //           .addFields(2, record1)
-  //           .build();
-  //   Table.TableFieldSchema bqDouble =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.DOUBLE)
-  //           .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-  //           .setName("float")
-  //           .build();
-  //   Table.TableSchema tableSchema =
-  //       Table.TableSchema.newBuilder().addFields(0, record).addFields(1, bqDouble).build();
-  //
-  //   JSONObject jsonRecord1 = new JSONObject();
-  //   jsonRecord1.put("int", 2048);
-  //   JSONObject jsonRecord = new JSONObject();
-  //   jsonRecord.put("int", 1024);
-  //   jsonRecord.put("bytes", "testing");
-  //   jsonRecord.put("record1", jsonRecord1);
-  //   JSONObject json = new JSONObject();
-  //   json.put("record", jsonRecord);
-  //   json.put("float", 1.23);
-  //
-  //   Descriptor descriptor = JsonToProtoConverter.BQTableSchemaToProtoSchema(tableSchema);
-  //   DynamicMessage protoMsg = JsonToProtoConverter.protoSchemaToProtoMessage(descriptor, json);
-  //   assertTrue(isProtoJsonEqual(protoMsg, json));
-  // }
-  //
-  // @Test
-  // public void testBQSchemaToProtobufferStructComplexFail() throws Exception {
-  //   Table.TableFieldSchema bqInt =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.INT64)
-  //           .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-  //           .setName("int")
-  //           .build();
-  //   Table.TableFieldSchema record =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.STRUCT)
-  //           .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-  //           .setName("record")
-  //           .addFields(0, bqInt)
-  //           .build();
-  //   Table.TableFieldSchema bqDouble =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.DOUBLE)
-  //           .setMode(Table.TableFieldSchema.Mode.NULLABLE)
-  //           .setName("float")
-  //           .build();
-  //   Table.TableSchema tableSchema =
-  //       Table.TableSchema.newBuilder().addFields(0, record).addFields(1, bqDouble).build();
-  //
-  //   JSONObject json = new JSONObject();
-  //   json.put("record", 1.23);
-  //   json.put("float", 1.23);
-  //   try {
-  //     Descriptor descriptor = JsonToProtoConverter.BQTableSchemaToProtoSchema(tableSchema);
-  //     DynamicMessage protoMsg = JsonToProtoConverter.protoSchemaToProtoMessage(descriptor, json);
-  //   } catch (IllegalArgumentException e) {
-  //     assertEquals(e.getMessage(), "JSONObject does not have an object field at .record.");
-  //   }
-  // }
-  //
-  // @Test
-  // public void testBQSchemaToProtobufferRepeatedSimple() throws Exception {
-  //   for (Map.Entry<Table.TableFieldSchema.Type, String> entry :
-  //       BQTableTypeToDebugMessage.entrySet()) {
-  //     Table.TableFieldSchema tableFieldSchema =
-  //         Table.TableFieldSchema.newBuilder()
-  //             .setType(entry.getKey())
-  //             .setMode(Table.TableFieldSchema.Mode.REPEATED)
-  //             .setName("test_field_type")
-  //             .build();
-  //     Table.TableSchema tableSchema =
-  //         Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
-  //     int success = 0;
-  //     for (JSONObject json : simpleJSONArrays) {
-  //       try {
-  //         Descriptor descriptor = JsonToProtoConverter.BQTableSchemaToProtoSchema(tableSchema);
-  //         DynamicMessage protoMsg =
-  //             JsonToProtoConverter.protoSchemaToProtoMessage(descriptor, json);
-  //         success += 1;
-  //       } catch (IllegalArgumentException e) {
-  //         assertEquals(
-  //             e.getMessage(),
-  //             "JSONObject does not have a "
-  //                 + entry.getValue()
-  //                 + " field at .test_field_type[0].");
-  //       }
-  //     }
-  //     assertEquals(1, success);
-  //   }
-  // }
-  //
-  // @Test
-  // public void testBQSchemaToProtobufferRepeatedSimpleInt64() throws Exception {
-  //   Table.TableFieldSchema bqByte =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.INT64)
-  //           .setMode(Table.TableFieldSchema.Mode.REPEATED)
-  //           .setName("byte")
-  //           .build();
-  //   Table.TableFieldSchema bqShort =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.INT64)
-  //           .setMode(Table.TableFieldSchema.Mode.REPEATED)
-  //           .setName("short")
-  //           .build();
-  //   Table.TableFieldSchema bqInt =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.INT64)
-  //           .setMode(Table.TableFieldSchema.Mode.REPEATED)
-  //           .setName("int")
-  //           .build();
-  //   Table.TableFieldSchema bqLong =
-  //       Table.TableFieldSchema.newBuilder()
-  //           .setType(Table.TableFieldSchema.Type.INT64)
-  //           .setMode(Table.TableFieldSchema.Mode.REPEATED)
-  //           .setName("long")
-  //           .build();
-  //   Table.TableSchema tableSchema =
-  //       Table.TableSchema.newBuilder()
-  //           .addFields(0, bqByte)
-  //           .addFields(1, bqShort)
-  //           .addFields(2, bqInt)
-  //           .addFields(3, bqLong)
-  //           .build();
-  //   JSONObject json = new JSONObject();
-  //   byte[] byteArr = {(byte) 1, (byte) 2};
-  //   short[] shortArr = {(short) 1, (short) 2};
-  //   int[] intArr = {1, 2, 3, 4, 5};
-  //   long[] longArr = {1L, 2L, 3L, 4L, 5L};
-  //   json.put("byte", new JSONArray(byteArr));
-  //   json.put("short", new JSONArray(shortArr));
-  //   json.put("int", new JSONArray(intArr));
-  //   json.put("long", new JSONArray(longArr));
-  //   Descriptor descriptor = JsonToProtoConverter.BQTableSchemaToProtoSchema(tableSchema);
-  //   DynamicMessage protoMsg = JsonToProtoConverter.protoSchemaToProtoMessage(descriptor, json);
-  //   assertTrue(isProtoJsonEqual(protoMsg, json));
-  // }
-  //
+  @Test
+  public void testStructComplex() throws Exception {
+    JSONObject complexLvl2 = new JSONObject();
+    complexLvl2.put("test_int", 3);
+
+    JSONObject complexLvl1 = new JSONObject();
+    complexLvl1.put("test_int", 2);
+    complexLvl1.put("complexLvl2", complexLvl2);
+
+    JSONObject json = new JSONObject();
+    json.put("test_int", 1);
+    json.put("test_string", new JSONArray(new String[] {"a", "b", "c"}));
+    json.put("test_bytes", "hello");
+    json.put("test_bool", true);
+    json.put("test_double", new JSONArray(new Double[] {1.1, 2.2, 3.3, 4.4}));
+    json.put("complexLvl1", complexLvl1);
+    json.put("complexLvl2", complexLvl2);
+
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json);
+    isProtoJsonEqual(protoMsg, json);
+  }
+
+  @Test
+  public void testInt64() throws Exception {
+    JSONObject json = new JSONObject();
+    json.put("byte", (byte) 1);
+    json.put("short", (short) 1);
+    json.put("int", 1);
+    json.put("long", 1L);
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
+    isProtoJsonEqual(protoMsg, json);
+  }
+
+  @Test
+  public void testDouble() throws Exception {
+    JSONObject json = new JSONObject();
+    json.put("double", 1.2);
+    json.put("float", 3.4f);
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(TestDouble.getDescriptor(), json);
+    isProtoJsonEqual(protoMsg, json);
+  }
+
   // @Test
   // public void testBQSchemaToProtobufferRepeatedSimpleDouble() throws Exception {
   //   Table.TableFieldSchema bqDouble =
