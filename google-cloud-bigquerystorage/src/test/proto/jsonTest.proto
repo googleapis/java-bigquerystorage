@@ -96,3 +96,14 @@ message TestDouble {
   optional double double = 1;
   optional float float = 2;
 }
+
+message NestedRepeated {
+  repeated int64 int = 1;
+  repeated double double = 2;
+  optional RepeatedString repeated_string = 3;
+}
+
+message TestRequired {
+  optional double optional_double = 1;
+  required float required_float = 2;
+}
