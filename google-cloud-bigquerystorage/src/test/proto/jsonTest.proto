@@ -94,7 +94,7 @@ message TestInt64 {
 
 message TestDouble {
   optional double double = 1;
-  optional float float = 2;
+  optional double float = 2;
 }
 
 message NestedRepeated {
@@ -105,5 +105,10 @@ message NestedRepeated {
 
 message TestRequired {
   optional double optional_double = 1;
-  required float required_float = 2;
+  required double required_double = 2;
+}
+
+message TestRepeatedIsOptional {
+  optional double required_double = 1;
+  repeated double repeated_double = 2;
 }

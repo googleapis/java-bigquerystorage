@@ -258,16 +258,26 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
+  public void testRepeatedIsOptional() throws Exception {
+    JSONObject json = new JSONObject();
+    json.put("required_double", 1.1);
+
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(TestRepeatedIsOptional.getDescriptor(), json);
+    AreMatchingFieldsFilledIn(protoMsg, json);
+  }
+
+  @Test
   public void testRequired() throws Exception {
     JSONObject json = new JSONObject();
-    json.put("test_required_float", 1.1);
+    json.put("test_required_double", 1.1);
     json.put("optional_double", 1.1);
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(TestRequired.getDescriptor(), json);
     } catch (IllegalArgumentException e) {
       assertEquals(
-          e.getMessage(), "JSONObject does not have the required field root.required_float.");
+          e.getMessage(), "JSONObject does not have the required field root.required_double.");
     }
   }
 
