@@ -25,6 +25,7 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
@@ -40,6 +41,7 @@ public class JsonToProtoMessageTest {
           .put(BoolType.getDescriptor(), "boolean")
           .put(BytesType.getDescriptor(), "string")
           .put(Int64Type.getDescriptor(), "int64")
+          .put(Int32Type.getDescriptor(), "int32")
           .put(DoubleType.getDescriptor(), "double")
           .put(StringType.getDescriptor(), "string")
           .put(RepeatedType.getDescriptor(), "array")
@@ -51,12 +53,14 @@ public class JsonToProtoMessageTest {
           .put(RepeatedBool.getDescriptor(), "boolean")
           .put(RepeatedBytes.getDescriptor(), "string")
           .put(RepeatedInt64.getDescriptor(), "int64")
+          .put(RepeatedInt32.getDescriptor(), "int32")
           .put(RepeatedDouble.getDescriptor(), "double")
           .put(RepeatedObject.getDescriptor(), "object")
           .build();
 
   private static JSONObject[] simpleJSONObjects = {
-    new JSONObject().put("test_field_type", 123),
+    new JSONObject().put("test_field_type", Long.MAX_VALUE),
+    new JSONObject().put("test_field_type", Integer.MAX_VALUE),
     new JSONObject().put("test_field_type", 1.23),
     new JSONObject().put("test_field_type", true),
     new JSONObject().put("test_field_type", "test"),
@@ -84,6 +88,19 @@ public class JsonToProtoMessageTest {
         .put(
             "test_repeated",
             new JSONArray(
+                new Integer[] {
+                  (int) Integer.MAX_VALUE,
+                  (int) Integer.MIN_VALUE,
+                  (int) Short.MAX_VALUE,
+                  (int) Short.MIN_VALUE,
+                  (int) Byte.MAX_VALUE,
+                  (int) Byte.MIN_VALUE,
+                  0
+                })),
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
                 new Double[] {
                   Double.MAX_VALUE,
                   Double.MIN_VALUE,
@@ -104,20 +121,28 @@ public class JsonToProtoMessageTest {
   };
 
   private void AreMatchingFieldsFilledIn(DynamicMessage proto, JSONObject json) {
+    HashMap<String, String> jsonLowercaseNameToActualName = new HashMap<String, String>();
+    String[] actualNames = JSONObject.getNames(json);
+    for (int i = 0; i < actualNames.length; i++) {
+      jsonLowercaseNameToActualName.put(actualNames[i].toLowerCase(), actualNames[i]);
+    }
     for (Map.Entry<FieldDescriptor, java.lang.Object> entry : proto.getAllFields().entrySet()) {
       FieldDescriptor key = entry.getKey();
       java.lang.Object value = entry.getValue();
       if (key.isRepeated()) {
-        isProtoArrayJsonArrayEqual(key, value, json);
+        isProtoArrayJsonArrayEqual(key, value, json, jsonLowercaseNameToActualName);
       } else {
-        isProtoFieldJsonFieldEqual(key, value, json);
+        isProtoFieldJsonFieldEqual(key, value, json, jsonLowercaseNameToActualName);
       }
     }
   }
 
   private void isProtoFieldJsonFieldEqual(
-      FieldDescriptor key, java.lang.Object value, JSONObject json) {
-    String fieldName = key.getName();
+      FieldDescriptor key,
+      java.lang.Object value,
+      JSONObject json,
+      HashMap<String, String> jsonLowercaseNameToActualName) {
+    String fieldName = jsonLowercaseNameToActualName.get(key.getName().toLowerCase());
     switch (key.getType()) {
       case BOOL:
         assertTrue((Boolean) value == json.getBoolean(fieldName));
@@ -127,6 +152,9 @@ public class JsonToProtoMessageTest {
         break;
       case INT64:
         assertTrue((long) value == json.getLong(fieldName));
+        break;
+      case INT32:
+        assertTrue((int) value == json.getInt(fieldName));
         break;
       case STRING:
         assertTrue(((String) value).equals(json.getString(fieldName)));
@@ -141,8 +169,11 @@ public class JsonToProtoMessageTest {
   }
 
   private void isProtoArrayJsonArrayEqual(
-      FieldDescriptor key, java.lang.Object value, JSONObject json) {
-    String fieldName = key.getName();
+      FieldDescriptor key,
+      java.lang.Object value,
+      JSONObject json,
+      HashMap<String, String> jsonLowercaseNameToActualName) {
+    String fieldName = jsonLowercaseNameToActualName.get(key.getName().toLowerCase());
     JSONArray jsonArray = json.getJSONArray(fieldName);
     switch (key.getType()) {
       case BOOL:
@@ -161,6 +192,12 @@ public class JsonToProtoMessageTest {
         List<Long> longArr = (List<Long>) value;
         for (int i = 0; i < jsonArray.length(); i++) {
           assertTrue((longArr.get(i) == jsonArray.getLong(i)));
+        }
+        break;
+      case INT32:
+        List<Integer> intArr = (List<Integer>) value;
+        for (int i = 0; i < jsonArray.length(); i++) {
+          assertTrue((intArr.get(i) == jsonArray.getInt(i)));
         }
         break;
       case STRING:
@@ -185,6 +222,18 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
+  public void testDifferentNameCasing() throws Exception {
+    JSONObject json = new JSONObject();
+    json.put("bYtE", (byte) 1);
+    json.put("SHORT", (short) 1);
+    json.put("inT", 1);
+    json.put("lONg", 1L);
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
+    AreMatchingFieldsFilledIn(protoMsg, json);
+  }
+
+  @Test
   public void testInt64() throws Exception {
     JSONObject json = new JSONObject();
     json.put("byte", (byte) 1);
@@ -194,6 +243,31 @@ public class JsonToProtoMessageTest {
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
     AreMatchingFieldsFilledIn(protoMsg, json);
+  }
+
+  @Test
+  public void testInt32() throws Exception {
+    JSONObject json = new JSONObject();
+    json.put("byte", (byte) 1);
+    json.put("short", (short) 1);
+    json.put("int", 1);
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(TestInt32.getDescriptor(), json);
+    AreMatchingFieldsFilledIn(protoMsg, json);
+  }
+
+  @Test
+  public void testInt32NotMatchInt64() throws Exception {
+    JSONObject json = new JSONObject();
+    json.put("byte", (byte) 1);
+    json.put("short", (short) 1);
+    json.put("int", 1L);
+    try {
+      DynamicMessage protoMsg =
+          JsonToProtoMessage.convertJsonToProtoMessage(TestInt32.getDescriptor(), json);
+    } catch (IllegalArgumentException e) {
+      assertEquals(e.getMessage(), "JSONObject does not have a int32 field at root.int.");
+    }
   }
 
   @Test
@@ -222,7 +296,11 @@ public class JsonToProtoMessageTest {
               "JSONObject does not have a " + entry.getValue() + " field at root.test_field_type.");
         }
       }
-      assertEquals(1, success);
+      if (entry.getKey() == Int64Type.getDescriptor()) {
+        assertEquals(2, success);
+      } else {
+        assertEquals(1, success);
+      }
     }
   }
 
@@ -243,7 +321,11 @@ public class JsonToProtoMessageTest {
                   + " field at root.test_repeated[0].");
         }
       }
-      assertEquals(1, success);
+      if (entry.getKey() == RepeatedInt64.getDescriptor()) {
+        assertEquals(2, success);
+      } else {
+        assertEquals(1, success);
+      }
     }
   }
 
@@ -323,9 +405,9 @@ public class JsonToProtoMessageTest {
     json.put("test_string", new JSONArray(new String[] {"a", "b", "c"}));
     json.put("test_bytes", "hello");
     json.put("test_bool", true);
-    json.put("test_double", new JSONArray(new Double[] {1.1, 2.2, 3.3, 4.4}));
+    json.put("test_DOUBLe", new JSONArray(new Double[] {1.1, 2.2, 3.3, 4.4}));
     json.put("complexLvl1", complexLvl1);
-    json.put("complexLvl2", complexLvl2);
+    json.put("complexLVL2", complexLvl2);
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json);
@@ -436,7 +518,7 @@ public class JsonToProtoMessageTest {
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(),
-          "JSONObject has unknown fields. Set allowUnknownFields to True to ignore unknown fields.");
+          "JSONObject has fields unknown to BigQuery: f1. Set allowUnknownFields to True to allow unknown fields.");
     }
   }
 
