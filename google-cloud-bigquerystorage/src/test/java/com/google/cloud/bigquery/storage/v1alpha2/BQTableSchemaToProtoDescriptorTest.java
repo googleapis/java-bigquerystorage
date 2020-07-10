@@ -101,7 +101,7 @@ public class BQTableSchemaToProtoDescriptorTest {
       final Table.TableSchema tableSchema =
           Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
       final Descriptor descriptor =
-          BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
+          BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
       isDescriptorEqual(descriptor, entry.getValue());
     }
   }
@@ -124,7 +124,7 @@ public class BQTableSchemaToProtoDescriptorTest {
     final Table.TableSchema tableSchema =
         Table.TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
     final Descriptor descriptor =
-        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
+        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
     isDescriptorEqual(descriptor, MessageType.getDescriptor());
   }
 
@@ -193,7 +193,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(7, ComplexLvl2)
             .build();
     final Descriptor descriptor =
-        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
+        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
     isDescriptorEqual(descriptor, ComplexRoot.getDescriptor());
   }
 
@@ -224,7 +224,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(2, optional)
             .build();
     final Descriptor descriptor =
-        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
+        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
     isDescriptorEqual(descriptor, OptionTest.getDescriptor());
   }
 
@@ -274,7 +274,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(2, reuse_lvl1_2)
             .build();
     final Descriptor descriptor =
-        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(tableSchema);
+        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
     HashMap<String, Integer> descriptorToCount = new HashMap<String, Integer>();
     mapDescriptorToCount(descriptor, descriptorToCount);
     assertEquals(descriptorToCount.size(), 2);
