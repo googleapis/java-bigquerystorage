@@ -107,6 +107,14 @@ public class JsonToProtoMessageTest {
                   (double) Float.MAX_VALUE,
                   (double) Float.MIN_VALUE
                 })),
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new Float[] {
+                  Float.MAX_VALUE,
+                  Float.MIN_VALUE
+                })),
     new JSONObject().put("test_repeated", new JSONArray(new Boolean[] {true, false})),
     new JSONObject().put("test_repeated", new JSONArray(new String[] {"hello", "test"})),
     new JSONObject()
@@ -229,7 +237,7 @@ public class JsonToProtoMessageTest {
     json.put("inT", 1);
     json.put("lONg", 1L);
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
+        JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
@@ -241,7 +249,7 @@ public class JsonToProtoMessageTest {
     json.put("int", 1);
     json.put("long", 1L);
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
+        JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
@@ -252,7 +260,7 @@ public class JsonToProtoMessageTest {
     json.put("short", (short) 1);
     json.put("int", 1);
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(TestInt32.getDescriptor(), json);
+        JsonToProtoMessage.convertJsonToProtoMessage(TestInt32.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
@@ -264,7 +272,7 @@ public class JsonToProtoMessageTest {
     json.put("int", 1L);
     try {
       DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(TestInt32.getDescriptor(), json);
+          JsonToProtoMessage.convertJsonToProtoMessage(TestInt32.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(e.getMessage(), "JSONObject does not have a int32 field at root.int.");
     }
@@ -276,7 +284,7 @@ public class JsonToProtoMessageTest {
     json.put("double", 1.2);
     json.put("float", 3.4f);
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(TestDouble.getDescriptor(), json);
+        JsonToProtoMessage.convertJsonToProtoMessage(TestDouble.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
@@ -287,7 +295,7 @@ public class JsonToProtoMessageTest {
       for (JSONObject json : simpleJSONObjects) {
         try {
           DynamicMessage protoMsg =
-              JsonToProtoMessage.convertJsonToProtoMessage(entry.getKey(), json);
+              JsonToProtoMessage.convertJsonToProtoMessage(entry.getKey(), json, false);
           AreMatchingFieldsFilledIn(protoMsg, json);
           success += 1;
         } catch (IllegalArgumentException e) {
@@ -311,7 +319,7 @@ public class JsonToProtoMessageTest {
       for (JSONObject json : simpleJSONArrays) {
         try {
           DynamicMessage protoMsg =
-              JsonToProtoMessage.convertJsonToProtoMessage(entry.getKey(), json);
+              JsonToProtoMessage.convertJsonToProtoMessage(entry.getKey(), json, false);
           success += 1;
         } catch (IllegalArgumentException e) {
           assertEquals(
@@ -321,7 +329,7 @@ public class JsonToProtoMessageTest {
                   + " field at root.test_repeated[0].");
         }
       }
-      if (entry.getKey() == RepeatedInt64.getDescriptor()) {
+      if (entry.getKey() == RepeatedInt64.getDescriptor() || entry.getKey() == RepeatedDouble.getDescriptor()) {
         assertEquals(2, success);
       } else {
         assertEquals(1, success);
@@ -335,7 +343,7 @@ public class JsonToProtoMessageTest {
     json.put("byte", 1);
 
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
+        JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
@@ -345,18 +353,17 @@ public class JsonToProtoMessageTest {
     json.put("required_double", 1.1);
 
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(TestRepeatedIsOptional.getDescriptor(), json);
+        JsonToProtoMessage.convertJsonToProtoMessage(TestRepeatedIsOptional.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
   @Test
   public void testRequired() throws Exception {
     JSONObject json = new JSONObject();
-    json.put("test_required_double", 1.1);
     json.put("optional_double", 1.1);
     try {
       DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(TestRequired.getDescriptor(), json);
+          JsonToProtoMessage.convertJsonToProtoMessage(TestRequired.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(), "JSONObject does not have the required field root.required_double.");
@@ -371,7 +378,7 @@ public class JsonToProtoMessageTest {
     json.put("test_field_type", stringType);
 
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(MessageType.getDescriptor(), json);
+        JsonToProtoMessage.convertJsonToProtoMessage(MessageType.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
@@ -383,7 +390,7 @@ public class JsonToProtoMessageTest {
     json.put("test_field_type", stringType);
     try {
       DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(MessageType.getDescriptor(), json);
+          JsonToProtoMessage.convertJsonToProtoMessage(MessageType.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(),
@@ -410,7 +417,7 @@ public class JsonToProtoMessageTest {
     json.put("complexLVL2", complexLvl2);
 
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json);
+        JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
@@ -434,7 +441,7 @@ public class JsonToProtoMessageTest {
 
     try {
       DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json);
+          JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(), "JSONObject does not have a int64 field at root.complexLvl1.test_int.");
@@ -447,7 +454,7 @@ public class JsonToProtoMessageTest {
     json.put("test_repeated", new JSONArray("[1.1, 2.2, true]"));
     try {
       DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(RepeatedDouble.getDescriptor(), json);
+          JsonToProtoMessage.convertJsonToProtoMessage(RepeatedDouble.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(), "JSONObject does not have a double field at root.test_repeated[2].");
@@ -468,7 +475,7 @@ public class JsonToProtoMessageTest {
     json.put("repeated_string", jsonRepeatedString);
 
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(NestedRepeated.getDescriptor(), json);
+        JsonToProtoMessage.convertJsonToProtoMessage(NestedRepeated.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
@@ -487,7 +494,7 @@ public class JsonToProtoMessageTest {
 
     try {
       DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(NestedRepeated.getDescriptor(), json);
+          JsonToProtoMessage.convertJsonToProtoMessage(NestedRepeated.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(),
@@ -510,29 +517,27 @@ public class JsonToProtoMessageTest {
   public void testAllowUnknownFieldsError() throws Exception {
     JSONObject json = new JSONObject();
     json.put("double", 1.1);
-    json.put("string", "hello");
 
     try {
       DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(RepeatedInt64.getDescriptor(), json);
+          JsonToProtoMessage.convertJsonToProtoMessage(RepeatedInt64.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(),
-          "JSONObject has fields unknown to BigQuery: f1. Set allowUnknownFields to True to allow unknown fields.");
+          "JSONObject has fields unknown to BigQuery: root.double. Set allowUnknownFields to True to allow unknown fields.");
     }
   }
 
   @Test
-  public void testTopLevelMatchFail() throws Exception {
+  public void testEmptyJSONObject() throws Exception {
     JSONObject json = new JSONObject();
-    json.put("double", 1.1);
     try {
       DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(Int64Type.getDescriptor(), json);
+          JsonToProtoMessage.convertJsonToProtoMessage(Int64Type.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(),
-          "There are no matching fields found for the JSONObject and the protocol buffer descriptor.");
+          "JSONObject is empty.");
     }
   }
 
@@ -544,9 +549,14 @@ public class JsonToProtoMessageTest {
     json.put("test_int", 1);
     json.put("complexLvl2", complexLvl2);
 
-    DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(ComplexLvl1.getDescriptor(), json);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    try {
+      DynamicMessage protoMsg =
+          JsonToProtoMessage.convertJsonToProtoMessage(ComplexLvl1.getDescriptor(), json, false);
+    } catch (IllegalArgumentException e) {
+      assertEquals(
+          e.getMessage(),
+          "JSONObject has fields unknown to BigQuery: root.complexLvl2.no_match. Set allowUnknownFields to True to allow unknown fields.");
+    }
   }
 
   @Test
@@ -556,7 +566,7 @@ public class JsonToProtoMessageTest {
     json.put("int", 1);
     try {
       DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
+          JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(e.getMessage(), "JSONObject does not have a int64 field at root.long.");
     }
