@@ -16,144 +16,177 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.core.*;
-import com.google.api.gax.grpc.GrpcStatusCode;
-import com.google.api.gax.rpc.InvalidArgumentException;
-import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoRows;
-import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.Descriptors.Descriptor;
-import com.google.protobuf.Message;
-import io.grpc.Status;
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Logger;
-import com.google.api.core.ApiFuture;
-import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.BatchingSettings;
-import com.google.api.gax.batching.FlowControlSettings;
-import com.google.api.gax.batching.FlowController;
-import com.google.api.gax.core.BackgroundResource;
-import com.google.api.gax.core.BackgroundResourceAggregation;
 import com.google.api.gax.core.CredentialsProvider;
-import com.google.api.gax.core.ExecutorAsBackgroundResource;
 import com.google.api.gax.core.ExecutorProvider;
-import com.google.api.gax.core.InstantiatingExecutorProvider;
-import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.*;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
-import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.common.base.Preconditions;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.Descriptors.Descriptor;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.threeten.bp.Duration;
-import org.threeten.bp.Instant;
 
 public class JsonStreamWriter {
-    BigQueryWriteClient client;
-    StreamWriter streamWriter;
-    Descriptor descriptor;
+  BigQueryWriteClient client;
+  StreamWriter streamWriter;
+  Descriptor descriptor;
 
-    private static String streamPatternString =
-        "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
+  private static String streamPatternString = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)";
 
-    private static Pattern streamPattern = Pattern.compile(streamPatternString);
+  private static Pattern streamPattern = Pattern.compile(streamPatternString);
 
-    private JsonStreamWriter(Builder builder) throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException, InterruptedException {
-      Matcher matcher = streamPattern.matcher(builder.streamName);
-      if (!matcher.matches()) {
-        throw new IllegalArgumentException("Invalid stream name: " + builder.streamName);
-      }
-      String streamName = builder.streamName;
-      String tableName = matcher.group(1);
-
-      this.client = builder.client;
-      Stream.WriteStream writeStream = Stream.WriteStream.newBuilder().setType(builder.streamType).setName(builder.streamName).build();
-      Stream.WriteStream response = client.createWriteStream(tableName, writeStream);
-      this.descriptor = BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(response.getTableSchema());
-      System.out.println(writeStream.getName());
-      // Stream.WriteStream stream =
-      //     client.getWriteStream(writeStream.getName());
-      // Stream.WriteStream stream =
-      //     client.getWriteStream(Storage.GetWriteStreamRequest.newBuilder().setName(streamName).build());
-      // this.streamWriter = builder.streamWriterBuilder.build();
+  private JsonStreamWriter(Builder builder)
+      throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
+          InterruptedException {
+    Matcher matcher = streamPattern.matcher(builder.tableName);
+    if (!matcher.matches()) {
+      throw new IllegalArgumentException("Invalid table name: " + builder.tableName);
     }
 
-    public Descriptor getDescriptor() {
-      return this.descriptor;
+    this.client = builder.client;
+    Stream.WriteStream request =
+        Stream.WriteStream.newBuilder().setType(builder.streamType).build();
+    Stream.WriteStream response =
+        client.createWriteStream(
+            Storage.CreateWriteStreamRequest.newBuilder()
+                .setParent(builder.tableName)
+                .setWriteStream(request)
+                .build());
+    this.descriptor =
+        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(
+            response.getTableSchema());
+    StreamWriter.Builder streamWriterBuilder =
+        StreamWriter.newBuilder(response.getName(), this.client);
+    setStreamWriterSettings(
+        streamWriterBuilder,
+        builder.channelProvider,
+        builder.credentialsProvider,
+        builder.batchingSettings,
+        builder.retrySettings,
+        builder.executorProvider,
+        builder.endpoint);
+    this.streamWriter = streamWriterBuilder.build();
+  }
+
+  public Descriptor getDescriptor() {
+    return this.descriptor;
+  }
+
+  private void setStreamWriterSettings(
+      StreamWriter.Builder builder,
+      TransportChannelProvider channelProvider,
+      CredentialsProvider credentialsProvider,
+      BatchingSettings batchingSettings,
+      RetrySettings retrySettings,
+      ExecutorProvider executorProvider,
+      String endpoint) {
+    if (channelProvider != null) {
+      builder.setChannelProvider(channelProvider);
+    }
+    if (credentialsProvider != null) {
+      builder.setCredentialsProvider(credentialsProvider);
+    }
+    if (batchingSettings != null) {
+      builder.setBatchingSettings(batchingSettings);
+    }
+    if (retrySettings != null) {
+      builder.setRetrySettings(retrySettings);
+    }
+    if (executorProvider != null) {
+      builder.setExecutorProvider(executorProvider);
+    }
+    if (endpoint != null) {
+      builder.setEndpoint(endpoint);
+    }
+  }
+
+  public static Builder newBuilder(String tableName) {
+    return new Builder(tableName, null);
+  }
+
+  public static Builder newBuilder(String tableName, BigQueryWriteClient client) {
+    Preconditions.checkArgument(client != null);
+    return new Builder(tableName, client);
+  }
+
+  public static final class Builder {
+    private String tableName;
+    private BigQueryWriteClient client;
+    private Stream.WriteStream.Type streamType;
+
+    private TransportChannelProvider channelProvider;
+    private CredentialsProvider credentialsProvider;
+    private BatchingSettings batchingSettings;
+    private RetrySettings retrySettings;
+    private ExecutorProvider executorProvider;
+    private String endpoint;
+
+    private Builder(String tableName, BigQueryWriteClient client) {
+      this.tableName = tableName;
+      this.client = client;
     }
 
-    public static Builder newBuilder(String streamName) {
-      return new Builder(streamName, null);
+    public Builder setStreamType(Stream.WriteStream.Type streamType) {
+      this.streamType = streamType;
+      return this;
     }
 
-    public static Builder newBuilder(String streamName, BigQueryWriteClient client) {
-      Preconditions.checkArgument(client != null);
-      return new Builder(streamName, client);
+    public Builder setChannelProvider(TransportChannelProvider channelProvider)
+        throws IllegalArgumentException {
+      if (channelProvider == null) {
+        throw new IllegalArgumentException("Channel provider cannot be set to null.");
+      }
+      this.channelProvider = channelProvider;
+      return this;
     }
 
-    public static final class Builder {
-      private String streamName;
-      private BigQueryWriteClient client;
-      private Stream.WriteStream.Type streamType;
-      private StreamWriter.Builder streamWriterBuilder;
-
-      private Builder(String streamName, BigQueryWriteClient client) {
-        this.streamName = streamName;
-        this.client = client;
-        this.streamWriterBuilder = StreamWriter.newBuilder(streamName, client);
+    public Builder setCredentialsProvider(CredentialsProvider credentialsProvider)
+        throws IllegalArgumentException {
+      if (credentialsProvider == null) {
+        throw new IllegalArgumentException("Credentials provider cannot be set to null.");
       }
-
-      public Builder setStreamType(Stream.WriteStream.Type streamType) {
-        this.streamType = streamType;
-        return this;
-      }
-
-      public Builder setChannelProvider(TransportChannelProvider channelProvider) {
-        this.streamWriterBuilder.setChannelProvider(channelProvider);
-        return this;
-      }
-      public Builder setCredentialsProvider(CredentialsProvider credentialsProvider) {
-        this.streamWriterBuilder.setCredentialsProvider(credentialsProvider);
-        return this;
-      }
-      public Builder setBatchingSettings(BatchingSettings batchingSettings) {
-        this.streamWriterBuilder.setBatchingSettings(batchingSettings);
-        return this;
-      }
-      public Builder setRetrySettings(RetrySettings retrySettings) {
-        this.streamWriterBuilder.setRetrySettings(retrySettings);
-        return this;
-      }
-      public Builder setExecutorProvider(ExecutorProvider executorProvider) {
-        this.streamWriterBuilder.setExecutorProvider(executorProvider);
-        return this;
-      }
-      public Builder setEndpoint(String endpoint) {
-        this.streamWriterBuilder.setEndpoint(endpoint);
-        return this;
-      }
-
-      public JsonStreamWriter build() throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException, InterruptedException  {
-        return new JsonStreamWriter(this);
-      }
+      this.credentialsProvider = credentialsProvider;
+      return this;
     }
 
+    public Builder setBatchingSettings(BatchingSettings batchingSettings)
+        throws IllegalArgumentException {
+      if (batchingSettings == null) {
+        throw new IllegalArgumentException("Batching settings cannot be set to null.");
+      }
+      this.batchingSettings = batchingSettings;
+      return this;
+    }
+
+    public Builder setRetrySettings(RetrySettings retrySettings) throws IllegalArgumentException {
+      if (retrySettings == null) {
+        throw new IllegalArgumentException("Retry settings cannot be set to null.");
+      }
+      this.retrySettings = retrySettings;
+      return this;
+    }
+
+    public Builder setExecutorProvider(ExecutorProvider executorProvider)
+        throws IllegalArgumentException {
+      if (executorProvider == null) {
+        throw new IllegalArgumentException("Executor provider cannot be set to null.");
+      }
+      this.executorProvider = executorProvider;
+      return this;
+    }
+
+    public Builder setEndpoint(String endpoint) throws IllegalArgumentException {
+      this.endpoint = endpoint;
+      return this;
+    }
+
+    public JsonStreamWriter build()
+        throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
+            InterruptedException {
+      return new JsonStreamWriter(this);
+    }
+  }
 }
