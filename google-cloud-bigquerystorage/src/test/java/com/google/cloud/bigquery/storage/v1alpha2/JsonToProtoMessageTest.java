@@ -108,13 +108,7 @@ public class JsonToProtoMessageTest {
                   (double) Float.MIN_VALUE
                 })),
     new JSONObject()
-        .put(
-            "test_repeated",
-            new JSONArray(
-                new Float[] {
-                  Float.MAX_VALUE,
-                  Float.MIN_VALUE
-                })),
+        .put("test_repeated", new JSONArray(new Float[] {Float.MAX_VALUE, Float.MIN_VALUE})),
     new JSONObject().put("test_repeated", new JSONArray(new Boolean[] {true, false})),
     new JSONObject().put("test_repeated", new JSONArray(new String[] {"hello", "test"})),
     new JSONObject()
@@ -329,7 +323,8 @@ public class JsonToProtoMessageTest {
                   + " field at root.test_repeated[0].");
         }
       }
-      if (entry.getKey() == RepeatedInt64.getDescriptor() || entry.getKey() == RepeatedDouble.getDescriptor()) {
+      if (entry.getKey() == RepeatedInt64.getDescriptor()
+          || entry.getKey() == RepeatedDouble.getDescriptor()) {
         assertEquals(2, success);
       } else {
         assertEquals(1, success);
@@ -353,7 +348,8 @@ public class JsonToProtoMessageTest {
     json.put("required_double", 1.1);
 
     DynamicMessage protoMsg =
-        JsonToProtoMessage.convertJsonToProtoMessage(TestRepeatedIsOptional.getDescriptor(), json, false);
+        JsonToProtoMessage.convertJsonToProtoMessage(
+            TestRepeatedIsOptional.getDescriptor(), json, false);
     AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
@@ -516,7 +512,8 @@ public class JsonToProtoMessageTest {
   @Test
   public void testAllowUnknownFieldsError() throws Exception {
     JSONObject json = new JSONObject();
-    json.put("double", 1.1);
+    json.put("test_repeated", new JSONArray(new int[] {1, 2, 3, 4, 5}));
+    json.put("string", "hello");
 
     try {
       DynamicMessage protoMsg =
@@ -524,7 +521,7 @@ public class JsonToProtoMessageTest {
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(),
-          "JSONObject has fields unknown to BigQuery: root.double. Set allowUnknownFields to True to allow unknown fields.");
+          "JSONObject has fields unknown to BigQuery: root.string. Set allowUnknownFields to True to allow unknown fields.");
     }
   }
 
@@ -535,14 +532,12 @@ public class JsonToProtoMessageTest {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(Int64Type.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          e.getMessage(),
-          "JSONObject is empty.");
+      assertEquals(e.getMessage(), "JSONObject is empty.");
     }
   }
 
   @Test
-  public void testTopLevelMatchSecondLevelNoMatch() throws Exception {
+  public void testAllowUnknownFieldsSecondLevel() throws Exception {
     JSONObject complexLvl2 = new JSONObject();
     complexLvl2.put("no_match", 1);
     JSONObject json = new JSONObject();
@@ -557,6 +552,35 @@ public class JsonToProtoMessageTest {
           e.getMessage(),
           "JSONObject has fields unknown to BigQuery: root.complexLvl2.no_match. Set allowUnknownFields to True to allow unknown fields.");
     }
+  }
+
+  @Test
+  public void testTopLevelMismatch() throws Exception {
+    JSONObject json = new JSONObject();
+    json.put("no_match", 1.1);
+
+    try {
+      DynamicMessage protoMsg =
+          JsonToProtoMessage.convertJsonToProtoMessage(
+              TopLevelMismatch.getDescriptor(), json, true);
+    } catch (IllegalArgumentException e) {
+      assertEquals(
+          e.getMessage(),
+          "There are no matching fields found for the JSONObject and the protocol buffer descriptor.");
+    }
+  }
+
+  @Test
+  public void testTopLevelMatchSecondLevelMismatch() throws Exception {
+    JSONObject complexLvl2 = new JSONObject();
+    complexLvl2.put("no_match", 1);
+    JSONObject json = new JSONObject();
+    json.put("test_int", 1);
+    json.put("complexLvl2", complexLvl2);
+
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(ComplexLvl1.getDescriptor(), json, true);
+    AreMatchingFieldsFilledIn(protoMsg, json);
   }
 
   @Test

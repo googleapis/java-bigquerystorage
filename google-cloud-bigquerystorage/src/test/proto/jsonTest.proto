@@ -122,3 +122,7 @@ message TestRepeatedIsOptional {
   optional double required_double = 1;
   repeated double repeated_double = 2;
 }
+
+message TopLevelMismatch {
+  optional double mismatch_double = 1;
+}

@@ -20,8 +20,9 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,9 +41,9 @@ public class JsonToProtoMessage {
   public static DynamicMessage convertJsonToProtoMessage(
       Descriptor protoSchema, JSONObject json, boolean allowUnknownFields)
       throws IllegalArgumentException {
-      if (json.length() == 0) {
-        throw new IllegalArgumentException("JSONObject is empty.");
-      }
+    if (json.length() == 0) {
+      throw new IllegalArgumentException("JSONObject is empty.");
+    }
     return convertJsonToProtoMessageImpl(protoSchema, json, "root", true, allowUnknownFields);
   }
 
@@ -66,32 +67,37 @@ public class JsonToProtoMessage {
 
     DynamicMessage.Builder protoMsg = DynamicMessage.newBuilder(protoSchema);
     List<FieldDescriptor> protoFields = protoSchema.getFields();
-    HashMap<String, FieldDescriptor> protoLowercaseNameToString = new HashMap<String, FieldDescriptor>();
+
+    Set<String> protoFieldNames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     for (FieldDescriptor field : protoFields) {
-      protoLowercaseNameToString.put(field.getName().toLowerCase(), field);
+      protoFieldNames.add(field.getName());
     }
 
-    HashMap<String, String> jsonLowercaseNameToActualName = new HashMap<String, String>();
-    String[] actualNames = JSONObject.getNames(json);
-    for (int i = 0; i < actualNames.length; i++) {
-      jsonLowercaseNameToActualName.put(actualNames[i].toLowerCase(), actualNames[i]);
+    HashMap<String, String> jsonLowercaseNameToName = new HashMap<String, String>();
+    String[] jsonNames = JSONObject.getNames(json);
+    for (int i = 0; i < jsonNames.length; i++) {
+      jsonLowercaseNameToName.put(jsonNames[i].toLowerCase(), jsonNames[i]);
     }
+
     if (!allowUnknownFields) {
-      for (String jsonLowercaseField : jsonLowercaseNameToActualName.keySet()) {
-        if (!protoLowercaseNameToString.containsKey(jsonLowercaseField)) {
+      for (int i = 0; i < jsonNames.length; i++) {
+        if (!protoFieldNames.contains(jsonNames[i])) {
           throw new IllegalArgumentException(
-              "JSONObject has fields unknown to BigQuery: " + jsonScope + "." + jsonLowercaseNameToActualName.get(jsonLowercaseField) + ". Set allowUnknownFields to True to allow unknown fields.");
+              "JSONObject has fields unknown to BigQuery: "
+                  + jsonScope
+                  + "."
+                  + jsonNames[i]
+                  + ". Set allowUnknownFields to True to allow unknown fields.");
         }
       }
     }
 
     int matchedFields = 0;
-    for (Map.Entry<String, FieldDescriptor> protoEntry : protoLowercaseNameToString.entrySet()) {
-      String lowercaseFieldName = protoEntry.getKey();
-      FieldDescriptor field = protoEntry.getValue();
+    for (FieldDescriptor field : protoFields) {
+      String lowercaseFieldName = field.getName().toLowerCase();
       String currentScope = jsonScope + "." + field.getName();
 
-      if (!jsonLowercaseNameToActualName.containsKey(lowercaseFieldName)) {
+      if (!jsonLowercaseNameToName.containsKey(lowercaseFieldName)) {
         if (field.isRequired()) {
           throw new IllegalArgumentException(
               "JSONObject does not have the required field " + currentScope + ".");
@@ -105,7 +111,7 @@ public class JsonToProtoMessage {
             protoMsg,
             field,
             json,
-            jsonLowercaseNameToActualName.get(lowercaseFieldName),
+            jsonLowercaseNameToName.get(lowercaseFieldName),
             currentScope,
             allowUnknownFields);
       } else {
@@ -113,7 +119,7 @@ public class JsonToProtoMessage {
             protoMsg,
             field,
             json,
-            jsonLowercaseNameToActualName.get(lowercaseFieldName),
+            jsonLowercaseNameToName.get(lowercaseFieldName),
             currentScope,
             allowUnknownFields);
       }
@@ -283,12 +289,7 @@ public class JsonToProtoMessage {
             protoMsg.addRepeatedField(fieldDescriptor, new Long((Long) val));
           } else {
             throw new IllegalArgumentException(
-                "JSONObject does not have a int64 field at "
-                    + currentScope
-                    + "["
-                    + i
-                    + "]"
-                    + ".");
+                "JSONObject does not have a int64 field at " + currentScope + "[" + i + "]" + ".");
           }
         }
         break;
@@ -299,12 +300,7 @@ public class JsonToProtoMessage {
             protoMsg.addRepeatedField(fieldDescriptor, new Integer((Integer) val));
           } else {
             throw new IllegalArgumentException(
-                "JSONObject does not have a int32 field at "
-                    + currentScope
-                    + "["
-                    + i
-                    + "]"
-                    + ".");
+                "JSONObject does not have a int32 field at " + currentScope + "[" + i + "]" + ".");
           }
         }
         break;
@@ -327,12 +323,7 @@ public class JsonToProtoMessage {
             protoMsg.addRepeatedField(fieldDescriptor, new Double((float) val));
           } else {
             throw new IllegalArgumentException(
-                "JSONObject does not have a double field at "
-                    + currentScope
-                    + "["
-                    + i
-                    + "]"
-                    + ".");
+                "JSONObject does not have a double field at " + currentScope + "[" + i + "]" + ".");
           }
         }
         break;
