@@ -26,8 +26,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Converts Json data to protocol buffer messages given the protocol buffer descriptor.
- *  The protobuf descriptor must have all fields lowercased.
+/**
+ * Converts Json data to protocol buffer messages given the protocol buffer descriptor. The protobuf
+ * descriptor must have all fields lowercased.
  */
 public class JsonToProtoMessage {
   private static ImmutableMap<FieldDescriptor.Type, String> FieldTypeToDebugMessage =
