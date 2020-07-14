@@ -409,6 +409,7 @@ public class JsonToProtoMessageTest {
     json.put("test_bytes", "hello");
     json.put("test_bool", true);
     json.put("test_DOUBLe", new JSONArray(new Double[] {1.1, 2.2, 3.3, 4.4}));
+    json.put("test_date", 1);
     json.put("complexLvl1", complexLvl1);
     json.put("complexLVL2", complexLvl2);
 
@@ -432,6 +433,7 @@ public class JsonToProtoMessageTest {
     json.put("test_bytes", "hello");
     json.put("test_bool", true);
     json.put("test_double", new JSONArray(new Double[] {1.1, 2.2, 3.3, 4.4}));
+    json.put("test_date", 1);
     json.put("complexLvl1", complexLvl1);
     json.put("complexLvl2", complexLvl2);
 
