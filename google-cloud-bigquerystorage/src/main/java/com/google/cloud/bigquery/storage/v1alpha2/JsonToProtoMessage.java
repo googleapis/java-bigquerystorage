@@ -20,10 +20,8 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import com.google.protobuf.UninitializedMessageException;
+import java.util.HashSet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -76,69 +74,53 @@ public class JsonToProtoMessage {
       boolean topLevel,
       boolean allowUnknownFields)
       throws IllegalArgumentException {
-
     DynamicMessage.Builder protoMsg = DynamicMessage.newBuilder(protoSchema);
-    List<FieldDescriptor> protoFields = protoSchema.getFields();
-
-    Set<String> protoFieldNames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-    for (FieldDescriptor field : protoFields) {
+    HashSet<String> protoFieldNames = new HashSet<String>();
+    for (FieldDescriptor field : protoSchema.getFields()) {
       protoFieldNames.add(field.getName());
     }
-
-    HashMap<String, String> jsonLowercaseNameToJsonName = new HashMap<String, String>();
     String[] jsonNames = JSONObject.getNames(json);
-    for (int i = 0; i < jsonNames.length; i++) {
-      jsonLowercaseNameToJsonName.put(jsonNames[i].toLowerCase(), jsonNames[i]);
-    }
-
-    if (!allowUnknownFields) {
-      for (int i = 0; i < jsonNames.length; i++) {
-        if (!protoFieldNames.contains(jsonNames[i])) {
-          throw new IllegalArgumentException(
-              String.format(
-                  "JSONObject has fields unknown to BigQuery: %s.%s. Set allowUnknownFields to True to allow unknown fields.",
-                  jsonScope, jsonNames[i]));
-        }
-      }
-    }
-
     int matchedFields = 0;
-    for (FieldDescriptor field : protoFields) {
-      String lowercaseFieldName = field.getName().toLowerCase();
-      String currentScope = jsonScope + "." + field.getName();
-
-      if (!jsonLowercaseNameToJsonName.containsKey(lowercaseFieldName)) {
-        if (field.isRequired()) {
-          throw new IllegalArgumentException(
-              "JSONObject does not have the required field " + currentScope + ".");
-        } else {
-          continue;
+    if (jsonNames != null) {
+      for (int i = 0; i < jsonNames.length; i++) {
+        String jsonName = jsonNames[i];
+        String jsonLowercaseName = jsonName.toLowerCase();
+        String currentScope = jsonScope + "." + jsonName;
+        if (!protoFieldNames.contains(jsonLowercaseName)) {
+          if (!allowUnknownFields) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "JSONObject has fields unknown to BigQuery: %s. Set allowUnknownFields to True to allow unknown fields.",
+                    currentScope));
+          } else {
+            continue;
+          }
         }
-      }
-      matchedFields++;
-      if (!field.isRepeated()) {
-        fillField(
-            protoMsg,
-            field,
-            json,
-            jsonLowercaseNameToJsonName.get(lowercaseFieldName),
-            currentScope,
-            allowUnknownFields);
-      } else {
-        fillRepeatedField(
-            protoMsg,
-            field,
-            json,
-            jsonLowercaseNameToJsonName.get(lowercaseFieldName),
-            currentScope,
-            allowUnknownFields);
+        FieldDescriptor field = protoSchema.findFieldByName(jsonLowercaseName);
+        matchedFields++;
+        if (!field.isRepeated()) {
+          fillField(protoMsg, field, json, jsonName, currentScope, allowUnknownFields);
+        } else {
+          fillRepeatedField(protoMsg, field, json, jsonName, currentScope, allowUnknownFields);
+        }
       }
     }
     if (matchedFields == 0 && topLevel) {
       throw new IllegalArgumentException(
           "There are no matching fields found for the JSONObject and the protocol buffer descriptor.");
     }
-    return protoMsg.build();
+    DynamicMessage msg;
+    try {
+      msg = protoMsg.build();
+    } catch (UninitializedMessageException e) {
+      String errorMsg = e.getMessage();
+      int idxOfColon = errorMsg.indexOf(":");
+      String missingFieldName = errorMsg.substring(idxOfColon + 2);
+      throw new IllegalArgumentException(
+          String.format(
+              "JSONObject does not have the required field %s.%s.", jsonScope, missingFieldName));
+    }
+    return msg;
   }
 
   /**

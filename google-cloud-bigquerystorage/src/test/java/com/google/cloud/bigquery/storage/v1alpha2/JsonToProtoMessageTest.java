@@ -125,16 +125,18 @@ public class JsonToProtoMessageTest {
   private void AreMatchingFieldsFilledIn(DynamicMessage proto, JSONObject json) {
     HashMap<String, String> jsonLowercaseNameToActualName = new HashMap<String, String>();
     String[] actualNames = JSONObject.getNames(json);
-    for (int i = 0; i < actualNames.length; i++) {
-      jsonLowercaseNameToActualName.put(actualNames[i].toLowerCase(), actualNames[i]);
-    }
-    for (Map.Entry<FieldDescriptor, java.lang.Object> entry : proto.getAllFields().entrySet()) {
-      FieldDescriptor key = entry.getKey();
-      java.lang.Object value = entry.getValue();
-      if (key.isRepeated()) {
-        isProtoArrayJsonArrayEqual(key, value, json, jsonLowercaseNameToActualName);
-      } else {
-        isProtoFieldJsonFieldEqual(key, value, json, jsonLowercaseNameToActualName);
+    if (actualNames != null) {
+      for (int i = 0; i < actualNames.length; i++) {
+        jsonLowercaseNameToActualName.put(actualNames[i].toLowerCase(), actualNames[i]);
+      }
+      for (Map.Entry<FieldDescriptor, java.lang.Object> entry : proto.getAllFields().entrySet()) {
+        FieldDescriptor key = entry.getKey();
+        java.lang.Object value = entry.getValue();
+        if (key.isRepeated()) {
+          isProtoArrayJsonArrayEqual(key, value, json, jsonLowercaseNameToActualName);
+        } else {
+          isProtoFieldJsonFieldEqual(key, value, json, jsonLowercaseNameToActualName);
+        }
       }
     }
   }
@@ -396,12 +398,12 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testStructComplex() throws Exception {
-    JSONObject complexLvl2 = new JSONObject();
-    complexLvl2.put("test_int", 3);
+    JSONObject complex_lvl2 = new JSONObject();
+    complex_lvl2.put("test_int", 3);
 
-    JSONObject complexLvl1 = new JSONObject();
-    complexLvl1.put("test_int", 2);
-    complexLvl1.put("complexLvl2", complexLvl2);
+    JSONObject complex_lvl1 = new JSONObject();
+    complex_lvl1.put("test_int", 2);
+    complex_lvl1.put("complex_lvl2", complex_lvl2);
 
     JSONObject json = new JSONObject();
     json.put("test_int", 1);
@@ -410,8 +412,8 @@ public class JsonToProtoMessageTest {
     json.put("test_bool", true);
     json.put("test_DOUBLe", new JSONArray(new Double[] {1.1, 2.2, 3.3, 4.4}));
     json.put("test_date", 1);
-    json.put("complexLvl1", complexLvl1);
-    json.put("complexLVL2", complexLvl2);
+    json.put("complex_lvl1", complex_lvl1);
+    json.put("complex_lvl2", complex_lvl2);
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json, false);
@@ -420,12 +422,12 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testStructComplexFail() throws Exception {
-    JSONObject complexLvl2 = new JSONObject();
-    complexLvl2.put("test_int", 3);
+    JSONObject complex_lvl2 = new JSONObject();
+    complex_lvl2.put("test_int", 3);
 
-    JSONObject complexLvl1 = new JSONObject();
-    complexLvl1.put("test_int", "not_int");
-    complexLvl1.put("complexLvl2", complexLvl2);
+    JSONObject complex_lvl1 = new JSONObject();
+    complex_lvl1.put("test_int", "not_int");
+    complex_lvl1.put("complex_lvl2", complex_lvl2);
 
     JSONObject json = new JSONObject();
     json.put("test_int", 1);
@@ -434,15 +436,15 @@ public class JsonToProtoMessageTest {
     json.put("test_bool", true);
     json.put("test_double", new JSONArray(new Double[] {1.1, 2.2, 3.3, 4.4}));
     json.put("test_date", 1);
-    json.put("complexLvl1", complexLvl1);
-    json.put("complexLvl2", complexLvl2);
+    json.put("complex_lvl1", complex_lvl1);
+    json.put("complex_lvl2", complex_lvl2);
 
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(
-          e.getMessage(), "JSONObject does not have a int64 field at root.complexLvl1.test_int.");
+          e.getMessage(), "JSONObject does not have a int64 field at root.complex_lvl1.test_int.");
     }
   }
 
@@ -512,6 +514,18 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
+  public void testEmptySecondLevelObject() throws Exception {
+    JSONObject complexLvl2 = new JSONObject();
+    JSONObject json = new JSONObject();
+    json.put("test_int", 1);
+    json.put("complex_lvl2", complexLvl2);
+
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(ComplexLvl1.getDescriptor(), json, true);
+    AreMatchingFieldsFilledIn(protoMsg, json);
+  }
+
+  @Test
   public void testAllowUnknownFieldsError() throws Exception {
     JSONObject json = new JSONObject();
     json.put("test_repeated", new JSONArray(new int[] {1, 2, 3, 4, 5}));
@@ -540,11 +554,11 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testAllowUnknownFieldsSecondLevel() throws Exception {
-    JSONObject complexLvl2 = new JSONObject();
-    complexLvl2.put("no_match", 1);
+    JSONObject complex_lvl2 = new JSONObject();
+    complex_lvl2.put("no_match", 1);
     JSONObject json = new JSONObject();
     json.put("test_int", 1);
-    json.put("complexLvl2", complexLvl2);
+    json.put("complex_lvl2", complex_lvl2);
 
     try {
       DynamicMessage protoMsg =
@@ -552,7 +566,7 @@ public class JsonToProtoMessageTest {
     } catch (IllegalArgumentException e) {
       assertEquals(
           e.getMessage(),
-          "JSONObject has fields unknown to BigQuery: root.complexLvl2.no_match. Set allowUnknownFields to True to allow unknown fields.");
+          "JSONObject has fields unknown to BigQuery: root.complex_lvl2.no_match. Set allowUnknownFields to True to allow unknown fields.");
     }
   }
 
@@ -574,11 +588,11 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testTopLevelMatchSecondLevelMismatch() throws Exception {
-    JSONObject complexLvl2 = new JSONObject();
-    complexLvl2.put("no_match", 1);
+    JSONObject complex_lvl2 = new JSONObject();
+    complex_lvl2.put("no_match", 1);
     JSONObject json = new JSONObject();
     json.put("test_int", 1);
-    json.put("complexLvl2", complexLvl2);
+    json.put("complex_lvl2", complex_lvl2);
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(ComplexLvl1.getDescriptor(), json, true);
