@@ -21,7 +21,6 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import com.google.protobuf.UninitializedMessageException;
-import java.util.HashSet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -77,20 +76,18 @@ public class JsonToProtoMessage {
       boolean topLevel,
       boolean allowUnknownFields)
       throws IllegalArgumentException {
+
     DynamicMessage.Builder protoMsg = DynamicMessage.newBuilder(protoSchema);
-    HashSet<String> protoFieldNames = new HashSet<String>();
-    // These protofields should already be lowercased.
-    for (FieldDescriptor field : protoSchema.getFields()) {
-      protoFieldNames.add(field.getName());
-    }
     String[] jsonNames = JSONObject.getNames(json);
     int matchedFields = 0;
+    // JsonNames will be null if the JSONObject is empty.
     if (jsonNames != null) {
       for (int i = 0; i < jsonNames.length; i++) {
         String jsonName = jsonNames[i];
         String jsonLowercaseName = jsonName.toLowerCase();
         String currentScope = jsonScope + "." + jsonName;
-        if (!protoFieldNames.contains(jsonLowercaseName)) {
+        FieldDescriptor field = protoSchema.findFieldByName(jsonLowercaseName);
+        if (field == null) {
           if (!allowUnknownFields) {
             throw new IllegalArgumentException(
                 String.format(
@@ -100,7 +97,6 @@ public class JsonToProtoMessage {
             continue;
           }
         }
-        FieldDescriptor field = protoSchema.findFieldByName(jsonLowercaseName);
         matchedFields++;
         if (!field.isRepeated()) {
           fillField(protoMsg, field, json, jsonName, currentScope, allowUnknownFields);
