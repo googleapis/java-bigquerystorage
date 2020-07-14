@@ -26,7 +26,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Converts Json data to protocol buffer messages given the protocol buffer descriptor. */
+/** Converts Json data to protocol buffer messages given the protocol buffer descriptor.
+ *  The protobuf descriptor must have all fields lowercased.
+ */
 public class JsonToProtoMessage {
   private static ImmutableMap<FieldDescriptor.Type, String> FieldTypeToDebugMessage =
       new ImmutableMap.Builder<FieldDescriptor.Type, String>()
@@ -76,6 +78,7 @@ public class JsonToProtoMessage {
       throws IllegalArgumentException {
     DynamicMessage.Builder protoMsg = DynamicMessage.newBuilder(protoSchema);
     HashSet<String> protoFieldNames = new HashSet<String>();
+    // These protofields should already be lowercased.
     for (FieldDescriptor field : protoSchema.getFields()) {
       protoFieldNames.add(field.getName());
     }
@@ -143,7 +146,6 @@ public class JsonToProtoMessage {
       boolean allowUnknownFields)
       throws IllegalArgumentException {
     java.lang.Object val;
-    String error;
     try {
       switch (fieldDescriptor.getType()) {
         case BOOL:
