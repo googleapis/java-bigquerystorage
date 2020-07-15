@@ -33,7 +33,7 @@ public class ApiResultRetryAlgorithm<ResponseT> implements ResultRetryAlgorithm<
     return status.getCode() == Status.Code.INTERNAL
         && status.getDescription() != null
         && (status.getDescription().contains("Received unexpected EOS on DATA frame from server")
-        || status.getDescription().contains("Received Rst Stream"));
+            || status.getDescription().contains("Received Rst Stream"));
   }
 
   @Override

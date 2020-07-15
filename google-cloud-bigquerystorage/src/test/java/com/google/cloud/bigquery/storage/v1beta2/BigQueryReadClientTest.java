@@ -175,7 +175,8 @@ public class BigQueryReadClientTest {
             new StatusRuntimeException(
                 Status.INTERNAL.withDescription(
                     "Received unexpected EOS on DATA frame from server")),
-            GrpcStatusCode.of(Code.INTERNAL), /* retryable = */ false);
+            GrpcStatusCode.of(Code.INTERNAL),
+            /* retryable = */ false);
     mockBigQueryRead.addException(exception);
     long rowCount = 1340416618L;
     ReadRowsResponse expectedResponse = ReadRowsResponse.newBuilder().setRowCount(rowCount).build();
@@ -198,7 +199,8 @@ public class BigQueryReadClientTest {
             new StatusRuntimeException(
                 Status.INTERNAL.withDescription(
                     "HTTP/2 error code: INTERNAL_ERROR\nReceived Rst Stream")),
-            GrpcStatusCode.of(Code.INTERNAL), /* retryable = */ false);
+            GrpcStatusCode.of(Code.INTERNAL),
+            /* retryable = */ false);
     mockBigQueryRead.addException(exception);
     long rowCount = 1340416618L;
     ReadRowsResponse expectedResponse = ReadRowsResponse.newBuilder().setRowCount(rowCount).build();
