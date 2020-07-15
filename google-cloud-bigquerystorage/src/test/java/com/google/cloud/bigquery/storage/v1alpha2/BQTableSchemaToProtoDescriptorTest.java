@@ -274,7 +274,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-    // isDescriptorEqual(descriptor, CasingComplex.getDescriptor());
+    isDescriptorEqual(descriptor, CasingComplex.getDescriptor());
   }
 
   @Test
