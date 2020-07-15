@@ -542,6 +542,20 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
+  public void testEmptyProtoMessage() throws Exception {
+    JSONObject json = new JSONObject();
+    json.put("test_repeated", new JSONArray(new int[0]));
+    json.put("string", "hello");
+
+    try {
+      DynamicMessage protoMsg =
+          JsonToProtoMessage.convertJsonToProtoMessage(RepeatedInt64.getDescriptor(), json, true);
+    } catch (IllegalArgumentException e) {
+      assertEquals(e.getMessage(), "The created protobuf message is empty.");
+    }
+  }
+
+  @Test
   public void testEmptyJSONObject() throws Exception {
     JSONObject json = new JSONObject();
     try {
@@ -549,6 +563,16 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.convertJsonToProtoMessage(Int64Type.getDescriptor(), json, false);
     } catch (IllegalArgumentException e) {
       assertEquals(e.getMessage(), "JSONObject is empty.");
+    }
+  }
+
+  @Test
+  public void testNull() throws Exception {
+    try {
+      DynamicMessage protoMsg =
+          JsonToProtoMessage.convertJsonToProtoMessage(Int64Type.getDescriptor(), null, false);
+    } catch (IllegalArgumentException e) {
+      assertEquals(e.getMessage(), "JSONObject is null.");
     }
   }
 
