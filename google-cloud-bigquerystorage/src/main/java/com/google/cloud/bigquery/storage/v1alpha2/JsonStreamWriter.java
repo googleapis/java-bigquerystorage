@@ -16,6 +16,7 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.core.*;
+import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoRows;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
@@ -27,39 +28,34 @@ import com.google.protobuf.Descriptors.Descriptor;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import java.util.regex.Pattern;
+import com.google.protobuf.Message;
 
 public class JsonStreamWriter {
+  private static String streamPatternString =
+      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
+  private static Pattern streamPattern = Pattern.compile(streamPatternString);
+
   BigQueryWriteClient client;
   StreamWriter streamWriter;
   Descriptor descriptor;
 
-  private static String streamPatternString = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)";
-
-  private static Pattern streamPattern = Pattern.compile(streamPatternString);
-
   private JsonStreamWriter(Builder builder)
       throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
           InterruptedException {
-    Matcher matcher = streamPattern.matcher(builder.tableName);
+    Matcher matcher = streamPattern.matcher(builder.streamName);
     if (!matcher.matches()) {
-      throw new IllegalArgumentException("Invalid table name: " + builder.tableName);
+      throw new IllegalArgumentException("Invalid stream name: " + builder.streamName);
     }
 
     this.client = builder.client;
-    Stream.WriteStream request =
-        Stream.WriteStream.newBuilder().setType(builder.streamType).build();
-    Stream.WriteStream response =
-        client.createWriteStream(
-            Storage.CreateWriteStreamRequest.newBuilder()
-                .setParent(builder.tableName)
-                .setWriteStream(request)
-                .build());
     this.descriptor =
-        BQTableSchemaToProtoDescriptor.ConvertBQTableSchemaToProtoDescriptor(
-            response.getTableSchema());
+        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(builder.BQTableSchema);
+
     StreamWriter.Builder streamWriterBuilder =
-        StreamWriter.newBuilder(response.getName(), this.client);
+        StreamWriter.newBuilder(builder.streamName, this.client);
     setStreamWriterSettings(
         streamWriterBuilder,
         builder.channelProvider,
@@ -69,6 +65,20 @@ public class JsonStreamWriter {
         builder.executorProvider,
         builder.endpoint);
     this.streamWriter = streamWriterBuilder.build();
+  }
+
+  // For testing, use proto first.
+  public <T extends Message> ApiFuture<AppendRowsResponse> append(List<T> protoRows) {
+    ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
+    Descriptors.Descriptor descriptor = null;
+    for (Message protoRow : protoRows) {
+      rowsBuilder.addSerializedRows(protoRow.toByteString());
+    }
+    AppendRowsRequest.ProtoData.Builder data = AppendRowsRequest.ProtoData.newBuilder();
+    data.setWriterSchema(ProtoSchemaConverter.convert(protoRows.get(0).getDescriptorForType()));
+    data.setRows(rowsBuilder.build());
+
+    return this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).build());
   }
 
   public Descriptor getDescriptor() {
@@ -103,19 +113,21 @@ public class JsonStreamWriter {
     }
   }
 
-  public static Builder newBuilder(String tableName) {
-    return new Builder(tableName, null);
+  public static Builder newBuilder(String streamName, Table.TableSchema BQTableSchema) {
+    return new Builder(streamName, BQTableSchema, null);
   }
 
-  public static Builder newBuilder(String tableName, BigQueryWriteClient client) {
-    Preconditions.checkArgument(client != null);
-    return new Builder(tableName, client);
+  public static Builder newBuilder(String streamName, Table.TableSchema BQTableSchema, BigQueryWriteClient client) throws IllegalArgumentException{
+    if (client == null) {
+      throw new IllegalArgumentException("BigQuery Write Client is null.");
+    }
+    return new Builder(streamName, BQTableSchema, client);
   }
 
   public static final class Builder {
-    private String tableName;
+    private String streamName;
     private BigQueryWriteClient client;
-    private Stream.WriteStream.Type streamType;
+    private Table.TableSchema BQTableSchema;
 
     private TransportChannelProvider channelProvider;
     private CredentialsProvider credentialsProvider;
@@ -124,14 +136,10 @@ public class JsonStreamWriter {
     private ExecutorProvider executorProvider;
     private String endpoint;
 
-    private Builder(String tableName, BigQueryWriteClient client) {
-      this.tableName = tableName;
+    private Builder(String streamName, Table.TableSchema BQTableSchema, BigQueryWriteClient client) {
+      this.streamName = streamName;
+      this.BQTableSchema = BQTableSchema;
       this.client = client;
-    }
-
-    public Builder setStreamType(Stream.WriteStream.Type streamType) {
-      this.streamType = streamType;
-      return this;
     }
 
     public Builder setChannelProvider(TransportChannelProvider channelProvider)
