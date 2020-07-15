@@ -20,26 +20,45 @@ import static org.mockito.Mockito.*;
 
 import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import com.google.cloud.bigquery.storage.test.JsonTest.AllenTest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
+import com.google.api.core.*;
+import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
 
 @RunWith(JUnit4.class)
 public class JsonStreamWriterTest {
-  private static final Logger LOG = Logger.getLogger(LocalTest.class.getName());
+  private static final Logger LOG = Logger.getLogger(JsonStreamWriterTest.class.getName());
 
   @Test
   public void testStuff() throws Exception {
-    try (BigQueryWriteClient bigQueryWriteClient = BigQueryWriteClient.create()) {
+    try (BigQueryWriteClient client = BigQueryWriteClient.create()) {
+      WriteStream response =
+          client.createWriteStream(
+              CreateWriteStreamRequest.newBuilder()
+                  .setParent("projects/bigquerytestdefault/datasets/allenTest/tables/allenTable")
+                  .setWriteStream(WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                  .build());
+
       JsonStreamWriter jsonStreamWriter =
           JsonStreamWriter.newBuilder(
-                  "projects/bigquerytestdefault/datasets/allenTest/tables/allenTable",
-                  bigQueryWriteClient)
-              .setStreamType(Stream.WriteStream.Type.COMMITTED)
+                  response.getName(),
+                  response.getTableSchema(),
+                  client)
               .build();
-      System.out.println(jsonStreamWriter.getDescriptor().toProto());
+      AllenTest allen1 = AllenTest.newBuilder().setFoo("hello").setTestConnection("hello again").build();
+      AllenTest allen2 = AllenTest.newBuilder().setFoo("hello3").setTestConnection("hello again3").build();
+      List<AllenTest> protoRows = new ArrayList<AllenTest>();
+      protoRows.add(allen1);
+      protoRows.add(allen2);
+      ApiFuture<AppendRowsResponse> appendResponse = jsonStreamWriter.append(protoRows);
+      System.out.println(appendResponse.get().getError());
+      System.out.println(appendResponse.get().getOffset());
     }
   }
 }
