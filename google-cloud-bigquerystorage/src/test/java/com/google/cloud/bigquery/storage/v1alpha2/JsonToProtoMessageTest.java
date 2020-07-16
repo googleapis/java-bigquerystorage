@@ -21,12 +21,11 @@ import static org.mockito.Mockito.*;
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
-import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import com.google.protobuf.Message;
+import java.util.ArrayList;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,6 +47,56 @@ public class JsonToProtoMessageTest {
           .put(ObjectType.getDescriptor(), "object")
           .build();
 
+  private static ImmutableMap<Descriptor, Message[]> AllTypesToCorrectProto =
+      new ImmutableMap.Builder<Descriptor, Message[]>()
+          .put(
+              BoolType.getDescriptor(),
+              new Message[] {BoolType.newBuilder().setTestFieldType(true).build()})
+          .put(
+              BytesType.getDescriptor(),
+              new Message[] {
+                BytesType.newBuilder()
+                    .setTestFieldType(ByteString.copyFrom("test".getBytes()))
+                    .build()
+              })
+          .put(
+              Int64Type.getDescriptor(),
+              new Message[] {
+                Int64Type.newBuilder().setTestFieldType(Long.MAX_VALUE).build(),
+                Int64Type.newBuilder().setTestFieldType(new Long(Integer.MAX_VALUE)).build()
+              })
+          .put(
+              Int32Type.getDescriptor(),
+              new Message[] {Int32Type.newBuilder().setTestFieldType(Integer.MAX_VALUE).build()})
+          .put(
+              DoubleType.getDescriptor(),
+              new Message[] {DoubleType.newBuilder().setTestFieldType(1.23).build()})
+          .put(
+              StringType.getDescriptor(),
+              new Message[] {StringType.newBuilder().setTestFieldType("test").build()})
+          .put(
+              RepeatedType.getDescriptor(),
+              new Message[] {
+                RepeatedType.newBuilder()
+                    .addAllTestFieldType(
+                        new ArrayList<Long>() {
+                          {
+                            add(1L);
+                            add(2L);
+                            add(3L);
+                          }
+                        })
+                    .build()
+              })
+          .put(
+              ObjectType.getDescriptor(),
+              new Message[] {
+                ObjectType.newBuilder()
+                    .setTestFieldType(ComplexLvl2.newBuilder().setTestInt(1).build())
+                    .build()
+              })
+          .build();
+
   private static ImmutableMap<Descriptor, String> AllRepeatedTypesToDebugMessageTest =
       new ImmutableMap.Builder<Descriptor, String>()
           .put(RepeatedBool.getDescriptor(), "boolean")
@@ -55,7 +104,90 @@ public class JsonToProtoMessageTest {
           .put(RepeatedInt64.getDescriptor(), "int64")
           .put(RepeatedInt32.getDescriptor(), "int32")
           .put(RepeatedDouble.getDescriptor(), "double")
+          .put(RepeatedString.getDescriptor(), "string")
           .put(RepeatedObject.getDescriptor(), "object")
+          .build();
+
+  private static ImmutableMap<Descriptor, Message[]> AllRepeatedTypesToCorrectProto =
+      new ImmutableMap.Builder<Descriptor, Message[]>()
+          .put(
+              RepeatedBool.getDescriptor(),
+              new Message[] {
+                RepeatedBool.newBuilder().addTestRepeated(true).addTestRepeated(false).build()
+              })
+          .put(
+              RepeatedBytes.getDescriptor(),
+              new Message[] {
+                RepeatedBytes.newBuilder()
+                    .addTestRepeated(ByteString.copyFrom("hello".getBytes()))
+                    .addTestRepeated(ByteString.copyFrom("test".getBytes()))
+                    .build()
+              })
+          .put(
+              RepeatedString.getDescriptor(),
+              new Message[] {
+                RepeatedString.newBuilder().addTestRepeated("hello").addTestRepeated("test").build()
+              })
+          .put(
+              RepeatedInt64.getDescriptor(),
+              new Message[] {
+                RepeatedInt64.newBuilder()
+                    .addTestRepeated(Long.MAX_VALUE)
+                    .addTestRepeated(Long.MIN_VALUE)
+                    .addTestRepeated(Integer.MAX_VALUE)
+                    .addTestRepeated(Integer.MIN_VALUE)
+                    .addTestRepeated(Short.MAX_VALUE)
+                    .addTestRepeated(Short.MIN_VALUE)
+                    .addTestRepeated(Byte.MAX_VALUE)
+                    .addTestRepeated(Byte.MIN_VALUE)
+                    .addTestRepeated(0)
+                    .build(),
+                RepeatedInt64.newBuilder()
+                    .addTestRepeated(Integer.MAX_VALUE)
+                    .addTestRepeated(Integer.MIN_VALUE)
+                    .addTestRepeated(Short.MAX_VALUE)
+                    .addTestRepeated(Short.MIN_VALUE)
+                    .addTestRepeated(Byte.MAX_VALUE)
+                    .addTestRepeated(Byte.MIN_VALUE)
+                    .addTestRepeated(0)
+                    .build()
+              })
+          .put(
+              RepeatedInt32.getDescriptor(),
+              new Message[] {
+                RepeatedInt32.newBuilder()
+                    .addTestRepeated(Integer.MAX_VALUE)
+                    .addTestRepeated(Integer.MIN_VALUE)
+                    .addTestRepeated(Short.MAX_VALUE)
+                    .addTestRepeated(Short.MIN_VALUE)
+                    .addTestRepeated(Byte.MAX_VALUE)
+                    .addTestRepeated(Byte.MIN_VALUE)
+                    .addTestRepeated(0)
+                    .build()
+              })
+          .put(
+              RepeatedDouble.getDescriptor(),
+              new Message[] {
+                RepeatedDouble.newBuilder()
+                    .addTestRepeated(Double.MAX_VALUE)
+                    .addTestRepeated(Double.MIN_VALUE)
+                    .addTestRepeated(Float.MAX_VALUE)
+                    .addTestRepeated(Float.MIN_VALUE)
+                    .build(),
+                RepeatedDouble.newBuilder()
+                    .addTestRepeated(Float.MAX_VALUE)
+                    .addTestRepeated(Float.MIN_VALUE)
+                    .build()
+              })
+          .put(
+              RepeatedObject.getDescriptor(),
+              new Message[] {
+                RepeatedObject.newBuilder()
+                    .addTestRepeated(ComplexLvl2.newBuilder().setTestInt(1).build())
+                    .addTestRepeated(ComplexLvl2.newBuilder().setTestInt(2).build())
+                    .addTestRepeated(ComplexLvl2.newBuilder().setTestInt(3).build())
+                    .build()
+              })
           .build();
 
   private static JSONObject[] simpleJSONObjects = {
@@ -122,94 +254,11 @@ public class JsonToProtoMessageTest {
                 }))
   };
 
-  private void AreMatchingFieldsFilledIn(DynamicMessage proto, JSONObject json) {
-    HashMap<String, String> jsonLowercaseNameToActualName = new HashMap<String, String>();
-    String[] actualNames = JSONObject.getNames(json);
-    if (actualNames != null) {
-      for (int i = 0; i < actualNames.length; i++) {
-        jsonLowercaseNameToActualName.put(actualNames[i].toLowerCase(), actualNames[i]);
-      }
-      for (Map.Entry<FieldDescriptor, java.lang.Object> entry : proto.getAllFields().entrySet()) {
-        FieldDescriptor key = entry.getKey();
-        java.lang.Object value = entry.getValue();
-        if (key.isRepeated()) {
-          isProtoArrayJsonArrayEqual(key, value, json, jsonLowercaseNameToActualName);
-        } else {
-          isProtoFieldJsonFieldEqual(key, value, json, jsonLowercaseNameToActualName);
-        }
-      }
-    }
-  }
-
-  private void isProtoFieldJsonFieldEqual(
-      FieldDescriptor key,
-      java.lang.Object value,
-      JSONObject json,
-      HashMap<String, String> jsonLowercaseNameToActualName) {
-    String fieldName = jsonLowercaseNameToActualName.get(key.getName().toLowerCase());
-    switch (key.getType()) {
-      case BOOL:
-        assertTrue((Boolean) value == json.getBoolean(fieldName));
-        break;
-      case BYTES:
-        assertTrue(Arrays.equals((byte[]) value, json.getString(fieldName).getBytes()));
-        break;
-      case INT64:
-        assertTrue((long) value == json.getLong(fieldName));
-        break;
-      case INT32:
-        assertTrue((int) value == json.getInt(fieldName));
-        break;
-      case STRING:
-        assertTrue(((String) value).equals(json.getString(fieldName)));
-        break;
-      case DOUBLE:
-        assertTrue((double) value == json.getDouble(fieldName));
-        break;
-      case MESSAGE:
-        AreMatchingFieldsFilledIn((DynamicMessage) value, json.getJSONObject(fieldName));
-        break;
-    }
-  }
-
-  private void isProtoArrayJsonArrayEqual(
-      FieldDescriptor key,
-      java.lang.Object value,
-      JSONObject json,
-      HashMap<String, String> jsonLowercaseNameToActualName) {
-    String fieldName = jsonLowercaseNameToActualName.get(key.getName().toLowerCase());
-    JSONArray jsonArray = json.getJSONArray(fieldName);
-    for (int i = 0; i < jsonArray.length(); i++) {
-      switch (key.getType()) {
-        case BOOL:
-          assertTrue((((List<Boolean>) value).get(i) == jsonArray.getBoolean(i)));
-          break;
-        case BYTES:
-          assertTrue(
-              Arrays.equals(((List<byte[]>) value).get(i), jsonArray.getString(i).getBytes()));
-          break;
-        case INT64:
-          assertTrue((((List<Long>) value).get(i) == jsonArray.getLong(i)));
-          break;
-        case INT32:
-          assertTrue((((List<Integer>) value).get(i) == jsonArray.getInt(i)));
-          break;
-        case STRING:
-          assertTrue(((List<String>) value).get(i).equals(jsonArray.getString(i)));
-          break;
-        case DOUBLE:
-          assertTrue((((List<Double>) value).get(i) == jsonArray.getDouble(i)));
-          break;
-        case MESSAGE:
-          AreMatchingFieldsFilledIn(
-              ((List<DynamicMessage>) value).get(i), jsonArray.getJSONObject(i));
-          break;
-      }
-    }
-  }
-
   @Test
   public void testDifferentNameCasing() throws Exception {
+    TestInt64 correctProto =
+        TestInt64.newBuilder().setByte(1).setShort(1).setInt(1).setLong(1).build();
+
     JSONObject json = new JSONObject();
     json.put("bYtE", (byte) 1);
     json.put("SHORT", (short) 1);
@@ -217,11 +266,13 @@ public class JsonToProtoMessageTest {
     json.put("lONg", 1L);
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
   public void testInt64() throws Exception {
+    TestInt64 correctProto =
+        TestInt64.newBuilder().setByte(1).setShort(1).setInt(1).setLong(1).build();
     JSONObject json = new JSONObject();
     json.put("byte", (byte) 1);
     json.put("short", (short) 1);
@@ -229,18 +280,19 @@ public class JsonToProtoMessageTest {
     json.put("long", 1L);
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
   public void testInt32() throws Exception {
+    TestInt32 correctProto = TestInt32.newBuilder().setByte(1).setShort(1).setInt(1).build();
     JSONObject json = new JSONObject();
     json.put("byte", (byte) 1);
     json.put("short", (short) 1);
     json.put("int", 1);
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt32.getDescriptor(), json, false);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
@@ -259,12 +311,13 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testDouble() throws Exception {
+    TestDouble correctProto = TestDouble.newBuilder().setDouble(1.2).setFloat(3.4f).build();
     JSONObject json = new JSONObject();
     json.put("double", 1.2);
     json.put("float", 3.4f);
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestDouble.getDescriptor(), json, false);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
@@ -275,7 +328,7 @@ public class JsonToProtoMessageTest {
         try {
           DynamicMessage protoMsg =
               JsonToProtoMessage.convertJsonToProtoMessage(entry.getKey(), json, false);
-          AreMatchingFieldsFilledIn(protoMsg, json);
+          assertEquals(protoMsg, AllTypesToCorrectProto.get(entry.getKey())[success]);
           success += 1;
         } catch (IllegalArgumentException e) {
           assertEquals(
@@ -299,6 +352,7 @@ public class JsonToProtoMessageTest {
         try {
           DynamicMessage protoMsg =
               JsonToProtoMessage.convertJsonToProtoMessage(entry.getKey(), json, false);
+          assertEquals(protoMsg, AllRepeatedTypesToCorrectProto.get(entry.getKey())[success]);
           success += 1;
         } catch (IllegalArgumentException e) {
           assertEquals(
@@ -319,23 +373,26 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testOptional() throws Exception {
+    TestInt64 correctProto = TestInt64.newBuilder().setByte(1).build();
     JSONObject json = new JSONObject();
     json.put("byte", 1);
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
   public void testRepeatedIsOptional() throws Exception {
+    TestRepeatedIsOptional correctProto =
+        TestRepeatedIsOptional.newBuilder().setRequiredDouble(1.1).build();
     JSONObject json = new JSONObject();
     json.put("required_double", 1.1);
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(
             TestRepeatedIsOptional.getDescriptor(), json, false);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
@@ -353,6 +410,10 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testStructSimple() throws Exception {
+    MessageType correctProto =
+        MessageType.newBuilder()
+            .setTestFieldType(StringType.newBuilder().setTestFieldType("test").build())
+            .build();
     JSONObject stringType = new JSONObject();
     stringType.put("test_field_type", "test");
     JSONObject json = new JSONObject();
@@ -360,7 +421,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(MessageType.getDescriptor(), json, false);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
@@ -381,6 +442,26 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testStructComplex() throws Exception {
+    ComplexRoot correctProto =
+        ComplexRoot.newBuilder()
+            .setTestInt(1)
+            .addTestString("a")
+            .addTestString("b")
+            .addTestString("c")
+            .setTestBytes(ByteString.copyFrom("hello".getBytes()))
+            .setTestBool(true)
+            .addTestDouble(1.1)
+            .addTestDouble(2.2)
+            .addTestDouble(3.3)
+            .addTestDouble(4.4)
+            .setTestDate(1)
+            .setComplexLvl1(
+                ComplexLvl1.newBuilder()
+                    .setTestInt(2)
+                    .setComplexLvl2(ComplexLvl2.newBuilder().setTestInt(3).build())
+                    .build())
+            .setComplexLvl2(ComplexLvl2.newBuilder().setTestInt(3).build())
+            .build();
     JSONObject complex_lvl2 = new JSONObject();
     complex_lvl2.put("test_int", 3);
 
@@ -400,7 +481,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json, false);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
@@ -446,6 +527,27 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testNestedRepeatedComplex() throws Exception {
+    NestedRepeated correctProto =
+        NestedRepeated.newBuilder()
+            .addDouble(1.1)
+            .addDouble(2.2)
+            .addDouble(3.3)
+            .addDouble(4.4)
+            .addDouble(5.5)
+            .addInt(1)
+            .addInt(2)
+            .addInt(3)
+            .addInt(4)
+            .addInt(5)
+            .setRepeatedString(
+                RepeatedString.newBuilder()
+                    .addTestRepeated("hello")
+                    .addTestRepeated("this")
+                    .addTestRepeated("is")
+                    .addTestRepeated("a")
+                    .addTestRepeated("test")
+                    .build())
+            .build();
     double[] doubleArr = {1.1, 2.2, 3.3, 4.4, 5.5};
     String[] stringArr = {"hello", "this", "is", "a", "test"};
     int[] intArr = {1, 2, 3, 4, 5};
@@ -459,7 +561,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(NestedRepeated.getDescriptor(), json, false);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
@@ -487,17 +589,30 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testAllowUnknownFields() throws Exception {
+    RepeatedInt64 correctProto =
+        RepeatedInt64.newBuilder()
+            .addTestRepeated(1)
+            .addTestRepeated(2)
+            .addTestRepeated(3)
+            .addTestRepeated(4)
+            .addTestRepeated(5)
+            .build();
     JSONObject json = new JSONObject();
     json.put("test_repeated", new JSONArray(new int[] {1, 2, 3, 4, 5}));
     json.put("string", "hello");
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(RepeatedInt64.getDescriptor(), json, true);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
   public void testEmptySecondLevelObject() throws Exception {
+    ComplexLvl1 correctProto =
+        ComplexLvl1.newBuilder()
+            .setTestInt(1)
+            .setComplexLvl2(ComplexLvl2.newBuilder().build())
+            .build();
     JSONObject complexLvl2 = new JSONObject();
     JSONObject json = new JSONObject();
     json.put("test_int", 1);
@@ -505,7 +620,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(ComplexLvl1.getDescriptor(), json, true);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
@@ -595,6 +710,11 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testTopLevelMatchSecondLevelMismatch() throws Exception {
+    ComplexLvl1 correctProto =
+        ComplexLvl1.newBuilder()
+            .setTestInt(1)
+            .setComplexLvl2(ComplexLvl2.newBuilder().build())
+            .build();
     JSONObject complex_lvl2 = new JSONObject();
     complex_lvl2.put("no_match", 1);
     JSONObject json = new JSONObject();
@@ -603,7 +723,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(ComplexLvl1.getDescriptor(), json, true);
-    AreMatchingFieldsFilledIn(protoMsg, json);
+    assertEquals(protoMsg, correctProto);
   }
 
   @Test
