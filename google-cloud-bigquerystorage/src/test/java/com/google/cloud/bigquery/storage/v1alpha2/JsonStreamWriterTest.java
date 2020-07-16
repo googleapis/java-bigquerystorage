@@ -30,10 +30,11 @@ import com.google.cloud.bigquery.storage.test.JsonTest.AllenTest;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.api.core.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(JUnit4.class)
 public class JsonStreamWriterTest {
-  private static final Logger LOG = Logger.getLogger(JsonStreamWriterTest.class.getName());
+  // private static final Logger LOG = Logger.getLogger(JsonStreamWriterTest.class.getName());
 
   @Test
   public void testStuff() throws Exception {
@@ -51,14 +52,24 @@ public class JsonStreamWriterTest {
                   response.getTableSchema(),
                   client)
               .build();
+      System.out.println(response.getTableSchema());
+      System.out.flush();
+      TimeUnit.SECONDS.sleep(10);
       AllenTest allen1 = AllenTest.newBuilder().setFoo("hello").setTestConnection("hello again").build();
       AllenTest allen2 = AllenTest.newBuilder().setFoo("hello3").setTestConnection("hello again3").build();
       List<AllenTest> protoRows = new ArrayList<AllenTest>();
       protoRows.add(allen1);
       protoRows.add(allen2);
-      ApiFuture<AppendRowsResponse> appendResponse = jsonStreamWriter.append(protoRows);
-      System.out.println(appendResponse.get().getError());
-      System.out.println(appendResponse.get().getOffset());
+      ApiFuture<AppendRowsResponse> appendResponseFuture = jsonStreamWriter.append(protoRows);
+      System.out.println("Not waiting for api response");
+      System.out.println(appendResponseFuture.get());
+      System.out.println("waiting for api response");
+      // AppendRowsResponse appendResponse = appendResponseFuture.get();
+      // System.out.println(appendResponse.hasUpdatedSchema());
+      // System.out.println(appendResponse.hasError());
+      // System.out.println(appendResponse.getUpdatedSchema());
+      // System.out.println(appendResponse.getOffset());
+      // System.out.println(appendResponse.getError());
     }
   }
 }
