@@ -179,49 +179,32 @@ public class JsonToProtoMessageTest {
       HashMap<String, String> jsonLowercaseNameToActualName) {
     String fieldName = jsonLowercaseNameToActualName.get(key.getName().toLowerCase());
     JSONArray jsonArray = json.getJSONArray(fieldName);
-    switch (key.getType()) {
-      case BOOL:
-        List<Boolean> boolArr = (List<Boolean>) value;
-        for (int i = 0; i < jsonArray.length(); i++) {
-          assertTrue((boolArr.get(i) == jsonArray.getBoolean(i)));
-        }
-        break;
-      case BYTES:
-        List<byte[]> byteArr = (List<byte[]>) value;
-        for (int i = 0; i < jsonArray.length(); i++) {
-          assertTrue(Arrays.equals(byteArr.get(i), jsonArray.getString(i).getBytes()));
-        }
-        break;
-      case INT64:
-        List<Long> longArr = (List<Long>) value;
-        for (int i = 0; i < jsonArray.length(); i++) {
-          assertTrue((longArr.get(i) == jsonArray.getLong(i)));
-        }
-        break;
-      case INT32:
-        List<Integer> intArr = (List<Integer>) value;
-        for (int i = 0; i < jsonArray.length(); i++) {
-          assertTrue((intArr.get(i) == jsonArray.getInt(i)));
-        }
-        break;
-      case STRING:
-        List<String> stringArr = (List<String>) value;
-        for (int i = 0; i < jsonArray.length(); i++) {
-          assertTrue(stringArr.get(i).equals(jsonArray.getString(i)));
-        }
-        break;
-      case DOUBLE:
-        List<Double> doubleArr = (List<Double>) value;
-        for (int i = 0; i < jsonArray.length(); i++) {
-          assertTrue((doubleArr.get(i) == jsonArray.getDouble(i)));
-        }
-        break;
-      case MESSAGE:
-        List<DynamicMessage> messageArr = (List<DynamicMessage>) value;
-        for (int i = 0; i < jsonArray.length(); i++) {
-          AreMatchingFieldsFilledIn(messageArr.get(i), jsonArray.getJSONObject(i));
-        }
-        break;
+    for (int i = 0; i < jsonArray.length(); i++) {
+      switch (key.getType()) {
+        case BOOL:
+          assertTrue((((List<Boolean>) value).get(i) == jsonArray.getBoolean(i)));
+          break;
+        case BYTES:
+          assertTrue(
+              Arrays.equals(((List<byte[]>) value).get(i), jsonArray.getString(i).getBytes()));
+          break;
+        case INT64:
+          assertTrue((((List<Long>) value).get(i) == jsonArray.getLong(i)));
+          break;
+        case INT32:
+          assertTrue((((List<Integer>) value).get(i) == jsonArray.getInt(i)));
+          break;
+        case STRING:
+          assertTrue(((List<String>) value).get(i).equals(jsonArray.getString(i)));
+          break;
+        case DOUBLE:
+          assertTrue((((List<Double>) value).get(i) == jsonArray.getDouble(i)));
+          break;
+        case MESSAGE:
+          AreMatchingFieldsFilledIn(
+              ((List<DynamicMessage>) value).get(i), jsonArray.getJSONObject(i));
+          break;
+      }
     }
   }
 
