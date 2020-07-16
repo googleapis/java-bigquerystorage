@@ -78,7 +78,13 @@ public class JsonStreamWriter {
     data.setWriterSchema(ProtoSchemaConverter.convert(protoRows.get(0).getDescriptorForType()));
     data.setRows(rowsBuilder.build());
 
-    return this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).build());
+    ApiFuture<AppendRowsResponse> appendResponseFuture = this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).build());
+    // AppendRowsResponse appendResponse = appendResponseFuture.get();
+    // if (appendResponse.hasUpdatedSchema()) {
+    //
+    //   // this.descriptor = BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(BQTableSchema);
+    // }
+    return appendResponseFuture;
   }
 
   public Descriptor getDescriptor() {
