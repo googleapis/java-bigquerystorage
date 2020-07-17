@@ -221,8 +221,8 @@ public class JsonToProtoMessageTest {
             "test_repeated",
             new JSONArray(
                 new Integer[] {
-                  (int) Integer.MAX_VALUE,
-                  (int) Integer.MIN_VALUE,
+                  Integer.MAX_VALUE,
+                  Integer.MIN_VALUE,
                   (int) Short.MAX_VALUE,
                   (int) Short.MIN_VALUE,
                   (int) Byte.MAX_VALUE,
@@ -256,7 +256,7 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testDifferentNameCasing() throws Exception {
-    TestInt64 correctProto =
+    TestInt64 expectedProto =
         TestInt64.newBuilder().setByte(1).setShort(1).setInt(1).setLong(1).build();
 
     JSONObject json = new JSONObject();
@@ -266,12 +266,12 @@ public class JsonToProtoMessageTest {
     json.put("lONg", 1L);
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
   public void testInt64() throws Exception {
-    TestInt64 correctProto =
+    TestInt64 expectedProto =
         TestInt64.newBuilder().setByte(1).setShort(1).setInt(1).setLong(1).build();
     JSONObject json = new JSONObject();
     json.put("byte", (byte) 1);
@@ -280,19 +280,19 @@ public class JsonToProtoMessageTest {
     json.put("long", 1L);
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
   public void testInt32() throws Exception {
-    TestInt32 correctProto = TestInt32.newBuilder().setByte(1).setShort(1).setInt(1).build();
+    TestInt32 expectedProto = TestInt32.newBuilder().setByte(1).setShort(1).setInt(1).build();
     JSONObject json = new JSONObject();
     json.put("byte", (byte) 1);
     json.put("short", (short) 1);
     json.put("int", 1);
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt32.getDescriptor(), json, false);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
@@ -311,13 +311,13 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testDouble() throws Exception {
-    TestDouble correctProto = TestDouble.newBuilder().setDouble(1.2).setFloat(3.4f).build();
+    TestDouble expectedProto = TestDouble.newBuilder().setDouble(1.2).setFloat(3.4f).build();
     JSONObject json = new JSONObject();
     json.put("double", 1.2);
     json.put("float", 3.4f);
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestDouble.getDescriptor(), json, false);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
@@ -373,18 +373,18 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testOptional() throws Exception {
-    TestInt64 correctProto = TestInt64.newBuilder().setByte(1).build();
+    TestInt64 expectedProto = TestInt64.newBuilder().setByte(1).build();
     JSONObject json = new JSONObject();
     json.put("byte", 1);
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json, false);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
   public void testRepeatedIsOptional() throws Exception {
-    TestRepeatedIsOptional correctProto =
+    TestRepeatedIsOptional expectedProto =
         TestRepeatedIsOptional.newBuilder().setRequiredDouble(1.1).build();
     JSONObject json = new JSONObject();
     json.put("required_double", 1.1);
@@ -392,7 +392,7 @@ public class JsonToProtoMessageTest {
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(
             TestRepeatedIsOptional.getDescriptor(), json, false);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
@@ -410,7 +410,7 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testStructSimple() throws Exception {
-    MessageType correctProto =
+    MessageType expectedProto =
         MessageType.newBuilder()
             .setTestFieldType(StringType.newBuilder().setTestFieldType("test").build())
             .build();
@@ -421,7 +421,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(MessageType.getDescriptor(), json, false);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
@@ -442,7 +442,7 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testStructComplex() throws Exception {
-    ComplexRoot correctProto =
+    ComplexRoot expectedProto =
         ComplexRoot.newBuilder()
             .setTestInt(1)
             .addTestString("a")
@@ -481,7 +481,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json, false);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
@@ -527,7 +527,7 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testNestedRepeatedComplex() throws Exception {
-    NestedRepeated correctProto =
+    NestedRepeated expectedProto =
         NestedRepeated.newBuilder()
             .addDouble(1.1)
             .addDouble(2.2)
@@ -561,7 +561,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(NestedRepeated.getDescriptor(), json, false);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
@@ -589,7 +589,7 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testAllowUnknownFields() throws Exception {
-    RepeatedInt64 correctProto =
+    RepeatedInt64 expectedProto =
         RepeatedInt64.newBuilder()
             .addTestRepeated(1)
             .addTestRepeated(2)
@@ -603,12 +603,12 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(RepeatedInt64.getDescriptor(), json, true);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
   public void testEmptySecondLevelObject() throws Exception {
-    ComplexLvl1 correctProto =
+    ComplexLvl1 expectedProto =
         ComplexLvl1.newBuilder()
             .setTestInt(1)
             .setComplexLvl2(ComplexLvl2.newBuilder().build())
@@ -620,7 +620,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(ComplexLvl1.getDescriptor(), json, true);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test
@@ -659,18 +659,28 @@ public class JsonToProtoMessageTest {
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(Int64Type.getDescriptor(), json, false);
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalStateException e) {
       assertEquals(e.getMessage(), "JSONObject is empty.");
     }
   }
 
   @Test
-  public void testNull() throws Exception {
+  public void testNullJson() throws Exception {
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(Int64Type.getDescriptor(), null, false);
-    } catch (IllegalArgumentException e) {
+    } catch (NullPointerException e) {
       assertEquals(e.getMessage(), "JSONObject is null.");
+    }
+  }
+
+  @Test
+  public void testNullDescriptor() throws Exception {
+    try {
+      DynamicMessage protoMsg =
+          JsonToProtoMessage.convertJsonToProtoMessage(null, new JSONObject(), false);
+    } catch (NullPointerException e) {
+      assertEquals(e.getMessage(), "Protobuf descriptor is null.");
     }
   }
 
@@ -710,7 +720,7 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testTopLevelMatchSecondLevelMismatch() throws Exception {
-    ComplexLvl1 correctProto =
+    ComplexLvl1 expectedProto =
         ComplexLvl1.newBuilder()
             .setTestInt(1)
             .setComplexLvl2(ComplexLvl2.newBuilder().build())
@@ -723,7 +733,7 @@ public class JsonToProtoMessageTest {
 
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(ComplexLvl1.getDescriptor(), json, true);
-    assertEquals(protoMsg, correctProto);
+    assertEquals(protoMsg, expectedProto);
   }
 
   @Test

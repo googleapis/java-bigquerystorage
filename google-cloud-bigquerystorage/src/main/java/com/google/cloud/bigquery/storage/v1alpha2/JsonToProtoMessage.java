@@ -15,6 +15,7 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -52,12 +53,10 @@ public class JsonToProtoMessage {
   public static DynamicMessage convertJsonToProtoMessage(
       Descriptor protoSchema, JSONObject json, boolean allowUnknownFields)
       throws IllegalArgumentException {
-    if (json == null) {
-      throw new IllegalArgumentException("JSONObject is null.");
-    }
-    if (json.length() == 0) {
-      throw new IllegalArgumentException("JSONObject is empty.");
-    }
+    Preconditions.checkNotNull(json, "JSONObject is null.");
+    Preconditions.checkNotNull(protoSchema, "Protobuf descriptor is null.");
+    Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
+
     return convertJsonToProtoMessageImpl(
         protoSchema, json, "root", /*topLevel=*/ true, allowUnknownFields);
   }
@@ -151,47 +150,53 @@ public class JsonToProtoMessage {
       String currentScope,
       boolean allowUnknownFields)
       throws IllegalArgumentException {
-    java.lang.Object val;
-    try {
-      switch (fieldDescriptor.getType()) {
-        case BOOL:
-          protoMsg.setField(fieldDescriptor, new Boolean(json.getBoolean(exactJsonKeyName)));
-          break;
-        case BYTES:
-          protoMsg.setField(fieldDescriptor, json.getString(exactJsonKeyName).getBytes());
-          break;
-        case INT64:
-          val = json.get(exactJsonKeyName);
-          if (val instanceof Integer) {
-            protoMsg.setField(fieldDescriptor, new Long((Integer) val));
-          } else if (val instanceof Long) {
-            protoMsg.setField(fieldDescriptor, (Long) val);
-          } else {
-            throw new JSONException("");
-          }
-          break;
-        case INT32:
-          val = json.get(exactJsonKeyName);
-          if (val instanceof Integer) {
-            protoMsg.setField(fieldDescriptor, (Integer) val);
-          } else {
-            throw new JSONException("");
-          }
-          break;
-        case STRING:
-          protoMsg.setField(fieldDescriptor, json.getString(exactJsonKeyName));
-          break;
-        case DOUBLE:
-          val = json.get(exactJsonKeyName);
-          if (val instanceof Double) {
-            protoMsg.setField(fieldDescriptor, (Double) val);
-          } else if (val instanceof Float) {
-            protoMsg.setField(fieldDescriptor, new Double((Float) val));
-          } else {
-            throw new JSONException("");
-          }
-          break;
-        case MESSAGE:
+
+    java.lang.Object val = json.get(exactJsonKeyName);
+    switch (fieldDescriptor.getType()) {
+      case BOOL:
+        if (val instanceof Boolean) {
+          protoMsg.setField(fieldDescriptor, (Boolean) val);
+          return;
+        }
+        break;
+      case BYTES:
+        if (val instanceof String) {
+          protoMsg.setField(fieldDescriptor, ((String) val).getBytes());
+          return;
+        }
+        break;
+      case INT64:
+        if (val instanceof Integer) {
+          protoMsg.setField(fieldDescriptor, new Long((Integer) val));
+          return;
+        } else if (val instanceof Long) {
+          protoMsg.setField(fieldDescriptor, (Long) val);
+          return;
+        }
+        break;
+      case INT32:
+        if (val instanceof Integer) {
+          protoMsg.setField(fieldDescriptor, (Integer) val);
+          return;
+        }
+        break;
+      case STRING:
+        if (val instanceof String) {
+          protoMsg.setField(fieldDescriptor, (String) val);
+          return;
+        }
+        break;
+      case DOUBLE:
+        if (val instanceof Double) {
+          protoMsg.setField(fieldDescriptor, (Double) val);
+          return;
+        } else if (val instanceof Float) {
+          protoMsg.setField(fieldDescriptor, new Double((Float) val));
+          return;
+        }
+        break;
+      case MESSAGE:
+        if (val instanceof JSONObject) {
           Message.Builder message = protoMsg.newBuilderForField(fieldDescriptor);
           protoMsg.setField(
               fieldDescriptor,
@@ -201,14 +206,14 @@ public class JsonToProtoMessage {
                   currentScope,
                   /*topLevel =*/ false,
                   allowUnknownFields));
-          break;
-      }
-    } catch (JSONException e) {
-      throw new IllegalArgumentException(
-          String.format(
-              "JSONObject does not have a %s field at %s.",
-              FieldTypeToDebugMessage.get(fieldDescriptor.getType()), currentScope));
+          return;
+        }
+        break;
     }
+    throw new IllegalArgumentException(
+        String.format(
+            "JSONObject does not have a %s field at %s.",
+            FieldTypeToDebugMessage.get(fieldDescriptor.getType()), currentScope));
   }
 
   /**
@@ -239,49 +244,60 @@ public class JsonToProtoMessage {
           "JSONObject does not have a array field at " + currentScope + ".");
     }
     java.lang.Object val;
-    int index = -1;
-    try {
-      for (int i = 0; i < jsonArray.length(); i++) {
-        index = i;
-        switch (fieldDescriptor.getType()) {
-          case BOOL:
-            protoMsg.addRepeatedField(fieldDescriptor, new Boolean(jsonArray.getBoolean(i)));
-            break;
-          case BYTES:
-            protoMsg.addRepeatedField(fieldDescriptor, jsonArray.getString(i).getBytes());
-            break;
-          case INT64:
-            val = jsonArray.get(i);
-            if (val instanceof Integer) {
-              protoMsg.addRepeatedField(fieldDescriptor, new Long((Integer) val));
-            } else if (val instanceof Long) {
-              protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
-            } else {
-              throw new JSONException("");
-            }
-            break;
-          case INT32:
-            val = jsonArray.get(i);
-            if (val instanceof Integer) {
-              protoMsg.addRepeatedField(fieldDescriptor, (Integer) val);
-            } else {
-              throw new JSONException("");
-            }
-            break;
-          case STRING:
-            protoMsg.addRepeatedField(fieldDescriptor, jsonArray.getString(i));
-            break;
-          case DOUBLE:
-            val = jsonArray.get(i);
-            if (val instanceof Double) {
-              protoMsg.addRepeatedField(fieldDescriptor, (Double) val);
-            } else if (val instanceof Float) {
-              protoMsg.addRepeatedField(fieldDescriptor, new Double((float) val));
-            } else {
-              throw new JSONException("");
-            }
-            break;
-          case MESSAGE:
+    int index;
+    boolean fail = false;
+    for (int i = 0; i < jsonArray.length(); i++) {
+      val = jsonArray.get(i);
+      index = i;
+      switch (fieldDescriptor.getType()) {
+        case BOOL:
+          if (val instanceof Boolean) {
+            protoMsg.addRepeatedField(fieldDescriptor, (Boolean) val);
+          } else {
+            fail = true;
+          }
+          break;
+        case BYTES:
+          if (val instanceof String) {
+            protoMsg.addRepeatedField(fieldDescriptor, ((String) val).getBytes());
+          } else {
+            fail = true;
+          }
+          break;
+        case INT64:
+          if (val instanceof Integer) {
+            protoMsg.addRepeatedField(fieldDescriptor, new Long((Integer) val));
+          } else if (val instanceof Long) {
+            protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+          } else {
+            fail = true;
+          }
+          break;
+        case INT32:
+          if (val instanceof Integer) {
+            protoMsg.addRepeatedField(fieldDescriptor, (Integer) val);
+          } else {
+            fail = true;
+          }
+          break;
+        case STRING:
+          if (val instanceof String) {
+            protoMsg.addRepeatedField(fieldDescriptor, (String) val);
+          } else {
+            fail = true;
+          }
+          break;
+        case DOUBLE:
+          if (val instanceof Double) {
+            protoMsg.addRepeatedField(fieldDescriptor, (Double) val);
+          } else if (val instanceof Float) {
+            protoMsg.addRepeatedField(fieldDescriptor, new Double((float) val));
+          } else {
+            fail = true;
+          }
+          break;
+        case MESSAGE:
+          if (val instanceof JSONObject) {
             Message.Builder message = protoMsg.newBuilderForField(fieldDescriptor);
             protoMsg.addRepeatedField(
                 fieldDescriptor,
@@ -291,14 +307,17 @@ public class JsonToProtoMessage {
                     currentScope,
                     /*topLevel =*/ false,
                     allowUnknownFields));
-            break;
-        }
+          } else {
+            fail = true;
+          }
+          break;
       }
-    } catch (JSONException e) {
-      throw new IllegalArgumentException(
-          String.format(
-              "JSONObject does not have a %s field at %s[%d].",
-              FieldTypeToDebugMessage.get(fieldDescriptor.getType()), currentScope, index));
+      if (fail) {
+        throw new IllegalArgumentException(
+            String.format(
+                "JSONObject does not have a %s field at %s[%d].",
+                FieldTypeToDebugMessage.get(fieldDescriptor.getType()), currentScope, index));
+      }
     }
   }
 }
