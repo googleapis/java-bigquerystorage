@@ -54,8 +54,12 @@ public class JsonStreamWriter {
     this.descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(builder.BQTableSchema);
 
-    StreamWriter.Builder streamWriterBuilder =
-        StreamWriter.newBuilder(builder.streamName, this.client);
+    StreamWriter.Builder streamWriterBuilder;
+    if (this.client == null) {
+      streamWriterBuilder = StreamWriter.newBuilder(builder.streamName);
+    } else {
+      streamWriterBuilder = StreamWriter.newBuilder(builder.streamName, builder.client);
+    }
     setStreamWriterSettings(
         streamWriterBuilder,
         builder.channelProvider,
@@ -67,25 +71,45 @@ public class JsonStreamWriter {
     this.streamWriter = streamWriterBuilder.build();
   }
 
-  // For testing, use proto first.
-  public <T extends Message> ApiFuture<AppendRowsResponse> append(List<T> protoRows) {
-    ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
-    Descriptors.Descriptor descriptor = null;
-    for (Message protoRow : protoRows) {
-      rowsBuilder.addSerializedRows(protoRow.toByteString());
-    }
-    AppendRowsRequest.ProtoData.Builder data = AppendRowsRequest.ProtoData.newBuilder();
-    data.setWriterSchema(ProtoSchemaConverter.convert(protoRows.get(0).getDescriptorForType()));
-    data.setRows(rowsBuilder.build());
+  // // For testing, use proto first.
+  // public <T extends Message> ApiFuture<AppendRowsResponse> append(List<T> protoRows) {
+  //   ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
+  //   Descriptors.Descriptor descriptor = null;
+  //   for (Message protoRow : protoRows) {
+  //     rowsBuilder.addSerializedRows(protoRow.toByteString());
+  //   }
+  //   AppendRowsRequest.ProtoData.Builder data = AppendRowsRequest.ProtoData.newBuilder();
+  //   data.setWriterSchema(ProtoSchemaConverter.convert(protoRows.get(0).getDescriptorForType()));
+  //   data.setRows(rowsBuilder.build());
+  //
+  //   ApiFuture<AppendRowsResponse> appendResponseFuture = this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).build());
+  //   // AppendRowsResponse appendResponse = appendResponseFuture.get();
+  //   // if (appendResponse.hasUpdatedSchema()) {
+  //   //
+  //   //   // this.descriptor = BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(BQTableSchema);
+  //   // }
+  //   return appendResponseFuture;
+  // }
 
-    ApiFuture<AppendRowsResponse> appendResponseFuture = this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).build());
-    // AppendRowsResponse appendResponse = appendResponseFuture.get();
-    // if (appendResponse.hasUpdatedSchema()) {
-    //
-    //   // this.descriptor = BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(BQTableSchema);
-    // }
-    return appendResponseFuture;
-  }
+ public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
+   ApiFuture<AppendRowsResponse> appendResponseFuture = this.streamWriter.append(message);
+   ApiFutures.<AppendRowsResponse>addCallback(
+                appendResponseFuture,
+                new ApiFutureCallback<AppendRowsResponse>() {
+                  @Override
+                  public void onSuccess(AppendRowsResponse response) {
+                    if (response.hasUpdatedSchema()) {
+                      this.descriptor = BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(response.getUpdatedSchema());
+                      System.out.println("New descriptor: " + this.descriptor.toProto());
+                    }
+                  }
+                  @Override
+                  public void onFailure(Throwable t) {
+
+                  }
+                });
+   return appendResponseFuture;
+ }
 
   public Descriptor getDescriptor() {
     return this.descriptor;
@@ -128,6 +152,10 @@ public class JsonStreamWriter {
       throw new IllegalArgumentException("BigQuery Write Client is null.");
     }
     return new Builder(streamName, BQTableSchema, client);
+  }
+
+  public void close() {
+    this.streamWriter.close();
   }
 
   public static final class Builder {
