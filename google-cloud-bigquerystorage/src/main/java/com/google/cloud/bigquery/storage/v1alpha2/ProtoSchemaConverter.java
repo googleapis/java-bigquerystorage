@@ -32,9 +32,9 @@ import java.util.*;
 public class ProtoSchemaConverter {
   private static ProtoSchema convertInternal(
       Descriptor input,
-      List<String> visitedTypes,
-      List<String> enumTypes,
-      List<String> structTypes,
+      Set<String> visitedTypes,
+      Set<String> enumTypes,
+      Set<String> structTypes,
       DescriptorProto.Builder rootProtoSchema) {
     DescriptorProto.Builder resultProto = DescriptorProto.newBuilder();
     if (rootProtoSchema == null) {
@@ -43,14 +43,14 @@ public class ProtoSchemaConverter {
     String protoName = input.getFullName();
     protoName = protoName.replace('.', '_');
     resultProto.setName(protoName);
-    List<String> localEnumTypes = new ArrayList<String>();
+    Set<String> localEnumTypes = new HashSet<String>();
     visitedTypes.add(input.getFullName());
     for (int i = 0; i < input.getFields().size(); i++) {
       FieldDescriptor inputField = input.getFields().get(i);
       FieldDescriptorProto.Builder resultField = inputField.toProto().toBuilder();
       if (inputField.getType() == FieldDescriptor.Type.GROUP
           || inputField.getType() == FieldDescriptor.Type.MESSAGE) {
-        String msgFullName = input.getFields().get(i).getMessageType().getFullName();
+        String msgFullName = inputField.getMessageType().getFullName();
         msgFullName = msgFullName.replace('.', '_');
         if (structTypes.contains(msgFullName)) {
           resultField.setTypeName(msgFullName);
@@ -116,9 +116,9 @@ public class ProtoSchemaConverter {
   }
 
   public static ProtoSchema convert(Descriptor descriptor) {
-    List<String> visitedTypes = new ArrayList<String>();
-    List<String> enumTypes = new ArrayList<String>();
-    List<String> structTypes = new ArrayList<String>();
+    Set<String> visitedTypes = new HashSet<String>();
+    Set<String> enumTypes = new HashSet<String>();
+    Set<String> structTypes = new HashSet<String>();
     return convertInternal(descriptor, visitedTypes, enumTypes, structTypes, null);
   }
 }

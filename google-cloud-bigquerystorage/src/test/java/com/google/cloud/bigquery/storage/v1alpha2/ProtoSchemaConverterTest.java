@@ -149,7 +149,23 @@ public class ProtoSchemaConverterTest {
           ProtoSchemaConverter.convert(testProto.getDescriptorForType());
       Assert.fail("No exception raised");
     } catch (InvalidArgumentException e) {
-      // Expected exception
+      Assert.assertEquals(
+          "Recursive type is not supported:com.google.cloud.bigquery.storage.test.ContainsRecursive",
+          e.getMessage());
+    }
+  }
+
+  @Test
+  public void convertRecursiveTopMessage() {
+    try {
+      RecursiveTypeTopMessage testProto = RecursiveTypeTopMessage.newBuilder().build();
+      ProtoBufProto.ProtoSchema protoSchema =
+          ProtoSchemaConverter.convert(testProto.getDescriptorForType());
+      Assert.fail("No exception raised");
+    } catch (InvalidArgumentException e) {
+      Assert.assertEquals(
+          "Recursive type is not supported:com.google.cloud.bigquery.storage.test.RecursiveTypeTopMessage",
+          e.getMessage());
     }
   }
 

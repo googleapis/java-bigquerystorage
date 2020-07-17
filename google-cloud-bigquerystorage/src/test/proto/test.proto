@@ -55,6 +55,10 @@ message RecursiveType {
   optional ContainsRecursive field = 2;
 }
 
+message RecursiveTypeTopMessage {
+  optional RecursiveTypeTopMessage field = 2;
+}
+
 message FooType {
   optional string foo = 1;
 }
