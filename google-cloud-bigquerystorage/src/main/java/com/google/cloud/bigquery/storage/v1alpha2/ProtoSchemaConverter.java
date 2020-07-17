@@ -18,6 +18,7 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoSchema;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
@@ -116,9 +117,8 @@ public class ProtoSchemaConverter {
   }
 
   public static ProtoSchema convert(Descriptor descriptor) {
-    Set<String> visitedTypes = new HashSet<String>();
-    Set<String> enumTypes = new HashSet<String>();
-    Set<String> structTypes = new HashSet<String>();
-    return convertInternal(descriptor, visitedTypes, enumTypes, structTypes, null);
+    Preconditions.checkNotNull(descriptor, "Descriptor is null.");
+    ArrayList<String> visitedTypes = new ArrayList<String>();
+    return convertInternal(descriptor, visitedTypes, new StructName());
   }
 }
