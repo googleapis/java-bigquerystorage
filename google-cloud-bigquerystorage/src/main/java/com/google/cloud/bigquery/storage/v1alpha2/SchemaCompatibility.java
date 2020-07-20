@@ -23,6 +23,7 @@ import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,7 +33,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import com.google.common.base.Preconditions;
 
 /**
  * A class that checks the schema compatibility between Proto schema in proto descriptor and
