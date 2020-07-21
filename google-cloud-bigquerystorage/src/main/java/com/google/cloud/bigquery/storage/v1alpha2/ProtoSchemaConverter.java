@@ -117,8 +117,9 @@ public class ProtoSchemaConverter {
   }
 
   public static ProtoSchema convert(Descriptor descriptor) {
-    Preconditions.checkNotNull(descriptor, "Descriptor is null.");
-    ArrayList<String> visitedTypes = new ArrayList<String>();
-    return convertInternal(descriptor, visitedTypes, new StructName());
+    Set<String> visitedTypes = new HashSet<String>();
+    Set<String> enumTypes = new HashSet<String>();
+    Set<String> structTypes = new HashSet<String>();
+    return convertInternal(descriptor, visitedTypes, enumTypes, structTypes, null);
   }
 }
