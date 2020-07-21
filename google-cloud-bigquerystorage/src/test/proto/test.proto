@@ -63,9 +63,7 @@ message FooType {
   optional string foo = 1;
 }
 
-message DuplicateType {
-  optional TestEnum f1 = 1;
-  optional TestEnum f2 = 2;
-  optional ComplicateType f3 = 3;
-  optional ComplicateType f4 = 4;
+message FooBarType {
+  optional string foo = 1;
+  optional string bar = 2;
 }

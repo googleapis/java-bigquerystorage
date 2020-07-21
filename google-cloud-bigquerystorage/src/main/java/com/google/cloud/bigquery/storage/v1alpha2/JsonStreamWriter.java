@@ -16,32 +16,46 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.core.*;
-import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoRows;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.*;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
-import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
-import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import java.util.regex.Pattern;
-import com.google.protobuf.Message;
 
+/**
+ * A StreamWriter that can write JSON data (JSONObjects) to BigQuery tables. The JsonStreamWriter is
+ * built on top of a StreamWriter, and it simply converts all JSON data to protobuf messages then
+ * calls StreamWriter's append() method to write to BigQuery tables. It maintains all StreamWriter
+ * functions, but also provides an additional feature: schema update support, where if the BigQuery
+ * table schema is updated, the JsonStreamWriter is guaranteed to be updated after some time.
+ */
 public class JsonStreamWriter {
   private static String streamPatternString =
-      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
+      "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+";
   private static Pattern streamPattern = Pattern.compile(streamPatternString);
+  private static final Logger LOG = Logger.getLogger(JsonStreamWriter.class.getName());
 
-  BigQueryWriteClient client;
-  StreamWriter streamWriter;
-  Descriptor descriptor;
+  private BigQueryWriteClient client;
+  private String streamName;
+  private StreamWriter streamWriter;
+  private Descriptor descriptor;
+  private Table.TableSchema BQTableSchema;
 
+  /**
+   * Constructs the JsonStreamWriter
+   *
+   * @param builder The Builder object for the JsonStreamWriter
+   */
   private JsonStreamWriter(Builder builder)
       throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
           InterruptedException {
@@ -50,7 +64,9 @@ public class JsonStreamWriter {
       throw new IllegalArgumentException("Invalid stream name: " + builder.streamName);
     }
 
+    this.streamName = builder.streamName;
     this.client = builder.client;
+    this.BQTableSchema = builder.BQTableSchema;
     this.descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(builder.BQTableSchema);
 
@@ -71,50 +87,102 @@ public class JsonStreamWriter {
     this.streamWriter = streamWriterBuilder.build();
   }
 
-  // // For testing, use proto first.
-  // public <T extends Message> ApiFuture<AppendRowsResponse> append(List<T> protoRows) {
-  //   ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
-  //   Descriptors.Descriptor descriptor = null;
-  //   for (Message protoRow : protoRows) {
-  //     rowsBuilder.addSerializedRows(protoRow.toByteString());
+  // For testing, use proto first.
+  // public <T extends Message> ApiFuture<AppendRowsResponse> append(JSONArray jsonArr) {
+  //   for (int i = 0; i < jsonArr.size(); i++) {
+  //     JSONObject json = jsonArr.getJSONObject(i);
   //   }
-  //   AppendRowsRequest.ProtoData.Builder data = AppendRowsRequest.ProtoData.newBuilder();
-  //   data.setWriterSchema(ProtoSchemaConverter.convert(protoRows.get(0).getDescriptorForType()));
-  //   data.setRows(rowsBuilder.build());
   //
-  //   ApiFuture<AppendRowsResponse> appendResponseFuture = this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).build());
-  //   // AppendRowsResponse appendResponse = appendResponseFuture.get();
-  //   // if (appendResponse.hasUpdatedSchema()) {
-  //   //
-  //   //   // this.descriptor = BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(BQTableSchema);
-  //   // }
-  //   return appendResponseFuture;
+  // //   ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
+  // //   Descriptors.Descriptor descriptor = null;
+  // //   for (Message protoRow : protoRows) {
+  // //     rowsBuilder.addSerializedRows(protoRow.toByteString());
+  // //   }
+  // //   AppendRowsRequest.ProtoData.Builder data = AppendRowsRequest.ProtoData.newBuilder();
+  // //
+  // data.setWriterSchema(ProtoSchemaConverter.convert(protoRows.get(0).getDescriptorForType()));
+  // //   data.setRows(rowsBuilder.build());
+  // //
+  // //   ApiFuture<AppendRowsResponse> appendResponseFuture =
+  // // this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).build());
+  // //   // AppendRowsResponse appendResponse = appendResponseFuture.get();
+  // //   // if (appendResponse.hasUpdatedSchema()) {
+  // //   //
+  // //   //   // this.descriptor =
+  // // BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(BQTableSchema);
+  // //   // }
+  //   // return appendResponseFuture;
   // }
 
- public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
-   ApiFuture<AppendRowsResponse> appendResponseFuture = this.streamWriter.append(message);
-   ApiFutures.<AppendRowsResponse>addCallback(
-                appendResponseFuture,
-                new ApiFutureCallback<AppendRowsResponse>() {
-                  @Override
-                  public void onSuccess(AppendRowsResponse response) {
-                    if (response.hasUpdatedSchema()) {
-                      this.descriptor = BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(response.getUpdatedSchema());
-                      System.out.println("New descriptor: " + this.descriptor.toProto());
-                    }
-                  }
-                  @Override
-                  public void onFailure(Throwable t) {
+  /**
+   * Updates the descriptor and BQTable schema. This function is used to support schema updates, and
+   * is called whenever AppendRowsResponse includes an updated schema. The function is synchronized
+   * since it is called through a callback (which is in another thread). If the main thread is
+   * calling append while the callback thread calls refreshAppend(), this might cause some issues.
+   *
+   * @param BQTableSchema The updated table schema.
+   */
+  private synchronized void updateDescriptor(Table.TableSchema updatedSchema)
+      throws Descriptors.DescriptorValidationException, IOException, InterruptedException {
+    if (!this.BQTableSchema.equals(updatedSchema)) {
+      this.descriptor =
+          BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
+      this.BQTableSchema = updatedSchema;
+      streamWriter.refreshAppend();
+    }
+  }
 
-                  }
-                });
-   return appendResponseFuture;
- }
+  /** Placeholder. Will update to include JsonToProtoMessage conversion. */
+  public synchronized ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
+    ApiFuture<AppendRowsResponse> appendResponseFuture = this.streamWriter.append(message);
+    ApiFutures.<AppendRowsResponse>addCallback(
+        appendResponseFuture,
+        new ApiFutureCallback<AppendRowsResponse>() {
+          @Override
+          public void onSuccess(AppendRowsResponse response) {
+            if (response.hasUpdatedSchema()) {
+              try {
+                updateDescriptor(response.getUpdatedSchema());
+              } catch (Exception e) {
+                // Deal with exceptions
+              }
+            }
+          }
 
+          @Override
+          public void onFailure(Throwable t) {}
+        });
+    return appendResponseFuture;
+  }
+
+  /**
+   * Gets streamName
+   *
+   * @return String
+   */
+  public String getStreamName() {
+    return this.streamName;
+  }
+
+  /**
+   * Gets current descriptor
+   *
+   * @return Descriptor
+   */
   public Descriptor getDescriptor() {
     return this.descriptor;
   }
 
+  /**
+   * Gets current BQTableSchema
+   *
+   * @return Table.TableSchema
+   */
+  public Table.TableSchema getBQTableSchema() {
+    return this.BQTableSchema;
+  }
+
+  /** Sets all StreamWriter settings. */
   private void setStreamWriterSettings(
       StreamWriter.Builder builder,
       TransportChannelProvider channelProvider,
@@ -143,17 +211,39 @@ public class JsonStreamWriter {
     }
   }
 
+  /**
+   * newBuilder that constructs a JsonStreamWriter builder with BigQuery client being initialized by
+   * StreamWriter by default.
+   *
+   * @param streamName name of the stream that must follow
+   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+"
+   * @param BQTableSchema schema used to convert Json to proto messages.
+   * @return Builder
+   */
   public static Builder newBuilder(String streamName, Table.TableSchema BQTableSchema) {
+    Preconditions.checkNotNull(streamName, "StreamName is null.");
+    Preconditions.checkNotNull(BQTableSchema, "BQTableSchema is null.");
     return new Builder(streamName, BQTableSchema, null);
   }
 
-  public static Builder newBuilder(String streamName, Table.TableSchema BQTableSchema, BigQueryWriteClient client) throws IllegalArgumentException{
-    if (client == null) {
-      throw new IllegalArgumentException("BigQuery Write Client is null.");
-    }
+  /**
+   * newBuilder that constructs a JsonStreamWriter builder.
+   *
+   * @param streamName name of the stream that must follow
+   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+"
+   * @param BQTableSchema schema used to convert Json to proto messages.
+   * @param client
+   * @return Builder
+   */
+  public static Builder newBuilder(
+      String streamName, Table.TableSchema BQTableSchema, BigQueryWriteClient client) {
+    Preconditions.checkNotNull(streamName, "StreamName is null.");
+    Preconditions.checkNotNull(BQTableSchema, "BQTableSchema is null.");
+    Preconditions.checkNotNull(client, "BigQuery client is null.");
     return new Builder(streamName, BQTableSchema, client);
   }
 
+  /** Closes the underlying StreamWriter. */
   public void close() {
     this.streamWriter.close();
   }
@@ -170,61 +260,96 @@ public class JsonStreamWriter {
     private ExecutorProvider executorProvider;
     private String endpoint;
 
-    private Builder(String streamName, Table.TableSchema BQTableSchema, BigQueryWriteClient client) {
+    /**
+     * Constructor for JsonStreamWriter's Builder
+     *
+     * @param streamName name of the stream that must follow
+     *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+"
+     * @param BQTableSchema schema used to convert Json to proto messages.
+     * @param client
+     */
+    private Builder(
+        String streamName, Table.TableSchema BQTableSchema, BigQueryWriteClient client) {
       this.streamName = streamName;
       this.BQTableSchema = BQTableSchema;
       this.client = client;
     }
 
-    public Builder setChannelProvider(TransportChannelProvider channelProvider)
-        throws IllegalArgumentException {
-      if (channelProvider == null) {
-        throw new IllegalArgumentException("Channel provider cannot be set to null.");
-      }
-      this.channelProvider = channelProvider;
+    /**
+     * Setter for the underlying StreamWriter's TransportChannelProvider.
+     *
+     * @param channelProvider
+     * @return Builder
+     */
+    public Builder setChannelProvider(TransportChannelProvider channelProvider) {
+      this.channelProvider =
+          Preconditions.checkNotNull(channelProvider, "ChannelProvider is null.");
       return this;
     }
 
-    public Builder setCredentialsProvider(CredentialsProvider credentialsProvider)
-        throws IllegalArgumentException {
-      if (credentialsProvider == null) {
-        throw new IllegalArgumentException("Credentials provider cannot be set to null.");
-      }
-      this.credentialsProvider = credentialsProvider;
+    /**
+     * Setter for the underlying StreamWriter's CredentialsProvider.
+     *
+     * @param credentialsProvider
+     * @return Builder
+     */
+    public Builder setCredentialsProvider(CredentialsProvider credentialsProvider) {
+      this.credentialsProvider =
+          Preconditions.checkNotNull(credentialsProvider, "CredentialsProvider is null.");
       return this;
     }
 
-    public Builder setBatchingSettings(BatchingSettings batchingSettings)
-        throws IllegalArgumentException {
-      if (batchingSettings == null) {
-        throw new IllegalArgumentException("Batching settings cannot be set to null.");
-      }
-      this.batchingSettings = batchingSettings;
+    /**
+     * Setter for the underlying StreamWriter's BatchingSettings.
+     *
+     * @param batchingSettings
+     * @return Builder
+     */
+    public Builder setBatchingSettings(BatchingSettings batchingSettings) {
+      this.batchingSettings =
+          Preconditions.checkNotNull(batchingSettings, "BatchingSettings is null.");
       return this;
     }
 
-    public Builder setRetrySettings(RetrySettings retrySettings) throws IllegalArgumentException {
-      if (retrySettings == null) {
-        throw new IllegalArgumentException("Retry settings cannot be set to null.");
-      }
-      this.retrySettings = retrySettings;
+    /**
+     * Setter for the underlying StreamWriter's RetrySettings.
+     *
+     * @param retrySettings
+     * @return Builder
+     */
+    public Builder setRetrySettings(RetrySettings retrySettings) {
+      this.retrySettings = Preconditions.checkNotNull(retrySettings, "RetrySettings is null.");
       return this;
     }
 
-    public Builder setExecutorProvider(ExecutorProvider executorProvider)
-        throws IllegalArgumentException {
-      if (executorProvider == null) {
-        throw new IllegalArgumentException("Executor provider cannot be set to null.");
-      }
-      this.executorProvider = executorProvider;
+    /**
+     * Setter for the underlying StreamWriter's ExecutorProvider.
+     *
+     * @param executorProvider
+     * @return Builder
+     */
+    public Builder setExecutorProvider(ExecutorProvider executorProvider) {
+      this.executorProvider =
+          Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null.");
       return this;
     }
 
-    public Builder setEndpoint(String endpoint) throws IllegalArgumentException {
-      this.endpoint = endpoint;
+    /**
+     * Setter for the underlying StreamWriter's Endpoint.
+     *
+     * @param endpoint
+     * @return Builder
+     */
+    public Builder setEndpoint(String endpoint) {
+      this.endpoint = Preconditions.checkNotNull(endpoint, "Endpoint is null.");
       return this;
     }
 
+    /**
+     * Builds JsonStreamWriter
+     *
+     * @return JsonStreamWriter
+     */
     public JsonStreamWriter build()
         throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
             InterruptedException {
