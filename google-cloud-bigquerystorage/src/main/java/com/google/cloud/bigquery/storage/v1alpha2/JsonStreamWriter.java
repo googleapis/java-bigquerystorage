@@ -87,53 +87,29 @@ public class JsonStreamWriter {
     this.streamWriter = streamWriterBuilder.build();
   }
 
-  // For testing, use proto first.
-  // public <T extends Message> ApiFuture<AppendRowsResponse> append(JSONArray jsonArr) {
-  //   for (int i = 0; i < jsonArr.size(); i++) {
-  //     JSONObject json = jsonArr.getJSONObject(i);
-  //   }
-  //
-  // //   ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
-  // //   Descriptors.Descriptor descriptor = null;
-  // //   for (Message protoRow : protoRows) {
-  // //     rowsBuilder.addSerializedRows(protoRow.toByteString());
-  // //   }
-  // //   AppendRowsRequest.ProtoData.Builder data = AppendRowsRequest.ProtoData.newBuilder();
-  // //
-  // data.setWriterSchema(ProtoSchemaConverter.convert(protoRows.get(0).getDescriptorForType()));
-  // //   data.setRows(rowsBuilder.build());
-  // //
-  // //   ApiFuture<AppendRowsResponse> appendResponseFuture =
-  // // this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).build());
-  // //   // AppendRowsResponse appendResponse = appendResponseFuture.get();
-  // //   // if (appendResponse.hasUpdatedSchema()) {
-  // //   //
-  // //   //   // this.descriptor =
-  // // BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(BQTableSchema);
-  // //   // }
-  //   // return appendResponseFuture;
-  // }
-
   /**
-   * Updates the descriptor and BQTable schema. This function is used to support schema updates, and
-   * is called whenever AppendRowsResponse includes an updated schema. The function is synchronized
-   * since it is called through a callback (which is in another thread). If the main thread is
-   * calling append while the callback thread calls refreshAppend(), this might cause some issues.
+   * Writes a JSONArray that contains JSONObjects to the BigQuery table by first converting the JSON
+   * data to protobuf messages, then using StreamWriter's append() to write the data. This will
+   * return a ApiFuture<AppendRowsResponse>, which will be processed by a callback to determine if a
+   * schema update is required.
    *
-   * @param BQTableSchema The updated table schema.
+   * @param jsonArr The JSON array that contains JSONObjects to be written
+   * @param allowUnknownFields if true, json data can have fields unknown to the BigQuery table.
+   * @return ApiFuture<AppendRowsResponse>
    */
-  private synchronized void updateDescriptor(Table.TableSchema updatedSchema)
-      throws Descriptors.DescriptorValidationException, IOException, InterruptedException {
-    if (!this.BQTableSchema.equals(updatedSchema)) {
-      this.descriptor =
-          BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
-      this.BQTableSchema = updatedSchema;
-      streamWriter.refreshAppend();
+  public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, boolean allowUnknownFields) {
+    ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
+    for (int i = 0; i < jsonArr.size(); i++) {
+      JSONObject json = jsonArr.getJSONObject(i);
+      DynamicMessage protoMessage =
+          JsonToProtoMessage.convertJsonToProtoMessage(this.descriptor, json, allowUnknownFields);
+      rowsBuilder.addSerializedRows(protoMessage.toByteString());
     }
-  }
 
-  /** Placeholder. Will update to include JsonToProtoMessage conversion. */
-  public synchronized ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
+    AppendRowsRequest.ProtoData.Builder data = AppendRowsRequest.ProtoData.newBuilder();
+    data.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
+    data.setRows(rowsBuilder.build());
+
     ApiFuture<AppendRowsResponse> appendResponseFuture = this.streamWriter.append(message);
     ApiFutures.<AppendRowsResponse>addCallback(
         appendResponseFuture,
@@ -153,6 +129,24 @@ public class JsonStreamWriter {
           public void onFailure(Throwable t) {}
         });
     return appendResponseFuture;
+  }
+
+  /**
+   * Updates the descriptor and BQTable schema. This function is used to support schema updates, and
+   * is called whenever AppendRowsResponse includes an updated schema. The function is synchronized
+   * since it is called through a callback (which is in another thread). If the main thread is
+   * calling append while the callback thread calls refreshAppend(), this might cause some issues.
+   *
+   * @param BQTableSchema The updated table schema.
+   */
+  private synchronized void updateDescriptor(Table.TableSchema updatedSchema)
+      throws Descriptors.DescriptorValidationException, IOException, InterruptedException {
+    if (!this.BQTableSchema.equals(updatedSchema)) {
+      this.descriptor =
+          BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
+      this.BQTableSchema = updatedSchema;
+      streamWriter.refreshAppend();
+    }
   }
 
   /**
