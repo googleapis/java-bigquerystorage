@@ -18,7 +18,6 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoSchema;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
