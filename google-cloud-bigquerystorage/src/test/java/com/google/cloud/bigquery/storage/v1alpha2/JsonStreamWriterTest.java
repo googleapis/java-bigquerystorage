@@ -43,6 +43,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.threeten.bp.Instant;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 @RunWith(JUnit4.class)
 public class JsonStreamWriterTest {
@@ -107,82 +109,6 @@ public class JsonStreamWriterTest {
         .setCredentialsProvider(NoCredentialsProvider.create());
   }
 
-  private AppendRowsRequest createAppendRequest(String[] messages, long offset) {
-    AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
-    AppendRowsRequest.ProtoData.Builder dataBuilder = AppendRowsRequest.ProtoData.newBuilder();
-    dataBuilder.setWriterSchema(
-        ProtoBufProto.ProtoSchema.newBuilder()
-            .setProtoDescriptor(
-                DescriptorProtos.DescriptorProto.newBuilder()
-                    .setName("Message")
-                    .addField(
-                        DescriptorProtos.FieldDescriptorProto.newBuilder()
-                            .setName("foo")
-                            .setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING)
-                            .setNumber(1)
-                            .build())
-                    .build()));
-    ProtoBufProto.ProtoRows.Builder rows = ProtoBufProto.ProtoRows.newBuilder();
-    for (String message : messages) {
-      FooType foo = FooType.newBuilder().setFoo(message).build();
-      rows.addSerializedRows(foo.toByteString());
-    }
-    if (offset > 0) {
-      requestBuilder.setOffset(Int64Value.of(offset));
-    }
-    return requestBuilder
-        .setProtoRows(dataBuilder.setRows(rows.build()).build())
-        .setWriteStream(TEST_STREAM)
-        .build();
-  }
-
-  private AppendRowsRequest createUpdatedAppendRequest(String[] messages, long offset) {
-    AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
-    AppendRowsRequest.ProtoData.Builder dataBuilder = AppendRowsRequest.ProtoData.newBuilder();
-    dataBuilder.setWriterSchema(
-        ProtoBufProto.ProtoSchema.newBuilder()
-            .setProtoDescriptor(
-                DescriptorProtos.DescriptorProto.newBuilder()
-                    .setName("Message")
-                    .addField(
-                        DescriptorProtos.FieldDescriptorProto.newBuilder()
-                            .setName("foo")
-                            .setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING)
-                            .setNumber(1)
-                            .build())
-                    .addField(
-                        DescriptorProtos.FieldDescriptorProto.newBuilder()
-                            .setName("bar")
-                            .setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING)
-                            .setNumber(2)
-                            .build())
-                    .build()));
-    ProtoBufProto.ProtoRows.Builder rows = ProtoBufProto.ProtoRows.newBuilder();
-    for (String message : messages) {
-      String[] splitMessage = message.split(",");
-      FooBarType foo =
-          FooBarType.newBuilder().setFoo(splitMessage[0]).setBar(splitMessage[1]).build();
-      rows.addSerializedRows(foo.toByteString());
-    }
-    if (offset > 0) {
-      requestBuilder.setOffset(Int64Value.of(offset));
-    }
-    return requestBuilder
-        .setProtoRows(dataBuilder.setRows(rows.build()).build())
-        .setWriteStream(TEST_STREAM)
-        .build();
-  }
-
-  private ApiFuture<AppendRowsResponse> sendTestMessage(
-      JsonStreamWriter writer, String[] messages) {
-    return writer.append(createAppendRequest(messages, -1));
-  }
-
-  private ApiFuture<AppendRowsResponse> sendUpdatedTestMessage(
-      JsonStreamWriter writer, String[] messages) {
-    return writer.append(createUpdatedAppendRequest(messages, -1));
-  }
-
   @Test
   public void testTwoParamNewBuilder() throws Exception {
     try {
@@ -202,66 +128,71 @@ public class JsonStreamWriterTest {
     assertEquals(TEST_STREAM, writer.getStreamName());
   }
 
-  // @Test
-  // public void testAppendByDuration() throws Exception {
-  //   JsonStreamWriter writer =
-  //       getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
-  //           .setBatchingSettings(
-  //               StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-  //                   .toBuilder()
-  //                   .setDelayThreshold(Duration.ofSeconds(5))
-  //                   .setElementCountThreshold(1L)
-  //                   .build())
-  //           .setExecutorProvider(FixedExecutorProvider.create(fakeExecutor))
-  //           .build();
-  //
-  //   testBigQueryWrite.addResponse(
-  //       Storage.AppendRowsResponse.newBuilder()
-  //           .setOffset(0)
-  //           .setUpdatedSchema(UPDATED_SCHEMA)
-  //           .build());
-  //   testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(1).build());
-  //   ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
-  //
-  //   assertFalse(appendFuture1.isDone());
-  //   fakeExecutor.advanceTime(Duration.ofSeconds(10));
-  //
-  //   Table.TableSchema updatedSchema = appendFuture1.get().getUpdatedSchema();
-  //   int millis = 0;
-  //   while (millis < 1000) {
-  //     if (updatedSchema.equals(writer.getBQTableSchema())) {
-  //       break;
-  //     }
-  //     Thread.sleep(10);
-  //     millis += 10;
-  //   }
-  //   assertEquals(0L, appendFuture1.get().getOffset());
-  //   assertTrue(appendFuture1.isDone());
-  //   ApiFuture<AppendRowsResponse> appendFuture2 =
-  //       sendUpdatedTestMessage(writer, new String[] {"B,C"});
-  //
-  //   assertEquals(1L, appendFuture2.get().getOffset());
-  //   assertEquals(2, testBigQueryWrite.getAppendRequests().size());
-  //
-  //   assertEquals(
-  //       1,
-  //       testBigQueryWrite
-  //           .getAppendRequests()
-  //           .get(0)
-  //           .getProtoRows()
-  //           .getRows()
-  //           .getSerializedRowsCount());
-  //
-  //   assertEquals(
-  //       1,
-  //       testBigQueryWrite
-  //           .getAppendRequests()
-  //           .get(1)
-  //           .getProtoRows()
-  //           .getRows()
-  //           .getSerializedRowsCount());
-  //   assertEquals(
-  //       true, testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
-  //   writer.close();
-  // }
+  @Test
+  public void testAppendByDuration() throws Exception {
+    JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setDelayThreshold(Duration.ofSeconds(5))
+                    .setElementCountThreshold(1L)
+                    .build())
+            .setExecutorProvider(FixedExecutorProvider.create(fakeExecutor))
+            .build();
+
+    testBigQueryWrite.addResponse(
+        Storage.AppendRowsResponse.newBuilder()
+            .setOffset(0)
+            .setUpdatedSchema(UPDATED_SCHEMA)
+            .build());
+    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(1).build());
+    JSONObject foo = new JSONObject();
+    foo.put("foo", "allen");
+
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(foo, /* allowUnknownFields */ false);
+
+    assertFalse(appendFuture1.isDone());
+    fakeExecutor.advanceTime(Duration.ofSeconds(10));
+
+    Table.TableSchema updatedSchema = appendFuture1.get().getUpdatedSchema();
+    int millis = 0;
+    while (millis < 1000) {
+      if (updatedSchema.equals(writer.getBQTableSchema())) {
+        break;
+      }
+      Thread.sleep(10);
+      millis += 10;
+    }
+    assertEquals(0L, appendFuture1.get().getOffset());
+    assertTrue(appendFuture1.isDone());
+    JSONObject updatedFoo = new JSONObject();
+    updatedFoo.put("foo", "allen");
+    updatedFoo.put("bar", "allen2");
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(updatedFoo, /* allowUnknownFields */ false);
+
+    assertEquals(1L, appendFuture2.get().getOffset());
+    assertEquals(2, testBigQueryWrite.getAppendRequests().size());
+
+    assertEquals(
+        1,
+        testBigQueryWrite
+            .getAppendRequests()
+            .get(0)
+            .getProtoRows()
+            .getRows()
+            .getSerializedRowsCount());
+
+    assertEquals(
+        1,
+        testBigQueryWrite
+            .getAppendRequests()
+            .get(1)
+            .getProtoRows()
+            .getRows()
+            .getSerializedRowsCount());
+    assertEquals(
+        true, testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
+    writer.close();
+  }
 }
