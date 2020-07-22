@@ -27,16 +27,15 @@ import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Int64Value;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import com.google.protobuf.Int64Value;
 
 /**
  * A StreamWriter that can write JSON data (JSONObjects) to BigQuery tables. The JsonStreamWriter is
@@ -102,12 +101,15 @@ public class JsonStreamWriter {
    *
    * @param jsonArr The JSON array that contains JSONObjects to be written
    * @param allowUnknownFields if true, json data can have fields unknown to the BigQuery table.
-   * @param offset  Offset for deduplication
+   * @param offset Offset for deduplication
    * @return ApiFuture<AppendRowsResponse>
    */
-  public synchronized ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, long offset, boolean allowUnknownFields) {
+  public synchronized ApiFuture<AppendRowsResponse> append(
+      JSONArray jsonArr, long offset, boolean allowUnknownFields) {
     ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
-    // Any error in convertJsonToProtoMessage will throw an IllegalArgumentException/IllegalStateException/NullPointerException and will halt processing of JSON data.
+    // Any error in convertJsonToProtoMessage will throw an
+    // IllegalArgumentException/IllegalStateException/NullPointerException and will halt processing
+    // of JSON data.
     for (int i = 0; i < jsonArr.length(); i++) {
       JSONObject json = jsonArr.getJSONObject(i);
       Message protoMessage =
@@ -119,7 +121,11 @@ public class JsonStreamWriter {
     data.setRows(rowsBuilder.build());
 
     ApiFuture<AppendRowsResponse> appendResponseFuture =
-        this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).setOffset(Int64Value.of(offset)).build());
+        this.streamWriter.append(
+            AppendRowsRequest.newBuilder()
+                .setProtoRows(data.build())
+                .setOffset(Int64Value.of(offset))
+                .build());
     ApiFutures.<AppendRowsResponse>addCallback(
         appendResponseFuture,
         new ApiFutureCallback<AppendRowsResponse>() {
@@ -152,14 +158,16 @@ public class JsonStreamWriter {
         this.descriptor =
             BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
       } catch (Descriptors.DescriptorValidationException e) {
-        LOG.severe("Schema updated error: Failed to convert updatedSchema that was returned by AppendRowsResponse to a descriptor.");
+        LOG.severe(
+            "Schema updated error: Failed to convert updatedSchema that was returned by AppendRowsResponse to a descriptor.");
         return;
       }
       this.tableSchema = updatedSchema;
       try {
         streamWriter.refreshAppend();
       } catch (IOException | InterruptedException e) {
-        LOG.severe("Schema updated error: Got exception while reestablishing connection for schema update.");
+        LOG.severe(
+            "Schema updated error: Got exception while reestablishing connection for schema update.");
         return;
       }
 
@@ -295,8 +303,8 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setChannelProvider(TransportChannelProvider channelProvider) {
-      this.channelProvider = Optional.of(
-          Preconditions.checkNotNull(channelProvider, "ChannelProvider is null."));
+      this.channelProvider =
+          Optional.of(Preconditions.checkNotNull(channelProvider, "ChannelProvider is null."));
       return this;
     }
 
@@ -307,8 +315,9 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setCredentialsProvider(CredentialsProvider credentialsProvider) {
-      this.credentialsProvider =Optional.of(
-          Preconditions.checkNotNull(credentialsProvider, "CredentialsProvider is null."));
+      this.credentialsProvider =
+          Optional.of(
+              Preconditions.checkNotNull(credentialsProvider, "CredentialsProvider is null."));
       return this;
     }
 
@@ -319,8 +328,8 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setBatchingSettings(BatchingSettings batchingSettings) {
-      this.batchingSettings =Optional.of(
-          Preconditions.checkNotNull(batchingSettings, "BatchingSettings is null."));
+      this.batchingSettings =
+          Optional.of(Preconditions.checkNotNull(batchingSettings, "BatchingSettings is null."));
       return this;
     }
 
@@ -331,7 +340,8 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setRetrySettings(RetrySettings retrySettings) {
-      this.retrySettings = Optional.of(Preconditions.checkNotNull(retrySettings, "RetrySettings is null."));
+      this.retrySettings =
+          Optional.of(Preconditions.checkNotNull(retrySettings, "RetrySettings is null."));
       return this;
     }
 
@@ -342,8 +352,8 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setExecutorProvider(ExecutorProvider executorProvider) {
-      this.executorProvider =Optional.of(
-          Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null."));
+      this.executorProvider =
+          Optional.of(Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null."));
       return this;
     }
 
