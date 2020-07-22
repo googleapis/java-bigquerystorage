@@ -15,36 +15,35 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.google.api.core.*;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.core.ExecutorProvider;
+import com.google.api.gax.core.FixedExecutorProvider;
 import com.google.api.gax.core.InstantiatingExecutorProvider;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.LocalChannelProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
-import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
-import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
+import com.google.cloud.bigquery.storage.test.Test.UpdatedFooType;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
-import com.google.protobuf.DescriptorProtos;
-import com.google.protobuf.Int64Value;
 import com.google.protobuf.Timestamp;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.logging.Logger;
-import org.junit.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.threeten.bp.Duration;
 import org.threeten.bp.Instant;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 @RunWith(JUnit4.class)
 public class JsonStreamWriterTest {
@@ -120,11 +119,39 @@ public class JsonStreamWriterTest {
     try {
       getTestJsonStreamWriterBuilder(TEST_STREAM, null);
     } catch (NullPointerException e) {
-      assertEquals(e.getMessage(), "BQTableSchema is null.");
+      assertEquals(e.getMessage(), "TableSchema is null.");
     }
 
     JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    assertEquals(TABLE_SCHEMA, writer.getBQTableSchema());
+    assertEquals(TABLE_SCHEMA, writer.getTableSchema());
+    assertEquals(TEST_STREAM, writer.getStreamName());
+  }
+
+  @Test
+  public void testThreeParamNewBuilder() throws Exception {
+    BigQueryWriteClient client =
+        BigQueryWriteClient.create();
+    try {
+      JsonStreamWriter.newBuilder(null, TABLE_SCHEMA, client).build();
+    } catch (NullPointerException e) {
+      assertEquals(e.getMessage(), "StreamName is null.");
+    }
+
+    try {
+      JsonStreamWriter.newBuilder(TEST_STREAM, null, client).build();
+    } catch (NullPointerException e) {
+      assertEquals(e.getMessage(), "TableSchema is null.");
+    }
+
+    try {
+      JsonStreamWriter.newBuilder(TEST_STREAM, TABLE_SCHEMA, null).build();
+    } catch (NullPointerException e) {
+      assertEquals(e.getMessage(), "BigQuery client is null.");
+    }
+
+    JsonStreamWriter writer =
+        JsonStreamWriter.newBuilder(TEST_STREAM, TABLE_SCHEMA, client).build();
+    assertEquals(TABLE_SCHEMA, writer.getTableSchema());
     assertEquals(TEST_STREAM, writer.getStreamName());
   }
 
@@ -140,17 +167,20 @@ public class JsonStreamWriterTest {
                     .build())
             .setExecutorProvider(FixedExecutorProvider.create(fakeExecutor))
             .build();
-
+    // Add fake resposne for FakeBigQueryWrite
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
             .setOffset(0)
-            .setUpdatedSchema(UPDATED_SCHEMA)
+            .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
             .build());
     testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(1).build());
+
     JSONObject foo = new JSONObject();
     foo.put("foo", "allen");
-
-    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(foo, /* allowUnknownFields */ false);
+    JSONArray fooArr = new JSONArray();
+    fooArr.put(foo);
+    ApiFuture<AppendRowsResponse> appendFuture1 =
+        writer.append(fooArr, /* allowUnknownFields */ false);
 
     assertFalse(appendFuture1.isDone());
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
@@ -158,7 +188,7 @@ public class JsonStreamWriterTest {
     Table.TableSchema updatedSchema = appendFuture1.get().getUpdatedSchema();
     int millis = 0;
     while (millis < 1000) {
-      if (updatedSchema.equals(writer.getBQTableSchema())) {
+      if (updatedSchema.equals(writer.getTableSchema())) {
         break;
       }
       Thread.sleep(10);
@@ -169,10 +199,16 @@ public class JsonStreamWriterTest {
     JSONObject updatedFoo = new JSONObject();
     updatedFoo.put("foo", "allen");
     updatedFoo.put("bar", "allen2");
-    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(updatedFoo, /* allowUnknownFields */ false);
+    JSONArray UpdatedFooArr = new JSONArray();
+    UpdatedFooArr.put(updatedFoo);
+    ApiFuture<AppendRowsResponse> appendFuture2 =
+        writer.append(UpdatedFooArr, /* allowUnknownFields */ false);
 
     assertEquals(1L, appendFuture2.get().getOffset());
     assertEquals(2, testBigQueryWrite.getAppendRequests().size());
+    assertEquals(
+        testBigQueryWrite.getAppendRequests().get(0).getProtoRows().getRows().getSerializedRows(0),
+        FooType.newBuilder().setFoo("allen").build().toByteString());
 
     assertEquals(
         1,
@@ -183,6 +219,9 @@ public class JsonStreamWriterTest {
             .getRows()
             .getSerializedRowsCount());
 
+    assertEquals(
+        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
+        UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
     assertEquals(
         1,
         testBigQueryWrite

@@ -105,13 +105,15 @@ public class JsonStreamWriter {
    */
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, boolean allowUnknownFields) {
     ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
+    // Any error in convertJsonToProtoMessage will throw an
+    // IllegalArgumentException/IllegalStateException/NullPointerException and will halt processing
+    // of JSON data.
     for (int i = 0; i < jsonArr.length(); i++) {
       JSONObject json = jsonArr.getJSONObject(i);
       Message protoMessage =
           JsonToProtoMessage.convertJsonToProtoMessage(this.descriptor, json, allowUnknownFields);
       rowsBuilder.addSerializedRows(protoMessage.toByteString());
     }
-
     AppendRowsRequest.ProtoData.Builder data = AppendRowsRequest.ProtoData.newBuilder();
     data.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
     data.setRows(rowsBuilder.build());
@@ -123,23 +125,15 @@ public class JsonStreamWriter {
         new ApiFutureCallback<AppendRowsResponse>() {
           @Override
           public void onSuccess(AppendRowsResponse response) {
-            try {
-              if (response.hasUpdatedSchema()) {
-                updateDescriptor(response.getUpdatedSchema());
-              }
-            } catch (IOException e) {
-
-            } catch (InterruptedException e) {
-
-            } catch (Descriptors.DescriptorValidationException e) {
-              // Should be impossible
-              throw new IllegalArgumentException(
-                  "Updated schema could not be converted to a protobuf descriptor.");
+            if (response.hasUpdatedSchema()) {
+              updateDescriptor(response.getUpdatedSchema());
             }
           }
 
           @Override
-          public void onFailure(Throwable t) {}
+          public void onFailure(Throwable t) {
+            LOG.severe("AppendRowsResponse error: " + t.getCause() + ".");
+          }
         });
     return appendResponseFuture;
   }
@@ -152,13 +146,25 @@ public class JsonStreamWriter {
    *
    * @param updatedSchema The updated table schema.
    */
-  private synchronized void updateDescriptor(Table.TableSchema updatedSchema)
-      throws IOException, InterruptedException, Descriptors.DescriptorValidationException {
+  private synchronized void updateDescriptor(Table.TableSchema updatedSchema) {
     if (!this.tableSchema.equals(updatedSchema)) {
-      this.descriptor =
-          BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
+      try {
+        this.descriptor =
+            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
+      } catch (Descriptors.DescriptorValidationException e) {
+        LOG.severe(
+            "Schema updated error: Failed to convert updatedSchema that was returned by AppendRowsResponse to a descriptor.");
+        return;
+      }
       this.tableSchema = updatedSchema;
-      streamWriter.refreshAppend();
+      try {
+        streamWriter.refreshAppend();
+      } catch (IOException | InterruptedException e) {
+        LOG.severe(
+            "Schema updated error: Got exception while reestablishing connection for schema update.");
+        return;
+      }
+
       LOG.info("Successfully updated schema.");
     }
   }
