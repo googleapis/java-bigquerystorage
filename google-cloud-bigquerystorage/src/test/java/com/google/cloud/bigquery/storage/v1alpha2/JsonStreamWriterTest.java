@@ -128,34 +128,6 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testThreeParamNewBuilder() throws Exception {
-    BigQueryWriteClient client =
-        BigQueryWriteClient.create();
-    try {
-      JsonStreamWriter.newBuilder(null, TABLE_SCHEMA, client).build();
-    } catch (NullPointerException e) {
-      assertEquals(e.getMessage(), "StreamName is null.");
-    }
-
-    try {
-      JsonStreamWriter.newBuilder(TEST_STREAM, null, client).build();
-    } catch (NullPointerException e) {
-      assertEquals(e.getMessage(), "TableSchema is null.");
-    }
-
-    try {
-      JsonStreamWriter.newBuilder(TEST_STREAM, TABLE_SCHEMA, null).build();
-    } catch (NullPointerException e) {
-      assertEquals(e.getMessage(), "BigQuery client is null.");
-    }
-
-    JsonStreamWriter writer =
-        JsonStreamWriter.newBuilder(TEST_STREAM, TABLE_SCHEMA, client).build();
-    assertEquals(TABLE_SCHEMA, writer.getTableSchema());
-    assertEquals(TEST_STREAM, writer.getStreamName());
-  }
-
-  @Test
   public void testAppendByDuration() throws Exception {
     JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
@@ -167,20 +139,20 @@ public class JsonStreamWriterTest {
                     .build())
             .setExecutorProvider(FixedExecutorProvider.create(fakeExecutor))
             .build();
-    // Add fake resposne for FakeBigQueryWrite
+    // Add fake resposne for FakeBigQueryWrite, first response has updated schema.
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
             .setOffset(0)
             .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
             .build());
     testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(1).build());
-
+    // First append
     JSONObject foo = new JSONObject();
     foo.put("foo", "allen");
     JSONArray fooArr = new JSONArray();
     fooArr.put(foo);
     ApiFuture<AppendRowsResponse> appendFuture1 =
-        writer.append(fooArr, /* allowUnknownFields */ false);
+        writer.append(fooArr, -1, /* allowUnknownFields */ false);
 
     assertFalse(appendFuture1.isDone());
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
@@ -194,22 +166,9 @@ public class JsonStreamWriterTest {
       Thread.sleep(10);
       millis += 10;
     }
-    assertEquals(0L, appendFuture1.get().getOffset());
+
     assertTrue(appendFuture1.isDone());
-    JSONObject updatedFoo = new JSONObject();
-    updatedFoo.put("foo", "allen");
-    updatedFoo.put("bar", "allen2");
-    JSONArray UpdatedFooArr = new JSONArray();
-    UpdatedFooArr.put(updatedFoo);
-    ApiFuture<AppendRowsResponse> appendFuture2 =
-        writer.append(UpdatedFooArr, /* allowUnknownFields */ false);
-
-    assertEquals(1L, appendFuture2.get().getOffset());
-    assertEquals(2, testBigQueryWrite.getAppendRequests().size());
-    assertEquals(
-        testBigQueryWrite.getAppendRequests().get(0).getProtoRows().getRows().getSerializedRows(0),
-        FooType.newBuilder().setFoo("allen").build().toByteString());
-
+    assertEquals(0L, appendFuture1.get().getOffset());
     assertEquals(
         1,
         testBigQueryWrite
@@ -218,7 +177,20 @@ public class JsonStreamWriterTest {
             .getProtoRows()
             .getRows()
             .getSerializedRowsCount());
+    assertEquals(
+        testBigQueryWrite.getAppendRequests().get(0).getProtoRows().getRows().getSerializedRows(0),
+        FooType.newBuilder().setFoo("allen").build().toByteString());
 
+    // Second append with updated schema.
+    JSONObject updatedFoo = new JSONObject();
+    updatedFoo.put("foo", "allen");
+    updatedFoo.put("bar", "allen2");
+    JSONArray UpdatedFooArr = new JSONArray();
+    UpdatedFooArr.put(updatedFoo);
+    ApiFuture<AppendRowsResponse> appendFuture2 =
+        writer.append(UpdatedFooArr, -1, /* allowUnknownFields */ false);
+
+    assertEquals(1L, appendFuture2.get().getOffset());
     assertEquals(
         testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
         UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
@@ -230,8 +202,20 @@ public class JsonStreamWriterTest {
             .getProtoRows()
             .getRows()
             .getSerializedRowsCount());
-    assertEquals(
-        true, testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
+    // Check if writer schemas were added in for both connections.
+    assertTrue(
+        testBigQueryWrite
+            .getAppendRequests()
+            .get(0)
+            .getProtoRows()
+            .hasWriterSchema());
+    assertTrue(
+        testBigQueryWrite
+            .getAppendRequests()
+            .get(1)
+            .getProtoRows()
+            .hasWriterSchema());
+    assertEquals(2, testBigQueryWrite.getAppendRequests().size());
     writer.close();
   }
 }
