@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import com.google.protobuf.Int64Value;
 
 /**
  * A StreamWriter that can write JSON data (JSONObjects) to BigQuery tables. The JsonStreamWriter is
@@ -101,13 +102,12 @@ public class JsonStreamWriter {
    *
    * @param jsonArr The JSON array that contains JSONObjects to be written
    * @param allowUnknownFields if true, json data can have fields unknown to the BigQuery table.
+   * @param offset  Offset for deduplication
    * @return ApiFuture<AppendRowsResponse>
    */
-  public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, boolean allowUnknownFields) {
+  public synchronized ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, long offset, boolean allowUnknownFields) {
     ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
-    // Any error in convertJsonToProtoMessage will throw an
-    // IllegalArgumentException/IllegalStateException/NullPointerException and will halt processing
-    // of JSON data.
+    // Any error in convertJsonToProtoMessage will throw an IllegalArgumentException/IllegalStateException/NullPointerException and will halt processing of JSON data.
     for (int i = 0; i < jsonArr.length(); i++) {
       JSONObject json = jsonArr.getJSONObject(i);
       Message protoMessage =
@@ -119,7 +119,7 @@ public class JsonStreamWriter {
     data.setRows(rowsBuilder.build());
 
     ApiFuture<AppendRowsResponse> appendResponseFuture =
-        this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).build());
+        this.streamWriter.append(AppendRowsRequest.newBuilder().setProtoRows(data.build()).setOffset(Int64Value.of(offset)).build());
     ApiFutures.<AppendRowsResponse>addCallback(
         appendResponseFuture,
         new ApiFutureCallback<AppendRowsResponse>() {
@@ -152,16 +152,14 @@ public class JsonStreamWriter {
         this.descriptor =
             BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
       } catch (Descriptors.DescriptorValidationException e) {
-        LOG.severe(
-            "Schema updated error: Failed to convert updatedSchema that was returned by AppendRowsResponse to a descriptor.");
+        LOG.severe("Schema updated error: Failed to convert updatedSchema that was returned by AppendRowsResponse to a descriptor.");
         return;
       }
       this.tableSchema = updatedSchema;
       try {
         streamWriter.refreshAppend();
       } catch (IOException | InterruptedException e) {
-        LOG.severe(
-            "Schema updated error: Got exception while reestablishing connection for schema update.");
+        LOG.severe("Schema updated error: Got exception while reestablishing connection for schema update.");
         return;
       }
 
@@ -199,29 +197,29 @@ public class JsonStreamWriter {
   /** Sets all StreamWriter settings. */
   private void setStreamWriterSettings(
       StreamWriter.Builder builder,
-      @Nullable TransportChannelProvider channelProvider,
-      @Nullable CredentialsProvider credentialsProvider,
-      @Nullable BatchingSettings batchingSettings,
-      @Nullable RetrySettings retrySettings,
-      @Nullable ExecutorProvider executorProvider,
-      @Nullable String endpoint) {
-    if (channelProvider != null) {
-      builder.setChannelProvider(channelProvider);
+      Optional<TransportChannelProvider> channelProvider,
+      Optional<CredentialsProvider> credentialsProvider,
+      Optional<BatchingSettings> batchingSettings,
+      Optional<RetrySettings> retrySettings,
+      Optional<ExecutorProvider> executorProvider,
+      Optional<String> endpoint) {
+    if (channelProvider.isPresent()) {
+      builder.setChannelProvider(channelProvider.get());
     }
-    if (credentialsProvider != null) {
-      builder.setCredentialsProvider(credentialsProvider);
+    if (credentialsProvider.isPresent()) {
+      builder.setCredentialsProvider(credentialsProvider.get());
     }
-    if (batchingSettings != null) {
-      builder.setBatchingSettings(batchingSettings);
+    if (batchingSettings.isPresent()) {
+      builder.setBatchingSettings(batchingSettings.get());
     }
-    if (retrySettings != null) {
-      builder.setRetrySettings(retrySettings);
+    if (retrySettings.isPresent()) {
+      builder.setRetrySettings(retrySettings.get());
     }
-    if (executorProvider != null) {
-      builder.setExecutorProvider(executorProvider);
+    if (executorProvider.isPresent()) {
+      builder.setExecutorProvider(executorProvider.get());
     }
-    if (endpoint != null) {
-      builder.setEndpoint(endpoint);
+    if (endpoint.isPresent()) {
+      builder.setEndpoint(endpoint.get());
     }
   }
 
@@ -269,12 +267,12 @@ public class JsonStreamWriter {
     private BigQueryWriteClient client;
     private Table.TableSchema tableSchema;
 
-    private TransportChannelProvider channelProvider;
-    private CredentialsProvider credentialsProvider;
-    private BatchingSettings batchingSettings;
-    private RetrySettings retrySettings;
-    private ExecutorProvider executorProvider;
-    private String endpoint;
+    private Optional<TransportChannelProvider> channelProvider = Optional.empty();
+    private Optional<CredentialsProvider> credentialsProvider = Optional.empty();
+    private Optional<BatchingSettings> batchingSettings = Optional.empty();
+    private Optional<RetrySettings> retrySettings = Optional.empty();
+    private Optional<ExecutorProvider> executorProvider = Optional.empty();
+    private Optional<String> endpoint = Optional.empty();
 
     /**
      * Constructor for JsonStreamWriter's Builder
@@ -297,8 +295,8 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setChannelProvider(TransportChannelProvider channelProvider) {
-      this.channelProvider =
-          Preconditions.checkNotNull(channelProvider, "ChannelProvider is null.");
+      this.channelProvider = Optional.of(
+          Preconditions.checkNotNull(channelProvider, "ChannelProvider is null."));
       return this;
     }
 
@@ -309,8 +307,8 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setCredentialsProvider(CredentialsProvider credentialsProvider) {
-      this.credentialsProvider =
-          Preconditions.checkNotNull(credentialsProvider, "CredentialsProvider is null.");
+      this.credentialsProvider =Optional.of(
+          Preconditions.checkNotNull(credentialsProvider, "CredentialsProvider is null."));
       return this;
     }
 
@@ -321,8 +319,8 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setBatchingSettings(BatchingSettings batchingSettings) {
-      this.batchingSettings =
-          Preconditions.checkNotNull(batchingSettings, "BatchingSettings is null.");
+      this.batchingSettings =Optional.of(
+          Preconditions.checkNotNull(batchingSettings, "BatchingSettings is null."));
       return this;
     }
 
@@ -333,7 +331,7 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setRetrySettings(RetrySettings retrySettings) {
-      this.retrySettings = Preconditions.checkNotNull(retrySettings, "RetrySettings is null.");
+      this.retrySettings = Optional.of(Preconditions.checkNotNull(retrySettings, "RetrySettings is null."));
       return this;
     }
 
@@ -344,8 +342,8 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setExecutorProvider(ExecutorProvider executorProvider) {
-      this.executorProvider =
-          Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null.");
+      this.executorProvider =Optional.of(
+          Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null."));
       return this;
     }
 
@@ -356,7 +354,7 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setEndpoint(String endpoint) {
-      this.endpoint = Preconditions.checkNotNull(endpoint, "Endpoint is null.");
+      this.endpoint = Optional.of(Preconditions.checkNotNull(endpoint, "Endpoint is null."));
       return this;
     }
 
