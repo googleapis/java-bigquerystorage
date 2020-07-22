@@ -31,10 +31,10 @@ import com.google.protobuf.Int64Value;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import java.util.*;
-import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -206,29 +206,29 @@ public class JsonStreamWriter {
   /** Sets all StreamWriter settings. */
   private void setStreamWriterSettings(
       StreamWriter.Builder builder,
-      Optional<TransportChannelProvider> channelProvider,
-      Optional<CredentialsProvider> credentialsProvider,
-      Optional<BatchingSettings> batchingSettings,
-      Optional<RetrySettings> retrySettings,
-      Optional<ExecutorProvider> executorProvider,
-      Optional<String> endpoint) {
-    if (channelProvider.isPresent()) {
-      builder.setChannelProvider(channelProvider.get());
+      @Nullable TransportChannelProvider channelProvider,
+      @Nullable CredentialsProvider credentialsProvider,
+      @Nullable BatchingSettings batchingSettings,
+      @Nullable RetrySettings retrySettings,
+      @Nullable ExecutorProvider executorProvider,
+      @Nullable String endpoint) {
+    if (channelProvider != null) {
+      builder.setChannelProvider(channelProvider);
     }
-    if (credentialsProvider.isPresent()) {
-      builder.setCredentialsProvider(credentialsProvider.get());
+    if (credentialsProvider != null) {
+      builder.setCredentialsProvider(credentialsProvider);
     }
-    if (batchingSettings.isPresent()) {
-      builder.setBatchingSettings(batchingSettings.get());
+    if (batchingSettings != null) {
+      builder.setBatchingSettings(batchingSettings);
     }
-    if (retrySettings.isPresent()) {
-      builder.setRetrySettings(retrySettings.get());
+    if (retrySettings != null) {
+      builder.setRetrySettings(retrySettings);
     }
-    if (executorProvider.isPresent()) {
-      builder.setExecutorProvider(executorProvider.get());
+    if (executorProvider != null) {
+      builder.setExecutorProvider(executorProvider);
     }
-    if (endpoint.isPresent()) {
-      builder.setEndpoint(endpoint.get());
+    if (endpoint != null) {
+      builder.setEndpoint(endpoint);
     }
   }
 
@@ -276,12 +276,12 @@ public class JsonStreamWriter {
     private BigQueryWriteClient client;
     private Table.TableSchema tableSchema;
 
-    private Optional<TransportChannelProvider> channelProvider = Optional.empty();
-    private Optional<CredentialsProvider> credentialsProvider = Optional.empty();
-    private Optional<BatchingSettings> batchingSettings = Optional.empty();
-    private Optional<RetrySettings> retrySettings = Optional.empty();
-    private Optional<ExecutorProvider> executorProvider = Optional.empty();
-    private Optional<String> endpoint = Optional.empty();
+    private TransportChannelProvider channelProvider;
+    private CredentialsProvider credentialsProvider;
+    private BatchingSettings batchingSettings;
+    private RetrySettings retrySettings;
+    private ExecutorProvider executorProvider;
+    private String endpoint;
 
     /**
      * Constructor for JsonStreamWriter's Builder
@@ -305,7 +305,7 @@ public class JsonStreamWriter {
      */
     public Builder setChannelProvider(TransportChannelProvider channelProvider) {
       this.channelProvider =
-          Optional.of(Preconditions.checkNotNull(channelProvider, "ChannelProvider is null."));
+          Preconditions.checkNotNull(channelProvider, "ChannelProvider is null.");
       return this;
     }
 
@@ -317,8 +317,7 @@ public class JsonStreamWriter {
      */
     public Builder setCredentialsProvider(CredentialsProvider credentialsProvider) {
       this.credentialsProvider =
-          Optional.of(
-              Preconditions.checkNotNull(credentialsProvider, "CredentialsProvider is null."));
+          Preconditions.checkNotNull(credentialsProvider, "CredentialsProvider is null.");
       return this;
     }
 
@@ -330,7 +329,7 @@ public class JsonStreamWriter {
      */
     public Builder setBatchingSettings(BatchingSettings batchingSettings) {
       this.batchingSettings =
-          Optional.of(Preconditions.checkNotNull(batchingSettings, "BatchingSettings is null."));
+          Preconditions.checkNotNull(batchingSettings, "BatchingSettings is null.");
       return this;
     }
 
@@ -341,8 +340,7 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setRetrySettings(RetrySettings retrySettings) {
-      this.retrySettings =
-          Optional.of(Preconditions.checkNotNull(retrySettings, "RetrySettings is null."));
+      this.retrySettings = Preconditions.checkNotNull(retrySettings, "RetrySettings is null.");
       return this;
     }
 
@@ -354,7 +352,7 @@ public class JsonStreamWriter {
      */
     public Builder setExecutorProvider(ExecutorProvider executorProvider) {
       this.executorProvider =
-          Optional.of(Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null."));
+          Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null.");
       return this;
     }
 
@@ -365,7 +363,7 @@ public class JsonStreamWriter {
      * @return Builder
      */
     public Builder setEndpoint(String endpoint) {
-      this.endpoint = Optional.of(Preconditions.checkNotNull(endpoint, "Endpoint is null."));
+      this.endpoint = Preconditions.checkNotNull(endpoint, "Endpoint is null.");
       return this;
     }
 
