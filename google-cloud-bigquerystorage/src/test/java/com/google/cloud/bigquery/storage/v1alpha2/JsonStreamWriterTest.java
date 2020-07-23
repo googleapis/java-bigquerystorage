@@ -450,7 +450,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testAppendSchemaUpdateException() throws Exception {
+  public void testAppendAlreadyExistsException() throws Exception {
     JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
@@ -461,32 +461,31 @@ public class JsonStreamWriterTest {
     JSONArray jsonArr = new JSONArray();
     jsonArr.put(foo);
     ApiFuture<AppendRowsResponse> appendFuture1 =
-        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
-
-    try {
-      AppendRowsResponse response = appendFuture1.get();
-    } catch (Throwable e) {
-      assertEquals(e.getCause().getMessage(), "ALREADY_EXISTS: ");
-    }
+        writer.append(jsonArr, 0, /* allowUnknownFields */ false);
 
     FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
     testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
 
     ApiFuture<AppendRowsResponse> appendFuture2 =
-        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+        writer.append(jsonArr, 0, /* allowUnknownFields */ false);
 
-    assertEquals(0L, appendFuture2.get().getOffset());
-    assertEquals(
-        1,
-        testBigQueryWrite
-            .getAppendRequests()
-            .get(1)
-            .getProtoRows()
-            .getRows()
-            .getSerializedRowsCount());
-    assertEquals(
-        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
-        expectedProto.toByteString());
+    try {
+      appendFuture2.get();
+    } catch (Throwable t) {
+      assertEquals(t.getCause().getMessage(), "ALREADY_EXISTS: ");
+    }
+    // assertEquals(0L, appendFuture2.get().getOffset());
+    // assertEquals(
+    //     1,
+    //     testBigQueryWrite
+    //         .getAppendRequests()
+    //         .get(1)
+    //         .getProtoRows()
+    //         .getRows()
+    //         .getSerializedRowsCount());
+    // assertEquals(
+    //     testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
+    //     expectedProto.toByteString());
     writer.close();
   }
 }
