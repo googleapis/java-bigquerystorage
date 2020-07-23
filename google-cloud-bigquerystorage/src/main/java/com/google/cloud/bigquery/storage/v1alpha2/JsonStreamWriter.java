@@ -127,6 +127,7 @@ public class JsonStreamWriter {
                 .setProtoRows(data.build())
                 .setOffset(Int64Value.of(offset))
                 .build());
+
     ApiFutures.<AppendRowsResponse>addCallback(
         appendResponseFuture,
         new ApiFutureCallback<AppendRowsResponse>() {
@@ -139,9 +140,10 @@ public class JsonStreamWriter {
 
           @Override
           public void onFailure(Throwable t) {
-            LOG.severe("AppendRowsResponse error: " + t.getCause() + ".");
+            LOG.severe("AppendRowsResponse error: " + t.toString() + ".");
           }
         });
+
     return appendResponseFuture;
   }
 
