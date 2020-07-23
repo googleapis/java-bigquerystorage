@@ -448,4 +448,45 @@ public class JsonStreamWriterTest {
     assertEquals(2, testBigQueryWrite.getAppendRequests().size());
     writer.close();
   }
+
+  @Test
+  public void testAppendSchemaUpdateException() throws Exception {
+    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    testBigQueryWrite.addResponse(
+        Storage.AppendRowsResponse.newBuilder()
+            .setError(com.google.rpc.Status.newBuilder().setCode(6).build())
+            .build());
+    JSONObject foo = new JSONObject();
+    foo.put("foo", "allen");
+    JSONArray jsonArr = new JSONArray();
+    jsonArr.put(foo);
+    ApiFuture<AppendRowsResponse> appendFuture1 =
+        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+
+    try {
+      AppendRowsResponse response = appendFuture1.get();
+    } catch (Throwable e) {
+      assertEquals(e.getCause().getMessage(), "ALREADY_EXISTS: ");
+    }
+
+    FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
+    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
+
+    ApiFuture<AppendRowsResponse> appendFuture2 =
+        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+
+    assertEquals(0L, appendFuture2.get().getOffset());
+    assertEquals(
+        1,
+        testBigQueryWrite
+            .getAppendRequests()
+            .get(1)
+            .getProtoRows()
+            .getRows()
+            .getSerializedRowsCount());
+    assertEquals(
+        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
+        expectedProto.toByteString());
+    writer.close();
+  }
 }
