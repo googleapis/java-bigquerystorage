@@ -194,6 +194,58 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals(3, response2.get().getOffset());
     }
 
+    @Test
+    public void testJsonStreamWriterBatchWriteWithCommittedStream()
+        throws IOException, InterruptedException, ExecutionException {
+      WriteStream writeStream =
+          client.createWriteStream(
+              CreateWriteStreamRequest.newBuilder()
+                  .setParent(tableId)
+                  .setWriteStream(
+                      WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                  .build());
+      try (JsonStreamWriter jsonStreamWriter =
+          JsonStreamWriter.newBuilder(writeStream.getName())
+              .setBatchingSettings(
+                  StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                      .toBuilder()
+                      .setRequestByteThreshold(1024 * 1024L) // 1 Mb
+                      .setElementCountThreshold(2L)
+                      .setDelayThreshold(Duration.ofSeconds(2))
+                      .build())
+              .build()) {
+        LOG.info("Sending one message");
+        JSONObject foo = new JSONObject();
+        foo.put("foo", "aaa");
+        JSONArray jsonArr = new JSONArray();
+        jsonArr.put(foo);
+
+        ApiFuture<AppendRowsResponse> response =
+            jsonStreamWriter.append(jsonArr, -1, /* allowUnknownFields */ false);
+        assertEquals(0, response.get().getOffset());
+
+        LOG.info("Sending two more messages");
+        JSONObject foo1 = new JSONObject();
+        foo.put("foo", "bbb");
+        JSONObject foo2 = new JSONObject();
+        foo.put("foo", "ccc");
+        JSONArray jsonArr1 = new JSONArray();
+        jsonArr1.put(foo1);
+        jsonArr1.put(foo2);
+
+        JSONObject foo3 = new JSONObject();
+        foo.put("foo", "ddd");
+        JSONArray jsonArr2 = new JSONArray();
+        jsonArr2.put(foo3);
+
+        ApiFuture<AppendRowsResponse> response1 =
+            jsonStreamWriter.append(jsonArr1, -1, /* allowUnknownFields */ false);
+        ApiFuture<AppendRowsResponse> response2 =
+            jsonStreamWriter.append(jsonArr2, -1, /* allowUnknownFields */ false);
+        assertEquals(1, response1.get().getOffset());
+        assertEquals(3, response2.get().getOffset());
+      }
+
     TableResult result =
         bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
     Iterator<FieldValueList> iter = result.getValues().iterator();
