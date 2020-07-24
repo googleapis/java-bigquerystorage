@@ -110,6 +110,7 @@ public class StreamWriter implements AutoCloseable {
 
   private Integer currentRetries = 0;
 
+  // Used for schema updates
   private Table.TableSchema updatedSchema;
 
   /** The maximum size of one request. Defined by the API. */
@@ -185,12 +186,20 @@ public class StreamWriter implements AutoCloseable {
     return tableName;
   }
 
+  /* Once updated schema is retrieved, it will be set to null (matches backend implementation of clearing updated schema once it puts it in an AppendRowsResponse)
+   *
+   * @return Table.TableSchema
+   */
   public Table.TableSchema getUpdatedSchema() {
     Table.TableSchema temp = this.updatedSchema;
     this.updatedSchema = null;
     return temp;
   }
 
+  /* Setter for updated schema. This method will only be called in the OnResponse() callback for an AppendRowsResponse to check if an updated schema exists and set it if it does.
+   *
+   * @param updatedSchema
+   */
   public void setUpdatedSchema(Table.TableSchema updatedSchema) {
     this.updatedSchema = updatedSchema;
   }
