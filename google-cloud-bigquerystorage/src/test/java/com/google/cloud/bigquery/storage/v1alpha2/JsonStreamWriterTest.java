@@ -499,10 +499,7 @@ public class JsonStreamWriterTest {
             .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
             .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
             .build());
-    testBigQueryWrite.addResponse(
-        Storage.AppendRowsResponse.newBuilder()
-            .setOffset(0)
-            .build());
+    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
 
     JSONObject foo = new JSONObject();
     foo.put("foo", "allen");
