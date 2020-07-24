@@ -460,32 +460,65 @@ public class JsonStreamWriterTest {
     foo.put("foo", "allen");
     JSONArray jsonArr = new JSONArray();
     jsonArr.put(foo);
-    ApiFuture<AppendRowsResponse> appendFuture1 =
-        writer.append(jsonArr, 0, /* allowUnknownFields */ false);
-
-    FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
-
-    ApiFuture<AppendRowsResponse> appendFuture2 =
-        writer.append(jsonArr, 0, /* allowUnknownFields */ false);
-
+    ApiFuture<AppendRowsResponse> appendFuture =
+        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
     try {
-      appendFuture2.get();
+      appendFuture.get();
     } catch (Throwable t) {
       assertEquals(t.getCause().getMessage(), "ALREADY_EXISTS: ");
     }
-    // assertEquals(0L, appendFuture2.get().getOffset());
-    // assertEquals(
-    //     1,
-    //     testBigQueryWrite
-    //         .getAppendRequests()
-    //         .get(1)
-    //         .getProtoRows()
-    //         .getRows()
-    //         .getSerializedRowsCount());
-    // assertEquals(
-    //     testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
-    //     expectedProto.toByteString());
+    writer.close();
+  }
+
+  @Test
+  public void testAppendOutOfRangeException() throws Exception {
+    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    testBigQueryWrite.addResponse(
+        Storage.AppendRowsResponse.newBuilder()
+            .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
+            .build());
+    JSONObject foo = new JSONObject();
+    foo.put("foo", "allen");
+    JSONArray jsonArr = new JSONArray();
+    jsonArr.put(foo);
+    ApiFuture<AppendRowsResponse> appendFuture =
+        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+    try {
+      appendFuture.get();
+    } catch (Throwable t) {
+      assertEquals(t.getCause().getMessage(), "OUT_OF_RANGE: ");
+    }
+    writer.close();
+  }
+
+  @Test
+  public void testAppendOutOfRangeAndUpdateSchema() throws Exception {
+    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    testBigQueryWrite.addResponse(
+        Storage.AppendRowsResponse.newBuilder()
+            .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
+            .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
+            .build());
+    JSONObject foo = new JSONObject();
+    foo.put("foo", "allen");
+    JSONArray jsonArr = new JSONArray();
+    jsonArr.put(foo);
+    ApiFuture<AppendRowsResponse> appendFuture =
+        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+    try {
+      appendFuture.get();
+    } catch (Throwable t) {
+      assertEquals(t.getCause().getMessage(), "OUT_OF_RANGE: ");
+      int millis = 0;
+      while (millis < 1000) {
+        if (writer.getTableSchema().equals(UPDATED_TABLE_SCHEMA)) {
+          break;
+        }
+        Thread.sleep(10);
+        millis += 10;
+      }
+      assertEquals(writer.getTableSchema(), UPDATED_TABLE_SCHEMA);
+    }
     writer.close();
   }
 }
