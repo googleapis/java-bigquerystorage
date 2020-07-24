@@ -110,6 +110,8 @@ public class StreamWriter implements AutoCloseable {
 
   private Integer currentRetries = 0;
 
+  private Table.TableSchema updatedSchema;
+
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
@@ -181,6 +183,16 @@ public class StreamWriter implements AutoCloseable {
   /** Table name we are writing to. */
   public String getTableNameString() {
     return tableName;
+  }
+
+  public Table.TableSchema getUpdatedSchema() {
+    Table.TableSchema temp = this.updatedSchema;
+    this.updatedSchema = null;
+    return temp;
+  }
+
+  public void setUpdatedSchema(Table.TableSchema updatedSchema) {
+    this.updatedSchema = updatedSchema;
   }
 
   /** Returns if a stream has expired. */
@@ -799,6 +811,9 @@ public class StreamWriter implements AutoCloseable {
         streamWriter.currentRetries = 0;
         if (response == null) {
           inflightBatch.onFailure(new IllegalStateException("Response is null"));
+        }
+        if (response.hasUpdatedSchema()) {
+          this.streamWriter.setUpdatedSchema(response.getUpdatedSchema());
         }
         // TODO: Deal with in stream errors.
         if (response.hasError()) {

@@ -121,29 +121,30 @@ public class JsonStreamWriter {
     data.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
     data.setRows(rowsBuilder.build());
 
-    ApiFuture<AppendRowsResponse> appendResponseFuture =
+    final ApiFuture<AppendRowsResponse> appendResponseFuture =
         this.streamWriter.append(
             AppendRowsRequest.newBuilder()
                 .setProtoRows(data.build())
                 .setOffset(Int64Value.of(offset))
                 .build());
 
+
     ApiFutures.<AppendRowsResponse>addCallback(
         appendResponseFuture,
         new ApiFutureCallback<AppendRowsResponse>() {
           @Override
           public void onSuccess(AppendRowsResponse response) {
-            if (response.hasUpdatedSchema()) {
-              updateDescriptor(response.getUpdatedSchema());
-            }
+            updateDescriptor();
+            LOG.info("onSuccess");
           }
 
           @Override
           public void onFailure(Throwable t) {
+            updateDescriptor();
+            LOG.info("onFailure");
             LOG.severe("AppendRowsResponse error: " + t.toString() + ".");
           }
         });
-
     return appendResponseFuture;
   }
 
@@ -153,10 +154,10 @@ public class JsonStreamWriter {
    * since it is called through a callback (which is in another thread). If the main thread is
    * calling append while the callback thread calls refreshAppend(), this might cause some issues.
    *
-   * @param updatedSchema The updated table schema.
    */
-  private synchronized void updateDescriptor(Table.TableSchema updatedSchema) {
-    if (!this.tableSchema.equals(updatedSchema)) {
+  private synchronized void updateDescriptor() {
+    Table.TableSchema updatedSchema = this.streamWriter.getUpdatedSchema();
+    if (updatedSchema != null && !this.tableSchema.equals(updatedSchema)) {
       try {
         this.descriptor =
             BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
@@ -173,8 +174,7 @@ public class JsonStreamWriter {
             "Schema updated error: Got exception while reestablishing connection for schema update.");
         return;
       }
-
-      LOG.info("Successfully updated schema.");
+      LOG.info("Successfully updated schema: " + this.tableSchema);
     }
   }
 
