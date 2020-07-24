@@ -384,6 +384,7 @@ public class JsonStreamWriterTest {
     foo.put("foo", "allen");
     JSONArray jsonArr = new JSONArray();
     jsonArr.put(foo);
+
     ApiFuture<AppendRowsResponse> appendFuture1 =
         writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
@@ -396,8 +397,7 @@ public class JsonStreamWriterTest {
       Thread.sleep(10);
       millis += 10;
     }
-
-    assertTrue(appendFuture1.isDone());
+    LOG.info("Took " + millis + " millis to finish schema update.");
     assertEquals(0L, appendFuture1.get().getOffset());
     assertEquals(
         1,
@@ -417,6 +417,7 @@ public class JsonStreamWriterTest {
     updatedFoo.put("bar", "allen2");
     JSONArray updatedJsonArr = new JSONArray();
     updatedJsonArr.put(updatedFoo);
+
     ApiFuture<AppendRowsResponse> appendFuture2 =
         writer.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
 
@@ -435,7 +436,7 @@ public class JsonStreamWriterTest {
     // Check if writer schemas were added in for both connections.
     assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
     assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
-    // .equals() method implemented in the Message interface
+    // .equals() method implemented in the Message interface to check if table schemas are the same.
     assertEquals(
         ProtoSchemaConverter.convert(
             BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(TABLE_SCHEMA)),
@@ -445,7 +446,6 @@ public class JsonStreamWriterTest {
             BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(
                 UPDATED_TABLE_SCHEMA)),
         testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getWriterSchema());
-    assertEquals(2, testBigQueryWrite.getAppendRequests().size());
     writer.close();
   }
 
@@ -499,6 +499,11 @@ public class JsonStreamWriterTest {
             .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
             .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
             .build());
+    testBigQueryWrite.addResponse(
+        Storage.AppendRowsResponse.newBuilder()
+            .setOffset(0)
+            .build());
+
     JSONObject foo = new JSONObject();
     foo.put("foo", "allen");
     JSONArray jsonArr = new JSONArray();
@@ -519,6 +524,42 @@ public class JsonStreamWriterTest {
       }
       assertEquals(writer.getTableSchema(), UPDATED_TABLE_SCHEMA);
     }
+
+    JSONObject updatedFoo = new JSONObject();
+    updatedFoo.put("foo", "allen");
+    updatedFoo.put("bar", "allen2");
+    JSONArray updatedJsonArr = new JSONArray();
+    updatedJsonArr.put(updatedFoo);
+
+    ApiFuture<AppendRowsResponse> appendFuture2 =
+        writer.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
+
+    assertEquals(0L, appendFuture2.get().getOffset());
+    assertEquals(
+        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
+        UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
+    assertEquals(
+        1,
+        testBigQueryWrite
+            .getAppendRequests()
+            .get(1)
+            .getProtoRows()
+            .getRows()
+            .getSerializedRowsCount());
+    // Check if writer schemas were added in for both connections.
+    assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
+    assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
+    // .equals() method implemented in the Message interface to check if table schemas are the same.
+    assertEquals(
+        ProtoSchemaConverter.convert(
+            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(TABLE_SCHEMA)),
+        testBigQueryWrite.getAppendRequests().get(0).getProtoRows().getWriterSchema());
+    assertEquals(
+        ProtoSchemaConverter.convert(
+            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(
+                UPDATED_TABLE_SCHEMA)),
+        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getWriterSchema());
+
     writer.close();
   }
 }

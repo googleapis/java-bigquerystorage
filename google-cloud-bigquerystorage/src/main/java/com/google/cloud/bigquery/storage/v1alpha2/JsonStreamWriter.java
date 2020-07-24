@@ -101,9 +101,10 @@ public class JsonStreamWriter {
    * schema update is required.
    *
    * @param jsonArr The JSON array that contains JSONObjects to be written
-   * @param allowUnknownFields if true, json data can have fields unknown to the BigQuery table.
    * @param offset Offset for deduplication
-   * @return ApiFuture<AppendRowsResponse>
+   * @param allowUnknownFields if true, json data can have fields unknown to the BigQuery table.
+   * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
+   *     ApiFuture
    */
   public synchronized ApiFuture<AppendRowsResponse> append(
       JSONArray jsonArr, long offset, boolean allowUnknownFields) {
@@ -128,20 +129,18 @@ public class JsonStreamWriter {
                 .setOffset(Int64Value.of(offset))
                 .build());
 
-
     ApiFutures.<AppendRowsResponse>addCallback(
         appendResponseFuture,
         new ApiFutureCallback<AppendRowsResponse>() {
           @Override
           public void onSuccess(AppendRowsResponse response) {
             updateDescriptor();
-            LOG.info("onSuccess");
+            LOG.info("AppendRowsResponse success.");
           }
 
           @Override
           public void onFailure(Throwable t) {
             updateDescriptor();
-            LOG.info("onFailure");
             LOG.severe("AppendRowsResponse error: " + t.toString() + ".");
           }
         });
@@ -153,7 +152,6 @@ public class JsonStreamWriter {
    * is called whenever AppendRowsResponse includes an updated schema. The function is synchronized
    * since it is called through a callback (which is in another thread). If the main thread is
    * calling append while the callback thread calls refreshAppend(), this might cause some issues.
-   *
    */
   private synchronized void updateDescriptor() {
     Table.TableSchema updatedSchema = this.streamWriter.getUpdatedSchema();
@@ -163,7 +161,7 @@ public class JsonStreamWriter {
             BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
       } catch (Descriptors.DescriptorValidationException e) {
         LOG.severe(
-            "Schema updated error: Failed to convert updatedSchema that was returned by AppendRowsResponse to a descriptor.");
+            "Schema update error: Failed to convert updatedSchema that was returned by AppendRowsResponse to a descriptor.");
         return;
       }
       this.tableSchema = updatedSchema;
@@ -171,7 +169,7 @@ public class JsonStreamWriter {
         streamWriter.refreshAppend();
       } catch (IOException | InterruptedException e) {
         LOG.severe(
-            "Schema updated error: Got exception while reestablishing connection for schema update.");
+            "Schema update error: Got exception while reestablishing connection for schema update.");
         return;
       }
       LOG.info("Successfully updated schema: " + this.tableSchema);
