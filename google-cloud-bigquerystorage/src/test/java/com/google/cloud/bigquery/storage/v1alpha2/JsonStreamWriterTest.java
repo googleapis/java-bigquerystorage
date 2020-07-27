@@ -385,9 +385,9 @@ public class JsonStreamWriterTest {
   private final OnSchemaUpdateRunnable ON_SCHEMA_UPDATE_RUNNABLE =
       new OnSchemaUpdateRunnable() {
         public void run() {
-          this.streamWriter.setUpdatedSchema(this.updatedSchema);
+          this.getStreamWriter().setUpdatedSchema(this.getUpdatedSchema());
           try {
-            this.jsonStreamWriter.setDescriptor(this.updatedSchema);
+            this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
           } catch (Descriptors.DescriptorValidationException e) {
             LOG.severe(
                 "Schema update fail: updated schema could not be converted to a valid descriptor.");
@@ -395,14 +395,14 @@ public class JsonStreamWriterTest {
           }
 
           try {
-            streamWriter.refreshAppend();
+            this.getStreamWriter().refreshAppend();
           } catch (IOException | InterruptedException e) {
             LOG.severe(
                 "Schema update error: Got exception while reestablishing connection for schema update.");
             return;
           }
 
-          LOG.info("Successfully updated schema: " + this.updatedSchema);
+          LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
         }
       };
 
@@ -427,11 +427,9 @@ public class JsonStreamWriterTest {
         writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
     Table.TableSchema updatedSchema = appendFuture1.get().getUpdatedSchema();
-    System.out.println("Updated?: " + updatedSchema);
     int millis = 0;
     while (millis < 1000) {
       if (updatedSchema.toString().equals(writer.getTableSchema().toString())) {
-
         break;
       }
       Thread.sleep(10);
