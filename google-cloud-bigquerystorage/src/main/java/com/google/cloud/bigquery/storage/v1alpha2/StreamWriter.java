@@ -112,6 +112,7 @@ public class StreamWriter implements AutoCloseable {
 
   // Used for schema updates
   private Table.TableSchema updatedSchema;
+  private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
 
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
@@ -160,6 +161,11 @@ public class StreamWriter implements AutoCloseable {
     backgroundResources = new BackgroundResourceAggregation(backgroundResourceList);
 
     shutdown = new AtomicBoolean(false);
+    if (builder.onSchemaUpdateRunnable != null) {
+      this.onSchemaUpdateRunnable = builder.onSchemaUpdateRunnable;
+      this.onSchemaUpdateRunnable.setStreamWriter(this);
+    }
+
     refreshAppend();
     Stream.WriteStream stream =
         stub.getWriteStream(Storage.GetWriteStreamRequest.newBuilder().setName(streamName).build());
@@ -191,17 +197,20 @@ public class StreamWriter implements AutoCloseable {
    * @return Table.TableSchema
    */
   public Table.TableSchema getUpdatedSchema() {
-    Table.TableSchema temp = this.updatedSchema;
-    this.updatedSchema = null;
-    return temp;
+    return this.updatedSchema;
   }
 
-  /* Setter for updated schema. This method will only be called in the OnResponse() callback for an AppendRowsResponse to check if an updated schema exists and set it if it does.
+  /* Setter for updated schema.
    *
    * @param updatedSchema
    */
   public void setUpdatedSchema(Table.TableSchema updatedSchema) {
     this.updatedSchema = updatedSchema;
+  }
+
+  /** OnSchemaUpdateRunnable for this streamWriter. */
+  public OnSchemaUpdateRunnable getOnSchemaUpdateRunnable() {
+    return this.onSchemaUpdateRunnable;
   }
 
   /** Returns if a stream has expired. */
@@ -641,6 +650,8 @@ public class StreamWriter implements AutoCloseable {
     private CredentialsProvider credentialsProvider =
         BigQueryWriteSettings.defaultCredentialsProviderBuilder().build();
 
+    private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
+
     private Builder(String stream, BigQueryWriteClient client) {
       this.streamName = Preconditions.checkNotNull(stream);
       this.client = client;
@@ -764,6 +775,13 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
+    /** Gives the ability to set action on schema update. */
+    public Builder setOnSchemaUpdateRunnable(OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
+      this.onSchemaUpdateRunnable =
+          Preconditions.checkNotNull(onSchemaUpdateRunnable, "onSchemaUpdateRunnable is null.");
+      return this;
+    }
+
     /** Builds the {@code StreamWriter}. */
     public StreamWriter build() throws IllegalArgumentException, IOException, InterruptedException {
       return new StreamWriter(this);
@@ -822,7 +840,11 @@ public class StreamWriter implements AutoCloseable {
           inflightBatch.onFailure(new IllegalStateException("Response is null"));
         }
         if (response.hasUpdatedSchema()) {
-          this.streamWriter.setUpdatedSchema(response.getUpdatedSchema());
+          if (streamWriter.getOnSchemaUpdateRunnable() != null) {
+            streamWriter.getOnSchemaUpdateRunnable().setUpdatedSchema(response.getUpdatedSchema());
+            streamWriter.executor.schedule(
+                streamWriter.getOnSchemaUpdateRunnable(), 0L, TimeUnit.MILLISECONDS);
+          }
         }
         // TODO: Deal with in stream errors.
         if (response.hasError()) {

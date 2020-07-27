@@ -31,12 +31,15 @@ import com.google.cloud.bigquery.storage.v1alpha2.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.*;
 import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
+import com.google.protobuf.Descriptors;
 import com.google.protobuf.Int64Value;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -192,68 +195,92 @@ public class ITBigQueryWriteManualClientTest {
               createAppendRequest(writeStream.getName(), new String[] {"ddd"}).build());
       assertEquals(1, response1.get().getOffset());
       assertEquals(3, response2.get().getOffset());
+
+      TableResult result =
+          bigquery.listTableData(
+              tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+      Iterator<FieldValueList> iter = result.getValues().iterator();
+      assertEquals("aaa", iter.next().get(0).getStringValue());
+      assertEquals("bbb", iter.next().get(0).getStringValue());
+      assertEquals("ccc", iter.next().get(0).getStringValue());
+      assertEquals("ddd", iter.next().get(0).getStringValue());
+      assertEquals(false, iter.hasNext());
     }
+  }
 
-    @Test
-    public void testJsonStreamWriterBatchWriteWithCommittedStream()
-        throws IOException, InterruptedException, ExecutionException {
-      WriteStream writeStream =
-          client.createWriteStream(
-              CreateWriteStreamRequest.newBuilder()
-                  .setParent(tableId)
-                  .setWriteStream(
-                      WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
-                  .build());
-      try (JsonStreamWriter jsonStreamWriter =
-          JsonStreamWriter.newBuilder(writeStream.getName())
-              .setBatchingSettings(
-                  StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                      .toBuilder()
-                      .setRequestByteThreshold(1024 * 1024L) // 1 Mb
-                      .setElementCountThreshold(2L)
-                      .setDelayThreshold(Duration.ofSeconds(2))
-                      .build())
-              .build()) {
-        LOG.info("Sending one message");
-        JSONObject foo = new JSONObject();
-        foo.put("foo", "aaa");
-        JSONArray jsonArr = new JSONArray();
-        jsonArr.put(foo);
+  @Test
+  public void testJsonStreamWriterBatchWriteWithCommittedStream()
+      throws IOException, InterruptedException, ExecutionException,
+          Descriptors.DescriptorValidationException {
+    String tableName = "JsonTable";
+    TableInfo tableInfo =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, tableName),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .build())))
+            .build();
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(parent.toString())
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+    try (JsonStreamWriter jsonStreamWriter =
+        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setRequestByteThreshold(1024 * 1024L) // 1 Mb
+                    .setElementCountThreshold(2L)
+                    .setDelayThreshold(Duration.ofSeconds(2))
+                    .build())
+            .build()) {
+      LOG.info("Sending one message");
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "aaa");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
 
-        ApiFuture<AppendRowsResponse> response =
-            jsonStreamWriter.append(jsonArr, -1, /* allowUnknownFields */ false);
-        assertEquals(0, response.get().getOffset());
+      ApiFuture<AppendRowsResponse> response =
+          jsonStreamWriter.append(jsonArr, -1, /* allowUnknownFields */ false);
+      assertEquals(0, response.get().getOffset());
 
-        LOG.info("Sending two more messages");
-        JSONObject foo1 = new JSONObject();
-        foo.put("foo", "bbb");
-        JSONObject foo2 = new JSONObject();
-        foo.put("foo", "ccc");
-        JSONArray jsonArr1 = new JSONArray();
-        jsonArr1.put(foo1);
-        jsonArr1.put(foo2);
+      LOG.info("Sending two more messages");
+      JSONObject foo1 = new JSONObject();
+      foo.put("foo", "bbb");
+      JSONObject foo2 = new JSONObject();
+      foo.put("foo", "ccc");
+      JSONArray jsonArr1 = new JSONArray();
+      jsonArr1.put(foo1);
+      jsonArr1.put(foo2);
 
-        JSONObject foo3 = new JSONObject();
-        foo.put("foo", "ddd");
-        JSONArray jsonArr2 = new JSONArray();
-        jsonArr2.put(foo3);
+      JSONObject foo3 = new JSONObject();
+      foo.put("foo", "ddd");
+      JSONArray jsonArr2 = new JSONArray();
+      jsonArr2.put(foo3);
 
-        ApiFuture<AppendRowsResponse> response1 =
-            jsonStreamWriter.append(jsonArr1, -1, /* allowUnknownFields */ false);
-        ApiFuture<AppendRowsResponse> response2 =
-            jsonStreamWriter.append(jsonArr2, -1, /* allowUnknownFields */ false);
-        assertEquals(1, response1.get().getOffset());
-        assertEquals(3, response2.get().getOffset());
-      }
+      ApiFuture<AppendRowsResponse> response1 =
+          jsonStreamWriter.append(jsonArr1, -1, /* allowUnknownFields */ false);
+      ApiFuture<AppendRowsResponse> response2 =
+          jsonStreamWriter.append(jsonArr2, -1, /* allowUnknownFields */ false);
+      assertEquals(1, response1.get().getOffset());
+      assertEquals(3, response2.get().getOffset());
 
-    TableResult result =
-        bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
-    Iterator<FieldValueList> iter = result.getValues().iterator();
-    assertEquals("aaa", iter.next().get(0).getStringValue());
-    assertEquals("bbb", iter.next().get(0).getStringValue());
-    assertEquals("ccc", iter.next().get(0).getStringValue());
-    assertEquals("ddd", iter.next().get(0).getStringValue());
-    assertEquals(false, iter.hasNext());
+      TableResult result =
+          bigquery.listTableData(
+              tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+      Iterator<FieldValueList> iter = result.getValues().iterator();
+      assertEquals("aaa", iter.next().get(0).getStringValue());
+      assertEquals("bbb", iter.next().get(0).getStringValue());
+      assertEquals("ccc", iter.next().get(0).getStringValue());
+      assertEquals("ddd", iter.next().get(0).getStringValue());
+      assertEquals(false, iter.hasNext());
+    }
   }
 
   @Test

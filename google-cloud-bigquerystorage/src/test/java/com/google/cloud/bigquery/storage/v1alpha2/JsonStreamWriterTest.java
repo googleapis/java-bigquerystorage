@@ -31,7 +31,9 @@ import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.test.Test.UpdatedFooType;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Descriptors;
 import com.google.protobuf.Timestamp;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -168,6 +170,17 @@ public class JsonStreamWriterTest {
         .setChannelProvider(channelProvider)
         .setExecutorProvider(SINGLE_THREAD_EXECUTOR)
         .setCredentialsProvider(NoCredentialsProvider.create());
+  }
+
+  private JsonStreamWriter.Builder getTestSchemaUpdateBuilder(
+      String testStream,
+      Table.TableSchema BQTableSchema,
+      OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
+    return JsonStreamWriter.newBuilder(testStream, BQTableSchema)
+        .setChannelProvider(channelProvider)
+        .setExecutorProvider(SINGLE_THREAD_EXECUTOR)
+        .setCredentialsProvider(NoCredentialsProvider.create())
+        .setOnSchemaUpdateRunnable(onSchemaUpdateRunnable);
   }
 
   @Test
@@ -369,9 +382,34 @@ public class JsonStreamWriterTest {
     writer.close();
   }
 
+  private final OnSchemaUpdateRunnable ON_SCHEMA_UPDATE_RUNNABLE =
+      new OnSchemaUpdateRunnable() {
+        public void run() {
+          this.streamWriter.setUpdatedSchema(this.updatedSchema);
+          try {
+            this.jsonStreamWriter.setDescriptor(this.updatedSchema);
+          } catch (Descriptors.DescriptorValidationException e) {
+            LOG.severe(
+                "Schema update fail: updated schema could not be converted to a valid descriptor.");
+            return;
+          }
+
+          try {
+            streamWriter.refreshAppend();
+          } catch (IOException | InterruptedException e) {
+            LOG.severe(
+                "Schema update error: Got exception while reestablishing connection for schema update.");
+            return;
+          }
+
+          LOG.info("Successfully updated schema: " + this.updatedSchema);
+        }
+      };
+
   @Test
   public void testAppendSchemaUpdate() throws Exception {
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    JsonStreamWriter writer =
+        getTestSchemaUpdateBuilder(TEST_STREAM, TABLE_SCHEMA, ON_SCHEMA_UPDATE_RUNNABLE).build();
     // Add fake resposne for FakeBigQueryWrite, first response has updated schema.
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
@@ -389,9 +427,11 @@ public class JsonStreamWriterTest {
         writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
     Table.TableSchema updatedSchema = appendFuture1.get().getUpdatedSchema();
+    System.out.println("Updated?: " + updatedSchema);
     int millis = 0;
     while (millis < 1000) {
       if (updatedSchema.toString().equals(writer.getTableSchema().toString())) {
+
         break;
       }
       Thread.sleep(10);
@@ -451,7 +491,8 @@ public class JsonStreamWriterTest {
 
   @Test
   public void testAppendAlreadyExistsException() throws Exception {
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    JsonStreamWriter writer =
+        getTestSchemaUpdateBuilder(TEST_STREAM, TABLE_SCHEMA, ON_SCHEMA_UPDATE_RUNNABLE).build();
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
             .setError(com.google.rpc.Status.newBuilder().setCode(6).build())
@@ -472,7 +513,8 @@ public class JsonStreamWriterTest {
 
   @Test
   public void testAppendOutOfRangeException() throws Exception {
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    JsonStreamWriter writer =
+        getTestSchemaUpdateBuilder(TEST_STREAM, TABLE_SCHEMA, ON_SCHEMA_UPDATE_RUNNABLE).build();
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
             .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
@@ -493,7 +535,8 @@ public class JsonStreamWriterTest {
 
   @Test
   public void testAppendOutOfRangeAndUpdateSchema() throws Exception {
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    JsonStreamWriter writer =
+        getTestSchemaUpdateBuilder(TEST_STREAM, TABLE_SCHEMA, ON_SCHEMA_UPDATE_RUNNABLE).build();
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
             .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
