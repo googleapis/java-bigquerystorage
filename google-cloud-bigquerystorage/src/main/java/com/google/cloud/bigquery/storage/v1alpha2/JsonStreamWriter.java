@@ -46,7 +46,7 @@ import org.json.JSONObject;
  * table schema is updated, users will be able to ingest data on the new schema after some time (in
  * order of minutes).
  */
-public class JsonStreamWriter {
+public class JsonStreamWriter implements AutoCloseable {
   private static String streamPatternString =
       "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+";
   private static Pattern streamPattern = Pattern.compile(streamPatternString);
@@ -56,7 +56,6 @@ public class JsonStreamWriter {
   private String streamName;
   private StreamWriter streamWriter;
   private Descriptor descriptor;
-  private Table.TableSchema tableSchema;
 
   /**
    * Constructs the JsonStreamWriter
@@ -73,7 +72,6 @@ public class JsonStreamWriter {
 
     this.streamName = builder.streamName;
     this.client = builder.client;
-    this.tableSchema = builder.tableSchema;
     this.descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(builder.tableSchema);
 
@@ -90,8 +88,16 @@ public class JsonStreamWriter {
         builder.batchingSettings,
         builder.retrySettings,
         builder.executorProvider,
-        builder.endpoint);
+        builder.endpoint,
+        builder.onSchemaUpdateRunnable);
     this.streamWriter = streamWriterBuilder.build();
+    this.streamWriter.setUpdatedSchema(builder.tableSchema);
+  }
+
+  public synchronized void setDescriptor(Table.TableSchema tableSchema)
+      throws Descriptors.DescriptorValidationException {
+    this.descriptor =
+        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
   }
 
   /**
@@ -129,51 +135,7 @@ public class JsonStreamWriter {
                 .setOffset(Int64Value.of(offset))
                 .build());
 
-    ApiFutures.<AppendRowsResponse>addCallback(
-        appendResponseFuture,
-        new ApiFutureCallback<AppendRowsResponse>() {
-          @Override
-          public void onSuccess(AppendRowsResponse response) {
-            updateDescriptor();
-            LOG.info("AppendRowsResponse success.");
-          }
-
-          @Override
-          public void onFailure(Throwable t) {
-            updateDescriptor();
-            LOG.severe("AppendRowsResponse error: " + t.toString() + ".");
-          }
-        });
     return appendResponseFuture;
-  }
-
-  /**
-   * Updates the descriptor and BQTable schema. This function is used to support schema updates, and
-   * is called whenever AppendRowsResponse includes an updated schema. The function is synchronized
-   * since it is called through a callback (which is in another thread). If the main thread is
-   * calling append while the callback thread calls refreshAppend(), this might cause some issues.
-   */
-  private synchronized void updateDescriptor() {
-    Table.TableSchema updatedSchema = this.streamWriter.getUpdatedSchema();
-    if (updatedSchema != null && !this.tableSchema.equals(updatedSchema)) {
-      try {
-        this.descriptor =
-            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
-      } catch (Descriptors.DescriptorValidationException e) {
-        LOG.severe(
-            "Schema update error: Failed to convert updatedSchema that was returned by AppendRowsResponse to a descriptor.");
-        return;
-      }
-      this.tableSchema = updatedSchema;
-      try {
-        streamWriter.refreshAppend();
-      } catch (IOException | InterruptedException e) {
-        LOG.severe(
-            "Schema update error: Got exception while reestablishing connection for schema update.");
-        return;
-      }
-      LOG.info("Successfully updated schema: " + this.tableSchema);
-    }
   }
 
   /**
@@ -200,7 +162,7 @@ public class JsonStreamWriter {
    * @return Table.TableSchema
    */
   public Table.TableSchema getTableSchema() {
-    return this.tableSchema;
+    return this.streamWriter.getUpdatedSchema();
   }
 
   /** Sets all StreamWriter settings. */
@@ -211,7 +173,8 @@ public class JsonStreamWriter {
       @Nullable BatchingSettings batchingSettings,
       @Nullable RetrySettings retrySettings,
       @Nullable ExecutorProvider executorProvider,
-      @Nullable String endpoint) {
+      @Nullable String endpoint,
+      @Nullable OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
     if (channelProvider != null) {
       builder.setChannelProvider(channelProvider);
     }
@@ -229,6 +192,10 @@ public class JsonStreamWriter {
     }
     if (endpoint != null) {
       builder.setEndpoint(endpoint);
+    }
+    if (onSchemaUpdateRunnable != null) {
+      onSchemaUpdateRunnable.setJsonStreamWriter(this);
+      builder.setOnSchemaUpdateRunnable(onSchemaUpdateRunnable);
     }
   }
 
@@ -267,6 +234,7 @@ public class JsonStreamWriter {
   }
 
   /** Closes the underlying StreamWriter. */
+  @Override
   public void close() {
     this.streamWriter.close();
   }
@@ -282,6 +250,7 @@ public class JsonStreamWriter {
     private RetrySettings retrySettings;
     private ExecutorProvider executorProvider;
     private String endpoint;
+    private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
 
     /**
      * Constructor for JsonStreamWriter's Builder
@@ -364,6 +333,20 @@ public class JsonStreamWriter {
      */
     public Builder setEndpoint(String endpoint) {
       this.endpoint = Preconditions.checkNotNull(endpoint, "Endpoint is null.");
+      return this;
+    }
+
+    /**
+     * Setter for the action to perform when there is a schema update.
+     *
+     * @param onSchemaUpdateRunnable An abstract class that implements runnable and provides access
+     *     to the JsonStreamWriter, the StreamWriter, and the updated schema. Users should implement
+     *     the inherited run() function.
+     * @return Builder
+     */
+    public Builder setOnSchemaUpdateRunnable(OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
+      this.onSchemaUpdateRunnable =
+          Preconditions.checkNotNull(onSchemaUpdateRunnable, "onSchemaUpdateRunnable is null.");
       return this;
     }
 
