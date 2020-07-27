@@ -361,63 +361,64 @@ public class ITBigQueryWriteManualClientTest {
         Thread.sleep(1000);
         millis += 1000;
       }
+      System.out.println(bigquery.getTable(DATASET, tableName).getDefinition().getSchema());
       LOG.info("bar column successfully added to table");
     } catch (BigQueryException e) {
       LOG.severe("bar column was not added. \n" + e.toString());
     }
 
-    Thread.sleep(10*60*1000);
-    LOG.info("Sending one message");
-    JSONObject foo = new JSONObject();
-    foo.put("foo", "aaa");
-    JSONArray jsonArr = new JSONArray();
-    jsonArr.put(foo);
-
-    ApiFuture<AppendRowsResponse> response =
-        jsonStreamWriter.append(jsonArr, -1, /* allowUnknownFields */ false);
-    assertEquals(0, response.get().getOffset());
-    TableResult result =
-        bigquery.listTableData(
-            tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
-    Iterator<FieldValueList> iter = result.getValues().iterator();
-    assertEquals("aaa", iter.next().get(0).getStringValue());
-    assertEquals(false, iter.hasNext());
-
-    com.google.cloud.bigquery.storage.v1alpha2.Table.TableSchema updatedSchema = response.get().getUpdatedSchema();
-    int millis = 0;
-    while (millis < 1000) {
-      if (updatedSchema.toString().equals(jsonStreamWriter.getTableSchema().toString())) {
-        break;
-      }
-      Thread.sleep(100);
-      millis += 100;
-    }
-    // LOG.info("Took " + millis + " millis to finish schema update.");
-    LOG.info("Updated schema: " + updatedSchema);
-    LOG.info("Updated schema: " + jsonStreamWriter.getTableSchema().toString());
-    // LOG.info("New descriptor: " + jsonStreamWriter.getDescriptor().toProto());
-    assertEquals(0L, response.get().getOffset());
-
-
-    // Second append with updated schema.
-    JSONObject updatedFoo = new JSONObject();
-    updatedFoo.put("foo", "bbb");
-    updatedFoo.put("bar", "ccc");
-    JSONArray updatedJsonArr = new JSONArray();
-    updatedJsonArr.put(updatedFoo);
-
-    ApiFuture<AppendRowsResponse> response2 =
-        jsonStreamWriter.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
-
-    assertEquals(1L, response2.get().getOffset());
-    TableResult result2 =
-        bigquery.listTableData(
-            tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
-    Iterator<FieldValueList> iter2 = result2.getValues().iterator();
-    assertEquals("aaa", iter2.next().get(0).getStringValue());
-    assertEquals("bbb", iter2.next().get(1).getStringValue());
-    assertEquals(false, iter2.hasNext());
-    jsonStreamWriter.close();
+    // Thread.sleep(10*60*1000);
+    // LOG.info("Sending one message");
+    // JSONObject foo = new JSONObject();
+    // foo.put("foo", "aaa");
+    // JSONArray jsonArr = new JSONArray();
+    // jsonArr.put(foo);
+    //
+    // ApiFuture<AppendRowsResponse> response =
+    //     jsonStreamWriter.append(jsonArr, -1, /* allowUnknownFields */ false);
+    // assertEquals(0, response.get().getOffset());
+    // TableResult result =
+    //     bigquery.listTableData(
+    //         tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    // Iterator<FieldValueList> iter = result.getValues().iterator();
+    // assertEquals("aaa", iter.next().get(0).getStringValue());
+    // assertEquals(false, iter.hasNext());
+    //
+    // com.google.cloud.bigquery.storage.v1alpha2.Table.TableSchema updatedSchema = response.get().getUpdatedSchema();
+    // int millis = 0;
+    // while (millis < 1000) {
+    //   if (updatedSchema.toString().equals(jsonStreamWriter.getTableSchema().toString())) {
+    //     break;
+    //   }
+    //   Thread.sleep(100);
+    //   millis += 100;
+    // }
+    // // LOG.info("Took " + millis + " millis to finish schema update.");
+    // LOG.info("Updated schema: " + updatedSchema);
+    // LOG.info("Updated schema: " + jsonStreamWriter.getTableSchema().toString());
+    // // LOG.info("New descriptor: " + jsonStreamWriter.getDescriptor().toProto());
+    // assertEquals(0L, response.get().getOffset());
+    //
+    //
+    // // Second append with updated schema.
+    // JSONObject updatedFoo = new JSONObject();
+    // updatedFoo.put("foo", "bbb");
+    // updatedFoo.put("bar", "ccc");
+    // JSONArray updatedJsonArr = new JSONArray();
+    // updatedJsonArr.put(updatedFoo);
+    //
+    // ApiFuture<AppendRowsResponse> response2 =
+    //     jsonStreamWriter.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
+    //
+    // assertEquals(1L, response2.get().getOffset());
+    // TableResult result2 =
+    //     bigquery.listTableData(
+    //         tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    // Iterator<FieldValueList> iter2 = result2.getValues().iterator();
+    // assertEquals("aaa", iter2.next().get(0).getStringValue());
+    // assertEquals("bbb", iter2.next().get(1).getStringValue());
+    // assertEquals(false, iter2.hasNext());
+    // jsonStreamWriter.close();
   }
 }
 
