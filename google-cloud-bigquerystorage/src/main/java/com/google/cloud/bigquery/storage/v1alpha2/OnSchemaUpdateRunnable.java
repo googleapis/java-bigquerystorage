@@ -49,9 +49,9 @@ import java.util.logging.Logger;
  * </pre>
  */
 public abstract class OnSchemaUpdateRunnable implements Runnable {
-  JsonStreamWriter jsonStreamWriter;
-  StreamWriter streamWriter;
-  Table.TableSchema updatedSchema;
+  private JsonStreamWriter jsonStreamWriter;
+  private StreamWriter streamWriter;
+  private Table.TableSchema updatedSchema;
   private static final Logger LOG = Logger.getLogger(OnSchemaUpdateRunnable.class.getName());
 
   /**
@@ -79,5 +79,29 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
    */
   public void setJsonStreamWriter(JsonStreamWriter jsonStreamWriter) {
     this.jsonStreamWriter = jsonStreamWriter;
+  }
+
+  /**
+   * Getter for the updatedSchema
+   *
+   */
+  public Table.TableSchema getUpdatedSchema() {
+    return this.updatedSchema;
+  }
+
+  /**
+   * Getter for the streamWriter
+   *
+   */
+  public StreamWriter getStreamWriter() {
+    return this.streamWriter;
+  }
+
+  /**
+   * Getter for the jsonStreamWriter
+   *
+   */
+  public JsonStreamWriter getJsonStreamWriter() {
+    return this.jsonStreamWriter;
   }
 }
