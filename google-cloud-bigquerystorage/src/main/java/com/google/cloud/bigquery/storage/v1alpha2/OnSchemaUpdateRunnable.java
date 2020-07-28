@@ -23,6 +23,13 @@ import java.util.logging.Logger;
  * updated schema has been passed back through the AppendRowsResponse. Users should only implement
  * the run() function. The following example performs a simple schema update.
  *
+ * <p>Performing a schema update requires 3 steps: making a new connection with the same
+ * WriteStream, updating StreamWriter's stored Table.TableSchema, and updating JsonStreamWriter's
+ * stored descriptor. By default, the StreamWriter will always refresh the connection upon schema
+ * update, but the rest is up to the users. In the example below, the run() method updates the
+ * Table.TableSchema for the StreamWriter, and generates a new Descriptor based on the updated
+ * schema for the JsonStreamWriter.
+ *
  * <pre>
  * <code>
  * public void run() {
@@ -32,14 +39,6 @@ import java.util.logging.Logger;
  * } catch (Descriptors.DescriptorValidationException e) {
  * LOG.severe(
  * "Schema update fail: updated schema could not be converted to a valid descriptor.");
- * return;
- * }
- *
- * try {
- * streamWriter.refreshAppend();
- * } catch (IOException | InterruptedException e) {
- * LOG.severe(
- * "Schema update error: Got exception while reestablishing connection for schema update.");
  * return;
  * }
  *
@@ -81,26 +80,17 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
     this.jsonStreamWriter = jsonStreamWriter;
   }
 
-  /**
-   * Getter for the updatedSchema
-   *
-   */
+  /** Getter for the updatedSchema */
   public Table.TableSchema getUpdatedSchema() {
     return this.updatedSchema;
   }
 
-  /**
-   * Getter for the streamWriter
-   *
-   */
+  /** Getter for the streamWriter */
   public StreamWriter getStreamWriter() {
     return this.streamWriter;
   }
 
-  /**
-   * Getter for the jsonStreamWriter
-   *
-   */
+  /** Getter for the jsonStreamWriter */
   public JsonStreamWriter getJsonStreamWriter() {
     return this.jsonStreamWriter;
   }

@@ -842,6 +842,11 @@ public class StreamWriter implements AutoCloseable {
         if (response.hasUpdatedSchema()) {
           if (streamWriter.getOnSchemaUpdateRunnable() != null) {
             streamWriter.getOnSchemaUpdateRunnable().setUpdatedSchema(response.getUpdatedSchema());
+            try {
+              streamWriter.getOnSchemaUpdateRunnable().getStreamWriter().refreshAppend();
+            } catch (InterruptedException | IOException e) {
+              LOG.severe("StreamWriter failed to refresh upon schema update." + e);
+            }
             streamWriter.executor.schedule(
                 streamWriter.getOnSchemaUpdateRunnable(), 0L, TimeUnit.MILLISECONDS);
           }
