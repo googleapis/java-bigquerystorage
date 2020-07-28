@@ -295,14 +295,6 @@ public class ITBigQueryWriteManualClientTest {
                 "Schema update fail: updated schema could not be converted to a valid descriptor.");
             return;
           }
-
-          try {
-            this.getStreamWriter().refreshAppend();
-          } catch (IOException | InterruptedException e) {
-            LOG.severe(
-                "Schema update error: Got exception while reestablishing connection for schema update.");
-            return;
-          }
           LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
         }
       };
@@ -334,11 +326,23 @@ public class ITBigQueryWriteManualClientTest {
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
                     .setRequestByteThreshold(1024 * 1024L) // 1 Mb
-                    .setElementCountThreshold(2L)
-                    .setDelayThreshold(Duration.ofSeconds(2))
+                    .setElementCountThreshold(1L)
                     .build())
             .setOnSchemaUpdateRunnable(ON_SCHEMA_UPDATE_RUNNABLE)
             .build()) {
+
+     // 1). Send 1 row
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "aaa");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+
+      ApiFuture<AppendRowsResponse> response =
+          jsonStreamWriter.append(jsonArr, -1, /* allowUnknownFields */ false);
+      assertEquals(0, response.get().getOffset());
+
+      // 2). Schema update and wait until querying it returns a new schema.
+      Schema newSchema;
       try {
         com.google.cloud.bigquery.Table table = bigquery.getTable(DATASET, tableName);
         Schema schema = table.getDefinition().getSchema();
@@ -362,40 +366,40 @@ public class ITBigQueryWriteManualClientTest {
           Thread.sleep(1000);
           millis += 1000;
         }
-        System.out.println(bigquery.getTable(DATASET, tableName).getDefinition().getSchema());
+        newSchema = schema;
         LOG.info("bar column successfully added to table");
       } catch (BigQueryException e) {
         LOG.severe("bar column was not added. \n" + e.toString());
       }
 
-      // Thread.sleep(10*60*1000);
-      // LOG.info("Sending one message");
-      // JSONObject foo = new JSONObject();
-      // foo.put("foo", "aaa");
-      // JSONArray jsonArr = new JSONArray();
-      // jsonArr.put(foo);
-      //
-      // ApiFuture<AppendRowsResponse> response =
-      //     jsonStreamWriter.append(jsonArr, -1, /* allowUnknownFields */ false);
-      // assertEquals(0, response.get().getOffset());
-      // TableResult result =
-      //     bigquery.listTableData(
-      //         tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
-      // Iterator<FieldValueList> iter = result.getValues().iterator();
-      // assertEquals("aaa", iter.next().get(0).getStringValue());
-      // assertEquals(false, iter.hasNext());
-      //
-      // com.google.cloud.bigquery.storage.v1alpha2.Table.TableSchema updatedSchema =
-      // response.get().getUpdatedSchema();
-      // int millis = 0;
-      // while (millis < 1000) {
-      //   if (updatedSchema.toString().equals(jsonStreamWriter.getTableSchema().toString())) {
-      //     break;
-      //   }
-      //   Thread.sleep(100);
-      //   millis += 100;
-      // }
-      // // LOG.info("Took " + millis + " millis to finish schema update.");
+      // 3). Send another row, this time expecting updatedSchema to be returned.
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "bbb");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+
+      ApiFuture<AppendRowsResponse> response =
+          jsonStreamWriter.append(jsonArr, -1, /* allowUnknownFields */ false);
+      assertEquals(1, response.get().getOffset());
+      TableResult result =
+          bigquery.listTableData(
+              tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+      Iterator<FieldValueList> iter = result.getValues().iterator();
+      assertEquals("aaa", iter.next().get(0).getStringValue());
+      assertEquals(false, iter.hasNext());
+
+      com.google.cloud.bigquery.storage.v1alpha2.Table.TableSchema updatedSchema = response.get().getUpdatedSchema();
+      int millis = 0;
+      while (millis < 1000) {
+        if (newSchema.equals(jsonStreamWriter.getTableSchema())) {
+          break;
+        }
+        Thread.sleep(100);
+        millis += 100;
+      }
+      LOG.info("New schema: " + newSchema);
+      LOG.info("Updated schema: " + updatedSchema);
+      // LOG.info("Took " + millis + " millis to finish schema update.");
       // LOG.info("Updated schema: " + updatedSchema);
       // LOG.info("Updated schema: " + jsonStreamWriter.getTableSchema().toString());
       // // LOG.info("New descriptor: " + jsonStreamWriter.getDescriptor().toProto());
