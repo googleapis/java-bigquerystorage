@@ -452,9 +452,6 @@ public class JsonStreamWriterTest {
 
     assertEquals(1L, appendFuture2.get().getOffset());
     assertEquals(
-        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
-        UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
-    assertEquals(
         1,
         testBigQueryWrite
             .getAppendRequests()
@@ -462,6 +459,9 @@ public class JsonStreamWriterTest {
             .getProtoRows()
             .getRows()
             .getSerializedRowsCount());
+    assertEquals(
+        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
+        UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
     // Check if writer schemas were added in for both connections.
     assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
     assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
@@ -565,9 +565,6 @@ public class JsonStreamWriterTest {
 
     assertEquals(0L, appendFuture2.get().getOffset());
     assertEquals(
-        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
-        UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
-    assertEquals(
         1,
         testBigQueryWrite
             .getAppendRequests()
@@ -575,6 +572,10 @@ public class JsonStreamWriterTest {
             .getProtoRows()
             .getRows()
             .getSerializedRowsCount());
+    assertEquals(
+        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
+        UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
+
     // Check if writer schemas were added in for both connections.
     assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
     assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
