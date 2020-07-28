@@ -94,12 +94,6 @@ public class JsonStreamWriter implements AutoCloseable {
     this.streamWriter.setUpdatedSchema(builder.tableSchema);
   }
 
-  public synchronized void setDescriptor(Table.TableSchema tableSchema)
-      throws Descriptors.DescriptorValidationException {
-    this.descriptor =
-        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-  }
-
   /**
    * Writes a JSONArray that contains JSONObjects to the BigQuery table by first converting the JSON
    * data to protobuf messages, then using StreamWriter's append() to write the data. This will
@@ -197,6 +191,17 @@ public class JsonStreamWriter implements AutoCloseable {
       onSchemaUpdateRunnable.setJsonStreamWriter(this);
       builder.setOnSchemaUpdateRunnable(onSchemaUpdateRunnable);
     }
+  }
+
+  /**
+   * Setter for descriptor.
+   *
+   * @param tableSchema
+   */
+  public synchronized void setDescriptor(Table.TableSchema tableSchema)
+      throws Descriptors.DescriptorValidationException {
+    this.descriptor =
+        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
   }
 
   /**
@@ -341,12 +346,12 @@ public class JsonStreamWriter implements AutoCloseable {
      *
      * @param onSchemaUpdateRunnable An abstract class that implements runnable and provides access
      *     to the JsonStreamWriter, the StreamWriter, and the updated schema. Users should implement
-     *     the inherited run() function.
+     *     the run() function.
      * @return Builder
      */
     public Builder setOnSchemaUpdateRunnable(OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
       this.onSchemaUpdateRunnable =
-          Preconditions.checkNotNull(onSchemaUpdateRunnable, "onSchemaUpdateRunnable is null.");
+          Preconditions.checkNotNull(onSchemaUpdateRunnable, "OnSchemaUpdateRunnable is null.");
       return this;
     }
 
