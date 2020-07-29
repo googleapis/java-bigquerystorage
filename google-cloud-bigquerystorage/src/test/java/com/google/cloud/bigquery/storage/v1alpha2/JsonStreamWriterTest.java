@@ -33,6 +33,7 @@ import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Timestamp;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -197,7 +198,6 @@ public class JsonStreamWriterTest {
     }
 
     JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    assertEquals(TABLE_SCHEMA, writer.getTableSchema());
     assertEquals(TEST_STREAM, writer.getStreamName());
   }
 
@@ -392,6 +392,12 @@ public class JsonStreamWriterTest {
                 "Schema update fail: updated schema could not be converted to a valid descriptor.");
             return;
           }
+          try {
+            this.getStreamWriter().refreshAppend();
+          } catch (InterruptedException | IOException e) {
+            LOG.severe("StreamWriter failed to refresh upon schema update." + e);
+          }
+
           LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
         }
       };

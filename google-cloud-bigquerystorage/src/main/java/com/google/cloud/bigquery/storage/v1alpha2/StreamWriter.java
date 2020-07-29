@@ -191,25 +191,23 @@ public class StreamWriter implements AutoCloseable {
   public String getTableNameString() {
     return tableName;
   }
-
-  /* Once updated schema is retrieved, it will be set to null (matches backend implementation of clearing updated schema once it puts it in an AppendRowsResponse)
+  /* Getter for the updated schema
    *
    * @return Table.TableSchema
    */
   public Table.TableSchema getUpdatedSchema() {
     return this.updatedSchema;
   }
-
   /* Setter for updated schema.
    *
    * @param updatedSchema
    */
-  public void setUpdatedSchema(Table.TableSchema updatedSchema) {
+  synchronized void setUpdatedSchema(Table.TableSchema updatedSchema) {
     this.updatedSchema = updatedSchema;
   }
 
   /** OnSchemaUpdateRunnable for this streamWriter. */
-  public OnSchemaUpdateRunnable getOnSchemaUpdateRunnable() {
+  OnSchemaUpdateRunnable getOnSchemaUpdateRunnable() {
     return this.onSchemaUpdateRunnable;
   }
 
@@ -842,11 +840,6 @@ public class StreamWriter implements AutoCloseable {
         if (response.hasUpdatedSchema()) {
           if (streamWriter.getOnSchemaUpdateRunnable() != null) {
             streamWriter.getOnSchemaUpdateRunnable().setUpdatedSchema(response.getUpdatedSchema());
-            try {
-              streamWriter.getOnSchemaUpdateRunnable().getStreamWriter().refreshAppend();
-            } catch (InterruptedException | IOException e) {
-              LOG.severe("StreamWriter failed to refresh upon schema update." + e);
-            }
             streamWriter.executor.schedule(
                 streamWriter.getOnSchemaUpdateRunnable(), 0L, TimeUnit.MILLISECONDS);
           }

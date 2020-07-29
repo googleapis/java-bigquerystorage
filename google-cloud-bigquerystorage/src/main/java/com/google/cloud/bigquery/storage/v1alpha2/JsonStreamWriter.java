@@ -93,6 +93,21 @@ public class JsonStreamWriter implements AutoCloseable {
     this.streamWriter = streamWriterBuilder.build();
     this.streamWriter.setUpdatedSchema(builder.tableSchema);
   }
+  /**
+   * Writes a JSONArray that contains JSONObjects to the BigQuery table by first converting the JSON
+   * data to protobuf messages, then using StreamWriter's append() to write the data. This will
+   * return a ApiFuture<AppendRowsResponse>, which will be processed by a callback to determine if a
+   * schema update is required.
+   *
+   * @param jsonArr The JSON array that contains JSONObjects to be written
+   * @param allowUnknownFields if true, json data can have fields unknown to the BigQuery table.
+   * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
+   *     ApiFuture
+   */
+  public synchronized ApiFuture<AppendRowsResponse> append(
+      JSONArray jsonArr, boolean allowUnknownFields) {
+    return append(jsonArr, -1, allowUnknownFields);
+  }
 
   /**
    * Writes a JSONArray that contains JSONObjects to the BigQuery table by first converting the JSON
@@ -151,11 +166,11 @@ public class JsonStreamWriter implements AutoCloseable {
   }
 
   /**
-   * Gets current tableSchema
+   * Gets current tableSchema for testing purposes
    *
    * @return Table.TableSchema
    */
-  public Table.TableSchema getTableSchema() {
+  Table.TableSchema getTableSchema() {
     return this.streamWriter.getUpdatedSchema();
   }
 

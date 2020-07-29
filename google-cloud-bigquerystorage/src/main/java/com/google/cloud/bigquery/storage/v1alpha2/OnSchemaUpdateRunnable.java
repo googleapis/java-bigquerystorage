@@ -33,16 +33,21 @@ import java.util.logging.Logger;
  * <pre>
  * <code>
  * public void run() {
- * this.streamWriter.setUpdatedSchema(this.updatedSchema);
+ * this.getStreamWriter().setUpdatedSchema(this.getUpdatedSchema());
  * try {
- * this.jsonStreamWriter.setDescriptor(this.updatedSchema);
+ * this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
  * } catch (Descriptors.DescriptorValidationException e) {
  * LOG.severe(
  * "Schema update fail: updated schema could not be converted to a valid descriptor.");
  * return;
  * }
+ * try {
+ * this.getStreamWriter().refreshAppend();
+ * } catch (InterruptedException | IOException e) {
+ * LOG.severe("StreamWriter failed to refresh upon schema update." + e);
+ * }
  *
- * LOG.info("Successfully updated schema: " + this.updatedSchema);
+ * LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
  * }
  * </code>
  * </pre>
@@ -58,7 +63,7 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
    *
    * @param updatedSchema
    */
-  public void setUpdatedSchema(Table.TableSchema updatedSchema) {
+  void setUpdatedSchema(Table.TableSchema updatedSchema) {
     this.updatedSchema = updatedSchema;
   }
 
@@ -67,7 +72,7 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
    *
    * @param streamWriter
    */
-  public void setStreamWriter(StreamWriter streamWriter) {
+  void setStreamWriter(StreamWriter streamWriter) {
     this.streamWriter = streamWriter;
   }
 
@@ -76,22 +81,22 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
    *
    * @param jsonStreamWriter
    */
-  public void setJsonStreamWriter(JsonStreamWriter jsonStreamWriter) {
+  void setJsonStreamWriter(JsonStreamWriter jsonStreamWriter) {
     this.jsonStreamWriter = jsonStreamWriter;
   }
 
   /** Getter for the updatedSchema */
-  public Table.TableSchema getUpdatedSchema() {
+  Table.TableSchema getUpdatedSchema() {
     return this.updatedSchema;
   }
 
   /** Getter for the streamWriter */
-  public StreamWriter getStreamWriter() {
+  StreamWriter getStreamWriter() {
     return this.streamWriter;
   }
 
   /** Getter for the jsonStreamWriter */
-  public JsonStreamWriter getJsonStreamWriter() {
+  JsonStreamWriter getJsonStreamWriter() {
     return this.jsonStreamWriter;
   }
 }
