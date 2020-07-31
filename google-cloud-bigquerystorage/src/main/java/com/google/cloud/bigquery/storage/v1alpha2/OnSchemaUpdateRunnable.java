@@ -23,17 +23,12 @@ import java.util.logging.Logger;
  * updated schema has been passed back through the AppendRowsResponse. Users should only implement
  * the run() function. The following example performs a simple schema update.
  *
- * <p>Performing a schema update requires 3 steps: making a new connection with the same
- * WriteStream, updating StreamWriter's stored Table.TableSchema, and updating JsonStreamWriter's
- * stored descriptor. By default, the StreamWriter will always refresh the connection upon schema
- * update, but the rest is up to the users. In the example below, the run() method updates the
- * Table.TableSchema for the StreamWriter, and generates a new Descriptor based on the updated
- * schema for the JsonStreamWriter.
+ * <p>Performing a schema update requires 2 steps: making a new connection with the same WriteStream
+ * and updating JsonStreamWriter's stored descriptor.
  *
  * <pre>
  * <code>
  * public void run() {
- * this.getStreamWriter().setUpdatedSchema(this.getUpdatedSchema());
  * try {
  * this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
  * } catch (Descriptors.DescriptorValidationException e) {
