@@ -91,7 +91,6 @@ public class JsonStreamWriter implements AutoCloseable {
         builder.endpoint,
         builder.onSchemaUpdateRunnable);
     this.streamWriter = streamWriterBuilder.build();
-    this.streamWriter.setUpdatedSchema(builder.tableSchema);
   }
   /**
    * Writes a JSONArray that contains JSONObjects to the BigQuery table by first converting the JSON
@@ -163,15 +162,6 @@ public class JsonStreamWriter implements AutoCloseable {
    */
   public Descriptor getDescriptor() {
     return this.descriptor;
-  }
-
-  /**
-   * Gets current tableSchema for testing purposes
-   *
-   * @return Table.TableSchema
-   */
-  Table.TableSchema getTableSchema() {
-    return this.streamWriter.getUpdatedSchema();
   }
 
   /** Sets all StreamWriter settings. */
@@ -272,6 +262,25 @@ public class JsonStreamWriter implements AutoCloseable {
     private String endpoint;
     private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
 
+    private final OnSchemaUpdateRunnable ON_SCHEMA_UPDATE_RUNNABLE =
+        new OnSchemaUpdateRunnable() {
+          public void run() {
+            try {
+              this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
+            } catch (Descriptors.DescriptorValidationException e) {
+              LOG.severe(
+                  "Schema update fail: updated schema could not be converted to a valid descriptor.");
+              return;
+            }
+            try {
+              this.getStreamWriter().refreshAppend();
+              Thread.sleep(7000);
+            } catch (InterruptedException | IOException e) {
+              LOG.severe("StreamWriter failed to refresh upon schema update." + e);
+            }
+            LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
+          }
+        };
     /**
      * Constructor for JsonStreamWriter's Builder
      *
@@ -284,6 +293,7 @@ public class JsonStreamWriter implements AutoCloseable {
       this.streamName = streamName;
       this.tableSchema = tableSchema;
       this.client = client;
+      this.onSchemaUpdateRunnable = ON_SCHEMA_UPDATE_RUNNABLE;
     }
 
     /**
@@ -353,20 +363,6 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setEndpoint(String endpoint) {
       this.endpoint = Preconditions.checkNotNull(endpoint, "Endpoint is null.");
-      return this;
-    }
-
-    /**
-     * Setter for the action to perform when there is a schema update.
-     *
-     * @param onSchemaUpdateRunnable An abstract class that implements runnable and provides access
-     *     to the JsonStreamWriter, the StreamWriter, and the updated schema. Users should implement
-     *     the run() function.
-     * @return Builder
-     */
-    public Builder setOnSchemaUpdateRunnable(OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
-      this.onSchemaUpdateRunnable =
-          Preconditions.checkNotNull(onSchemaUpdateRunnable, "OnSchemaUpdateRunnable is null.");
       return this;
     }
 

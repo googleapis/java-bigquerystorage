@@ -31,10 +31,9 @@ import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.test.Test.UpdatedFooType;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.Descriptors;
 import com.google.protobuf.Timestamp;
-import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.UUID;
 import java.util.logging.Logger;
 import org.json.JSONArray;
@@ -170,17 +169,6 @@ public class JsonStreamWriterTest {
         .setChannelProvider(channelProvider)
         .setExecutorProvider(SINGLE_THREAD_EXECUTOR)
         .setCredentialsProvider(NoCredentialsProvider.create());
-  }
-
-  private JsonStreamWriter.Builder getTestSchemaUpdateBuilder(
-      String testStream,
-      Table.TableSchema BQTableSchema,
-      OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
-    return JsonStreamWriter.newBuilder(testStream, BQTableSchema)
-        .setChannelProvider(channelProvider)
-        .setExecutorProvider(SINGLE_THREAD_EXECUTOR)
-        .setCredentialsProvider(NoCredentialsProvider.create())
-        .setOnSchemaUpdateRunnable(onSchemaUpdateRunnable);
   }
 
   @Test
@@ -381,31 +369,9 @@ public class JsonStreamWriterTest {
     writer.close();
   }
 
-  private final OnSchemaUpdateRunnable ON_SCHEMA_UPDATE_RUNNABLE =
-      new OnSchemaUpdateRunnable() {
-        public void run() {
-          this.getStreamWriter().setUpdatedSchema(this.getUpdatedSchema());
-          try {
-            this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
-          } catch (Descriptors.DescriptorValidationException e) {
-            LOG.severe(
-                "Schema update fail: updated schema could not be converted to a valid descriptor.");
-            return;
-          }
-          try {
-            this.getStreamWriter().refreshAppend();
-          } catch (InterruptedException | IOException e) {
-            LOG.severe("StreamWriter failed to refresh upon schema update." + e);
-          }
-
-          LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
-        }
-      };
-
   @Test
   public void testAppendSchemaUpdate() throws Exception {
-    JsonStreamWriter writer =
-        getTestSchemaUpdateBuilder(TEST_STREAM, TABLE_SCHEMA, ON_SCHEMA_UPDATE_RUNNABLE).build();
+    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
     // Add fake resposne for FakeBigQueryWrite, first response has updated schema.
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
@@ -422,17 +388,15 @@ public class JsonStreamWriterTest {
     ApiFuture<AppendRowsResponse> appendFuture1 =
         writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
-    Table.TableSchema updatedSchema = appendFuture1.get().getUpdatedSchema();
     int millis = 0;
-    while (millis < 1000) {
-      if (updatedSchema.equals(writer.getTableSchema())) {
+    while (millis <= 10000) {
+      if (writer.getDescriptor().getFields().size() == 2) {
         break;
       }
-      Thread.sleep(10);
-      millis += 10;
+      Thread.sleep(100);
+      millis += 100;
     }
-    assertEquals(updatedSchema, writer.getTableSchema());
-    LOG.info("Took " + millis + " millis to finish schema update.");
+    assertTrue(writer.getDescriptor().getFields().size() == 2);
     assertEquals(0L, appendFuture1.get().getOffset());
     assertEquals(
         1,
@@ -468,26 +432,16 @@ public class JsonStreamWriterTest {
     assertEquals(
         testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
         UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
-    // Check if writer schemas were added in for both connections.
+    // // Check if writer schemas were added in for both connections.
     assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
     assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
-    // .equals() method implemented in the Message interface to check if table schemas are the same.
-    assertEquals(
-        ProtoSchemaConverter.convert(
-            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(TABLE_SCHEMA)),
-        testBigQueryWrite.getAppendRequests().get(0).getProtoRows().getWriterSchema());
-    assertEquals(
-        ProtoSchemaConverter.convert(
-            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(
-                UPDATED_TABLE_SCHEMA)),
-        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getWriterSchema());
+
     writer.close();
   }
 
   @Test
   public void testAppendAlreadyExistsException() throws Exception {
-    JsonStreamWriter writer =
-        getTestSchemaUpdateBuilder(TEST_STREAM, TABLE_SCHEMA, ON_SCHEMA_UPDATE_RUNNABLE).build();
+    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
             .setError(com.google.rpc.Status.newBuilder().setCode(6).build())
@@ -508,8 +462,7 @@ public class JsonStreamWriterTest {
 
   @Test
   public void testAppendOutOfRangeException() throws Exception {
-    JsonStreamWriter writer =
-        getTestSchemaUpdateBuilder(TEST_STREAM, TABLE_SCHEMA, ON_SCHEMA_UPDATE_RUNNABLE).build();
+    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
             .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
@@ -530,8 +483,7 @@ public class JsonStreamWriterTest {
 
   @Test
   public void testAppendOutOfRangeAndUpdateSchema() throws Exception {
-    JsonStreamWriter writer =
-        getTestSchemaUpdateBuilder(TEST_STREAM, TABLE_SCHEMA, ON_SCHEMA_UPDATE_RUNNABLE).build();
+    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
     testBigQueryWrite.addResponse(
         Storage.AppendRowsResponse.newBuilder()
             .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
@@ -550,14 +502,14 @@ public class JsonStreamWriterTest {
     } catch (Throwable t) {
       assertEquals(t.getCause().getMessage(), "OUT_OF_RANGE: ");
       int millis = 0;
-      while (millis < 1000) {
-        if (writer.getTableSchema().equals(UPDATED_TABLE_SCHEMA)) {
+      while (millis <= 10000) {
+        if (writer.getDescriptor().getFields().size() == 2) {
           break;
         }
-        Thread.sleep(10);
-        millis += 10;
+        Thread.sleep(100);
+        millis += 100;
       }
-      assertEquals(writer.getTableSchema(), UPDATED_TABLE_SCHEMA);
+      assertTrue(writer.getDescriptor().getFields().size() == 2);
     }
 
     JSONObject updatedFoo = new JSONObject();
@@ -585,17 +537,75 @@ public class JsonStreamWriterTest {
     // Check if writer schemas were added in for both connections.
     assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
     assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
-    // .equals() method implemented in the Message interface to check if table schemas are the same.
-    assertEquals(
-        ProtoSchemaConverter.convert(
-            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(TABLE_SCHEMA)),
-        testBigQueryWrite.getAppendRequests().get(0).getProtoRows().getWriterSchema());
-    assertEquals(
-        ProtoSchemaConverter.convert(
-            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(
-                UPDATED_TABLE_SCHEMA)),
-        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getWriterSchema());
 
+    writer.close();
+  }
+
+  @Test
+  public void testMultiThreadAppend() throws Exception {
+    final JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(1L)
+                    .build())
+            .build();
+
+    JSONObject foo = new JSONObject();
+    foo.put("foo", "allen");
+    final JSONArray jsonArr = new JSONArray();
+    jsonArr.put(foo);
+
+    final HashSet<Long> offset_sets = new HashSet<Long>();
+
+    Thread[] thread_arr = new Thread[20];
+    for (int i = 0; i < 20; i++) {
+      testBigQueryWrite.addResponse(
+          Storage.AppendRowsResponse.newBuilder().setOffset((long) i).build());
+      offset_sets.add((long) i);
+      Thread t =
+          new Thread(
+              new Runnable() {
+                public void run() {
+                  try {
+                    ApiFuture<AppendRowsResponse> appendFuture =
+                        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+                    AppendRowsResponse response = appendFuture.get();
+                    LOG.info("Processing complete, offset is " + response.getOffset());
+                    offset_sets.remove(response.getOffset());
+                  } catch (Exception e) {
+                    LOG.severe("Thread execution failed: " + e.getMessage());
+                  }
+                }
+              });
+      thread_arr[i] = t;
+      LOG.info("Starting thread " + i + ".");
+      t.start();
+    }
+
+    for (int i = 0; i < thread_arr.length; i++) {
+      thread_arr[i].join();
+    }
+    assertTrue(offset_sets.size() == 0);
+    for (int i = 0; i < thread_arr.length; i++) {
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(i)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(i)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          FooType.newBuilder().setFoo("allen").build().toByteString());
+    }
     writer.close();
   }
 }
