@@ -351,11 +351,11 @@ public class ITBigQueryWriteManualClientTest {
           millis += 1000;
         }
         newSchema = schema;
-        LOG.info("bar column successfully added to table");
+        LOG.info("bar column successfully added to table in " + millis + " millis: " + bigquery.getTable(DATASET, tableName).getDefinition().getSchema());
       } catch (BigQueryException e) {
         LOG.severe("bar column was not added. \n" + e.toString());
       }
-      Thread.sleep(60*1000);
+      Thread.sleep(5*60*1000);
       // 3). Send another row, this time expecting updatedSchema to be returned.
       JSONObject foo2 = new JSONObject();
       foo2.put("foo", "bbb");
@@ -365,6 +365,7 @@ public class ITBigQueryWriteManualClientTest {
       ApiFuture<AppendRowsResponse> response2 =
           jsonStreamWriter.append(jsonArr2, -1, /* allowUnknownFields */ false);
       assertEquals(1, response2.get().getOffset());
+      assertTrue(response2.get().hasUpdatedSchema());
       TableResult result2 =
           bigquery.listTableData(
               tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
