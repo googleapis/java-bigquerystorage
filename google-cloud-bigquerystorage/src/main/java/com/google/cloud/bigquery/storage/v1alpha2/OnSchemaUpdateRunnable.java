@@ -15,34 +15,33 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import java.util.logging.Logger;
-
 /**
- * A abstract class that implements the Runnable interface and provides access to the current
+ * A abstract class that implements the Runable interface and provides access to the current
  * JsonStreamWriter, StreamWriter, and updatedSchema. This runnable will only be called when a
  * updated schema has been passed back through the AppendRowsResponse. Users should only implement
  * the run() function. The following example performs a simple schema update.
  *
  * <p>Performing a schema update requires 2 steps: making a new connection with the same WriteStream
- * and updating JsonStreamWriter's stored descriptor.
+ * and updating JsonStreamWriter's stored descriptor. The order is important here, since
+ * refreshAppend() internally needs to wait for at least 7 seconds. If the descriptor updates first
+ * and an append with a new schema comes in while refreshAppend(), there will be errors.
  *
  * <pre>
  * <code>
  * public void run() {
- * try {
- * this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
- * } catch (Descriptors.DescriptorValidationException e) {
- * LOG.severe(
- * "Schema update fail: updated schema could not be converted to a valid descriptor.");
- * return;
- * }
- * try {
- * this.getStreamWriter().refreshAppend();
- * } catch (InterruptedException | IOException e) {
- * LOG.severe("StreamWriter failed to refresh upon schema update." + e);
- * }
- *
- * LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
+ *   try {
+ *     this.getStreamWriter().refreshAppend();
+ *   } catch (InterruptedException | IOException e) {
+ *     LOG.severe("StreamWriter failed to refresh upon schema update." + e);
+ *   }
+ *   try {
+ *     this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
+ *   } catch (Descriptors.DescriptorValidationException e) {
+ *     LOG.severe(
+ *         "Schema update fail: updated schema could not be converted to a valid descriptor.");
+ *     return;
+ *   }
+ *   LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
  * }
  * </code>
  * </pre>
@@ -51,7 +50,6 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
   private JsonStreamWriter jsonStreamWriter;
   private StreamWriter streamWriter;
   private Table.TableSchema updatedSchema;
-  private static final Logger LOG = Logger.getLogger(OnSchemaUpdateRunnable.class.getName());
 
   /**
    * Setter for the updatedSchema

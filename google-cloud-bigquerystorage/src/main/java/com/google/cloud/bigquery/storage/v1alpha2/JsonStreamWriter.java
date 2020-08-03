@@ -264,17 +264,16 @@ public class JsonStreamWriter implements AutoCloseable {
         new OnSchemaUpdateRunnable() {
           public void run() {
             try {
+              this.getStreamWriter().refreshAppend();
+            } catch (InterruptedException | IOException e) {
+              LOG.severe("StreamWriter failed to refresh upon schema update." + e);
+            }
+            try {
               this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
             } catch (Descriptors.DescriptorValidationException e) {
               LOG.severe(
                   "Schema update fail: updated schema could not be converted to a valid descriptor.");
               return;
-            }
-            try {
-              this.getStreamWriter().refreshAppend();
-              Thread.sleep(7000);
-            } catch (InterruptedException | IOException e) {
-              LOG.severe("StreamWriter failed to refresh upon schema update." + e);
             }
             LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
           }

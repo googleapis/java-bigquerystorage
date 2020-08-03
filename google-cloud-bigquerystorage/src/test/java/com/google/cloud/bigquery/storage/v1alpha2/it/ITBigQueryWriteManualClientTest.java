@@ -297,6 +297,7 @@ public class ITBigQueryWriteManualClientTest {
                         com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
                             .build())))
             .build();
+
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     WriteStream writeStream =
@@ -306,14 +307,13 @@ public class ITBigQueryWriteManualClientTest {
                 .setWriteStream(
                     WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
                 .build());
+
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
-                    .setRequestByteThreshold(1024 * 1024L) // 1 Mb
-                    .setElementCountThreshold(2L)
-                    .setDelayThreshold(Duration.ofSeconds(2))
+                    .setElementCountThreshold(1L)
                     .build())
             .build()) {
       // 1). Send 1 row
@@ -325,7 +325,6 @@ public class ITBigQueryWriteManualClientTest {
       ApiFuture<AppendRowsResponse> response =
           jsonStreamWriter.append(jsonArr, -1, /* allowUnknownFields */ false);
       assertEquals(0, response.get().getOffset());
-
       // 2). Schema update and wait until querying it returns a new schema.
       try {
         com.google.cloud.bigquery.Table table = bigquery.getTable(DATASET, tableName);
@@ -343,68 +342,77 @@ public class ITBigQueryWriteManualClientTest {
             table.toBuilder().setDefinition(StandardTableDefinition.of(newSchema)).build();
         updatedTable.update();
         int millis = 0;
-        while (millis < 10000) {
-          if (newSchema.equals(bigquery.getTable(DATASET, tableName).getDefinition().getSchema())) {
+        while (millis <= 10000) {
+          if (newSchema.equals(table.reload().getDefinition().getSchema())) {
             break;
           }
           Thread.sleep(1000);
           millis += 1000;
         }
         newSchema = schema;
-        LOG.info("bar column successfully added to table in " + millis + " millis: " + bigquery.getTable(DATASET, tableName).getDefinition().getSchema());
+        LOG.info(
+            "bar column successfully added to table in "
+                + millis
+                + " millis: "
+                + bigquery.getTable(DATASET, tableName).getDefinition().getSchema());
       } catch (BigQueryException e) {
         LOG.severe("bar column was not added. \n" + e.toString());
       }
-      Thread.sleep(5*60*1000);
-      // 3). Send another row, this time expecting updatedSchema to be returned.
+      // 3). Send rows to wait for updatedSchema to be returned.
       JSONObject foo2 = new JSONObject();
       foo2.put("foo", "bbb");
       JSONArray jsonArr2 = new JSONArray();
       jsonArr2.put(foo2);
 
-      ApiFuture<AppendRowsResponse> response2 =
-          jsonStreamWriter.append(jsonArr2, -1, /* allowUnknownFields */ false);
-      assertEquals(1, response2.get().getOffset());
-      assertTrue(response2.get().hasUpdatedSchema());
-      TableResult result2 =
-          bigquery.listTableData(
-              tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
-      Iterator<FieldValueList> iter2 = result2.getValues().iterator();
-      assertEquals("aaa", iter2.next().get(0).getStringValue());
-      assertEquals("bbb", iter2.next().get(0).getStringValue());
-      assertEquals(false, iter2.hasNext());
+      int next = 0;
+      for (int i = 1; i < 100; i++) {
+        ApiFuture<AppendRowsResponse> response2 =
+            jsonStreamWriter.append(jsonArr2, -1, /* allowUnknownFields */ false);
+        assertEquals(i, response2.get().getOffset());
+        if (response2.get().hasUpdatedSchema()) {
+          next = i;
+          break;
+        } else {
+          Thread.sleep(1000);
+        }
+      }
 
       int millis = 0;
       while (millis <= 10000) {
         if (jsonStreamWriter.getDescriptor().getFields().size() == 2) {
+          LOG.info("JsonStreamWriter successfully updated internal descriptor!");
           break;
         }
         Thread.sleep(100);
         millis += 100;
       }
       assertTrue(jsonStreamWriter.getDescriptor().getFields().size() == 2);
-
       // 4). Send rows with updated schema.
       JSONObject updatedFoo = new JSONObject();
       updatedFoo.put("foo", "ccc");
       updatedFoo.put("bar", "ddd");
       JSONArray updatedJsonArr = new JSONArray();
       updatedJsonArr.put(updatedFoo);
-      ApiFuture<AppendRowsResponse> response3 =
-          jsonStreamWriter.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
-      assertEquals(2, response3.get().getOffset());
+      for (int i = 0; i < 10; i++) {
+        ApiFuture<AppendRowsResponse> response3 =
+            jsonStreamWriter.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
+        assertEquals(next + 1 + i, response3.get().getOffset());
+      }
 
       TableResult result3 =
           bigquery.listTableData(
               tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
       Iterator<FieldValueList> iter3 = result3.getValues().iterator();
       assertEquals("aaa", iter3.next().get(0).getStringValue());
-      assertEquals("bbb", iter3.next().get(0).getStringValue());
-      FieldValueList temp = iter3.next();
-      assertEquals("ccc", temp.get(0).getStringValue());
-      assertEquals("ddd", temp.get(1).getStringValue());
+      for (int j = 1; j <= next; j++) {
+        assertEquals("bbb", iter3.next().get(0).getStringValue());
+      }
+      for (int j = next + 1; j < next + 1 + 10; j++) {
+        FieldValueList temp = iter3.next();
+        assertEquals("ccc", temp.get(0).getStringValue());
+        assertEquals("ddd", temp.get(1).getStringValue());
+      }
       assertEquals(false, iter3.hasNext());
-      jsonStreamWriter.close();
     }
   }
 

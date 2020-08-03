@@ -280,7 +280,7 @@ public class StreamWriter implements AutoCloseable {
    *
    * @throws IOException
    */
-  public void refreshAppend() throws IOException, InterruptedException {
+  public synchronized void refreshAppend() throws IOException, InterruptedException {
     synchronized (this) {
       if (shutdown.get()) {
         LOG.warning("Cannot refresh on a already shutdown writer.");
@@ -301,6 +301,12 @@ public class StreamWriter implements AutoCloseable {
       }
     } catch (InterruptedException expected) {
     }
+    // Currently there is a bug that it took reconnected stream 5 seconds to pick up
+    // stream count. So wait at least 7 seconds before sending a new request.
+    Thread.sleep(
+        Math.max(
+            this.retrySettings.getInitialRetryDelay().toMillis(),
+            Duration.ofSeconds(7).toMillis()));
     LOG.info("Write Stream " + streamName + " connection established");
   }
 
@@ -825,6 +831,7 @@ public class StreamWriter implements AutoCloseable {
         if (response.hasUpdatedSchema()) {
           if (streamWriter.getOnSchemaUpdateRunnable() != null) {
             streamWriter.getOnSchemaUpdateRunnable().setUpdatedSchema(response.getUpdatedSchema());
+            // streamWriter.getOnSchemaUpdateRunnable().run();
             streamWriter.executor.schedule(
                 streamWriter.getOnSchemaUpdateRunnable(), 0L, TimeUnit.MILLISECONDS);
           }
@@ -879,12 +886,6 @@ public class StreamWriter implements AutoCloseable {
             if (streamWriter.currentRetries < streamWriter.getRetrySettings().getMaxAttempts()
                 && !streamWriter.shutdown.get()) {
               streamWriter.refreshAppend();
-              // Currently there is a bug that it took reconnected stream 5 seconds to pick up
-              // stream count. So wait at least 7 seconds before sending a new request.
-              Thread.sleep(
-                  Math.min(
-                      streamWriter.getRetrySettings().getInitialRetryDelay().toMillis(),
-                      Duration.ofSeconds(7).toMillis()));
               LOG.info("Resending requests on transient error:" + streamWriter.currentRetries);
               streamWriter.writeBatch(inflightBatch);
               synchronized (streamWriter.currentRetries) {
