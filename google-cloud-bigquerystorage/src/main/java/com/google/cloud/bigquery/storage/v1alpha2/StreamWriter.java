@@ -831,7 +831,6 @@ public class StreamWriter implements AutoCloseable {
         if (response.hasUpdatedSchema()) {
           if (streamWriter.getOnSchemaUpdateRunnable() != null) {
             streamWriter.getOnSchemaUpdateRunnable().setUpdatedSchema(response.getUpdatedSchema());
-            // streamWriter.getOnSchemaUpdateRunnable().run();
             streamWriter.executor.schedule(
                 streamWriter.getOnSchemaUpdateRunnable(), 0L, TimeUnit.MILLISECONDS);
           }
