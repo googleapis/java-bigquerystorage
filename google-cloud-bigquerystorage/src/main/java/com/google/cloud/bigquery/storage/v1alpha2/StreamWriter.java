@@ -164,7 +164,6 @@ public class StreamWriter implements AutoCloseable {
       stub = builder.client;
     }
     backgroundResources = new BackgroundResourceAggregation(backgroundResourceList);
-
     shutdown = new AtomicBoolean(false);
     if (builder.onSchemaUpdateRunnable != null) {
       this.onSchemaUpdateRunnable = builder.onSchemaUpdateRunnable;
@@ -323,9 +322,11 @@ public class StreamWriter implements AutoCloseable {
         Math.max(
             this.retrySettings.getInitialRetryDelay().toMillis(),
             Duration.ofSeconds(REFRESH_STREAM_WAIT_TIME).toMillis()));
-    if (this.onSchemaUpdateRunnable.getAttachUpdatedTableSchema()) {
-      this.onSchemaUpdateRunnable.setAttachUpdatedTableSchema(false);
-      this.updatedSchema = this.onSchemaUpdateRunnable.getUpdatedSchema();
+    if (this.onSchemaUpdateRunnable != null) {
+      if (this.onSchemaUpdateRunnable.getAttachUpdatedTableSchema()) {
+        this.onSchemaUpdateRunnable.setAttachUpdatedTableSchema(false);
+        this.updatedSchema = this.onSchemaUpdateRunnable.getUpdatedSchema();
+      }
     }
     // Can only unlock here since need to sleep the full 7 seconds before stream can allow appends.
     appendAndRefreshAppendLock.unlock();

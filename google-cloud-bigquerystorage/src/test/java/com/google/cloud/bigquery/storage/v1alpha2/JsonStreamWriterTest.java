@@ -767,9 +767,9 @@ public class JsonStreamWriterTest {
       jsonArr.put(foo);
 
       final HashSet<Long> offset_sets = new HashSet<Long>();
-
-      Thread[] thread_arr = new Thread[20];
-      for (int i = 0; i < 20; i++) {
+      int thread_nums = 5;
+      Thread[] thread_arr = new Thread[thread_nums];
+      for (int i = 0; i < thread_nums; i++) {
         testBigQueryWrite.addResponse(
             Storage.AppendRowsResponse.newBuilder().setOffset((long) i).build());
         offset_sets.add((long) i);
@@ -793,11 +793,11 @@ public class JsonStreamWriterTest {
         t.start();
       }
 
-      for (int i = 0; i < thread_arr.length; i++) {
+      for (int i = 0; i < thread_nums; i++) {
         thread_arr[i].join();
       }
       assertTrue(offset_sets.size() == 0);
-      for (int i = 0; i < thread_arr.length; i++) {
+      for (int i = 0; i < thread_nums; i++) {
         assertEquals(
             1,
             testBigQueryWrite
@@ -834,10 +834,10 @@ public class JsonStreamWriterTest {
       jsonArr.put(foo);
 
       final HashSet<Long> offset_sets = new HashSet<Long>();
-
-      Thread[] thread_arr = new Thread[20];
-      for (int i = 0; i < 20; i++) {
-        if (i == 10) {
+      int thread_nums = 5;
+      Thread[] thread_arr = new Thread[thread_nums];
+      for (int i = 0; i < thread_nums; i++) {
+        if (i == 2) {
           testBigQueryWrite.addResponse(
               Storage.AppendRowsResponse.newBuilder()
                   .setOffset((long) i)
@@ -869,11 +869,11 @@ public class JsonStreamWriterTest {
         t.start();
       }
 
-      for (int i = 0; i < thread_arr.length; i++) {
+      for (int i = 0; i < thread_nums; i++) {
         thread_arr[i].join();
       }
       assertTrue(offset_sets.size() == 0);
-      for (int i = 0; i < thread_arr.length; i++) {
+      for (int i = 0; i < thread_nums; i++) {
         assertEquals(
             1,
             testBigQueryWrite
@@ -906,7 +906,7 @@ public class JsonStreamWriterTest {
       final JSONArray jsonArr2 = new JSONArray();
       jsonArr2.put(foo);
 
-      for (int i = 20; i < 40; i++) {
+      for (int i = thread_nums; i < thread_nums + 5; i++) {
         testBigQueryWrite.addResponse(
             Storage.AppendRowsResponse.newBuilder().setOffset((long) i).build());
         offset_sets.add((long) i);
@@ -925,28 +925,28 @@ public class JsonStreamWriterTest {
                     }
                   }
                 });
-        thread_arr[i - 20] = t;
+        thread_arr[i - 5] = t;
         LOG.info("Starting thread " + i + " with updated json data.");
         t.start();
       }
 
-      for (int i = 0; i < thread_arr.length; i++) {
+      for (int i = 0; i < thread_nums; i++) {
         thread_arr[i].join();
       }
       assertTrue(offset_sets.size() == 0);
-      for (int i = 0; i < thread_arr.length; i++) {
+      for (int i = 0; i < thread_nums; i++) {
         assertEquals(
             1,
             testBigQueryWrite
                 .getAppendRequests()
-                .get(i + 20)
+                .get(i + 5)
                 .getProtoRows()
                 .getRows()
                 .getSerializedRowsCount());
         assertEquals(
             testBigQueryWrite
                 .getAppendRequests()
-                .get(i + 20)
+                .get(i + 5)
                 .getProtoRows()
                 .getRows()
                 .getSerializedRows(0),
