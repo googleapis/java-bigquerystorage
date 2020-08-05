@@ -88,8 +88,7 @@ public class JsonStreamWriter implements AutoCloseable {
         builder.batchingSettings,
         builder.retrySettings,
         builder.executorProvider,
-        builder.endpoint,
-        builder.onSchemaUpdateRunnable);
+        builder.endpoint);
     this.streamWriter = streamWriterBuilder.build();
   }
   /**
@@ -118,7 +117,7 @@ public class JsonStreamWriter implements AutoCloseable {
    * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
    *     ApiFuture
    */
-  public synchronized ApiFuture<AppendRowsResponse> append(
+  public ApiFuture<AppendRowsResponse> append(
       JSONArray jsonArr, long offset, boolean allowUnknownFields) {
     ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
     // Any error in convertJsonToProtoMessage will throw an
@@ -170,8 +169,7 @@ public class JsonStreamWriter implements AutoCloseable {
       @Nullable BatchingSettings batchingSettings,
       @Nullable RetrySettings retrySettings,
       @Nullable ExecutorProvider executorProvider,
-      @Nullable String endpoint,
-      @Nullable OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
+      @Nullable String endpoint) {
     if (channelProvider != null) {
       builder.setChannelProvider(channelProvider);
     }
@@ -190,10 +188,9 @@ public class JsonStreamWriter implements AutoCloseable {
     if (endpoint != null) {
       builder.setEndpoint(endpoint);
     }
-    if (onSchemaUpdateRunnable != null) {
-      onSchemaUpdateRunnable.setJsonStreamWriter(this);
-      builder.setOnSchemaUpdateRunnable(onSchemaUpdateRunnable);
-    }
+    JsonStreamWriterOnSchemaUpdateRunnable jsonStreamWriterOnSchemaUpdateRunnable = new JsonStreamWriterOnSchemaUpdateRunnable();
+    jsonStreamWriterOnSchemaUpdateRunnable.setJsonStreamWriter(this);
+    builder.setOnSchemaUpdateRunnable(jsonStreamWriterOnSchemaUpdateRunnable);
   }
 
   /**
@@ -247,6 +244,41 @@ public class JsonStreamWriter implements AutoCloseable {
     this.streamWriter.close();
   }
 
+  public class JsonStreamWriterOnSchemaUpdateRunnable extends OnSchemaUpdateRunnable {
+    private JsonStreamWriter jsonStreamWriter;
+    /**
+     * Setter for the jsonStreamWriter
+     *
+     * @param jsonStreamWriter
+     */
+    public void setJsonStreamWriter(JsonStreamWriter jsonStreamWriter) {
+      this.jsonStreamWriter = jsonStreamWriter;
+    }
+
+    /** Getter for the jsonStreamWriter */
+    public JsonStreamWriter getJsonStreamWriter() {
+      return this.jsonStreamWriter;
+    }
+
+    @Override
+    public void run() {
+      this.setAttachUpdatedTableSchema(true);
+      try {
+        this.getStreamWriter().refreshAppend();
+      } catch (InterruptedException | IOException e) {
+        LOG.severe("StreamWriter failed to refresh upon schema update." + e);
+      }
+      try {
+        this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
+      } catch (Descriptors.DescriptorValidationException e) {
+        LOG.severe(
+            "Schema update fail: updated schema could not be converted to a valid descriptor.");
+        return;
+      }
+      LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
+    }
+  }
+
   public static final class Builder {
     private String streamName;
     private BigQueryWriteClient client;
@@ -258,26 +290,7 @@ public class JsonStreamWriter implements AutoCloseable {
     private RetrySettings retrySettings;
     private ExecutorProvider executorProvider;
     private String endpoint;
-    private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
 
-    private final OnSchemaUpdateRunnable ON_SCHEMA_UPDATE_RUNNABLE =
-        new OnSchemaUpdateRunnable() {
-          public void run() {
-            try {
-              this.getStreamWriter().refreshAppend();
-            } catch (InterruptedException | IOException e) {
-              LOG.severe("StreamWriter failed to refresh upon schema update." + e);
-            }
-            try {
-              this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
-            } catch (Descriptors.DescriptorValidationException e) {
-              LOG.severe(
-                  "Schema update fail: updated schema could not be converted to a valid descriptor.");
-              return;
-            }
-            LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
-          }
-        };
     /**
      * Constructor for JsonStreamWriter's Builder
      *
@@ -290,7 +303,6 @@ public class JsonStreamWriter implements AutoCloseable {
       this.streamName = streamName;
       this.tableSchema = tableSchema;
       this.client = client;
-      this.onSchemaUpdateRunnable = ON_SCHEMA_UPDATE_RUNNABLE;
     }
 
     /**

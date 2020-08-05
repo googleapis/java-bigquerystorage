@@ -50,6 +50,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.threeten.bp.Duration;
 import org.threeten.bp.Instant;
+import com.google.protobuf.Descriptors;
 
 /**
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
@@ -88,6 +89,7 @@ public class StreamWriter implements AutoCloseable {
   private BigQueryWriteSettings stubSettings;
 
   private final Lock messagesBatchLock;
+  private final Lock appendAndRefreshAppendLock;
   private final MessagesBatch messagesBatch;
 
   private BackgroundResource backgroundResources;
@@ -112,6 +114,9 @@ public class StreamWriter implements AutoCloseable {
 
   // Used for schema updates
   private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
+  private Table.TableSchema updatedSchema;
+
+  private final int REFRESH_STREAM_WAIT_TIME = 7;
 
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
@@ -136,6 +141,7 @@ public class StreamWriter implements AutoCloseable {
     this.retrySettings = builder.retrySettings;
     this.messagesBatch = new MessagesBatch(batchingSettings, this.streamName);
     messagesBatchLock = new ReentrantLock();
+    appendAndRefreshAppendLock = new ReentrantLock();
     activeAlarm = new AtomicBoolean(false);
     executor = builder.executorProvider.getExecutor();
     backgroundResourceList = new ArrayList<>();
@@ -191,6 +197,10 @@ public class StreamWriter implements AutoCloseable {
     return tableName;
   }
 
+  public void setUpdatedSchema(Table.TableSchema updatedSchema) {
+    this.updatedSchema = updatedSchema;
+  }
+
   /** OnSchemaUpdateRunnable for this streamWriter. */
   OnSchemaUpdateRunnable getOnSchemaUpdateRunnable() {
     return this.onSchemaUpdateRunnable;
@@ -229,6 +239,7 @@ public class StreamWriter implements AutoCloseable {
    * @return the message ID wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
+    appendAndRefreshAppendLock.lock();
     Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
     Preconditions.checkNotNull(message, "Message is null.");
     final AppendRequestAndFutureResponse outstandingAppend =
@@ -247,6 +258,7 @@ public class StreamWriter implements AutoCloseable {
       }
     } finally {
       messagesBatchLock.unlock();
+      appendAndRefreshAppendLock.unlock();
     }
 
     return outstandingAppend.appendResult;
@@ -280,21 +292,21 @@ public class StreamWriter implements AutoCloseable {
    *
    * @throws IOException
    */
-  public synchronized void refreshAppend() throws IOException, InterruptedException {
-    synchronized (this) {
-      if (shutdown.get()) {
-        LOG.warning("Cannot refresh on a already shutdown writer.");
-        return;
-      }
-      // There could be a moment, stub is not yet initialized.
-      if (clientStream != null) {
-        LOG.info("Closing the stream " + streamName);
-        clientStream.closeSend();
-      }
-      messagesBatch.resetAttachSchema();
-      bidiStreamingCallable = stub.appendRowsCallable();
-      clientStream = bidiStreamingCallable.splitCall(responseObserver);
+  public void refreshAppend() throws IOException, InterruptedException {
+    appendAndRefreshAppendLock.lock();
+    if (shutdown.get()) {
+      LOG.warning("Cannot refresh on a already shutdown writer.");
+      appendAndRefreshAppendLock.unlock();
+      return;
     }
+    // There could be a moment, stub is not yet initialized.
+    if (clientStream != null) {
+      LOG.info("Closing the stream " + streamName);
+      clientStream.closeSend();
+    }
+    messagesBatch.resetAttachSchema();
+    bidiStreamingCallable = stub.appendRowsCallable();
+    clientStream = bidiStreamingCallable.splitCall(responseObserver);
     try {
       while (!clientStream.isSendReady()) {
         Thread.sleep(10);
@@ -306,7 +318,13 @@ public class StreamWriter implements AutoCloseable {
     Thread.sleep(
         Math.max(
             this.retrySettings.getInitialRetryDelay().toMillis(),
-            Duration.ofSeconds(7).toMillis()));
+            Duration.ofSeconds(REFRESH_STREAM_WAIT_TIME).toMillis()));
+    // Can only unlock here since need to sleep the full 7 seconds before stream can allow appends.
+    if (this.onSchemaUpdateRunnable.getAttachUpdatedTableSchema()) {
+      this.onSchemaUpdateRunnable.setAttachUpdatedTableSchema(false);
+      this.updatedSchema = this.onSchemaUpdateRunnable.getUpdatedSchema();
+    }
+    appendAndRefreshAppendLock.unlock();
     LOG.info("Write Stream " + streamName + " connection established");
   }
 
@@ -362,6 +380,37 @@ public class StreamWriter implements AutoCloseable {
   private void writeBatch(final InflightBatch inflightBatch) {
     if (inflightBatch != null) {
       AppendRowsRequest request = inflightBatch.getMergedRequest();
+      // if (this.updatedSchema != null) {
+      //   try {
+      //     request.getProtoRows().toBuilder().setWriterSchema(ProtoSchemaConverter.convert(BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(this.updatedSchema)));
+      //     LOG.info("Updated writer schema for first append after schema update: " + request.getProtoRows().getWriterSchema());
+      //   } catch(Descriptors.DescriptorValidationException e) {
+      //     LOG.severe("Failed to update writer schema for append after schema update:" + e.getMessage());
+      //   }
+      //   this.updatedSchema = null;
+      // }
+      try {
+        Table.TableFieldSchema FOO =
+            Table.TableFieldSchema.newBuilder()
+                .setType(Table.TableFieldSchema.Type.STRING)
+                .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+                .setName("foo")
+                .build();
+        Table.TableSchema TABLE_SCHEMA =
+            Table.TableSchema.newBuilder().addFields(0, FOO).build();
+
+        AppendRowsRequest.ProtoData.Builder data =
+            request.getProtoRows().toBuilder().clearWriterSchema();
+        data.setWriterSchema(ProtoSchemaConverter.convert(BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(TABLE_SCHEMA)));
+
+        AppendRowsRequest.Builder requestBuilder = request.toBuilder();
+        request = requestBuilder.setProtoRows(data.build()).build();
+        // AppendRowsRequest newRequest = request.getProtoRows().toBuilder().setWriterSchema();
+        LOG.info("Updated writer schema for first append after schema update: " + request.getProtoRows().getWriterSchema());
+      } catch(Descriptors.DescriptorValidationException e) {
+          LOG.severe("Failed to update writer schema for append after schema update:" + e.getMessage());
+        }
+
       try {
         messagesWaiter.acquire(inflightBatch.getByteSize());
         responseObserver.addInflightBatch(inflightBatch);

@@ -16,40 +16,15 @@
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 /**
- * A abstract class that implements the Runable interface and provides access to the current
- * JsonStreamWriter, StreamWriter, and updatedSchema. This runnable will only be called when a
+ * A abstract class that implements the Runnable interface and provides access to the current
+ * StreamWriter and updatedSchema. This runnable will only be called when a
  * updated schema has been passed back through the AppendRowsResponse. Users should only implement
- * the run() function. The following example performs a simple schema update.
- *
- * <p>Performing a schema update requires 2 steps: making a new connection with the same WriteStream
- * and updating JsonStreamWriter's stored descriptor. The order is important here, since
- * refreshAppend() internally needs to wait for at least 7 seconds. If the descriptor updates first
- * and an append with a new schema comes in while refreshAppend(), there will be errors.
- *
- * <pre>
- * <code>
- * public void run() {
- *   try {
- *     this.getStreamWriter().refreshAppend();
- *   } catch (InterruptedException | IOException e) {
- *     LOG.severe("StreamWriter failed to refresh upon schema update." + e);
- *   }
- *   try {
- *     this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
- *   } catch (Descriptors.DescriptorValidationException e) {
- *     LOG.severe(
- *         "Schema update fail: updated schema could not be converted to a valid descriptor.");
- *     return;
- *   }
- *   LOG.info("Successfully updated schema: " + this.getUpdatedSchema());
- * }
- * </code>
- * </pre>
+ * the run() function.
  */
 public abstract class OnSchemaUpdateRunnable implements Runnable {
-  private JsonStreamWriter jsonStreamWriter;
   private StreamWriter streamWriter;
   private Table.TableSchema updatedSchema;
+  private boolean attachUpdatedTableSchema = false;
 
   /**
    * Setter for the updatedSchema
@@ -70,12 +45,12 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
   }
 
   /**
-   * Setter for the jsonStreamWriter
+   * Setter for attachUpdatedTableSchema. This is used to set the writer schema for the first append calls after a refreshAppend() is called to refresh the write stream upon schema update.
    *
-   * @param jsonStreamWriter
+   * @param streamWriter
    */
-  void setJsonStreamWriter(JsonStreamWriter jsonStreamWriter) {
-    this.jsonStreamWriter = jsonStreamWriter;
+  void setAttachUpdatedTableSchema(boolean attachUpdatedTableSchema) {
+    this.attachUpdatedTableSchema = attachUpdatedTableSchema;
   }
 
   /** Getter for the updatedSchema */
@@ -88,8 +63,8 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
     return this.streamWriter;
   }
 
-  /** Getter for the jsonStreamWriter */
-  JsonStreamWriter getJsonStreamWriter() {
-    return this.jsonStreamWriter;
+  /** Getter for attachUpdatedTableSchema */
+  boolean getAttachUpdatedTableSchema() {
+    return this.attachUpdatedTableSchema;
   }
 }
