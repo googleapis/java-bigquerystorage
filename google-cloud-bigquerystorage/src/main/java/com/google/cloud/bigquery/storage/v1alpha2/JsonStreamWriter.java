@@ -101,8 +101,7 @@ public class JsonStreamWriter implements AutoCloseable {
    * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
    *     ApiFuture
    */
-  public synchronized ApiFuture<AppendRowsResponse> append(
-      JSONArray jsonArr, boolean allowUnknownFields) {
+  public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, boolean allowUnknownFields) {
     return append(jsonArr, -1, allowUnknownFields);
   }
 
@@ -188,7 +187,8 @@ public class JsonStreamWriter implements AutoCloseable {
     if (endpoint != null) {
       builder.setEndpoint(endpoint);
     }
-    JsonStreamWriterOnSchemaUpdateRunnable jsonStreamWriterOnSchemaUpdateRunnable = new JsonStreamWriterOnSchemaUpdateRunnable();
+    JsonStreamWriterOnSchemaUpdateRunnable jsonStreamWriterOnSchemaUpdateRunnable =
+        new JsonStreamWriterOnSchemaUpdateRunnable();
     jsonStreamWriterOnSchemaUpdateRunnable.setJsonStreamWriter(this);
     builder.setOnSchemaUpdateRunnable(jsonStreamWriterOnSchemaUpdateRunnable);
   }

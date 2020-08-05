@@ -17,9 +17,8 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 
 /**
  * A abstract class that implements the Runnable interface and provides access to the current
- * StreamWriter and updatedSchema. This runnable will only be called when a
- * updated schema has been passed back through the AppendRowsResponse. Users should only implement
- * the run() function.
+ * StreamWriter and updatedSchema. This runnable will only be called when a updated schema has been
+ * passed back through the AppendRowsResponse. Users should only implement the run() function.
  */
 public abstract class OnSchemaUpdateRunnable implements Runnable {
   private StreamWriter streamWriter;
@@ -45,7 +44,8 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
   }
 
   /**
-   * Setter for attachUpdatedTableSchema. This is used to set the writer schema for the first append calls after a refreshAppend() is called to refresh the write stream upon schema update.
+   * Setter for attachUpdatedTableSchema. This is used to set the writer schema for the first append
+   * calls after a refreshAppend() is called to refresh the write stream upon schema update.
    *
    * @param streamWriter
    */
