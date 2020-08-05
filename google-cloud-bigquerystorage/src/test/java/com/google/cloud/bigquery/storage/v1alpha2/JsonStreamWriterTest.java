@@ -29,6 +29,7 @@ import com.google.api.gax.grpc.testing.MockServiceHelper;
 import com.google.cloud.bigquery.storage.test.JsonTest.ComplexRoot;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.test.Test.UpdatedFooType;
+import com.google.cloud.bigquery.storage.test.Test.UpdatedFooType2;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
@@ -71,8 +72,16 @@ public class JsonStreamWriterTest {
           .setMode(Table.TableFieldSchema.Mode.NULLABLE)
           .setName("bar")
           .build();
+  private final Table.TableFieldSchema BAZ =
+      Table.TableFieldSchema.newBuilder()
+          .setType(Table.TableFieldSchema.Type.STRING)
+          .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+          .setName("baz")
+          .build();
   private final Table.TableSchema UPDATED_TABLE_SCHEMA =
       Table.TableSchema.newBuilder().addFields(0, FOO).addFields(1, BAR).build();
+  private final Table.TableSchema UPDATED_TABLE_SCHEMA_2 =
+      Table.TableSchema.newBuilder().addFields(0, FOO).addFields(1, BAR).addFields(2, BAZ).build();
 
   private final Table.TableFieldSchema TEST_INT =
       Table.TableFieldSchema.newBuilder()
@@ -197,25 +206,32 @@ public class JsonStreamWriterTest {
     JSONArray jsonArr = new JSONArray();
     jsonArr.put(foo);
 
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
 
-    ApiFuture<AppendRowsResponse> appendFuture =
-        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
 
-    assertEquals(0L, appendFuture.get().getOffset());
-    assertEquals(
-        1,
-        testBigQueryWrite
-            .getAppendRequests()
-            .get(0)
-            .getProtoRows()
-            .getRows()
-            .getSerializedRowsCount());
-    assertEquals(
-        testBigQueryWrite.getAppendRequests().get(0).getProtoRows().getRows().getSerializedRows(0),
-        expectedProto.toByteString());
-    writer.close();
+      ApiFuture<AppendRowsResponse> appendFuture =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+
+      assertEquals(0L, appendFuture.get().getOffset());
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          expectedProto.toByteString());
+    }
   }
 
   @Test
@@ -235,32 +251,33 @@ public class JsonStreamWriterTest {
     jsonArr.put(foo2);
     jsonArr.put(foo3);
 
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
 
-    ApiFuture<AppendRowsResponse> appendFuture =
-        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+      ApiFuture<AppendRowsResponse> appendFuture =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
-    assertEquals(0L, appendFuture.get().getOffset());
-    assertEquals(
-        4,
-        testBigQueryWrite
-            .getAppendRequests()
-            .get(0)
-            .getProtoRows()
-            .getRows()
-            .getSerializedRowsCount());
-    for (int i = 0; i < 4; i++) {
+      assertEquals(0L, appendFuture.get().getOffset());
       assertEquals(
+          4,
           testBigQueryWrite
               .getAppendRequests()
               .get(0)
               .getProtoRows()
               .getRows()
-              .getSerializedRows(i),
-          expectedProto.toByteString());
+              .getSerializedRowsCount());
+      for (int i = 0; i < 4; i++) {
+        assertEquals(
+            testBigQueryWrite
+                .getAppendRequests()
+                .get(0)
+                .getProtoRows()
+                .getRows()
+                .getSerializedRows(i),
+            expectedProto.toByteString());
+      }
     }
-    writer.close();
   }
 
   @Test
@@ -271,34 +288,35 @@ public class JsonStreamWriterTest {
     JSONArray jsonArr = new JSONArray();
     jsonArr.put(foo);
 
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(1).build());
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(2).build());
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(3).build());
-    ApiFuture<AppendRowsResponse> appendFuture;
-    for (int i = 0; i < 4; i++) {
-      appendFuture = writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(1).build());
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(2).build());
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(3).build());
+      ApiFuture<AppendRowsResponse> appendFuture;
+      for (int i = 0; i < 4; i++) {
+        appendFuture = writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
-      assertEquals((long) i, appendFuture.get().getOffset());
-      assertEquals(
-          1,
-          testBigQueryWrite
-              .getAppendRequests()
-              .get(i)
-              .getProtoRows()
-              .getRows()
-              .getSerializedRowsCount());
-      assertEquals(
-          testBigQueryWrite
-              .getAppendRequests()
-              .get(i)
-              .getProtoRows()
-              .getRows()
-              .getSerializedRows(0),
-          expectedProto.toByteString());
+        assertEquals((long) i, appendFuture.get().getOffset());
+        assertEquals(
+            1,
+            testBigQueryWrite
+                .getAppendRequests()
+                .get(i)
+                .getProtoRows()
+                .getRows()
+                .getSerializedRowsCount());
+        assertEquals(
+            testBigQueryWrite
+                .getAppendRequests()
+                .get(i)
+                .getProtoRows()
+                .getRows()
+                .getSerializedRows(0),
+            expectedProto.toByteString());
+      }
     }
-    writer.close();
   }
 
   @Test
@@ -348,159 +366,57 @@ public class JsonStreamWriterTest {
     JSONArray jsonArr = new JSONArray();
     jsonArr.put(json);
 
-    JsonStreamWriter writer =
-        getTestJsonStreamWriterBuilder(TEST_STREAM, COMPLEX_TABLE_SCHEMA).build();
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
-    ApiFuture<AppendRowsResponse> appendFuture =
-        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, COMPLEX_TABLE_SCHEMA).build()) {
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
+      ApiFuture<AppendRowsResponse> appendFuture =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
-    assertEquals(0L, appendFuture.get().getOffset());
-    assertEquals(
-        1,
-        testBigQueryWrite
-            .getAppendRequests()
-            .get(0)
-            .getProtoRows()
-            .getRows()
-            .getSerializedRowsCount());
-    assertEquals(
-        testBigQueryWrite.getAppendRequests().get(0).getProtoRows().getRows().getSerializedRows(0),
-        expectedProto.toByteString());
-    writer.close();
-  }
-
-  @Test
-  public void testAppendSchemaUpdate() throws Exception {
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    // Add fake resposne for FakeBigQueryWrite, first response has updated schema.
-    testBigQueryWrite.addResponse(
-        Storage.AppendRowsResponse.newBuilder()
-            .setOffset(0)
-            .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
-            .build());
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(1).build());
-    // First append
-    JSONObject foo = new JSONObject();
-    foo.put("foo", "allen");
-    JSONArray jsonArr = new JSONArray();
-    jsonArr.put(foo);
-
-    ApiFuture<AppendRowsResponse> appendFuture1 =
-        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
-
-    int millis = 0;
-    while (millis <= 10000) {
-      if (writer.getDescriptor().getFields().size() == 2) {
-        break;
-      }
-      Thread.sleep(100);
-      millis += 100;
+      assertEquals(0L, appendFuture.get().getOffset());
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          expectedProto.toByteString());
     }
-    assertTrue(writer.getDescriptor().getFields().size() == 2);
-    assertEquals(0L, appendFuture1.get().getOffset());
-    assertEquals(
-        1,
-        testBigQueryWrite
-            .getAppendRequests()
-            .get(0)
-            .getProtoRows()
-            .getRows()
-            .getSerializedRowsCount());
-    assertEquals(
-        testBigQueryWrite.getAppendRequests().get(0).getProtoRows().getRows().getSerializedRows(0),
-        FooType.newBuilder().setFoo("allen").build().toByteString());
-
-    // Second append with updated schema.
-    JSONObject updatedFoo = new JSONObject();
-    updatedFoo.put("foo", "allen");
-    updatedFoo.put("bar", "allen2");
-    JSONArray updatedJsonArr = new JSONArray();
-    updatedJsonArr.put(updatedFoo);
-
-    ApiFuture<AppendRowsResponse> appendFuture2 =
-        writer.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
-
-    assertEquals(1L, appendFuture2.get().getOffset());
-    assertEquals(
-        1,
-        testBigQueryWrite
-            .getAppendRequests()
-            .get(1)
-            .getProtoRows()
-            .getRows()
-            .getSerializedRowsCount());
-    assertEquals(
-        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
-        UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
-    // // Check if writer schemas were added in for both connections.
-    assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
-    assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
-
-    writer.close();
   }
 
   @Test
-  public void testAppendAlreadyExistsException() throws Exception {
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    testBigQueryWrite.addResponse(
-        Storage.AppendRowsResponse.newBuilder()
-            .setError(com.google.rpc.Status.newBuilder().setCode(6).build())
-            .build());
-    JSONObject foo = new JSONObject();
-    foo.put("foo", "allen");
-    JSONArray jsonArr = new JSONArray();
-    jsonArr.put(foo);
-    ApiFuture<AppendRowsResponse> appendFuture =
-        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
-    try {
-      appendFuture.get();
-    } catch (Throwable t) {
-      assertEquals(t.getCause().getMessage(), "ALREADY_EXISTS: ");
-    }
-    writer.close();
-  }
+  public void testAppendMultipleSchemaUpdate() throws Exception {
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
+      // Add fake resposne for FakeBigQueryWrite, first response has updated schema.
+      testBigQueryWrite.addResponse(
+          Storage.AppendRowsResponse.newBuilder()
+              .setOffset(0)
+              .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
+              .build());
+      testBigQueryWrite.addResponse(
+          Storage.AppendRowsResponse.newBuilder()
+              .setOffset(1)
+              .setUpdatedSchema(UPDATED_TABLE_SCHEMA_2)
+              .build());
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(2).build());
+      // First append
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "allen");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
 
-  @Test
-  public void testAppendOutOfRangeException() throws Exception {
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    testBigQueryWrite.addResponse(
-        Storage.AppendRowsResponse.newBuilder()
-            .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
-            .build());
-    JSONObject foo = new JSONObject();
-    foo.put("foo", "allen");
-    JSONArray jsonArr = new JSONArray();
-    jsonArr.put(foo);
-    ApiFuture<AppendRowsResponse> appendFuture =
-        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
-    try {
-      appendFuture.get();
-    } catch (Throwable t) {
-      assertEquals(t.getCause().getMessage(), "OUT_OF_RANGE: ");
-    }
-    writer.close();
-  }
+      ApiFuture<AppendRowsResponse> appendFuture1 =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
-  @Test
-  public void testAppendOutOfRangeAndUpdateSchema() throws Exception {
-    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    testBigQueryWrite.addResponse(
-        Storage.AppendRowsResponse.newBuilder()
-            .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
-            .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
-            .build());
-    testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
-
-    JSONObject foo = new JSONObject();
-    foo.put("foo", "allen");
-    JSONArray jsonArr = new JSONArray();
-    jsonArr.put(foo);
-    ApiFuture<AppendRowsResponse> appendFuture =
-        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
-    try {
-      appendFuture.get();
-    } catch (Throwable t) {
-      assertEquals(t.getCause().getMessage(), "OUT_OF_RANGE: ");
       int millis = 0;
       while (millis <= 10000) {
         if (writer.getDescriptor().getFields().size() == 2) {
@@ -510,102 +426,532 @@ public class JsonStreamWriterTest {
         millis += 100;
       }
       assertTrue(writer.getDescriptor().getFields().size() == 2);
-    }
-
-    JSONObject updatedFoo = new JSONObject();
-    updatedFoo.put("foo", "allen");
-    updatedFoo.put("bar", "allen2");
-    JSONArray updatedJsonArr = new JSONArray();
-    updatedJsonArr.put(updatedFoo);
-
-    ApiFuture<AppendRowsResponse> appendFuture2 =
-        writer.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
-
-    assertEquals(0L, appendFuture2.get().getOffset());
-    assertEquals(
-        1,
-        testBigQueryWrite
-            .getAppendRequests()
-            .get(1)
-            .getProtoRows()
-            .getRows()
-            .getSerializedRowsCount());
-    assertEquals(
-        testBigQueryWrite.getAppendRequests().get(1).getProtoRows().getRows().getSerializedRows(0),
-        UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
-
-    // Check if writer schemas were added in for both connections.
-    assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
-    assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
-
-    writer.close();
-  }
-
-  @Test
-  public void testMultiThreadAppend() throws Exception {
-    final JsonStreamWriter writer =
-        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
-            .setBatchingSettings(
-                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                    .toBuilder()
-                    .setElementCountThreshold(1L)
-                    .build())
-            .build();
-
-    JSONObject foo = new JSONObject();
-    foo.put("foo", "allen");
-    final JSONArray jsonArr = new JSONArray();
-    jsonArr.put(foo);
-
-    final HashSet<Long> offset_sets = new HashSet<Long>();
-
-    Thread[] thread_arr = new Thread[20];
-    for (int i = 0; i < 20; i++) {
-      testBigQueryWrite.addResponse(
-          Storage.AppendRowsResponse.newBuilder().setOffset((long) i).build());
-      offset_sets.add((long) i);
-      Thread t =
-          new Thread(
-              new Runnable() {
-                public void run() {
-                  try {
-                    ApiFuture<AppendRowsResponse> appendFuture =
-                        writer.append(jsonArr, -1, /* allowUnknownFields */ false);
-                    AppendRowsResponse response = appendFuture.get();
-                    LOG.info("Processing complete, offset is " + response.getOffset());
-                    offset_sets.remove(response.getOffset());
-                  } catch (Exception e) {
-                    LOG.severe("Thread execution failed: " + e.getMessage());
-                  }
-                }
-              });
-      thread_arr[i] = t;
-      LOG.info("Starting thread " + i + ".");
-      t.start();
-    }
-
-    for (int i = 0; i < thread_arr.length; i++) {
-      thread_arr[i].join();
-    }
-    assertTrue(offset_sets.size() == 0);
-    for (int i = 0; i < thread_arr.length; i++) {
+      assertEquals(0L, appendFuture1.get().getOffset());
       assertEquals(
           1,
           testBigQueryWrite
               .getAppendRequests()
-              .get(i)
+              .get(0)
               .getProtoRows()
               .getRows()
               .getSerializedRowsCount());
       assertEquals(
           testBigQueryWrite
               .getAppendRequests()
-              .get(i)
+              .get(0)
               .getProtoRows()
               .getRows()
               .getSerializedRows(0),
           FooType.newBuilder().setFoo("allen").build().toByteString());
+
+      // Second append with updated schema.
+      JSONObject updatedFoo = new JSONObject();
+      updatedFoo.put("foo", "allen");
+      updatedFoo.put("bar", "allen2");
+      JSONArray updatedJsonArr = new JSONArray();
+      updatedJsonArr.put(updatedFoo);
+
+      ApiFuture<AppendRowsResponse> appendFuture2 =
+          writer.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
+
+      millis = 0;
+      while (millis <= 10000) {
+        if (writer.getDescriptor().getFields().size() == 3) {
+          break;
+        }
+        Thread.sleep(100);
+        millis += 100;
+      }
+      assertTrue(writer.getDescriptor().getFields().size() == 3);
+      assertEquals(1L, appendFuture2.get().getOffset());
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(1)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(1)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
+
+      // Third append with updated schema.
+      JSONObject updatedFoo2 = new JSONObject();
+      updatedFoo2.put("foo", "allen");
+      updatedFoo2.put("bar", "allen2");
+      updatedFoo2.put("baz", "allen3");
+      JSONArray updatedJsonArr2 = new JSONArray();
+      updatedJsonArr2.put(updatedFoo2);
+
+      ApiFuture<AppendRowsResponse> appendFuture3 =
+          writer.append(updatedJsonArr2, -1, /* allowUnknownFields */ false);
+
+      assertEquals(2L, appendFuture3.get().getOffset());
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(1)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(2)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          UpdatedFooType2.newBuilder()
+              .setFoo("allen")
+              .setBar("allen2")
+              .setBaz("allen3")
+              .build()
+              .toByteString());
+      // // Check if writer schemas were added in for both connections.
+      assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
+      assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
+      assertTrue(testBigQueryWrite.getAppendRequests().get(2).getProtoRows().hasWriterSchema());
     }
-    writer.close();
+  }
+
+  @Test
+  public void testAppendAlreadyExistsException() throws Exception {
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
+      testBigQueryWrite.addResponse(
+          Storage.AppendRowsResponse.newBuilder()
+              .setError(com.google.rpc.Status.newBuilder().setCode(6).build())
+              .build());
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "allen");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+      ApiFuture<AppendRowsResponse> appendFuture =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+      try {
+        appendFuture.get();
+      } catch (Throwable t) {
+        assertEquals(t.getCause().getMessage(), "ALREADY_EXISTS: ");
+      }
+    }
+  }
+
+  @Test
+  public void testAppendOutOfRangeException() throws Exception {
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
+      testBigQueryWrite.addResponse(
+          Storage.AppendRowsResponse.newBuilder()
+              .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
+              .build());
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "allen");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+      ApiFuture<AppendRowsResponse> appendFuture =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+      try {
+        appendFuture.get();
+      } catch (Throwable t) {
+        assertEquals(t.getCause().getMessage(), "OUT_OF_RANGE: ");
+      }
+    }
+  }
+
+  @Test
+  public void testAppendOutOfRangeAndUpdateSchema() throws Exception {
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
+      testBigQueryWrite.addResponse(
+          Storage.AppendRowsResponse.newBuilder()
+              .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
+              .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
+              .build());
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(0).build());
+
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "allen");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+      ApiFuture<AppendRowsResponse> appendFuture =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+      try {
+        appendFuture.get();
+      } catch (Throwable t) {
+        assertEquals(t.getCause().getMessage(), "OUT_OF_RANGE: ");
+        int millis = 0;
+        while (millis <= 10000) {
+          if (writer.getDescriptor().getFields().size() == 2) {
+            break;
+          }
+          Thread.sleep(100);
+          millis += 100;
+        }
+        assertTrue(writer.getDescriptor().getFields().size() == 2);
+      }
+
+      JSONObject updatedFoo = new JSONObject();
+      updatedFoo.put("foo", "allen");
+      updatedFoo.put("bar", "allen2");
+      JSONArray updatedJsonArr = new JSONArray();
+      updatedJsonArr.put(updatedFoo);
+
+      ApiFuture<AppendRowsResponse> appendFuture2 =
+          writer.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
+
+      assertEquals(0L, appendFuture2.get().getOffset());
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(1)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(1)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
+
+      // Check if writer schemas were added in for both connections.
+      assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
+      assertTrue(testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema());
+    }
+  }
+
+  @Test
+  public void testSchemaUpdateWithNonemptyBatch() throws Exception {
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(2L)
+                    .build())
+            .build()) {
+      testBigQueryWrite.addResponse(
+          Storage.AppendRowsResponse.newBuilder()
+              .setOffset(0)
+              .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
+              .build());
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(2).build());
+      testBigQueryWrite.addResponse(Storage.AppendRowsResponse.newBuilder().setOffset(3).build());
+      // First append
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "allen");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+
+      ApiFuture<AppendRowsResponse> appendFuture1 =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+      ApiFuture<AppendRowsResponse> appendFuture2 =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+      ApiFuture<AppendRowsResponse> appendFuture3 =
+          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+
+      assertEquals(0L, appendFuture1.get().getOffset());
+      assertEquals(1L, appendFuture2.get().getOffset());
+      assertEquals(
+          2,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          FooType.newBuilder().setFoo("allen").build().toByteString());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(1),
+          FooType.newBuilder().setFoo("allen").build().toByteString());
+
+      assertEquals(2L, appendFuture3.get().getOffset());
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(1)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(1)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          FooType.newBuilder().setFoo("allen").build().toByteString());
+
+      int millis = 0;
+      while (millis <= 10000) {
+        if (writer.getDescriptor().getFields().size() == 2) {
+          break;
+        }
+        Thread.sleep(100);
+        millis += 100;
+      }
+      assertTrue(writer.getDescriptor().getFields().size() == 2);
+
+      // Second append with updated schema.
+      JSONObject updatedFoo = new JSONObject();
+      updatedFoo.put("foo", "allen");
+      updatedFoo.put("bar", "allen2");
+      JSONArray updatedJsonArr = new JSONArray();
+      updatedJsonArr.put(updatedFoo);
+
+      ApiFuture<AppendRowsResponse> appendFuture4 =
+          writer.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
+
+      assertEquals(3L, appendFuture4.get().getOffset());
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(2)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(2)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
+
+      assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
+      assertTrue(
+          testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema()
+              || testBigQueryWrite.getAppendRequests().get(2).getProtoRows().hasWriterSchema());
+    }
+  }
+
+  @Test
+  public void testMultiThreadAppendNoSchemaUpdate() throws Exception {
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(1L)
+                    .build())
+            .build()) {
+
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "allen");
+      final JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+
+      final HashSet<Long> offset_sets = new HashSet<Long>();
+
+      Thread[] thread_arr = new Thread[20];
+      for (int i = 0; i < 20; i++) {
+        testBigQueryWrite.addResponse(
+            Storage.AppendRowsResponse.newBuilder().setOffset((long) i).build());
+        offset_sets.add((long) i);
+        Thread t =
+            new Thread(
+                new Runnable() {
+                  public void run() {
+                    try {
+                      ApiFuture<AppendRowsResponse> appendFuture =
+                          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+                      AppendRowsResponse response = appendFuture.get();
+                      LOG.info("Processing complete, offset is " + response.getOffset());
+                      offset_sets.remove(response.getOffset());
+                    } catch (Exception e) {
+                      LOG.severe("Thread execution failed: " + e.getMessage());
+                    }
+                  }
+                });
+        thread_arr[i] = t;
+        LOG.info("Starting thread " + i + ".");
+        t.start();
+      }
+
+      for (int i = 0; i < thread_arr.length; i++) {
+        thread_arr[i].join();
+      }
+      assertTrue(offset_sets.size() == 0);
+      for (int i = 0; i < thread_arr.length; i++) {
+        assertEquals(
+            1,
+            testBigQueryWrite
+                .getAppendRequests()
+                .get(i)
+                .getProtoRows()
+                .getRows()
+                .getSerializedRowsCount());
+        assertEquals(
+            testBigQueryWrite
+                .getAppendRequests()
+                .get(i)
+                .getProtoRows()
+                .getRows()
+                .getSerializedRows(0),
+            FooType.newBuilder().setFoo("allen").build().toByteString());
+      }
+    }
+  }
+
+  @Test
+  public void testMultiThreadAppendWithSchemaUpdate() throws Exception {
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(1L)
+                    .build())
+            .build()) {
+      JSONObject foo = new JSONObject();
+      foo.put("foo", "allen");
+      final JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+
+      final HashSet<Long> offset_sets = new HashSet<Long>();
+
+      Thread[] thread_arr = new Thread[20];
+      for (int i = 0; i < 20; i++) {
+        if (i == 10) {
+          testBigQueryWrite.addResponse(
+              Storage.AppendRowsResponse.newBuilder()
+                  .setOffset((long) i)
+                  .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
+                  .build());
+        } else {
+          testBigQueryWrite.addResponse(
+              Storage.AppendRowsResponse.newBuilder().setOffset((long) i).build());
+        }
+
+        offset_sets.add((long) i);
+        Thread t =
+            new Thread(
+                new Runnable() {
+                  public void run() {
+                    try {
+                      ApiFuture<AppendRowsResponse> appendFuture =
+                          writer.append(jsonArr, -1, /* allowUnknownFields */ false);
+                      AppendRowsResponse response = appendFuture.get();
+                      LOG.info("Processing complete, offset is " + response.getOffset());
+                      offset_sets.remove(response.getOffset());
+                    } catch (Exception e) {
+                      LOG.severe("Thread execution failed: " + e.getMessage());
+                    }
+                  }
+                });
+        thread_arr[i] = t;
+        LOG.info("Starting thread " + i + ".");
+        t.start();
+      }
+
+      for (int i = 0; i < thread_arr.length; i++) {
+        thread_arr[i].join();
+      }
+      assertTrue(offset_sets.size() == 0);
+      for (int i = 0; i < thread_arr.length; i++) {
+        assertEquals(
+            1,
+            testBigQueryWrite
+                .getAppendRequests()
+                .get(i)
+                .getProtoRows()
+                .getRows()
+                .getSerializedRowsCount());
+        assertEquals(
+            testBigQueryWrite
+                .getAppendRequests()
+                .get(i)
+                .getProtoRows()
+                .getRows()
+                .getSerializedRows(0),
+            FooType.newBuilder().setFoo("allen").build().toByteString());
+      }
+
+      int millis = 0;
+      while (millis <= 10000) {
+        if (writer.getDescriptor().getFields().size() == 2) {
+          break;
+        }
+        Thread.sleep(100);
+        millis += 100;
+      }
+      assertTrue(writer.getDescriptor().getFields().size() == 2);
+
+      foo.put("bar", "allen2");
+      final JSONArray jsonArr2 = new JSONArray();
+      jsonArr2.put(foo);
+
+      for (int i = 20; i < 40; i++) {
+        testBigQueryWrite.addResponse(
+            Storage.AppendRowsResponse.newBuilder().setOffset((long) i).build());
+        offset_sets.add((long) i);
+        Thread t =
+            new Thread(
+                new Runnable() {
+                  public void run() {
+                    try {
+                      ApiFuture<AppendRowsResponse> appendFuture =
+                          writer.append(jsonArr2, -1, /* allowUnknownFields */ false);
+                      AppendRowsResponse response = appendFuture.get();
+                      LOG.info("Processing complete, offset is " + response.getOffset());
+                      offset_sets.remove(response.getOffset());
+                    } catch (Exception e) {
+                      LOG.severe("Thread execution failed: " + e.getMessage());
+                    }
+                  }
+                });
+        thread_arr[i - 20] = t;
+        LOG.info("Starting thread " + i + " with updated json data.");
+        t.start();
+      }
+
+      for (int i = 0; i < thread_arr.length; i++) {
+        thread_arr[i].join();
+      }
+      assertTrue(offset_sets.size() == 0);
+      for (int i = 0; i < thread_arr.length; i++) {
+        assertEquals(
+            1,
+            testBigQueryWrite
+                .getAppendRequests()
+                .get(i + 20)
+                .getProtoRows()
+                .getRows()
+                .getSerializedRowsCount());
+        assertEquals(
+            testBigQueryWrite
+                .getAppendRequests()
+                .get(i + 20)
+                .getProtoRows()
+                .getRows()
+                .getSerializedRows(0),
+            UpdatedFooType.newBuilder().setFoo("allen").setBar("allen2").build().toByteString());
+      }
+    }
   }
 }
