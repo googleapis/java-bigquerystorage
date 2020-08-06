@@ -151,7 +151,7 @@ public class JsonStreamWriter implements AutoCloseable {
    * necessary since if there are rows remaining when the connection refreshes, it will send out the
    * old writer schema instead of the new one.
    */
-  public void refreshConnection()
+  void refreshConnection()
       throws IOException, InterruptedException, Descriptors.DescriptorValidationException {
     synchronized (this) {
       this.streamWriter.writeAllOutstanding();
@@ -261,7 +261,7 @@ public class JsonStreamWriter implements AutoCloseable {
     this.streamWriter.close();
   }
 
-  public class JsonStreamWriterOnSchemaUpdateRunnable extends OnSchemaUpdateRunnable {
+  private class JsonStreamWriterOnSchemaUpdateRunnable extends OnSchemaUpdateRunnable {
     private JsonStreamWriter jsonStreamWriter;
     /**
      * Setter for the jsonStreamWriter
