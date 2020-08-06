@@ -23,7 +23,6 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 public abstract class OnSchemaUpdateRunnable implements Runnable {
   private StreamWriter streamWriter;
   private Table.TableSchema updatedSchema;
-  private boolean attachUpdatedTableSchema = false;
 
   /**
    * Setter for the updatedSchema
@@ -43,16 +42,6 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
     this.streamWriter = streamWriter;
   }
 
-  /**
-   * Setter for attachUpdatedTableSchema. This is used to set the writer schema for the first append
-   * calls after a refreshAppend() is called to refresh the write stream upon schema update.
-   *
-   * @param streamWriter
-   */
-  void setAttachUpdatedTableSchema(boolean attachUpdatedTableSchema) {
-    this.attachUpdatedTableSchema = attachUpdatedTableSchema;
-  }
-
   /** Getter for the updatedSchema */
   Table.TableSchema getUpdatedSchema() {
     return this.updatedSchema;
@@ -61,10 +50,5 @@ public abstract class OnSchemaUpdateRunnable implements Runnable {
   /** Getter for the streamWriter */
   StreamWriter getStreamWriter() {
     return this.streamWriter;
-  }
-
-  /** Getter for attachUpdatedTableSchema */
-  boolean getAttachUpdatedTableSchema() {
-    return this.attachUpdatedTableSchema;
   }
 }

@@ -56,6 +56,7 @@ public class JsonStreamWriter implements AutoCloseable {
   private String streamName;
   private StreamWriter streamWriter;
   private Descriptor descriptor;
+  private Table.TableSchema tableSchema;
 
   /**
    * Constructs the JsonStreamWriter
@@ -129,17 +130,35 @@ public class JsonStreamWriter implements AutoCloseable {
       rowsBuilder.addSerializedRows(protoMessage.toByteString());
     }
     AppendRowsRequest.ProtoData.Builder data = AppendRowsRequest.ProtoData.newBuilder();
-    data.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
-    data.setRows(rowsBuilder.build());
+    // Need to make sure refreshAppendAndSetDescriptor finish first before this can run
+    synchronized (this) {
+      data.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
+      data.setRows(rowsBuilder.build());
+      final ApiFuture<AppendRowsResponse> appendResponseFuture =
+          this.streamWriter.append(
+              AppendRowsRequest.newBuilder()
+                  .setProtoRows(data.build())
+                  .setOffset(Int64Value.of(offset))
+                  .build());
+      return appendResponseFuture;
+    }
+  }
 
-    final ApiFuture<AppendRowsResponse> appendResponseFuture =
-        this.streamWriter.append(
-            AppendRowsRequest.newBuilder()
-                .setProtoRows(data.build())
-                .setOffset(Int64Value.of(offset))
-                .build());
-
-    return appendResponseFuture;
+  /**
+   * Refreshes connection for a JsonStreamWriter by first flushing all remaining rows, then calling
+   * refreshAppend(), and finally setting the descriptor. All of these actions need to be performed
+   * atomically to avoid having synchronization issues with append(). Flushing all rows first is
+   * necessary since if there are rows remaining when the connection refreshes, it will send out the
+   * old writer schema instead of the new one.
+   */
+  public void refreshConnection()
+      throws IOException, InterruptedException, Descriptors.DescriptorValidationException {
+    synchronized (this) {
+      this.streamWriter.writeAllOutstanding();
+      this.streamWriter.refreshAppend();
+      this.descriptor =
+          BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(this.tableSchema);
+    }
   }
 
   /**
@@ -194,14 +213,12 @@ public class JsonStreamWriter implements AutoCloseable {
   }
 
   /**
-   * Setter for descriptor.
+   * Setter for table schema. Used for schema updates.
    *
    * @param tableSchema
    */
-  public synchronized void setDescriptor(Table.TableSchema tableSchema)
-      throws Descriptors.DescriptorValidationException {
-    this.descriptor =
-        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
+  void setTableSchema(Table.TableSchema tableSchema) {
+    this.tableSchema = tableSchema;
   }
 
   /**
@@ -262,14 +279,12 @@ public class JsonStreamWriter implements AutoCloseable {
 
     @Override
     public void run() {
-      this.setAttachUpdatedTableSchema(true);
+      this.getJsonStreamWriter().setTableSchema(this.getUpdatedSchema());
       try {
-        this.getStreamWriter().refreshAppend();
+        this.getJsonStreamWriter().refreshConnection();
       } catch (InterruptedException | IOException e) {
         LOG.severe("StreamWriter failed to refresh upon schema update." + e);
-      }
-      try {
-        this.getJsonStreamWriter().setDescriptor(this.getUpdatedSchema());
+        return;
       } catch (Descriptors.DescriptorValidationException e) {
         LOG.severe(
             "Schema update fail: updated schema could not be converted to a valid descriptor.");
