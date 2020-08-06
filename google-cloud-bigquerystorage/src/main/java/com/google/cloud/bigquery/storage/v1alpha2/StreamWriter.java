@@ -34,7 +34,6 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.common.base.Preconditions;
-import com.google.protobuf.Descriptors;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
@@ -114,7 +113,6 @@ public class StreamWriter implements AutoCloseable {
 
   // Used for schema updates
   private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
-  private Table.TableSchema updatedSchema;
 
   private final int REFRESH_STREAM_WAIT_TIME = 7;
 
@@ -194,14 +192,6 @@ public class StreamWriter implements AutoCloseable {
   /** Table name we are writing to. */
   public String getTableNameString() {
     return tableName;
-  }
-
-  /**
-   * Set updated schema. Used during schema updates and for updating the writer schema for the first
-   * append after refreshing the connection.
-   */
-  void setUpdatedSchema(Table.TableSchema updatedSchema) {
-    this.updatedSchema = updatedSchema;
   }
 
   /** OnSchemaUpdateRunnable for this streamWriter. */
@@ -322,12 +312,6 @@ public class StreamWriter implements AutoCloseable {
         Math.max(
             this.retrySettings.getInitialRetryDelay().toMillis(),
             Duration.ofSeconds(REFRESH_STREAM_WAIT_TIME).toMillis()));
-    if (this.onSchemaUpdateRunnable != null) {
-      if (this.onSchemaUpdateRunnable.getAttachUpdatedTableSchema()) {
-        this.onSchemaUpdateRunnable.setAttachUpdatedTableSchema(false);
-        this.updatedSchema = this.onSchemaUpdateRunnable.getUpdatedSchema();
-      }
-    }
     // Can only unlock here since need to sleep the full 7 seconds before stream can allow appends.
     appendAndRefreshAppendLock.unlock();
     LOG.info("Write Stream " + streamName + " connection established");
@@ -385,26 +369,6 @@ public class StreamWriter implements AutoCloseable {
   private void writeBatch(final InflightBatch inflightBatch) {
     if (inflightBatch != null) {
       AppendRowsRequest request = inflightBatch.getMergedRequest();
-      if (this.updatedSchema != null) {
-        try {
-          AppendRowsRequest.ProtoData.Builder data =
-              request.getProtoRows().toBuilder().clearWriterSchema();
-          data.setWriterSchema(
-              ProtoSchemaConverter.convert(
-                  BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(
-                      this.updatedSchema)));
-
-          AppendRowsRequest.Builder requestBuilder = request.toBuilder();
-          request = requestBuilder.setProtoRows(data.build()).build();
-          LOG.info(
-              "Updated writer schema for first append after schema update: "
-                  + request.getProtoRows().getWriterSchema());
-        } catch (Descriptors.DescriptorValidationException e) {
-          LOG.severe(
-              "Failed to update writer schema for append after schema update:" + e.getMessage());
-        }
-        this.updatedSchema = null;
-      }
       try {
         messagesWaiter.acquire(inflightBatch.getByteSize());
         responseObserver.addInflightBatch(inflightBatch);
