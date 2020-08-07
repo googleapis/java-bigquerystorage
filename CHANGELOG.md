@@ -1,5 +1,18 @@
 # Changelog
 
+### [1.3.2](https://www.github.com/googleapis/java-bigquerystorage/compare/v1.3.1...v1.3.2) (2020-08-07)
+
+
+### Bug Fixes
+
+* enum value conflict in generated ProtoSchema descriptor. ([#469](https://www.github.com/googleapis/java-bigquerystorage/issues/469)) ([3e1382f](https://www.github.com/googleapis/java-bigquerystorage/commit/3e1382f247de5e6ee8727130280e34fa01d3c088)), closes [#464](https://www.github.com/googleapis/java-bigquerystorage/issues/464)
+
+
+### Dependencies
+
+* update dependency com.fasterxml.jackson.core:jackson-core to v2.11.2 ([#461](https://www.github.com/googleapis/java-bigquerystorage/issues/461)) ([36b368a](https://www.github.com/googleapis/java-bigquerystorage/commit/36b368a14bb7d45f92af23bc0dd6fe08ad79b085))
+* update dependency com.google.cloud:google-cloud-shared-dependencies to v0.8.5 ([#467](https://www.github.com/googleapis/java-bigquerystorage/issues/467)) ([35c65d4](https://www.github.com/googleapis/java-bigquerystorage/commit/35c65d466d44d01e6f7626ef7cf1aa0e9f3ff0f3))
+
 ### [1.3.1](https://www.github.com/googleapis/java-bigquerystorage/compare/v1.3.0...v1.3.1) (2020-07-31)
 
 
