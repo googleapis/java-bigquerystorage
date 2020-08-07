@@ -15,12 +15,12 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import com.google.api.core.*;
+import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.retrying.RetrySettings;
-import com.google.api.gax.rpc.*;
+import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoRows;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
@@ -30,7 +30,6 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Int64Value;
 import com.google.protobuf.Message;
 import java.io.IOException;
-import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
