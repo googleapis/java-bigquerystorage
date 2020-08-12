@@ -39,10 +39,13 @@ import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.threeten.bp.Instant;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
 
 @RunWith(JUnit4.class)
-public class DirectWriterTest {
-  private static final Logger LOG = Logger.getLogger(DirectWriterTest.class.getName());
+public class JsonDirectWriterTest {
+  private static final Logger LOG = Logger.getLogger(JsonDirectWriterTest.class.getName());
 
   private static final String TEST_TABLE = "projects/p/datasets/d/tables/t";
   private static final String TEST_STREAM = "projects/p/datasets/d/tables/t/streams/s";
@@ -52,6 +55,15 @@ public class DirectWriterTest {
   private static MockServiceHelper serviceHelper;
   private BigQueryWriteClient client;
   private LocalChannelProvider channelProvider;
+
+  private final Table.TableFieldSchema FOO =
+      Table.TableFieldSchema.newBuilder()
+          .setType(Table.TableFieldSchema.Type.STRING)
+          .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+          .setName("foo")
+          .build();
+  private final Table.TableSchema TABLE_SCHEMA =
+      Table.TableSchema.newBuilder().addFields(0, FOO).build();
 
   @Mock private static SchemaCompatibility schemaCheck;
 
@@ -91,7 +103,7 @@ public class DirectWriterTest {
   void WriterCreationResponseMock(String testStreamName, Set<Long> responseOffsets) {
     // Response from CreateWriteStream
     Stream.WriteStream expectedResponse =
-        Stream.WriteStream.newBuilder().setName(testStreamName).build();
+        Stream.WriteStream.newBuilder().setName(testStreamName).setTableSchema(TABLE_SCHEMA).build();
     mockBigQueryWrite.addResponse(expectedResponse);
 
     // Response from GetWriteStream
@@ -103,6 +115,7 @@ public class DirectWriterTest {
             .setName(testStreamName)
             .setType(Stream.WriteStream.Type.COMMITTED)
             .setCreateTime(timestamp)
+            .setTableSchema(TABLE_SCHEMA)
             .build();
     mockBigQueryWrite.addResponse(expectedResponse2);
 
@@ -115,13 +128,19 @@ public class DirectWriterTest {
 
   @Test
   public void testWriteSuccess() throws Exception {
-    DirectWriter.testSetStub(client, 10, schemaCheck);
+    JsonDirectWriter.testSetStub(client, 10);
+    JSONObject foo1 = new JSONObject();
+    foo1.put("foo", "m1");
+    JSONObject foo2 = new JSONObject();
+    foo2.put("foo", "m2");
+    JSONArray json = new JSONArray();
+    json.put(foo1);
+    json.put(foo2);
     FooType m1 = FooType.newBuilder().setFoo("m1").build();
     FooType m2 = FooType.newBuilder().setFoo("m2").build();
 
     WriterCreationResponseMock(TEST_STREAM, Sets.newHashSet(Long.valueOf(0L)));
-    ApiFuture<Long> ret = DirectWriter.<FooType>append(TEST_TABLE, Arrays.asList(m1, m2));
-    verify(schemaCheck).check(TEST_TABLE, FooType.getDescriptor());
+    ApiFuture<Long> ret = JsonDirectWriter.append(TEST_TABLE, json);
     assertEquals(Long.valueOf(0L), ret.get());
     List<AbstractMessage> actualRequests = mockBigQueryWrite.getRequests();
     Assert.assertEquals(3, actualRequests.size());
@@ -131,83 +150,53 @@ public class DirectWriterTest {
         Stream.WriteStream.Type.COMMITTED,
         ((Storage.CreateWriteStreamRequest) actualRequests.get(0)).getWriteStream().getType());
     assertEquals(TEST_STREAM, ((Storage.GetWriteStreamRequest) actualRequests.get(1)).getName());
-
-    Storage.AppendRowsRequest.ProtoData.Builder dataBuilder =
-        Storage.AppendRowsRequest.ProtoData.newBuilder();
-    dataBuilder.setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()));
-    dataBuilder.setRows(
-        ProtoBufProto.ProtoRows.newBuilder()
-            .addSerializedRows(m1.toByteString())
-            .addSerializedRows(m2.toByteString())
-            .build());
-    Storage.AppendRowsRequest expectRequest =
-        Storage.AppendRowsRequest.newBuilder()
-            .setWriteStream(TEST_STREAM)
-            .setProtoRows(dataBuilder.build())
-            .build();
-    assertEquals(expectRequest.toString(), actualRequests.get(2).toString());
+    assertEquals(((AppendRowsRequest)actualRequests.get(2)).getProtoRows().getRows().getSerializedRows(0), m1.toByteString());
+    assertEquals(((AppendRowsRequest)actualRequests.get(2)).getProtoRows().getRows().getSerializedRows(1), m2.toByteString());
 
     Storage.AppendRowsResponse response =
         Storage.AppendRowsResponse.newBuilder().setOffset(2).build();
     mockBigQueryWrite.addResponse(response);
-    // Append again, write stream name and schema are cleared.
-    ret = DirectWriter.<FooType>append(TEST_TABLE, Arrays.asList(m1));
+    JSONArray json2 = new JSONArray();
+    json2.put(foo1);
+    // // Append again, write stream name and schema are cleared.
+    ret = JsonDirectWriter.append(TEST_TABLE, json2);
     assertEquals(Long.valueOf(2L), ret.get());
-    dataBuilder = Storage.AppendRowsRequest.ProtoData.newBuilder();
-    dataBuilder.setRows(
-        ProtoBufProto.ProtoRows.newBuilder().addSerializedRows(m1.toByteString()).build());
-    expectRequest =
-        Storage.AppendRowsRequest.newBuilder().setProtoRows(dataBuilder.build()).build();
-    assertEquals(expectRequest.toString(), actualRequests.get(3).toString());
-
-    // Write with a different schema.
-    WriterCreationResponseMock(TEST_STREAM_2, Sets.newHashSet(Long.valueOf(0L)));
-    AllSupportedTypes m3 = AllSupportedTypes.newBuilder().setStringValue("s").build();
-    ret = DirectWriter.<AllSupportedTypes>append(TEST_TABLE, Arrays.asList(m3));
-    verify(schemaCheck).check(TEST_TABLE, AllSupportedTypes.getDescriptor());
-    assertEquals(Long.valueOf(0L), ret.get());
-    dataBuilder = Storage.AppendRowsRequest.ProtoData.newBuilder();
-    dataBuilder.setWriterSchema(ProtoSchemaConverter.convert(AllSupportedTypes.getDescriptor()));
-    dataBuilder.setRows(
-        ProtoBufProto.ProtoRows.newBuilder().addSerializedRows(m3.toByteString()).build());
-    expectRequest =
-        Storage.AppendRowsRequest.newBuilder()
-            .setWriteStream(TEST_STREAM_2)
-            .setProtoRows(dataBuilder.build())
-            .build();
-    Assert.assertEquals(7, actualRequests.size());
-    assertEquals(
-        TEST_TABLE, ((Storage.CreateWriteStreamRequest) actualRequests.get(4)).getParent());
-    assertEquals(
-        Stream.WriteStream.Type.COMMITTED,
-        ((Storage.CreateWriteStreamRequest) actualRequests.get(4)).getWriteStream().getType());
-    assertEquals(TEST_STREAM_2, ((Storage.GetWriteStreamRequest) actualRequests.get(5)).getName());
-    assertEquals(expectRequest.toString(), actualRequests.get(6).toString());
-
-    DirectWriter.clearCache();
+    assertEquals(((AppendRowsRequest)actualRequests.get(3)).getProtoRows().getRows().getSerializedRows(0), m1.toByteString());
+    JsonDirectWriter.clearCache();
   }
 
   @Test
   public void testWriteBadTableName() throws Exception {
-    DirectWriter.testSetStub(client, 10, schemaCheck);
-    FooType m1 = FooType.newBuilder().setFoo("m1").build();
-    FooType m2 = FooType.newBuilder().setFoo("m2").build();
+    JsonDirectWriter.testSetStub(client, 10);
+    JSONObject foo1 = new JSONObject();
+    foo1.put("foo", "m1");
+    JSONObject foo2 = new JSONObject();
+    foo2.put("foo", "m2");
+    JSONArray json = new JSONArray();
+    json.put(foo1);
+    json.put(foo2);
 
     try {
-      ApiFuture<Long> ret = DirectWriter.<FooType>append("abc", Arrays.asList(m1, m2));
+      ApiFuture<Long> ret = JsonDirectWriter.append("abc", json);
       fail("should fail");
     } catch (IllegalArgumentException expected) {
       assertEquals("Invalid table name: abc", expected.getMessage());
     }
 
-    DirectWriter.clearCache();
+    JsonDirectWriter.clearCache();
   }
 
   @Test
   public void testConcurrentAccess() throws Exception {
-    DirectWriter.testSetStub(client, 2, schemaCheck);
-    final FooType m1 = FooType.newBuilder().setFoo("m1").build();
-    final FooType m2 = FooType.newBuilder().setFoo("m2").build();
+    JsonDirectWriter.testSetStub(client, 2);
+    JSONObject foo1 = new JSONObject();
+    foo1.put("foo", "m1");
+    JSONObject foo2 = new JSONObject();
+    foo2.put("foo", "m2");
+    final JSONArray json = new JSONArray();
+    json.put(foo1);
+    json.put(foo2);
+
     final Set<Long> expectedOffset =
         Sets.newHashSet(
             Long.valueOf(0L),
@@ -226,7 +215,7 @@ public class DirectWriterTest {
             public void run() {
               try {
                 ApiFuture<Long> result =
-                    DirectWriter.<FooType>append(TEST_TABLE, Arrays.asList(m1, m2));
+                    JsonDirectWriter.append(TEST_TABLE, json);
                 synchronized (expectedOffset) {
                   assertTrue(expectedOffset.remove(result.get()));
                 }
@@ -242,6 +231,6 @@ public class DirectWriterTest {
     } catch (InterruptedException e) {
       LOG.info(e.toString());
     }
-    DirectWriter.clearCache();
+    JsonDirectWriter.clearCache();
   }
 }
