@@ -19,9 +19,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
-import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
@@ -31,8 +28,8 @@ import java.util.regex.Pattern;
 
 /**
  * A cache of JsonStreamWriters that can be looked up by Table Name. The entries will expire after 5
- * minutes if not used. Code sample: JsonWriterCache cache = JsonWriterCache.getInstance(); JsonStreamWriter
- * writer = cache.getWriter(); // Use... cache.returnWriter(writer);
+ * minutes if not used. Code sample: JsonWriterCache cache = JsonWriterCache.getInstance();
+ * JsonStreamWriter writer = cache.getWriter(); // Use... cache.returnWriter(writer);
  */
 public class JsonWriterCache {
   private static final Logger LOG = Logger.getLogger(JsonWriterCache.class.getName());
@@ -52,10 +49,8 @@ public class JsonWriterCache {
 
   private JsonWriterCache(BigQueryWriteClient stub, int maxTableEntry) {
     this.stub = stub;
-   jsonWriterCache =
-        CacheBuilder.newBuilder()
-            .maximumSize(maxTableEntry)
-            .<String, JsonStreamWriter>build();
+    jsonWriterCache =
+        CacheBuilder.newBuilder().maximumSize(maxTableEntry).<String, JsonStreamWriter>build();
   }
 
   public static JsonWriterCache getInstance() throws IOException {
@@ -69,8 +64,7 @@ public class JsonWriterCache {
 
   /** Returns a cache with custom stub used by test. */
   @VisibleForTesting
-  public static JsonWriterCache getTestInstance(
-      BigQueryWriteClient stub, int maxTableEntry) {
+  public static JsonWriterCache getTestInstance(BigQueryWriteClient stub, int maxTableEntry) {
     Preconditions.checkNotNull(stub, "Stub is null.");
     return new JsonWriterCache(stub, maxTableEntry);
   }
@@ -89,7 +83,8 @@ public class JsonWriterCache {
   }
 
   JsonStreamWriter CreateNewWriter(Stream.WriteStream writeStream)
-      throws IllegalArgumentException, IOException, InterruptedException, Descriptors.DescriptorValidationException {
+      throws IllegalArgumentException, IOException, InterruptedException,
+          Descriptors.DescriptorValidationException {
     return JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
         .setChannelProvider(stub.getSettings().getTransportChannelProvider())
         .setCredentialsProvider(stub.getSettings().getCredentialsProvider())
@@ -104,7 +99,8 @@ public class JsonWriterCache {
    * @throws Exception
    */
   public JsonStreamWriter getTableWriter(String tableName)
-      throws IllegalArgumentException, IOException, InterruptedException, Descriptors.DescriptorValidationException {
+      throws IllegalArgumentException, IOException, InterruptedException,
+          Descriptors.DescriptorValidationException {
     Preconditions.checkNotNull(tableName, "TableName is null.");
     Matcher matcher = tablePattern.matcher(tableName);
     if (!matcher.matches()) {
@@ -125,7 +121,7 @@ public class JsonWriterCache {
       }
       writeStream = CreateNewWriteStream(tableName);
       writer = CreateNewWriter(writeStream);
-     jsonWriterCache.put(tableName, writer);
+      jsonWriterCache.put(tableName, writer);
     }
     return writer;
   }
@@ -138,7 +134,7 @@ public class JsonWriterCache {
         JsonStreamWriter entry = jsonWriterCache.getIfPresent(key);
         entry.close();
       }
-     jsonWriterCache.cleanUp();
+      jsonWriterCache.cleanUp();
     }
   }
 
