@@ -581,7 +581,9 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testDirectWrite() throws IOException, InterruptedException, ExecutionException {
+  public void testDirectWrite()
+      throws IOException, InterruptedException, ExecutionException,
+          Descriptors.DescriptorValidationException {
     final FooType fa = FooType.newBuilder().setFoo("aaa").build();
     final FooType fb = FooType.newBuilder().setFoo("bbb").build();
     Set<Long> expectedOffset = new HashSet<>();
@@ -606,9 +608,9 @@ public class ITBigQueryWriteManualClientTest {
     }
     assertTrue(expectedOffset.isEmpty());
 
-    JSONObject m1_json = new JSONObject();
+    JSONObject a_json = new JSONObject();
     a_json.put("foo", "aaa");
-    JSONObject m2_json = new JSONObject();
+    JSONObject b_json = new JSONObject();
     b_json.put("foo", "bbb");
     final JSONArray jsonArr = new JSONArray();
     jsonArr.put(a_json);
@@ -623,7 +625,9 @@ public class ITBigQueryWriteManualClientTest {
     callable =
         new Callable<Long>() {
           @Override
-          public Long call() throws IOException, InterruptedException, ExecutionException {
+          public Long call()
+              throws IOException, InterruptedException, ExecutionException,
+                  Descriptors.DescriptorValidationException {
             ApiFuture<Long> result = DirectWriter.append(tableId, jsonArr);
             return result.get();
           }
