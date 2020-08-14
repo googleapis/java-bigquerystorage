@@ -285,10 +285,10 @@ public class StreamWriter implements AutoCloseable {
    *
    * @throws Exception
    */
-  public void flushAll() throws Exception {
+  public void flushAll(long timeoutMillis) throws Exception {
     writeAllOutstanding();
     synchronized (messagesWaiter) {
-      messagesWaiter.waitComplete();
+      messagesWaiter.waitComplete(timeoutMillis);
     }
     exceptionLock.lock();
     try {
@@ -591,8 +591,12 @@ public class StreamWriter implements AutoCloseable {
       currentAlarmFuture.cancel(false);
     }
     writeAllOutstanding();
-    synchronized (messagesWaiter) {
-      messagesWaiter.waitComplete();
+    try {
+      synchronized (messagesWaiter) {
+        messagesWaiter.waitComplete(0);
+      }
+    } catch (InterruptedException e) {
+      LOG.warning("Failed to wait for messages to return " + e.toString());
     }
     if (clientStream.isSendReady()) {
       clientStream.closeSend();

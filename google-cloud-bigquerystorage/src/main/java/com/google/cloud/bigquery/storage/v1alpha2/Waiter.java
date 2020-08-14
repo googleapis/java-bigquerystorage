@@ -146,15 +146,17 @@ class Waiter {
     }
   }
 
-  public synchronized void waitComplete() {
+  public synchronized void waitComplete(long timeoutMillis) throws InterruptedException {
+    long begin = System.currentTimeMillis();
     lock.lock();
     try {
-      while (pendingCount > 0) {
+      while (pendingCount > 0
+          && (timeoutMillis == 0 || begin + timeoutMillis > System.currentTimeMillis())) {
         lock.unlock();
         try {
-          wait();
+          wait(timeoutMillis == 0 ? 0 : 1000);
         } catch (InterruptedException e) {
-          LOG.warning("Interrupted while waiting for completion");
+          throw e;
         }
         lock.lock();
       }

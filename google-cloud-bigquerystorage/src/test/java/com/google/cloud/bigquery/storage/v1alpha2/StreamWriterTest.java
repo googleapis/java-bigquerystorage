@@ -856,7 +856,7 @@ public class StreamWriterTest {
     ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
 
     assertFalse(appendFuture3.isDone());
-    writer.flushAll();
+    writer.flushAll(100000);
 
     assertTrue(appendFuture3.isDone());
 
@@ -883,7 +883,7 @@ public class StreamWriterTest {
 
     assertFalse(appendFuture3.isDone());
     try {
-      writer.flushAll();
+      writer.flushAll(100000);
       fail("Should have thrown an Exception");
     } catch (Exception expected) {
       LOG.info("got:" + expected.toString());
