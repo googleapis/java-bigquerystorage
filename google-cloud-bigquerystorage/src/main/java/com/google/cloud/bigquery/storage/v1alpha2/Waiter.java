@@ -66,6 +66,7 @@ class Waiter {
   public synchronized void release(long messageSize) {
     lock.lock();
     --pendingCount;
+    LOG.info("======= release:" + pendingCount);
     pendingSize -= messageSize;
     notifyNextAcquires();
     lock.unlock();
@@ -103,6 +104,7 @@ class Waiter {
         lock.lock();
       }
       ++pendingCount;
+      LOG.info("======= acquire:" + pendingCount);
       if (messageWaiter != null) {
         awaitingMessageAcquires.removeFirst();
       }
