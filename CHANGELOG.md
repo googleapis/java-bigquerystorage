@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.4.2](https://www.github.com/googleapis/java-bigquerystorage/compare/v1.4.1...v1.4.2) (2020-08-14)
+
+
+### Dependencies
+
+* update dependency com.google.cloud:google-cloud-bigquery to v1.116.10 ([#483](https://www.github.com/googleapis/java-bigquerystorage/issues/483)) ([285b6f8](https://www.github.com/googleapis/java-bigquerystorage/commit/285b6f846753f387800d2787746ddb43de67a4b7))
+
 ### [1.4.1](https://www.github.com/googleapis/java-bigquerystorage/compare/v1.4.0...v1.4.1) (2020-08-10)
 
 
