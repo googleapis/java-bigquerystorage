@@ -150,8 +150,7 @@ class Waiter {
     long end = System.currentTimeMillis() + timeoutMillis;
     lock.lock();
     try {
-      while (pendingCount > 0
-          && (timeoutMillis == 0 || end > System.currentTimeMillis())) {
+      while (pendingCount > 0 && (timeoutMillis == 0 || end > System.currentTimeMillis())) {
         lock.unlock();
         try {
           wait(timeoutMillis == 0 ? 0 : end - System.currentTimeMillis());
