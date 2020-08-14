@@ -918,7 +918,8 @@ public class StreamWriterTest {
     try {
       writer.flushAll(1);
       fail("expected exception to throw on very short timeout");
-    } catch (InterruptedException ex) {}
+    } catch (InterruptedException ex) {
+    }
 
     writer.close();
   }
