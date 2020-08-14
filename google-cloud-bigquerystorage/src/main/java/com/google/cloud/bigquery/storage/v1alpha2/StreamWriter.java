@@ -916,7 +916,7 @@ public class StreamWriter implements AutoCloseable {
 
     @Override
     public void onError(Throwable t) {
-      LOG.info("OnError called");
+      LOG.fine("OnError called");
       if (streamWriter.shutdown.get()) {
         return;
       }
@@ -963,7 +963,6 @@ public class StreamWriter implements AutoCloseable {
           }
           try {
             if (!streamWriter.shutdown.get()) {
-              LOG.info("here");
               // Establish a new connection.
               streamWriter.refreshAppend();
             }
