@@ -917,10 +917,8 @@ public class StreamWriterTest {
     assertFalse(appendFuture3.isDone());
     try {
       writer.flushAll(1);
-      fail("expected exception to throw");
-    } catch (InterruptedException ex) {
-
-    }
+      fail("expected exception to throw on very short timeout");
+    } catch (InterruptedException ex) {}
 
     writer.close();
   }
