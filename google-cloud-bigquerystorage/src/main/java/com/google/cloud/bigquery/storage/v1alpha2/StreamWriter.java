@@ -280,7 +280,7 @@ public class StreamWriter implements AutoCloseable {
    *
    * @throws Exception
    */
-  public void flush() throws Exception {
+  public void flushAll() throws Exception {
     writeAllOutstanding();
     synchronized (messagesWaiter) {
       messagesWaiter.waitComplete();

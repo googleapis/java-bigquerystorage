@@ -856,7 +856,7 @@ public class StreamWriterTest {
     ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
 
     assertFalse(appendFuture3.isDone());
-    writer.flush();
+    writer.flushAll();
 
     assertTrue(appendFuture3.isDone());
 
@@ -876,8 +876,6 @@ public class StreamWriterTest {
             .build();
 
     testBigQueryWrite.addException(Status.DATA_LOSS.asException());
-    testBigQueryWrite.addException(Status.DATA_LOSS.asException());
-    testBigQueryWrite.addException(Status.DATA_LOSS.asException());
 
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
@@ -885,7 +883,7 @@ public class StreamWriterTest {
 
     assertFalse(appendFuture3.isDone());
     try {
-      writer.flush();
+      writer.flushAll();
       fail("Should have thrown an Exception");
     } catch (Exception expected) {
       LOG.info("got:" + expected.toString());
