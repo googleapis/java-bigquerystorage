@@ -38,7 +38,8 @@ import org.json.JSONArray;
 /**
  * Writer that can help user to write data to BigQuery. This is a simplified version of the Write
  * API. For users writing with COMMITTED stream and don't care about row deduplication, it is
- * recommended to use this Writer. The DiectWriter can be used to write both JSON and protobuf data.
+ * recommended to use this Writer. The DirectWriter can be used to write both JSON and protobuf
+ * data.
  *
  * <pre>{@code
  * DataProto data;
