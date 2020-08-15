@@ -289,11 +289,14 @@ public class StreamWriter implements AutoCloseable {
    */
   public void flushAll(long timeoutMillis) throws Exception {
     appendAndRefreshAppendLock.lock();
-    writeAllOutstanding();
-    synchronized (messagesWaiter) {
-      messagesWaiter.waitComplete(timeoutMillis);
+    try {
+      writeAllOutstanding();
+      synchronized (messagesWaiter) {
+        messagesWaiter.waitComplete(timeoutMillis);
+      }
+    } finally {
+      appendAndRefreshAppendLock.unlock();
     }
-    appendAndRefreshAppendLock.unlock();
     exceptionLock.lock();
     try {
       if (streamException != null) {
