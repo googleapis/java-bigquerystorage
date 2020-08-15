@@ -221,7 +221,9 @@ public class StreamWriter implements AutoCloseable {
 
   private void setException(Throwable t) {
     exceptionLock.lock();
-    this.streamException = t;
+    if (this.streamException == null) {
+      this.streamException = t;
+    }
     exceptionLock.unlock();
   }
 
@@ -286,10 +288,12 @@ public class StreamWriter implements AutoCloseable {
    * @throws Exception
    */
   public void flushAll(long timeoutMillis) throws Exception {
+    appendAndRefreshAppendLock.lock();
     writeAllOutstanding();
     synchronized (messagesWaiter) {
       messagesWaiter.waitComplete(timeoutMillis);
     }
+    appendAndRefreshAppendLock.unlock();
     exceptionLock.lock();
     try {
       if (streamException != null) {
@@ -893,13 +897,15 @@ public class StreamWriter implements AutoCloseable {
                 streamWriter.getOnSchemaUpdateRunnable(), 0L, TimeUnit.MILLISECONDS);
           }
         }
-        // TODO: Deal with in stream errors.
+        // Currently there is nothing retryable. If the error is already exists, then ignore it.
         if (response.hasError()) {
-          StatusRuntimeException exception =
-              new StatusRuntimeException(
-                  Status.fromCodeValue(response.getError().getCode())
-                      .withDescription(response.getError().getMessage()));
-          inflightBatch.onFailure(exception);
+          if (response.getError().getCode() != 6 /* ALREADY_EXISTS */) {
+            StatusRuntimeException exception =
+                new StatusRuntimeException(
+                    Status.fromCodeValue(response.getError().getCode())
+                        .withDescription(response.getError().getMessage()));
+            inflightBatch.onFailure(exception);
+          }
         }
         if (inflightBatch.getExpectedOffset() > 0
             && response.getOffset() != inflightBatch.getExpectedOffset()) {
@@ -950,7 +956,6 @@ public class StreamWriter implements AutoCloseable {
               }
             } else {
               inflightBatch.onFailure(t);
-              // Fail all the rest of the batches
               abortInflightRequests(t);
               synchronized (streamWriter.currentRetries) {
                 streamWriter.currentRetries = 0;
@@ -969,14 +974,6 @@ public class StreamWriter implements AutoCloseable {
           abortInflightRequests(t);
           synchronized (streamWriter.currentRetries) {
             streamWriter.currentRetries = 0;
-          }
-          try {
-            if (!streamWriter.shutdown.get()) {
-              // Establish a new connection.
-              streamWriter.refreshAppend();
-            }
-          } catch (IOException | InterruptedException e) {
-            LOG.info("Failed to establish a new connection");
           }
         }
       } finally {

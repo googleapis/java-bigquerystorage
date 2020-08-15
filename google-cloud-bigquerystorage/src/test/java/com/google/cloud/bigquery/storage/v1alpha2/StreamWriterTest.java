@@ -886,7 +886,11 @@ public class StreamWriterTest {
       writer.flushAll(100000);
       fail("Should have thrown an Exception");
     } catch (Exception expected) {
-      LOG.info("got:" + expected.toString());
+      if (expected.getCause() instanceof  com.google.api.gax.rpc.DataLossException) {
+        LOG.info("got:" + expected.toString());
+      } else {
+        fail("Unexpected exception:" + expected.toString());
+      }
     }
 
     assertTrue(appendFuture3.isDone());
