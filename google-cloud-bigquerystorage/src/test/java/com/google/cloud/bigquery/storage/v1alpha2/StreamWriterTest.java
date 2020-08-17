@@ -897,4 +897,34 @@ public class StreamWriterTest {
 
     writer.close();
   }
+
+//  Local run can pass but the test is not stable in public runs, disable it for now.
+//  @Test
+//  public void testFlushtTmeout() throws Exception {
+//    StreamWriter writer =
+//        getTestStreamWriterBuilder()
+//            .setBatchingSettings(
+//                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+//                    .toBuilder()
+//                    .setElementCountThreshold(2L)
+//                    .setDelayThreshold(Duration.ofSeconds(100000))
+//                    .build())
+//            .build();
+//
+//    testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
+//    testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(2).build());
+//
+//    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+//    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
+//    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
+//
+//    assertFalse(appendFuture3.isDone());
+//    try {
+//      writer.flushAll(1);
+//      fail("expected exception to throw on very short timeout");
+//    } catch (InterruptedException ex) {
+//    }
+//
+//    writer.close();
+//  }
 }
