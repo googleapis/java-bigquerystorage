@@ -343,9 +343,6 @@ public class SchemaCompatibility {
       case "NUMERIC":
         match = isCompatibleWithBQNumeric(protoType);
         break;
-      case "BIGNUMERIC":
-        match = isCompatibleWithBQNumeric(protoType);
-        break;
       case "RECORD":
         if (allMessageTypes.size() > NestingLimit) {
           throw new IllegalArgumentException(
