@@ -203,7 +203,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testTwoParamNewBuilder() 
+  public void testTwoParamNewBuilder()
       throws DescriptorValidationException, IOException, InterruptedException {
     JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
     assertEquals(TEST_STREAM, writer.getStreamName());
@@ -534,7 +534,7 @@ public class JsonStreamWriterTest {
 
   @Test
   // This might be a bug but it is the current behavior. Investigate.
-  public void testAppendAlreadyExists_doesNotThrowxception() 
+  public void testAppendAlreadyExists_doesNotThrowxception()
       throws DescriptorValidationException, IOException, InterruptedException, ExecutionException {
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
