@@ -4,7 +4,7 @@
   <groupId>com.google.cloud</groupId>
   <artifactId>google-cloud-bigquerystorage-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.5.2-SNAPSHOT</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
+  <version>1.5.7-SNAPSHOT</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
   <name>BigQuery Storage Parent</name>
   <url>https://github.com/googleapis/java-bigquerystorage</url>
   <description>
@@ -14,7 +14,7 @@
   <parent>
     <groupId>com.google.cloud</groupId>
     <artifactId>google-cloud-shared-config</artifactId>
-    <version>0.9.2</version>
+    <version>0.9.3</version>
   </parent>
 
   <developers>
@@ -64,8 +64,7 @@
     <project.protobuf-java.version>3.11.4</project.protobuf-java.version>
     <github.global.server>github</github.global.server>
     <site.installationModule>google-cloud-bigquerystorage-parent</site.installationModule>
-    <jackson-core.version>2.11.2</jackson-core.version>
-    <commons-lang3.version>3.5</commons-lang3.version>
+    <jackson-core.version>2.11.3</jackson-core.version>
   </properties>
 
   <pluginRepositories>
@@ -91,69 +90,64 @@
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-shared-dependencies</artifactId>
-        <version>0.8.6</version>
+        <version>0.13.0</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-bigquery</artifactId>
-        <version>1.117.1</version>
+        <version>1.123.0</version>
       </dependency>
       <dependency>
         <groupId>com.google.api.grpc</groupId>
         <artifactId>proto-google-cloud-bigquerystorage-v1alpha2</artifactId>
-        <version>0.105.2-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1alpha2:current} -->
+        <version>0.105.7-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1alpha2:current} -->
       </dependency>
       <dependency>
         <groupId>com.google.api.grpc</groupId>
         <artifactId>proto-google-cloud-bigquerystorage-v1beta1</artifactId>
-        <version>0.105.2-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1beta1:current} -->
+        <version>0.105.7-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1beta1:current} -->
       </dependency>
       <dependency>
         <groupId>com.google.api.grpc</groupId>
         <artifactId>proto-google-cloud-bigquerystorage-v1beta2</artifactId>
-        <version>0.105.2-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1beta2:current} -->
+        <version>0.105.7-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1beta2:current} -->
       </dependency>
       <dependency>
         <groupId>com.google.api.grpc</groupId>
         <artifactId>proto-google-cloud-bigquerystorage-v1</artifactId>
-        <version>1.5.2-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1:current} -->
+        <version>1.5.7-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1:current} -->
       </dependency>
       <dependency>
         <groupId>com.google.api.grpc</groupId>
         <artifactId>grpc-google-cloud-bigquerystorage-v1alpha2</artifactId>
-        <version>0.105.2-SNAPSHOT</version><!-- {x-version-update:grpc-google-cloud-bigquerystorage-v1alpha2:current} -->
+        <version>0.105.7-SNAPSHOT</version><!-- {x-version-update:grpc-google-cloud-bigquerystorage-v1alpha2:current} -->
       </dependency>
       <dependency>
         <groupId>com.google.api.grpc</groupId>
         <artifactId>grpc-google-cloud-bigquerystorage-v1beta1</artifactId>
-        <version>0.105.2-SNAPSHOT</version><!-- {x-version-update:grpc-google-cloud-bigquerystorage-v1beta1:current} -->
+        <version>0.105.7-SNAPSHOT</version><!-- {x-version-update:grpc-google-cloud-bigquerystorage-v1beta1:current} -->
       </dependency>
       <dependency>
         <groupId>com.google.api.grpc</groupId>
         <artifactId>grpc-google-cloud-bigquerystorage-v1beta2</artifactId>
-        <version>0.105.2-SNAPSHOT</version><!-- {x-version-update:grpc-google-cloud-bigquerystorage-v1beta2:current} -->
+        <version>0.105.7-SNAPSHOT</version><!-- {x-version-update:grpc-google-cloud-bigquerystorage-v1beta2:current} -->
       </dependency>
       <dependency>
         <groupId>com.google.api.grpc</groupId>
         <artifactId>grpc-google-cloud-bigquerystorage-v1</artifactId>
-        <version>1.5.2-SNAPSHOT</version><!-- {x-version-update:grpc-google-cloud-bigquerystorage-v1:current} -->
+        <version>1.5.7-SNAPSHOT</version><!-- {x-version-update:grpc-google-cloud-bigquerystorage-v1:current} -->
       </dependency>
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-bigquerystorage</artifactId>
-        <version>1.5.2-SNAPSHOT</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
+        <version>1.5.7-SNAPSHOT</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-core</artifactId>
         <version>${jackson-core.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>${commons-lang3.version}</version>
       </dependency>
       <dependency>
         <groupId>org.json</groupId>
@@ -166,7 +160,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.13</version>
+        <version>4.13.1</version>
         <scope>test</scope>
       </dependency>
     </dependencies>

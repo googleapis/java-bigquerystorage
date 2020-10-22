@@ -11,7 +11,7 @@
       "git": {
         "name": ".",
         "remote": "https://github.com/googleapis/java-bigquerystorage.git",
-        "sha": "3c4cfd5d635ec2438b8f931de74d86e26403ed5b"
+        "sha": "39b7037af2eba54cf45a7c17061d91b2b150a0be"
       }
     },
     {
@@ -50,7 +50,7 @@
       "git": {
         "name": "synthtool",
         "remote": "https://github.com/googleapis/synthtool.git",
-        "sha": "019c7168faa0e56619f792693a8acdb30d6de19b"
+        "sha": "5a506ec8765cc04f7e29f888b8e9b257d9a7ae11"
       }
     }
   ],
@@ -98,16 +98,23 @@
     ".github/ISSUE_TEMPLATE/feature_request.md",
     ".github/ISSUE_TEMPLATE/support_request.md",
     ".github/PULL_REQUEST_TEMPLATE.md",
+    ".github/readme/synth.py",
     ".github/release-please.yml",
+    ".github/snippet-bot.yml",
     ".github/trusted-contribution.yml",
+    ".github/workflows/approve-readme.yaml",
+    ".github/workflows/auto-release.yaml",
     ".github/workflows/ci.yaml",
+    ".github/workflows/formatting.yaml",
     ".github/workflows/samples.yaml",
+    ".kokoro/build.bat",
     ".kokoro/build.sh",
     ".kokoro/coerce_logs.sh",
     ".kokoro/common.cfg",
     ".kokoro/common.sh",
     ".kokoro/continuous/common.cfg",
     ".kokoro/continuous/java8.cfg",
+    ".kokoro/continuous/readme.cfg",
     ".kokoro/dependencies.sh",
     ".kokoro/linkage-monitor.sh",
     ".kokoro/nightly/common.cfg",
@@ -131,6 +138,7 @@
     ".kokoro/presubmit/linkage-monitor.cfg",
     ".kokoro/presubmit/lint.cfg",
     ".kokoro/presubmit/samples.cfg",
+    ".kokoro/readme.sh",
     ".kokoro/release/bump_snapshot.cfg",
     ".kokoro/release/common.cfg",
     ".kokoro/release/common.sh",
@@ -148,7 +156,6 @@
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",
     "LICENSE",
-    "README.md",
     "codecov.yaml",
     "google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/BaseBigQueryReadClient.java",
     "google-cloud-bigquerystorage/src/main/java/com/google/cloud/bigquery/storage/v1/BaseBigQueryReadSettings.java",
@@ -299,7 +306,6 @@
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/proto/google/cloud/bigquery/storage/v1beta2/avro.proto",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/proto/google/cloud/bigquery/storage/v1beta2/storage.proto",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/proto/google/cloud/bigquery/storage/v1beta2/stream.proto",
-    "renovate.json",
     "samples/install-without-bom/pom.xml",
     "samples/pom.xml",
     "samples/snapshot/pom.xml",
