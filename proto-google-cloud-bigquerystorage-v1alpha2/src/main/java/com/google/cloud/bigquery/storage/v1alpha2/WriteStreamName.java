@@ -121,7 +121,7 @@ public class WriteStreamName implements ResourceName {
   public static List<String> toStringList(List<WriteStreamName> values) {
     List<String> list = new ArrayList<>(values.size());
     for (WriteStreamName value : values) {
-      if (Objects.isNull(value)) {
+      if (value == null) {
         list.add("");
       } else {
         list.add(value.toString());
@@ -136,20 +136,20 @@ public class WriteStreamName implements ResourceName {
 
   @Override
   public Map<String, String> getFieldValuesMap() {
-    if (Objects.isNull(fieldValuesMap)) {
+    if (fieldValuesMap == null) {
       synchronized (this) {
-        if (Objects.isNull(fieldValuesMap)) {
+        if (fieldValuesMap == null) {
           ImmutableMap.Builder<String, String> fieldMapBuilder = ImmutableMap.builder();
-          if (!Objects.isNull(project)) {
+          if (project != null) {
             fieldMapBuilder.put("project", project);
           }
-          if (!Objects.isNull(dataset)) {
+          if (dataset != null) {
             fieldMapBuilder.put("dataset", dataset);
           }
-          if (!Objects.isNull(table)) {
+          if (table != null) {
             fieldMapBuilder.put("table", table);
           }
-          if (!Objects.isNull(stream)) {
+          if (stream != null) {
             fieldMapBuilder.put("stream", stream);
           }
           fieldValuesMap = fieldMapBuilder.build();

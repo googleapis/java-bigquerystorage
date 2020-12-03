@@ -24,7 +24,6 @@ import com.google.cloud.bigquery.storage.v1beta1.stub.BigQueryStorageStub;
 import com.google.cloud.bigquery.storage.v1beta1.stub.BigQueryStorageStubSettings;
 import com.google.protobuf.Empty;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Generated;
 
@@ -168,7 +167,7 @@ public class BaseBigQueryStorageClient implements BackgroundResource {
     Storage.CreateReadSessionRequest request =
         Storage.CreateReadSessionRequest.newBuilder()
             .setTableReference(tableReference)
-            .setParent(Objects.isNull(parent) ? null : parent.toString())
+            .setParent(parent == null ? null : parent.toString())
             .setRequestedStreams(requestedStreams)
             .build();
     return createReadSession(request);
