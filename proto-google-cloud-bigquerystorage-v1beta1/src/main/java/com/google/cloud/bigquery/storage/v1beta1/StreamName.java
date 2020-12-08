@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.cloud.bigquery.storage.v1;
+package com.google.cloud.bigquery.storage.v1beta1;
 
 import com.google.api.pathtemplate.PathTemplate;
 import com.google.api.resourcenames.ResourceName;
@@ -26,17 +26,28 @@ import java.util.Map;
 
 /** AUTO-GENERATED DOCUMENTATION AND CLASS */
 @javax.annotation.Generated("by GAPIC protoc plugin")
-public class ProjectName implements ResourceName {
+public class StreamName implements ResourceName {
 
   private static final PathTemplate PATH_TEMPLATE =
-      PathTemplate.createWithoutUrlEncoding("projects/{project}");
+      PathTemplate.createWithoutUrlEncoding(
+          "projects/{project}/locations/{location}/streams/{stream}");
 
   private volatile Map<String, String> fieldValuesMap;
 
   private final String project;
+  private final String location;
+  private final String stream;
 
   public String getProject() {
     return project;
+  }
+
+  public String getLocation() {
+    return location;
+  }
+
+  public String getStream() {
+    return stream;
   }
 
   public static Builder newBuilder() {
@@ -47,39 +58,46 @@ public class ProjectName implements ResourceName {
     return new Builder(this);
   }
 
-  private ProjectName(Builder builder) {
+  private StreamName(Builder builder) {
     project = Preconditions.checkNotNull(builder.getProject());
+    location = Preconditions.checkNotNull(builder.getLocation());
+    stream = Preconditions.checkNotNull(builder.getStream());
   }
 
-  public static ProjectName of(String project) {
-    return newBuilder().setProject(project).build();
+  public static StreamName of(String project, String location, String stream) {
+    return newBuilder().setProject(project).setLocation(location).setStream(stream).build();
   }
 
-  public static String format(String project) {
-    return newBuilder().setProject(project).build().toString();
+  public static String format(String project, String location, String stream) {
+    return newBuilder()
+        .setProject(project)
+        .setLocation(location)
+        .setStream(stream)
+        .build()
+        .toString();
   }
 
-  public static ProjectName parse(String formattedString) {
+  public static StreamName parse(String formattedString) {
     if (formattedString.isEmpty()) {
       return null;
     }
     Map<String, String> matchMap =
         PATH_TEMPLATE.validatedMatch(
-            formattedString, "ProjectName.parse: formattedString not in valid format");
-    return of(matchMap.get("project"));
+            formattedString, "StreamName.parse: formattedString not in valid format");
+    return of(matchMap.get("project"), matchMap.get("location"), matchMap.get("stream"));
   }
 
-  public static List<ProjectName> parseList(List<String> formattedStrings) {
-    List<ProjectName> list = new ArrayList<>(formattedStrings.size());
+  public static List<StreamName> parseList(List<String> formattedStrings) {
+    List<StreamName> list = new ArrayList<>(formattedStrings.size());
     for (String formattedString : formattedStrings) {
       list.add(parse(formattedString));
     }
     return list;
   }
 
-  public static List<String> toStringList(List<ProjectName> values) {
+  public static List<String> toStringList(List<StreamName> values) {
     List<String> list = new ArrayList<String>(values.size());
-    for (ProjectName value : values) {
+    for (StreamName value : values) {
       if (value == null) {
         list.add("");
       } else {
@@ -99,6 +117,8 @@ public class ProjectName implements ResourceName {
         if (fieldValuesMap == null) {
           ImmutableMap.Builder<String, String> fieldMapBuilder = ImmutableMap.builder();
           fieldMapBuilder.put("project", project);
+          fieldMapBuilder.put("location", location);
+          fieldMapBuilder.put("stream", stream);
           fieldValuesMap = fieldMapBuilder.build();
         }
       }
@@ -112,16 +132,26 @@ public class ProjectName implements ResourceName {
 
   @Override
   public String toString() {
-    return PATH_TEMPLATE.instantiate("project", project);
+    return PATH_TEMPLATE.instantiate("project", project, "location", location, "stream", stream);
   }
 
-  /** Builder for ProjectName. */
+  /** Builder for StreamName. */
   public static class Builder {
 
     private String project;
+    private String location;
+    private String stream;
 
     public String getProject() {
       return project;
+    }
+
+    public String getLocation() {
+      return location;
+    }
+
+    public String getStream() {
+      return stream;
     }
 
     public Builder setProject(String project) {
@@ -129,14 +159,26 @@ public class ProjectName implements ResourceName {
       return this;
     }
 
-    private Builder() {}
-
-    private Builder(ProjectName projectName) {
-      project = projectName.project;
+    public Builder setLocation(String location) {
+      this.location = location;
+      return this;
     }
 
-    public ProjectName build() {
-      return new ProjectName(this);
+    public Builder setStream(String stream) {
+      this.stream = stream;
+      return this;
+    }
+
+    private Builder() {}
+
+    private Builder(StreamName streamName) {
+      project = streamName.project;
+      location = streamName.location;
+      stream = streamName.stream;
+    }
+
+    public StreamName build() {
+      return new StreamName(this);
     }
   }
 
@@ -145,9 +187,11 @@ public class ProjectName implements ResourceName {
     if (o == this) {
       return true;
     }
-    if (o instanceof ProjectName) {
-      ProjectName that = (ProjectName) o;
-      return (this.project.equals(that.project));
+    if (o instanceof StreamName) {
+      StreamName that = (StreamName) o;
+      return (this.project.equals(that.project))
+          && (this.location.equals(that.location))
+          && (this.stream.equals(that.stream));
     }
     return false;
   }
@@ -157,6 +201,10 @@ public class ProjectName implements ResourceName {
     int h = 1;
     h *= 1000003;
     h ^= project.hashCode();
+    h *= 1000003;
+    h ^= location.hashCode();
+    h *= 1000003;
+    h ^= stream.hashCode();
     return h;
   }
 }
