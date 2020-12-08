@@ -607,22 +607,24 @@ public class ITBigQueryWriteManualClientTest {
       try {
         flushRequest = flushRequest.toBuilder().setOffset(Int64Value.of(1)).build();
         client.flushRows(flushRequest);
-        fail("Excpected Out Of Range exception");
+        fail("Expected Out Of Range exception");
       } catch (com.google.api.gax.rpc.OutOfRangeException ex) {
         assertThat(ex.getMessage())
             .contains("OUT_OF_RANGE: Offset 1 is beyond the end of the stream");
       }
     }
-    // String query = "SELECT * from " + DATASET + "." + tableName;
-    // LOG.info("Querying: " + query);
-    // TableResult queryResult = bigquery.query(QueryJobConfiguration.newBuilder(query).build());
-    // Iterator<FieldValueList> iter = queryResult.getValues().iterator();
+    String query = "SELECT * from " + DATASET + "." + tableName;
+    LOG.info("Querying: " + query);
+    TableResult queryResult = bigquery.query(QueryJobConfiguration.newBuilder(query).build());
+    Iterator<FieldValueList> iter = queryResult.getValues().iterator();
 
     // We cannot read from tabledata.list yet.
     // TableResult result =
     //    bigquery.listTableData(tableInfo.getTableId(),
     // BigQuery.TableDataListOption.startIndex(0L));
     // Iterator<FieldValueList> iter = result.getValues().iterator();
+    // Why I cannot get result?
+    assertFalse(iter.hasNext());
     // assertEquals("aaa", iter.next().get(0).getStringValue());
     // assertEquals(false, iter.hasNext());
   }
