@@ -887,6 +887,10 @@ public class StreamWriterTest {
       if (expected.getCause() instanceof com.google.api.gax.rpc.DataLossException
           | expected instanceof java.lang.InterruptedException) {
         LOG.info("got: " + expected.toString());
+        if (expected instanceof java.lang.InterruptedException) {
+          LOG.warning("Test return ealy due to InterruptedException");
+          return;
+        }
       } else {
         fail("Unexpected exception:" + expected.toString());
       }
