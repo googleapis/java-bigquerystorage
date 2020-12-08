@@ -23,7 +23,6 @@ import com.google.api.gax.rpc.UnaryCallable;
 import com.google.cloud.bigquery.storage.v1beta2.stub.BigQueryWriteStub;
 import com.google.cloud.bigquery.storage.v1beta2.stub.BigQueryWriteStubSettings;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Generated;
 
@@ -152,7 +151,7 @@ public class BigQueryWriteClient implements BackgroundResource {
   public final WriteStream createWriteStream(TableName parent, WriteStream writeStream) {
     CreateWriteStreamRequest request =
         CreateWriteStreamRequest.newBuilder()
-            .setParent(Objects.isNull(parent) ? null : parent.toString())
+            .setParent(parent == null ? null : parent.toString())
             .setWriteStream(writeStream)
             .build();
     return createWriteStream(request);
@@ -241,9 +240,7 @@ public class BigQueryWriteClient implements BackgroundResource {
    */
   public final WriteStream getWriteStream(WriteStreamName name) {
     GetWriteStreamRequest request =
-        GetWriteStreamRequest.newBuilder()
-            .setName(Objects.isNull(name) ? null : name.toString())
-            .build();
+        GetWriteStreamRequest.newBuilder().setName(name == null ? null : name.toString()).build();
     return getWriteStream(request);
   }
 
@@ -293,7 +290,7 @@ public class BigQueryWriteClient implements BackgroundResource {
   public final FinalizeWriteStreamResponse finalizeWriteStream(WriteStreamName name) {
     FinalizeWriteStreamRequest request =
         FinalizeWriteStreamRequest.newBuilder()
-            .setName(Objects.isNull(name) ? null : name.toString())
+            .setName(name == null ? null : name.toString())
             .build();
     return finalizeWriteStream(request);
   }
@@ -393,7 +390,7 @@ public class BigQueryWriteClient implements BackgroundResource {
   public final FlushRowsResponse flushRows(WriteStreamName writeStream) {
     FlushRowsRequest request =
         FlushRowsRequest.newBuilder()
-            .setWriteStream(Objects.isNull(writeStream) ? null : writeStream.toString())
+            .setWriteStream(writeStream == null ? null : writeStream.toString())
             .build();
     return flushRows(request);
   }
