@@ -33,9 +33,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Timestamp;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import org.json.JSONArray;
@@ -775,7 +773,7 @@ public class JsonStreamWriterTest {
       final JSONArray jsonArr = new JSONArray();
       jsonArr.put(foo);
 
-      final HashSet<Long> offset_sets = new HashSet<Long>();
+      final Collection<Long> offset_sets = Collections.synchronizedCollection(new HashSet<Long>());
       int thread_nums = 5;
       Thread[] thread_arr = new Thread[thread_nums];
       for (int i = 0; i < thread_nums; i++) {
@@ -839,7 +837,7 @@ public class JsonStreamWriterTest {
       final JSONArray jsonArr = new JSONArray();
       jsonArr.put(foo);
 
-      final HashSet<Long> offsetSets = new HashSet<Long>();
+      final Collection<Long> offset_sets = Collections.synchronizedCollection(new HashSet<Long>());
       int numberThreads = 5;
       Thread[] thread_arr = new Thread[numberThreads];
       for (int i = 0; i < numberThreads; i++) {
@@ -854,7 +852,7 @@ public class JsonStreamWriterTest {
               AppendRowsResponse.newBuilder().setOffset((long) i).build());
         }
 
-        offsetSets.add((long) i);
+        offset_sets.add((long) i);
         Thread t =
             new Thread(
                 new Runnable() {
@@ -863,7 +861,7 @@ public class JsonStreamWriterTest {
                       ApiFuture<AppendRowsResponse> appendFuture =
                           writer.append(jsonArr, -1, /* allowUnknownFields */ false);
                       AppendRowsResponse response = appendFuture.get();
-                      offsetSets.remove(response.getOffset());
+                      offset_sets.remove(response.getOffset());
                     } catch (Exception e) {
                       LOG.severe("Thread execution failed: " + e.getMessage());
                     }
@@ -876,7 +874,7 @@ public class JsonStreamWriterTest {
       for (int i = 0; i < numberThreads; i++) {
         thread_arr[i].join();
       }
-      assertTrue(offsetSets.size() == 0);
+      assertTrue(offset_sets.size() == 0);
       for (int i = 0; i < numberThreads; i++) {
         assertEquals(
             1,
@@ -912,7 +910,7 @@ public class JsonStreamWriterTest {
 
       for (int i = numberThreads; i < numberThreads + 5; i++) {
         testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset((long) i).build());
-        offsetSets.add((long) i);
+        offset_sets.add((long) i);
         Thread t =
             new Thread(
                 new Runnable() {
@@ -921,7 +919,7 @@ public class JsonStreamWriterTest {
                       ApiFuture<AppendRowsResponse> appendFuture =
                           writer.append(jsonArr2, -1, /* allowUnknownFields */ false);
                       AppendRowsResponse response = appendFuture.get();
-                      offsetSets.remove(response.getOffset());
+                      offset_sets.remove(response.getOffset());
                     } catch (Exception e) {
                       LOG.severe("Thread execution failed: " + e.getMessage());
                     }
@@ -934,7 +932,7 @@ public class JsonStreamWriterTest {
       for (int i = 0; i < numberThreads; i++) {
         thread_arr[i].join();
       }
-      assertTrue(offsetSets.size() == 0);
+      assertTrue(offset_sets.size() == 0);
       for (int i = 0; i < numberThreads; i++) {
         assertEquals(
             1,

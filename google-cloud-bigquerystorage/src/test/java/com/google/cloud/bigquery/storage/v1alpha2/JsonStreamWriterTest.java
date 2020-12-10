@@ -840,7 +840,7 @@ public class JsonStreamWriterTest {
       final JSONArray jsonArr = new JSONArray();
       jsonArr.put(foo);
 
-      final HashSet<Long> offsetSets = new HashSet<Long>();
+      final Collection<Long> offsetSets = Collections.synchronizedCollection(new HashSet<Long>());
       int numberThreads = 5;
       Thread[] thread_arr = new Thread[numberThreads];
       for (int i = 0; i < numberThreads; i++) {
