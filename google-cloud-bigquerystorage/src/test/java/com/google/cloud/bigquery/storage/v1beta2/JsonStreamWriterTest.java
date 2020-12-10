@@ -853,7 +853,7 @@ public class JsonStreamWriterTest {
               AppendRowsResponse.newBuilder().setOffset((long) i).build());
         }
 
-        offset_sets.add((long) i);
+        offsetSets.add((long) i);
         Thread t =
             new Thread(
                 new Runnable() {
@@ -862,7 +862,7 @@ public class JsonStreamWriterTest {
                       ApiFuture<AppendRowsResponse> appendFuture =
                           writer.append(jsonArr, -1, /* allowUnknownFields */ false);
                       AppendRowsResponse response = appendFuture.get();
-                      offset_sets.remove(response.getOffset());
+                      offsetSets.remove(response.getOffset());
                     } catch (Exception e) {
                       LOG.severe("Thread execution failed: " + e.getMessage());
                     }
@@ -875,7 +875,7 @@ public class JsonStreamWriterTest {
       for (int i = 0; i < numberThreads; i++) {
         thread_arr[i].join();
       }
-      assertTrue(offset_sets.size() == 0);
+      assertTrue(offsetSets.size() == 0);
       for (int i = 0; i < numberThreads; i++) {
         assertEquals(
             1,
@@ -911,7 +911,7 @@ public class JsonStreamWriterTest {
 
       for (int i = numberThreads; i < numberThreads + 5; i++) {
         testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset((long) i).build());
-        offset_sets.add((long) i);
+        offsetSets.add((long) i);
         Thread t =
             new Thread(
                 new Runnable() {
@@ -920,7 +920,7 @@ public class JsonStreamWriterTest {
                       ApiFuture<AppendRowsResponse> appendFuture =
                           writer.append(jsonArr2, -1, /* allowUnknownFields */ false);
                       AppendRowsResponse response = appendFuture.get();
-                      offset_sets.remove(response.getOffset());
+                      offsetSets.remove(response.getOffset());
                     } catch (Exception e) {
                       LOG.severe("Thread execution failed: " + e.getMessage());
                     }
@@ -933,7 +933,7 @@ public class JsonStreamWriterTest {
       for (int i = 0; i < numberThreads; i++) {
         thread_arr[i].join();
       }
-      assertTrue(offset_sets.size() == 0);
+      assertTrue(offsetSets.size() == 0);
       for (int i = 0; i < numberThreads; i++) {
         assertEquals(
             1,
