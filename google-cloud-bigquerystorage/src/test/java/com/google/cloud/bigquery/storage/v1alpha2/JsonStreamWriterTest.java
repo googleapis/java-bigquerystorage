@@ -34,9 +34,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Timestamp;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import org.json.JSONArray;
@@ -777,7 +775,7 @@ public class JsonStreamWriterTest {
       final JSONArray jsonArr = new JSONArray();
       jsonArr.put(foo);
 
-      final HashSet<Long> offset_sets = new HashSet<Long>();
+      final Collection<Long> offset_sets = Collections.synchronizedCollection(new HashSet<Long>());
       int thread_nums = 5;
       Thread[] thread_arr = new Thread[thread_nums];
       for (int i = 0; i < thread_nums; i++) {
