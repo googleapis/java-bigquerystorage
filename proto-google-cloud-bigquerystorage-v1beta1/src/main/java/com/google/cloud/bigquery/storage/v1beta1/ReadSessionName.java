@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.cloud.bigquery.storage.v1;
+package com.google.cloud.bigquery.storage.v1beta1;
 
 import com.google.api.pathtemplate.PathTemplate;
 import com.google.api.resourcenames.ResourceName;
@@ -26,17 +26,28 @@ import java.util.Map;
 
 /** AUTO-GENERATED DOCUMENTATION AND CLASS */
 @javax.annotation.Generated("by GAPIC protoc plugin")
-public class ProjectName implements ResourceName {
+public class ReadSessionName implements ResourceName {
 
   private static final PathTemplate PATH_TEMPLATE =
-      PathTemplate.createWithoutUrlEncoding("projects/{project}");
+      PathTemplate.createWithoutUrlEncoding(
+          "projects/{project}/locations/{location}/sessions/{session}");
 
   private volatile Map<String, String> fieldValuesMap;
 
   private final String project;
+  private final String location;
+  private final String session;
 
   public String getProject() {
     return project;
+  }
+
+  public String getLocation() {
+    return location;
+  }
+
+  public String getSession() {
+    return session;
   }
 
   public static Builder newBuilder() {
@@ -47,39 +58,46 @@ public class ProjectName implements ResourceName {
     return new Builder(this);
   }
 
-  private ProjectName(Builder builder) {
+  private ReadSessionName(Builder builder) {
     project = Preconditions.checkNotNull(builder.getProject());
+    location = Preconditions.checkNotNull(builder.getLocation());
+    session = Preconditions.checkNotNull(builder.getSession());
   }
 
-  public static ProjectName of(String project) {
-    return newBuilder().setProject(project).build();
+  public static ReadSessionName of(String project, String location, String session) {
+    return newBuilder().setProject(project).setLocation(location).setSession(session).build();
   }
 
-  public static String format(String project) {
-    return newBuilder().setProject(project).build().toString();
+  public static String format(String project, String location, String session) {
+    return newBuilder()
+        .setProject(project)
+        .setLocation(location)
+        .setSession(session)
+        .build()
+        .toString();
   }
 
-  public static ProjectName parse(String formattedString) {
+  public static ReadSessionName parse(String formattedString) {
     if (formattedString.isEmpty()) {
       return null;
     }
     Map<String, String> matchMap =
         PATH_TEMPLATE.validatedMatch(
-            formattedString, "ProjectName.parse: formattedString not in valid format");
-    return of(matchMap.get("project"));
+            formattedString, "ReadSessionName.parse: formattedString not in valid format");
+    return of(matchMap.get("project"), matchMap.get("location"), matchMap.get("session"));
   }
 
-  public static List<ProjectName> parseList(List<String> formattedStrings) {
-    List<ProjectName> list = new ArrayList<>(formattedStrings.size());
+  public static List<ReadSessionName> parseList(List<String> formattedStrings) {
+    List<ReadSessionName> list = new ArrayList<>(formattedStrings.size());
     for (String formattedString : formattedStrings) {
       list.add(parse(formattedString));
     }
     return list;
   }
 
-  public static List<String> toStringList(List<ProjectName> values) {
+  public static List<String> toStringList(List<ReadSessionName> values) {
     List<String> list = new ArrayList<String>(values.size());
-    for (ProjectName value : values) {
+    for (ReadSessionName value : values) {
       if (value == null) {
         list.add("");
       } else {
@@ -99,6 +117,8 @@ public class ProjectName implements ResourceName {
         if (fieldValuesMap == null) {
           ImmutableMap.Builder<String, String> fieldMapBuilder = ImmutableMap.builder();
           fieldMapBuilder.put("project", project);
+          fieldMapBuilder.put("location", location);
+          fieldMapBuilder.put("session", session);
           fieldValuesMap = fieldMapBuilder.build();
         }
       }
@@ -112,16 +132,26 @@ public class ProjectName implements ResourceName {
 
   @Override
   public String toString() {
-    return PATH_TEMPLATE.instantiate("project", project);
+    return PATH_TEMPLATE.instantiate("project", project, "location", location, "session", session);
   }
 
-  /** Builder for ProjectName. */
+  /** Builder for ReadSessionName. */
   public static class Builder {
 
     private String project;
+    private String location;
+    private String session;
 
     public String getProject() {
       return project;
+    }
+
+    public String getLocation() {
+      return location;
+    }
+
+    public String getSession() {
+      return session;
     }
 
     public Builder setProject(String project) {
@@ -129,14 +159,26 @@ public class ProjectName implements ResourceName {
       return this;
     }
 
-    private Builder() {}
-
-    private Builder(ProjectName projectName) {
-      project = projectName.project;
+    public Builder setLocation(String location) {
+      this.location = location;
+      return this;
     }
 
-    public ProjectName build() {
-      return new ProjectName(this);
+    public Builder setSession(String session) {
+      this.session = session;
+      return this;
+    }
+
+    private Builder() {}
+
+    private Builder(ReadSessionName readSessionName) {
+      project = readSessionName.project;
+      location = readSessionName.location;
+      session = readSessionName.session;
+    }
+
+    public ReadSessionName build() {
+      return new ReadSessionName(this);
     }
   }
 
@@ -145,9 +187,11 @@ public class ProjectName implements ResourceName {
     if (o == this) {
       return true;
     }
-    if (o instanceof ProjectName) {
-      ProjectName that = (ProjectName) o;
-      return (this.project.equals(that.project));
+    if (o instanceof ReadSessionName) {
+      ReadSessionName that = (ReadSessionName) o;
+      return (this.project.equals(that.project))
+          && (this.location.equals(that.location))
+          && (this.session.equals(that.session));
     }
     return false;
   }
@@ -157,6 +201,10 @@ public class ProjectName implements ResourceName {
     int h = 1;
     h *= 1000003;
     h ^= project.hashCode();
+    h *= 1000003;
+    h ^= location.hashCode();
+    h *= 1000003;
+    h ^= session.hashCode();
     return h;
   }
 }
