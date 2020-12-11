@@ -74,7 +74,7 @@ public class BQTableSchemaToProtoDescriptorTest {
       // Check type
       FieldDescriptor.Type convertedType = convertedField.getType();
       FieldDescriptor.Type originalType = originalField.getType();
-      assertEquals(convertedType, originalType);
+      assertEquals(convertedField.getName(), convertedType, originalType);
       // Check mode
       assertTrue(
           (originalField.isRepeated() == convertedField.isRepeated())
@@ -179,6 +179,30 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(1, ComplexLvl2)
             .setName("complex_lvl1")
             .build();
+    final TableFieldSchema TEST_NUMERIC =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.NUMERIC)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test_numeric")
+            .build();
+    final TableFieldSchema TEST_GEO =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.GEOGRAPHY)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test_geo")
+            .build();
+    final TableFieldSchema TEST_TIMESTAMP =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.TIMESTAMP)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test_timestamp")
+            .build();
+    final TableFieldSchema TEST_TIME =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.TIME)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test_time")
+            .build();
     final TableSchema tableSchema =
         TableSchema.newBuilder()
             .addFields(0, test_int)
@@ -189,6 +213,10 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(5, test_date)
             .addFields(6, ComplexLvl1)
             .addFields(7, ComplexLvl2)
+            .addFields(8, TEST_NUMERIC)
+            .addFields(9, TEST_GEO)
+            .addFields(10, TEST_TIMESTAMP)
+            .addFields(11, TEST_TIME)
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
