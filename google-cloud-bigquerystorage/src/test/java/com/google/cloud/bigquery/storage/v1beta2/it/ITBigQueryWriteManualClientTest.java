@@ -250,7 +250,7 @@ public class ITBigQueryWriteManualClientTest {
       JSONObject testStr = new JSONObject();
       testStr.put("test_str", "aaa");
       JSONObject testNumerics = new JSONObject();
-      testNumerics.put("test_numerics", new JSONArray(new String[]{"123.4", "-9000000"}));
+      testNumerics.put("test_numerics", new JSONArray(new String[] {"123.4", "-9000000"}));
       JSONObject testDateTime = new JSONObject();
       testDateTime.put("test_datetime", "2020-10-1 12:00:00");
       JSONArray row = new JSONArray(new JSONObject[] {testStr, testNumerics, testDateTime});
