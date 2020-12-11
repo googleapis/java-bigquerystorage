@@ -181,6 +181,30 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(1, ComplexLvl2)
             .setName("complex_lvl1")
             .build();
+    final Table.TableFieldSchema TEST_NUMERIC =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.NUMERIC)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("test_numeric")
+            .build();
+    final Table.TableFieldSchema TEST_GEO =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.GEOGRAPHY)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("test_geo")
+            .build();
+    final Table.TableFieldSchema TEST_TIMESTAMP =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.TIMESTAMP)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("test_timestamp")
+            .build();
+    final Table.TableFieldSchema TEST_TIME =
+        Table.TableFieldSchema.newBuilder()
+            .setType(Table.TableFieldSchema.Type.TIME)
+            .setMode(Table.TableFieldSchema.Mode.NULLABLE)
+            .setName("test_time")
+            .build();
     final Table.TableSchema tableSchema =
         Table.TableSchema.newBuilder()
             .addFields(0, test_int)
@@ -191,6 +215,10 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(5, test_date)
             .addFields(6, ComplexLvl1)
             .addFields(7, ComplexLvl2)
+            .addFields(8, TEST_NUMERIC)
+            .addFields(9, TEST_GEO)
+            .addFields(10, TEST_TIMESTAMP)
+            .addFields(11, TEST_TIME)
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
