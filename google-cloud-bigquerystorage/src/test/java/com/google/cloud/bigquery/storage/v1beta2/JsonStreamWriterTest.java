@@ -825,7 +825,6 @@ public class JsonStreamWriterTest {
                       AppendRowsResponse response = appendFuture.get();
                       offsetSets.remove(response.getOffset());
                     } catch (Exception e) {
-
                       LOG.severe("Thread execution failed: " + e.getMessage());
                     }
                   }
