@@ -216,12 +216,15 @@ public class JsonStreamWriterTest {
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
 
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
+      // Temp for Breaking Change.
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
 
       ApiFuture<AppendRowsResponse> appendFuture =
           writer.append(jsonArr, -1, /* allowUnknownFields */ false);
-
-      assertEquals(0L, appendFuture.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(0L, appendFuture.get().getOffset());
+      appendFuture.get();
       assertEquals(
           1,
           testBigQueryWrite
@@ -260,12 +263,16 @@ public class JsonStreamWriterTest {
 
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
+      // Temp for Breaking Change.
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
 
       ApiFuture<AppendRowsResponse> appendFuture =
           writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
-      assertEquals(0L, appendFuture.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(0L, appendFuture.get().getOffset());
+      appendFuture.get();
       assertEquals(
           4,
           testBigQueryWrite
@@ -297,15 +304,21 @@ public class JsonStreamWriterTest {
 
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(1).build());
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(2).build());
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(3).build());
+      // Temp for Breaking Change.
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(1).build());
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(2).build());
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(3).build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
       ApiFuture<AppendRowsResponse> appendFuture;
       for (int i = 0; i < 4; i++) {
         appendFuture = writer.append(jsonArr, -1, /* allowUnknownFields */ false);
-
-        assertEquals((long) i, appendFuture.get().getOffset());
+        // Temp for Breaking Change.
+        // assertEquals((long) i, appendFuture.get().getOffset());
+        appendFuture.get();
         assertEquals(
             1,
             testBigQueryWrite
@@ -375,11 +388,16 @@ public class JsonStreamWriterTest {
 
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, COMPLEX_TABLE_SCHEMA).build()) {
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
+      // Temp for Breaking Change.
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
+
       ApiFuture<AppendRowsResponse> appendFuture =
           writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
-      assertEquals(0L, appendFuture.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(0L, appendFuture.get().getOffset());
+      appendFuture.get();
       assertEquals(
           1,
           testBigQueryWrite
@@ -404,17 +422,19 @@ public class JsonStreamWriterTest {
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
       // Add fake resposne for FakeBigQueryWrite, first response has updated schema.
+      // Temp for Breaking Change.
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()
-              .setOffset(0)
+              // .setOffset(0)
               .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
               .build());
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()
-              .setOffset(1)
+              // .setOffset(1)
               .setUpdatedSchema(UPDATED_TABLE_SCHEMA_2)
               .build());
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(2).build());
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(2).build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
       // First append
       JSONObject foo = new JSONObject();
       foo.put("foo", "allen");
@@ -433,7 +453,9 @@ public class JsonStreamWriterTest {
         millis += 100;
       }
       assertTrue(writer.getDescriptor().getFields().size() == 2);
-      assertEquals(0L, appendFuture1.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(0L, appendFuture1.get().getOffset());
+      appendFuture1.get();
       assertEquals(
           1,
           testBigQueryWrite
@@ -470,7 +492,9 @@ public class JsonStreamWriterTest {
         millis += 100;
       }
       assertTrue(writer.getDescriptor().getFields().size() == 3);
-      assertEquals(1L, appendFuture2.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(1L, appendFuture2.get().getOffset());
+      appendFuture2.get();
       assertEquals(
           1,
           testBigQueryWrite
@@ -499,7 +523,9 @@ public class JsonStreamWriterTest {
       ApiFuture<AppendRowsResponse> appendFuture3 =
           writer.append(updatedJsonArr2, -1, /* allowUnknownFields */ false);
 
-      assertEquals(2L, appendFuture3.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(2L, appendFuture3.get().getOffset());
+      appendFuture3.get();
       assertEquals(
           1,
           testBigQueryWrite
@@ -580,7 +606,9 @@ public class JsonStreamWriterTest {
               .setError(com.google.rpc.Status.newBuilder().setCode(11).build())
               .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
               .build());
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
+      // Temp for Breaking Change.
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(0).build());
 
       JSONObject foo = new JSONObject();
       foo.put("foo", "allen");
@@ -612,8 +640,9 @@ public class JsonStreamWriterTest {
 
       ApiFuture<AppendRowsResponse> appendFuture2 =
           writer.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
-
-      assertEquals(0L, appendFuture2.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(0L, appendFuture2.get().getOffset());
+      appendFuture2.get();
       assertEquals(
           1,
           testBigQueryWrite
@@ -647,13 +676,16 @@ public class JsonStreamWriterTest {
                     .setElementCountThreshold(2L)
                     .build())
             .build()) {
+      // Temp for Breaking Change.
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()
-              .setOffset(0)
+              // .setOffset(0)
               .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
               .build());
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(2).build());
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(3).build());
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(2).build());
+      // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset(3).build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
       // First append
       JSONObject foo = new JSONObject();
       foo.put("foo", "allen");
@@ -667,8 +699,11 @@ public class JsonStreamWriterTest {
       ApiFuture<AppendRowsResponse> appendFuture3 =
           writer.append(jsonArr, -1, /* allowUnknownFields */ false);
 
-      assertEquals(0L, appendFuture1.get().getOffset());
-      assertEquals(1L, appendFuture2.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(0L, appendFuture1.get().getOffset());
+      // assertEquals(1L, appendFuture2.get().getOffset());
+      appendFuture1.get();
+      appendFuture2.get();
       assertEquals(
           2,
           testBigQueryWrite
@@ -694,7 +729,9 @@ public class JsonStreamWriterTest {
               .getSerializedRows(1),
           FooType.newBuilder().setFoo("allen").build().toByteString());
 
-      assertEquals(2L, appendFuture3.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(2L, appendFuture3.get().getOffset());
+      appendFuture3.get();
       assertEquals(
           1,
           testBigQueryWrite
@@ -732,7 +769,9 @@ public class JsonStreamWriterTest {
       ApiFuture<AppendRowsResponse> appendFuture4 =
           writer.append(updatedJsonArr, -1, /* allowUnknownFields */ false);
 
-      assertEquals(3L, appendFuture4.get().getOffset());
+      // Temp for Breaking Change.
+      // assertEquals(3L, appendFuture4.get().getOffset());
+      appendFuture4.get();
       assertEquals(
           1,
           testBigQueryWrite
@@ -777,7 +816,10 @@ public class JsonStreamWriterTest {
       int thread_nums = 5;
       Thread[] thread_arr = new Thread[thread_nums];
       for (int i = 0; i < thread_nums; i++) {
-        testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset((long) i).build());
+        // Temp for Breaking Change.
+        // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset((long)
+        // i).build());
+        testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
         offsetSets.add((long) i);
         Thread t =
             new Thread(
@@ -787,7 +829,7 @@ public class JsonStreamWriterTest {
                       ApiFuture<AppendRowsResponse> appendFuture =
                           writer.append(jsonArr, -1, /* allowUnknownFields */ false);
                       AppendRowsResponse response = appendFuture.get();
-                      offsetSets.remove(response.getOffset());
+                      // offsetSets.remove(response.getOffset());
                     } catch (Exception e) {
 
                       LOG.severe("Thread execution failed: " + e.getMessage());
@@ -801,7 +843,7 @@ public class JsonStreamWriterTest {
       for (int i = 0; i < thread_nums; i++) {
         thread_arr[i].join();
       }
-      assertTrue(offsetSets.size() == 0);
+      // assertTrue(offsetSets.size() == 0);
       for (int i = 0; i < thread_nums; i++) {
         assertEquals(
             1,
@@ -843,17 +885,20 @@ public class JsonStreamWriterTest {
       Thread[] thread_arr = new Thread[numberThreads];
       for (int i = 0; i < numberThreads; i++) {
         if (i == 2) {
+          // Temp for Breaking Change.
           testBigQueryWrite.addResponse(
               AppendRowsResponse.newBuilder()
-                  .setOffset((long) i)
+                  // .setOffset((long) i)
                   .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
                   .build());
         } else {
-          testBigQueryWrite.addResponse(
-              AppendRowsResponse.newBuilder().setOffset((long) i).build());
+          // Temp for Breaking Change.
+          // testBigQueryWrite.addResponse(
+          //    AppendRowsResponse.newBuilder().setOffset((long) i).build());
+          testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
         }
 
-        offset_sets.add((long) i);
+        offsetSets.add((long) i);
         Thread t =
             new Thread(
                 new Runnable() {
@@ -862,7 +907,7 @@ public class JsonStreamWriterTest {
                       ApiFuture<AppendRowsResponse> appendFuture =
                           writer.append(jsonArr, -1, /* allowUnknownFields */ false);
                       AppendRowsResponse response = appendFuture.get();
-                      offset_sets.remove(response.getOffset());
+                      // offsetSets.remove(response.getOffset());
                     } catch (Exception e) {
                       LOG.severe("Thread execution failed: " + e.getMessage());
                     }
@@ -875,7 +920,7 @@ public class JsonStreamWriterTest {
       for (int i = 0; i < numberThreads; i++) {
         thread_arr[i].join();
       }
-      assertTrue(offset_sets.size() == 0);
+      // assertTrue(offsetSets.size() == 0);
       for (int i = 0; i < numberThreads; i++) {
         assertEquals(
             1,
@@ -910,8 +955,11 @@ public class JsonStreamWriterTest {
       jsonArr2.put(foo);
 
       for (int i = numberThreads; i < numberThreads + 5; i++) {
-        testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset((long) i).build());
-        offset_sets.add((long) i);
+        // Temp for Breaking Change.
+        // testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().setOffset((long)
+        // i).build());
+        testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
+        offsetSets.add((long) i);
         Thread t =
             new Thread(
                 new Runnable() {
@@ -920,7 +968,7 @@ public class JsonStreamWriterTest {
                       ApiFuture<AppendRowsResponse> appendFuture =
                           writer.append(jsonArr2, -1, /* allowUnknownFields */ false);
                       AppendRowsResponse response = appendFuture.get();
-                      offset_sets.remove(response.getOffset());
+                      offsetSets.remove(response.getOffset());
                     } catch (Exception e) {
                       LOG.severe("Thread execution failed: " + e.getMessage());
                     }
@@ -933,7 +981,7 @@ public class JsonStreamWriterTest {
       for (int i = 0; i < numberThreads; i++) {
         thread_arr[i].join();
       }
-      assertTrue(offset_sets.size() == 0);
+      // assertTrue(offsetSets.size() == 0);
       for (int i = 0; i < numberThreads; i++) {
         assertEquals(
             1,
