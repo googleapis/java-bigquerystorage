@@ -23,7 +23,6 @@ import com.google.api.gax.rpc.UnaryCallable;
 import com.google.cloud.bigquery.storage.v1beta2.stub.BigQueryReadStub;
 import com.google.cloud.bigquery.storage.v1beta2.stub.BigQueryReadStubSettings;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Generated;
 
@@ -176,7 +175,7 @@ public class BaseBigQueryReadClient implements BackgroundResource {
       ProjectName parent, ReadSession readSession, int maxStreamCount) {
     CreateReadSessionRequest request =
         CreateReadSessionRequest.newBuilder()
-            .setParent(Objects.isNull(parent) ? null : parent.toString())
+            .setParent(parent == null ? null : parent.toString())
             .setReadSession(readSession)
             .setMaxStreamCount(maxStreamCount)
             .build();
