@@ -39,13 +39,13 @@ public class BQTableSchemaToProtoDescriptorTest {
               .put(Table.TableFieldSchema.Type.BOOL, BoolType.getDescriptor())
               .put(Table.TableFieldSchema.Type.BYTES, BytesType.getDescriptor())
               .put(Table.TableFieldSchema.Type.DATE, Int32Type.getDescriptor())
-              .put(Table.TableFieldSchema.Type.DATETIME, Int64Type.getDescriptor())
+              .put(Table.TableFieldSchema.Type.DATETIME, StringType.getDescriptor())
               .put(Table.TableFieldSchema.Type.DOUBLE, DoubleType.getDescriptor())
               .put(Table.TableFieldSchema.Type.GEOGRAPHY, StringType.getDescriptor())
               .put(Table.TableFieldSchema.Type.INT64, Int64Type.getDescriptor())
               .put(Table.TableFieldSchema.Type.NUMERIC, StringType.getDescriptor())
               .put(Table.TableFieldSchema.Type.STRING, StringType.getDescriptor())
-              .put(Table.TableFieldSchema.Type.TIME, Int64Type.getDescriptor())
+              .put(Table.TableFieldSchema.Type.TIME, StringType.getDescriptor())
               .put(Table.TableFieldSchema.Type.TIMESTAMP, Int64Type.getDescriptor())
               .build();
 
