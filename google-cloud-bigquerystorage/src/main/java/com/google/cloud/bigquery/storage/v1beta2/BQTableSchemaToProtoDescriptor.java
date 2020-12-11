@@ -56,7 +56,6 @@ public class BQTableSchemaToProtoDescriptor {
               .put(TableFieldSchema.Type.STRUCT, FieldDescriptorProto.Type.TYPE_MESSAGE)
               .put(TableFieldSchema.Type.TIME, FieldDescriptorProto.Type.TYPE_STRING)
               .put(TableFieldSchema.Type.TIMESTAMP, FieldDescriptorProto.Type.TYPE_INT64)
-              .put(TableFieldSchema.Type.BIGNUMERIC, FieldDescriptorProto.Type.TYPE_INT64)
               .build();
 
   /**
