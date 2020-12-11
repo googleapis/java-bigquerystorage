@@ -32,6 +32,7 @@ import com.google.protobuf.Int64Value;
 import com.google.protobuf.Timestamp;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -90,7 +91,6 @@ public class BigQueryWriteClientTest {
             .setCreateTime(Timestamp.newBuilder().build())
             .setCommitTime(Timestamp.newBuilder().build())
             .setTableSchema(TableSchema.newBuilder().build())
-            .setExternalId("external_id-1153075697")
             .build();
     mockBigQueryWrite.addResponse(expectedResponse);
 
@@ -135,7 +135,6 @@ public class BigQueryWriteClientTest {
             .setCreateTime(Timestamp.newBuilder().build())
             .setCommitTime(Timestamp.newBuilder().build())
             .setTableSchema(TableSchema.newBuilder().build())
-            .setExternalId("external_id-1153075697")
             .build();
     mockBigQueryWrite.addResponse(expectedResponse);
 
@@ -182,7 +181,7 @@ public class BigQueryWriteClientTest {
             .setWriteStream(
                 WriteStreamName.of("[PROJECT]", "[DATASET]", "[TABLE]", "[STREAM]").toString())
             .setOffset(Int64Value.newBuilder().build())
-            .setIgnoreUnknownFields(true)
+            .setTraceId("trace_id1270300245")
             .build();
 
     MockStreamObserver<AppendRowsResponse> responseObserver = new MockStreamObserver<>();
@@ -209,7 +208,7 @@ public class BigQueryWriteClientTest {
             .setWriteStream(
                 WriteStreamName.of("[PROJECT]", "[DATASET]", "[TABLE]", "[STREAM]").toString())
             .setOffset(Int64Value.newBuilder().build())
-            .setIgnoreUnknownFields(true)
+            .setTraceId("trace_id1270300245")
             .build();
 
     MockStreamObserver<AppendRowsResponse> responseObserver = new MockStreamObserver<>();
@@ -239,7 +238,6 @@ public class BigQueryWriteClientTest {
             .setCreateTime(Timestamp.newBuilder().build())
             .setCommitTime(Timestamp.newBuilder().build())
             .setTableSchema(TableSchema.newBuilder().build())
-            .setExternalId("external_id-1153075697")
             .build();
     mockBigQueryWrite.addResponse(expectedResponse);
 
@@ -281,7 +279,6 @@ public class BigQueryWriteClientTest {
             .setCreateTime(Timestamp.newBuilder().build())
             .setCommitTime(Timestamp.newBuilder().build())
             .setTableSchema(TableSchema.newBuilder().build())
-            .setExternalId("external_id-1153075697")
             .build();
     mockBigQueryWrite.addResponse(expectedResponse);
 
@@ -392,6 +389,7 @@ public class BigQueryWriteClientTest {
     BatchCommitWriteStreamsResponse expectedResponse =
         BatchCommitWriteStreamsResponse.newBuilder()
             .setCommitTime(Timestamp.newBuilder().build())
+            .addAllStreamErrors(new ArrayList<StorageError>())
             .build();
     mockBigQueryWrite.addResponse(expectedResponse);
 
