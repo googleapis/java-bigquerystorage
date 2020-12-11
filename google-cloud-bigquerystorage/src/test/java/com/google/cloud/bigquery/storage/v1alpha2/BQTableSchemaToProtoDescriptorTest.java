@@ -75,7 +75,7 @@ public class BQTableSchemaToProtoDescriptorTest {
       // Check type
       FieldDescriptor.Type convertedType = convertedField.getType();
       FieldDescriptor.Type originalType = originalField.getType();
-      assertEquals(convertedType, originalType);
+      assertEquals(convertedField.getName(), convertedType, originalType);
       // Check mode
       assertTrue(
           (originalField.isRepeated() == convertedField.isRepeated())
