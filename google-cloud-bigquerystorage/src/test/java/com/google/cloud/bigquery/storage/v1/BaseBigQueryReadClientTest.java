@@ -85,9 +85,9 @@ public class BaseBigQueryReadClientTest {
   public void createReadSessionTest() throws Exception {
     ReadSession expectedResponse =
         ReadSession.newBuilder()
-            .setName("name3373707")
+            .setName(ReadSessionName.of("[PROJECT]", "[LOCATION]", "[SESSION]").toString())
             .setExpireTime(Timestamp.newBuilder().build())
-            .setTable("table110115790")
+            .setTable(TableName.of("[PROJECT]", "[DATASET]", "[TABLE]").toString())
             .addAllStreams(new ArrayList<ReadStream>())
             .build();
     mockBigQueryRead.addResponse(expectedResponse);
@@ -132,9 +132,9 @@ public class BaseBigQueryReadClientTest {
   public void createReadSessionTest2() throws Exception {
     ReadSession expectedResponse =
         ReadSession.newBuilder()
-            .setName("name3373707")
+            .setName(ReadSessionName.of("[PROJECT]", "[LOCATION]", "[SESSION]").toString())
             .setExpireTime(Timestamp.newBuilder().build())
-            .setTable("table110115790")
+            .setTable(TableName.of("[PROJECT]", "[DATASET]", "[TABLE]").toString())
             .addAllStreams(new ArrayList<ReadStream>())
             .build();
     mockBigQueryRead.addResponse(expectedResponse);
