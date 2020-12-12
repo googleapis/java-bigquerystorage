@@ -23,7 +23,6 @@ import com.google.api.gax.rpc.UnaryCallable;
 import com.google.cloud.bigquery.storage.v1alpha2.stub.BigQueryWriteStub;
 import com.google.cloud.bigquery.storage.v1alpha2.stub.BigQueryWriteStubSettings;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Generated;
 
@@ -149,7 +148,7 @@ public class BigQueryWriteClient implements BackgroundResource {
       TableName parent, Stream.WriteStream writeStream) {
     Storage.CreateWriteStreamRequest request =
         Storage.CreateWriteStreamRequest.newBuilder()
-            .setParent(Objects.isNull(parent) ? null : parent.toString())
+            .setParent(parent == null ? null : parent.toString())
             .setWriteStream(writeStream)
             .build();
     return createWriteStream(request);
@@ -232,7 +231,7 @@ public class BigQueryWriteClient implements BackgroundResource {
   public final Stream.WriteStream getWriteStream(WriteStreamName name) {
     Storage.GetWriteStreamRequest request =
         Storage.GetWriteStreamRequest.newBuilder()
-            .setName(Objects.isNull(name) ? null : name.toString())
+            .setName(name == null ? null : name.toString())
             .build();
     return getWriteStream(request);
   }
@@ -284,7 +283,7 @@ public class BigQueryWriteClient implements BackgroundResource {
   public final Storage.FinalizeWriteStreamResponse finalizeWriteStream(WriteStreamName name) {
     Storage.FinalizeWriteStreamRequest request =
         Storage.FinalizeWriteStreamRequest.newBuilder()
-            .setName(Objects.isNull(name) ? null : name.toString())
+            .setName(name == null ? null : name.toString())
             .build();
     return finalizeWriteStream(request);
   }
@@ -340,7 +339,7 @@ public class BigQueryWriteClient implements BackgroundResource {
   public final Storage.BatchCommitWriteStreamsResponse batchCommitWriteStreams(TableName parent) {
     Storage.BatchCommitWriteStreamsRequest request =
         Storage.BatchCommitWriteStreamsRequest.newBuilder()
-            .setParent(Objects.isNull(parent) ? null : parent.toString())
+            .setParent(parent == null ? null : parent.toString())
             .build();
     return batchCommitWriteStreams(request);
   }
@@ -402,7 +401,7 @@ public class BigQueryWriteClient implements BackgroundResource {
   public final Storage.FlushRowsResponse flushRows(WriteStreamName writeStream) {
     Storage.FlushRowsRequest request =
         Storage.FlushRowsRequest.newBuilder()
-            .setWriteStream(Objects.isNull(writeStream) ? null : writeStream.toString())
+            .setWriteStream(writeStream == null ? null : writeStream.toString())
             .build();
     return flushRows(request);
   }

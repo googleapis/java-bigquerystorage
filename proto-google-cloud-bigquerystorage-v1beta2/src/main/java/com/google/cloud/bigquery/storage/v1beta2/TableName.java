@@ -98,7 +98,7 @@ public class TableName implements ResourceName {
   public static List<String> toStringList(List<TableName> values) {
     List<String> list = new ArrayList<>(values.size());
     for (TableName value : values) {
-      if (Objects.isNull(value)) {
+      if (value == null) {
         list.add("");
       } else {
         list.add(value.toString());
@@ -113,17 +113,17 @@ public class TableName implements ResourceName {
 
   @Override
   public Map<String, String> getFieldValuesMap() {
-    if (Objects.isNull(fieldValuesMap)) {
+    if (fieldValuesMap == null) {
       synchronized (this) {
-        if (Objects.isNull(fieldValuesMap)) {
+        if (fieldValuesMap == null) {
           ImmutableMap.Builder<String, String> fieldMapBuilder = ImmutableMap.builder();
-          if (!Objects.isNull(project)) {
+          if (project != null) {
             fieldMapBuilder.put("project", project);
           }
-          if (!Objects.isNull(dataset)) {
+          if (dataset != null) {
             fieldMapBuilder.put("dataset", dataset);
           }
-          if (!Objects.isNull(table)) {
+          if (table != null) {
             fieldMapBuilder.put("table", table);
           }
           fieldValuesMap = fieldMapBuilder.build();
