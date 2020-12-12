@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.cloud.bigquery.storage.v1alpha2.stub;
 
+import com.google.api.core.BetaApi;
 import com.google.api.gax.core.BackgroundResource;
 import com.google.api.gax.core.BackgroundResourceAggregation;
 import com.google.api.gax.grpc.GrpcCallSettings;
@@ -24,10 +24,18 @@ import com.google.api.gax.rpc.BidiStreamingCallable;
 import com.google.api.gax.rpc.ClientContext;
 import com.google.api.gax.rpc.RequestParamsExtractor;
 import com.google.api.gax.rpc.UnaryCallable;
-import com.google.cloud.bigquery.storage.v1alpha2.Storage;
-import com.google.cloud.bigquery.storage.v1alpha2.Stream;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.BatchCommitWriteStreamsRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.BatchCommitWriteStreamsResponse;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.CreateWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.FinalizeWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.FinalizeWriteStreamResponse;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.FlushRowsRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.FlushRowsResponse;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.GetWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
 import com.google.common.collect.ImmutableMap;
-import com.google.longrunning.stub.GrpcOperationsStub;
 import io.grpc.MethodDescriptor;
 import io.grpc.protobuf.ProtoUtils;
 import java.io.IOException;
@@ -35,106 +43,88 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Generated;
 
-// AUTO-GENERATED DOCUMENTATION AND CLASS.
+// AUTO-GENERATED DOCUMENTATION AND CLASS
 /**
- * gRPC stub implementation for the BigQueryWrite service API.
+ * gRPC stub implementation for BigQuery Storage API.
  *
  * <p>This class is for advanced usage and reflects the underlying API directly.
  */
-@Generated("by gapic-generator-java")
+@Generated("by gapic-generator")
+@BetaApi("A restructuring of stub classes is planned, so this may break in the future")
 public class GrpcBigQueryWriteStub extends BigQueryWriteStub {
-  private static final MethodDescriptor<Storage.CreateWriteStreamRequest, Stream.WriteStream>
+
+  private static final MethodDescriptor<CreateWriteStreamRequest, WriteStream>
       createWriteStreamMethodDescriptor =
-          MethodDescriptor.<Storage.CreateWriteStreamRequest, Stream.WriteStream>newBuilder()
+          MethodDescriptor.<CreateWriteStreamRequest, WriteStream>newBuilder()
               .setType(MethodDescriptor.MethodType.UNARY)
               .setFullMethodName(
                   "google.cloud.bigquery.storage.v1alpha2.BigQueryWrite/CreateWriteStream")
               .setRequestMarshaller(
-                  ProtoUtils.marshaller(Storage.CreateWriteStreamRequest.getDefaultInstance()))
-              .setResponseMarshaller(ProtoUtils.marshaller(Stream.WriteStream.getDefaultInstance()))
+                  ProtoUtils.marshaller(CreateWriteStreamRequest.getDefaultInstance()))
+              .setResponseMarshaller(ProtoUtils.marshaller(WriteStream.getDefaultInstance()))
               .build();
-
-  private static final MethodDescriptor<Storage.AppendRowsRequest, Storage.AppendRowsResponse>
+  private static final MethodDescriptor<AppendRowsRequest, AppendRowsResponse>
       appendRowsMethodDescriptor =
-          MethodDescriptor.<Storage.AppendRowsRequest, Storage.AppendRowsResponse>newBuilder()
+          MethodDescriptor.<AppendRowsRequest, AppendRowsResponse>newBuilder()
               .setType(MethodDescriptor.MethodType.BIDI_STREAMING)
               .setFullMethodName("google.cloud.bigquery.storage.v1alpha2.BigQueryWrite/AppendRows")
-              .setRequestMarshaller(
-                  ProtoUtils.marshaller(Storage.AppendRowsRequest.getDefaultInstance()))
-              .setResponseMarshaller(
-                  ProtoUtils.marshaller(Storage.AppendRowsResponse.getDefaultInstance()))
+              .setRequestMarshaller(ProtoUtils.marshaller(AppendRowsRequest.getDefaultInstance()))
+              .setResponseMarshaller(ProtoUtils.marshaller(AppendRowsResponse.getDefaultInstance()))
               .build();
-
-  private static final MethodDescriptor<Storage.GetWriteStreamRequest, Stream.WriteStream>
+  private static final MethodDescriptor<GetWriteStreamRequest, WriteStream>
       getWriteStreamMethodDescriptor =
-          MethodDescriptor.<Storage.GetWriteStreamRequest, Stream.WriteStream>newBuilder()
+          MethodDescriptor.<GetWriteStreamRequest, WriteStream>newBuilder()
               .setType(MethodDescriptor.MethodType.UNARY)
               .setFullMethodName(
                   "google.cloud.bigquery.storage.v1alpha2.BigQueryWrite/GetWriteStream")
               .setRequestMarshaller(
-                  ProtoUtils.marshaller(Storage.GetWriteStreamRequest.getDefaultInstance()))
-              .setResponseMarshaller(ProtoUtils.marshaller(Stream.WriteStream.getDefaultInstance()))
+                  ProtoUtils.marshaller(GetWriteStreamRequest.getDefaultInstance()))
+              .setResponseMarshaller(ProtoUtils.marshaller(WriteStream.getDefaultInstance()))
               .build();
-
-  private static final MethodDescriptor<
-          Storage.FinalizeWriteStreamRequest, Storage.FinalizeWriteStreamResponse>
+  private static final MethodDescriptor<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>
       finalizeWriteStreamMethodDescriptor =
-          MethodDescriptor
-              .<Storage.FinalizeWriteStreamRequest, Storage.FinalizeWriteStreamResponse>newBuilder()
+          MethodDescriptor.<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>newBuilder()
               .setType(MethodDescriptor.MethodType.UNARY)
               .setFullMethodName(
                   "google.cloud.bigquery.storage.v1alpha2.BigQueryWrite/FinalizeWriteStream")
               .setRequestMarshaller(
-                  ProtoUtils.marshaller(Storage.FinalizeWriteStreamRequest.getDefaultInstance()))
+                  ProtoUtils.marshaller(FinalizeWriteStreamRequest.getDefaultInstance()))
               .setResponseMarshaller(
-                  ProtoUtils.marshaller(Storage.FinalizeWriteStreamResponse.getDefaultInstance()))
+                  ProtoUtils.marshaller(FinalizeWriteStreamResponse.getDefaultInstance()))
               .build();
-
   private static final MethodDescriptor<
-          Storage.BatchCommitWriteStreamsRequest, Storage.BatchCommitWriteStreamsResponse>
+          BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>
       batchCommitWriteStreamsMethodDescriptor =
           MethodDescriptor
-              .<Storage.BatchCommitWriteStreamsRequest, Storage.BatchCommitWriteStreamsResponse>
-                  newBuilder()
+              .<BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>newBuilder()
               .setType(MethodDescriptor.MethodType.UNARY)
               .setFullMethodName(
                   "google.cloud.bigquery.storage.v1alpha2.BigQueryWrite/BatchCommitWriteStreams")
               .setRequestMarshaller(
-                  ProtoUtils.marshaller(
-                      Storage.BatchCommitWriteStreamsRequest.getDefaultInstance()))
+                  ProtoUtils.marshaller(BatchCommitWriteStreamsRequest.getDefaultInstance()))
               .setResponseMarshaller(
-                  ProtoUtils.marshaller(
-                      Storage.BatchCommitWriteStreamsResponse.getDefaultInstance()))
+                  ProtoUtils.marshaller(BatchCommitWriteStreamsResponse.getDefaultInstance()))
               .build();
-
-  private static final MethodDescriptor<Storage.FlushRowsRequest, Storage.FlushRowsResponse>
+  private static final MethodDescriptor<FlushRowsRequest, FlushRowsResponse>
       flushRowsMethodDescriptor =
-          MethodDescriptor.<Storage.FlushRowsRequest, Storage.FlushRowsResponse>newBuilder()
+          MethodDescriptor.<FlushRowsRequest, FlushRowsResponse>newBuilder()
               .setType(MethodDescriptor.MethodType.UNARY)
               .setFullMethodName("google.cloud.bigquery.storage.v1alpha2.BigQueryWrite/FlushRows")
-              .setRequestMarshaller(
-                  ProtoUtils.marshaller(Storage.FlushRowsRequest.getDefaultInstance()))
-              .setResponseMarshaller(
-                  ProtoUtils.marshaller(Storage.FlushRowsResponse.getDefaultInstance()))
+              .setRequestMarshaller(ProtoUtils.marshaller(FlushRowsRequest.getDefaultInstance()))
+              .setResponseMarshaller(ProtoUtils.marshaller(FlushRowsResponse.getDefaultInstance()))
               .build();
 
-  private final UnaryCallable<Storage.CreateWriteStreamRequest, Stream.WriteStream>
-      createWriteStreamCallable;
-  private final BidiStreamingCallable<Storage.AppendRowsRequest, Storage.AppendRowsResponse>
-      appendRowsCallable;
-  private final UnaryCallable<Storage.GetWriteStreamRequest, Stream.WriteStream>
-      getWriteStreamCallable;
-  private final UnaryCallable<
-          Storage.FinalizeWriteStreamRequest, Storage.FinalizeWriteStreamResponse>
-      finalizeWriteStreamCallable;
-  private final UnaryCallable<
-          Storage.BatchCommitWriteStreamsRequest, Storage.BatchCommitWriteStreamsResponse>
-      batchCommitWriteStreamsCallable;
-  private final UnaryCallable<Storage.FlushRowsRequest, Storage.FlushRowsResponse>
-      flushRowsCallable;
-
   private final BackgroundResource backgroundResources;
-  private final GrpcOperationsStub operationsStub;
+
+  private final UnaryCallable<CreateWriteStreamRequest, WriteStream> createWriteStreamCallable;
+  private final BidiStreamingCallable<AppendRowsRequest, AppendRowsResponse> appendRowsCallable;
+  private final UnaryCallable<GetWriteStreamRequest, WriteStream> getWriteStreamCallable;
+  private final UnaryCallable<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>
+      finalizeWriteStreamCallable;
+  private final UnaryCallable<BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>
+      batchCommitWriteStreamsCallable;
+  private final UnaryCallable<FlushRowsRequest, FlushRowsResponse> flushRowsCallable;
+
   private final GrpcStubCallableFactory callableFactory;
 
   public static final GrpcBigQueryWriteStub create(BigQueryWriteStubSettings settings)
@@ -152,110 +142,100 @@ public class GrpcBigQueryWriteStub extends BigQueryWriteStub {
         BigQueryWriteStubSettings.newBuilder().build(), clientContext, callableFactory);
   }
 
+  /**
+   * Constructs an instance of GrpcBigQueryWriteStub, using the given settings. This is protected so
+   * that it is easy to make a subclass, but otherwise, the static factory methods should be
+   * preferred.
+   */
   protected GrpcBigQueryWriteStub(BigQueryWriteStubSettings settings, ClientContext clientContext)
       throws IOException {
     this(settings, clientContext, new GrpcBigQueryWriteCallableFactory());
   }
 
+  /**
+   * Constructs an instance of GrpcBigQueryWriteStub, using the given settings. This is protected so
+   * that it is easy to make a subclass, but otherwise, the static factory methods should be
+   * preferred.
+   */
   protected GrpcBigQueryWriteStub(
       BigQueryWriteStubSettings settings,
       ClientContext clientContext,
       GrpcStubCallableFactory callableFactory)
       throws IOException {
     this.callableFactory = callableFactory;
-    this.operationsStub = GrpcOperationsStub.create(clientContext, callableFactory);
 
-    GrpcCallSettings<Storage.CreateWriteStreamRequest, Stream.WriteStream>
-        createWriteStreamTransportSettings =
-            GrpcCallSettings.<Storage.CreateWriteStreamRequest, Stream.WriteStream>newBuilder()
-                .setMethodDescriptor(createWriteStreamMethodDescriptor)
-                .setParamsExtractor(
-                    new RequestParamsExtractor<Storage.CreateWriteStreamRequest>() {
-                      @Override
-                      public Map<String, String> extract(Storage.CreateWriteStreamRequest request) {
-                        ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
-                        params.put("parent", String.valueOf(request.getParent()));
-                        return params.build();
-                      }
-                    })
-                .build();
-    GrpcCallSettings<Storage.AppendRowsRequest, Storage.AppendRowsResponse>
-        appendRowsTransportSettings =
-            GrpcCallSettings.<Storage.AppendRowsRequest, Storage.AppendRowsResponse>newBuilder()
-                .setMethodDescriptor(appendRowsMethodDescriptor)
-                .setParamsExtractor(
-                    new RequestParamsExtractor<Storage.AppendRowsRequest>() {
-                      @Override
-                      public Map<String, String> extract(Storage.AppendRowsRequest request) {
-                        ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
-                        params.put("write_stream", String.valueOf(request.getWriteStream()));
-                        return params.build();
-                      }
-                    })
-                .build();
-    GrpcCallSettings<Storage.GetWriteStreamRequest, Stream.WriteStream>
-        getWriteStreamTransportSettings =
-            GrpcCallSettings.<Storage.GetWriteStreamRequest, Stream.WriteStream>newBuilder()
-                .setMethodDescriptor(getWriteStreamMethodDescriptor)
-                .setParamsExtractor(
-                    new RequestParamsExtractor<Storage.GetWriteStreamRequest>() {
-                      @Override
-                      public Map<String, String> extract(Storage.GetWriteStreamRequest request) {
-                        ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
-                        params.put("name", String.valueOf(request.getName()));
-                        return params.build();
-                      }
-                    })
-                .build();
-    GrpcCallSettings<Storage.FinalizeWriteStreamRequest, Storage.FinalizeWriteStreamResponse>
+    GrpcCallSettings<CreateWriteStreamRequest, WriteStream> createWriteStreamTransportSettings =
+        GrpcCallSettings.<CreateWriteStreamRequest, WriteStream>newBuilder()
+            .setMethodDescriptor(createWriteStreamMethodDescriptor)
+            .setParamsExtractor(
+                new RequestParamsExtractor<CreateWriteStreamRequest>() {
+                  @Override
+                  public Map<String, String> extract(CreateWriteStreamRequest request) {
+                    ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
+                    params.put("parent", String.valueOf(request.getParent()));
+                    return params.build();
+                  }
+                })
+            .build();
+    GrpcCallSettings<AppendRowsRequest, AppendRowsResponse> appendRowsTransportSettings =
+        GrpcCallSettings.<AppendRowsRequest, AppendRowsResponse>newBuilder()
+            .setMethodDescriptor(appendRowsMethodDescriptor)
+            .build();
+    GrpcCallSettings<GetWriteStreamRequest, WriteStream> getWriteStreamTransportSettings =
+        GrpcCallSettings.<GetWriteStreamRequest, WriteStream>newBuilder()
+            .setMethodDescriptor(getWriteStreamMethodDescriptor)
+            .setParamsExtractor(
+                new RequestParamsExtractor<GetWriteStreamRequest>() {
+                  @Override
+                  public Map<String, String> extract(GetWriteStreamRequest request) {
+                    ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
+                    params.put("name", String.valueOf(request.getName()));
+                    return params.build();
+                  }
+                })
+            .build();
+    GrpcCallSettings<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>
         finalizeWriteStreamTransportSettings =
-            GrpcCallSettings
-                .<Storage.FinalizeWriteStreamRequest, Storage.FinalizeWriteStreamResponse>
-                    newBuilder()
+            GrpcCallSettings.<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>newBuilder()
                 .setMethodDescriptor(finalizeWriteStreamMethodDescriptor)
                 .setParamsExtractor(
-                    new RequestParamsExtractor<Storage.FinalizeWriteStreamRequest>() {
+                    new RequestParamsExtractor<FinalizeWriteStreamRequest>() {
                       @Override
-                      public Map<String, String> extract(
-                          Storage.FinalizeWriteStreamRequest request) {
+                      public Map<String, String> extract(FinalizeWriteStreamRequest request) {
                         ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
                         params.put("name", String.valueOf(request.getName()));
                         return params.build();
                       }
                     })
                 .build();
-    GrpcCallSettings<
-            Storage.BatchCommitWriteStreamsRequest, Storage.BatchCommitWriteStreamsResponse>
+    GrpcCallSettings<BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>
         batchCommitWriteStreamsTransportSettings =
             GrpcCallSettings
-                .<Storage.BatchCommitWriteStreamsRequest, Storage.BatchCommitWriteStreamsResponse>
-                    newBuilder()
+                .<BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>newBuilder()
                 .setMethodDescriptor(batchCommitWriteStreamsMethodDescriptor)
                 .setParamsExtractor(
-                    new RequestParamsExtractor<Storage.BatchCommitWriteStreamsRequest>() {
+                    new RequestParamsExtractor<BatchCommitWriteStreamsRequest>() {
                       @Override
-                      public Map<String, String> extract(
-                          Storage.BatchCommitWriteStreamsRequest request) {
+                      public Map<String, String> extract(BatchCommitWriteStreamsRequest request) {
                         ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
                         params.put("parent", String.valueOf(request.getParent()));
                         return params.build();
                       }
                     })
                 .build();
-    GrpcCallSettings<Storage.FlushRowsRequest, Storage.FlushRowsResponse>
-        flushRowsTransportSettings =
-            GrpcCallSettings.<Storage.FlushRowsRequest, Storage.FlushRowsResponse>newBuilder()
-                .setMethodDescriptor(flushRowsMethodDescriptor)
-                .setParamsExtractor(
-                    new RequestParamsExtractor<Storage.FlushRowsRequest>() {
-                      @Override
-                      public Map<String, String> extract(Storage.FlushRowsRequest request) {
-                        ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
-                        params.put("write_stream", String.valueOf(request.getWriteStream()));
-                        return params.build();
-                      }
-                    })
-                .build();
+    GrpcCallSettings<FlushRowsRequest, FlushRowsResponse> flushRowsTransportSettings =
+        GrpcCallSettings.<FlushRowsRequest, FlushRowsResponse>newBuilder()
+            .setMethodDescriptor(flushRowsMethodDescriptor)
+            .setParamsExtractor(
+                new RequestParamsExtractor<FlushRowsRequest>() {
+                  @Override
+                  public Map<String, String> extract(FlushRowsRequest request) {
+                    ImmutableMap.Builder<String, String> params = ImmutableMap.builder();
+                    params.put("write_stream", String.valueOf(request.getWriteStream()));
+                    return params.build();
+                  }
+                })
+            .build();
 
     this.createWriteStreamCallable =
         callableFactory.createUnaryCallable(
@@ -282,40 +262,32 @@ public class GrpcBigQueryWriteStub extends BigQueryWriteStub {
         callableFactory.createUnaryCallable(
             flushRowsTransportSettings, settings.flushRowsSettings(), clientContext);
 
-    this.backgroundResources =
-        new BackgroundResourceAggregation(clientContext.getBackgroundResources());
+    backgroundResources = new BackgroundResourceAggregation(clientContext.getBackgroundResources());
   }
 
-  public GrpcOperationsStub getOperationsStub() {
-    return operationsStub;
-  }
-
-  public UnaryCallable<Storage.CreateWriteStreamRequest, Stream.WriteStream>
-      createWriteStreamCallable() {
+  public UnaryCallable<CreateWriteStreamRequest, WriteStream> createWriteStreamCallable() {
     return createWriteStreamCallable;
   }
 
-  public BidiStreamingCallable<Storage.AppendRowsRequest, Storage.AppendRowsResponse>
-      appendRowsCallable() {
+  public BidiStreamingCallable<AppendRowsRequest, AppendRowsResponse> appendRowsCallable() {
     return appendRowsCallable;
   }
 
-  public UnaryCallable<Storage.GetWriteStreamRequest, Stream.WriteStream> getWriteStreamCallable() {
+  public UnaryCallable<GetWriteStreamRequest, WriteStream> getWriteStreamCallable() {
     return getWriteStreamCallable;
   }
 
-  public UnaryCallable<Storage.FinalizeWriteStreamRequest, Storage.FinalizeWriteStreamResponse>
+  public UnaryCallable<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>
       finalizeWriteStreamCallable() {
     return finalizeWriteStreamCallable;
   }
 
-  public UnaryCallable<
-          Storage.BatchCommitWriteStreamsRequest, Storage.BatchCommitWriteStreamsResponse>
+  public UnaryCallable<BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>
       batchCommitWriteStreamsCallable() {
     return batchCommitWriteStreamsCallable;
   }
 
-  public UnaryCallable<Storage.FlushRowsRequest, Storage.FlushRowsResponse> flushRowsCallable() {
+  public UnaryCallable<FlushRowsRequest, FlushRowsResponse> flushRowsCallable() {
     return flushRowsCallable;
   }
 
