@@ -18,32 +18,32 @@
       "git": {
         "name": "googleapis",
         "remote": "https://github.com/googleapis/googleapis.git",
-        "sha": "e39e42f368d236203a774ee994fcb4d730c33a83",
-        "internalRef": "345311069"
+        "sha": "b53c4d98aab1eae3dac90b37019dede686782f13",
+        "internalRef": "345469340"
       }
     },
     {
       "git": {
         "name": "googleapis",
         "remote": "https://github.com/googleapis/googleapis.git",
-        "sha": "e39e42f368d236203a774ee994fcb4d730c33a83",
-        "internalRef": "345311069"
+        "sha": "b53c4d98aab1eae3dac90b37019dede686782f13",
+        "internalRef": "345469340"
       }
     },
     {
       "git": {
         "name": "googleapis",
         "remote": "https://github.com/googleapis/googleapis.git",
-        "sha": "e39e42f368d236203a774ee994fcb4d730c33a83",
-        "internalRef": "345311069"
+        "sha": "b53c4d98aab1eae3dac90b37019dede686782f13",
+        "internalRef": "345469340"
       }
     },
     {
       "git": {
         "name": "googleapis",
         "remote": "https://github.com/googleapis/googleapis.git",
-        "sha": "e39e42f368d236203a774ee994fcb4d730c33a83",
-        "internalRef": "345311069"
+        "sha": "b53c4d98aab1eae3dac90b37019dede686782f13",
+        "internalRef": "345469340"
       }
     },
     {
@@ -327,6 +327,8 @@
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/SplitReadStreamRequestOrBuilder.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/SplitReadStreamResponse.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/SplitReadStreamResponseOrBuilder.java",
+    "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/StorageError.java",
+    "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/StorageErrorOrBuilder.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/StorageProto.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/StreamProto.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/StreamStats.java",
