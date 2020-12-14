@@ -256,7 +256,7 @@ public class ITBigQueryWriteManualClientTest {
       JSONArray row = new JSONArray(new JSONObject[] {testStr, testNumerics, testDateTime});
 
       ApiFuture<AppendRowsResponse> response =
-          jsonStreamWriter.append(row, -1, /* allowUnknownFields */ false);
+      jsonStreamWriter.append(row, -1, /* allowUnknownFields */ false);
       // Temp for Breaking Change.
       response.get();
       // assertEquals(0, response.get().getOffset());
