@@ -3,44 +3,118 @@
 <differences>
     <!--TODO: To be removed-->
     <difference>
-        <differenceType>7009</differenceType>
-        <className>com/google/cloud/bigquery/storage/v1alpha2/StreamWriter</className>
-        <method>void shutdown()</method>
+        <className>com/google/cloud/bigquery/storage/v1beta2/AppendRowsRequest</className>
+        <differenceType>6011</differenceType>
+        <field>IGNORE_UNKNOWN_FIELDS_FIELD_NUMBER</field>
     </difference>
     <difference>
-        <differenceType>7009</differenceType>
-        <className>com/google/cloud/bigquery/storage/v1alpha2/StreamWriter</className>
-        <method>boolean awaitTermination(long, java.util.concurrent.TimeUnit) </method>
-    </difference>
-    <difference>
-        <differenceType>7005</differenceType>
-        <className>com/google/cloud/bigquery/storage/v1alpha2/DirectWriter</className>
-        <method>void testSetStub(com.google.cloud.bigquery.storage.v1alpha2.BigQueryWriteClient, int, com.google.cloud.bigquery.storage.v1alpha2.SchemaCompact) </method>
-        <to>void testSetStub(com.google.cloud.bigquery.storage.v1alpha2.BigQueryWriteClient, int, com.google.cloud.bigquery.storage.v1alpha2.SchemaCompatibility)</to>
-    </difference>
-    <difference>
-        <differenceType>8001</differenceType>
-        <className>com/google/cloud/bigquery/storage/v1alpha2/SchemaCompact</className>
-    </difference>
-    <difference>
-        <differenceType>7005</differenceType>
-        <className>com/google/cloud/bigquery/storage/v1alpha2/WriterCache</className>
-        <method>com.google.cloud.bigquery.storage.v1alpha2.WriterCache getTestInstance(com.google.cloud.bigquery.storage.v1alpha2.BigQueryWriteClient, int, com.google.cloud.bigquery.storage.v1alpha2.SchemaCompact) </method>
-        <to>com.google.cloud.bigquery.storage.v1alpha2.WriterCache getTestInstance(com.google.cloud.bigquery.storage.v1alpha2.BigQueryWriteClient, int, com.google.cloud.bigquery.storage.v1alpha2.SchemaCompatibility)</to>
-    </difference>
-    <difference>
+        <className>com/google/cloud/bigquery/storage/v1beta2/AppendRowsRequest</className>
         <differenceType>7002</differenceType>
-        <className>com/google/cloud/bigquery/storage/v1alpha2/BQTableSchemaToProtoDescriptor</className>
-        <method>com.google.protobuf.Descriptors$Descriptor ConvertBQTableSchemaToProtoDescriptor(com.google.cloud.bigquery.storage.v1alpha2.Table$TableSchema)</method>
+        <method>public boolean getIgnoreUnknownFields()</method>
     </difference>
-<difference>
-    <className>com/google/cloud/bigquery/storage/v1alpha2/JsonStreamWriter</className>
-    <differenceType>7002</differenceType>
-    <method>java.lang.Boolean expired()</method>
-</difference>
-<difference>
-    <className>com/google/cloud/bigquery/storage/v1alpha2/StreamWriter</className>
-    <differenceType>7002</differenceType>
-    <method>java.lang.Boolean expired()</method>
-</difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest$Builder clearIgnoreUnknownFields()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public boolean getIgnoreUnknownFields()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest$Builder setIgnoreUnknownFields(boolean)</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public boolean getIgnoreUnknownFields()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse</className>
+        <differenceType>6011</differenceType>
+        <field>OFFSET_FIELD_NUMBER</field>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse</className>
+        <differenceType>7002</differenceType>
+        <method>public long getOffset()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse$Builder clearOffset()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public long getOffset()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse$ResponseCase</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse$Builder setOffset(long)</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse$ResponseCase</className>
+        <differenceType>6001</differenceType>
+        <field>OFFSET</field>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponseOrBuilder</className>
+        <differenceType>7002</differenceType>
+        <method>public long getOffset()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream</className>
+        <differenceType>6011</differenceType>
+        <field>EXTERNAL_ID_FIELD_NUMBER</field>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream</className>
+        <differenceType>7002</differenceType>
+        <method>public java.lang.String getExternalId()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.protobuf.ByteString getExternalIdBytes()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder clearExternalId()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public java.lang.String getExternalId()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.protobuf.ByteString getExternalIdBytes()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder setExternalId(java.lang.String)</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder setExternalIdBytes(com.google.protobuf.ByteString)</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public java.lang.String getExternalId()</method>
+    </difference>
+    <difference>
+        <className>com.google.cloud.bigquery.storage.v1beta2.WriteStream$Builder</className>
+        <differenceType>7002</differenceType>
+        <method>public com.google.protobuf.ByteString getExternalIdBytes()</method>
+    </difference>
 </differences>
