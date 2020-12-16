@@ -83,8 +83,11 @@ public class StreamWriter implements AutoCloseable {
 
   private static String streamPatternString =
       "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
+  private static String defaultStreamPatternString =
+      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/_default";
 
   private static Pattern streamPattern = Pattern.compile(streamPatternString);
+  private static Pattern defaultStreamPattern = Pattern.compile(defaultStreamPatternString);
 
   private final String streamName;
   private final String tableName;
@@ -134,7 +137,8 @@ public class StreamWriter implements AutoCloseable {
   private StreamWriter(Builder builder)
       throws IllegalArgumentException, IOException, InterruptedException {
     Matcher matcher = streamPattern.matcher(builder.streamName);
-    if (!matcher.matches()) {
+    Matcher defaultMater = defaultStreamPattern.matcher(builder.streamName);
+    if (!matcher.matches() && !defaultMater.matches()) {
       throw new IllegalArgumentException("Invalid stream name: " + builder.streamName);
     }
     streamName = builder.streamName;
