@@ -934,7 +934,7 @@ public class JsonStreamWriterTest {
           testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
         }
 
-        offset_sets.add((long) i);
+        offsetSets.add((long) i);
         Thread t =
             new Thread(
                 new Runnable() {
@@ -1004,7 +1004,7 @@ public class JsonStreamWriterTest {
                       ApiFuture<AppendRowsResponse> appendFuture =
                           writer.append(jsonArr2, -1, /* allowUnknownFields */ false);
                       AppendRowsResponse response = appendFuture.get();
-                      offset_sets.remove(response.getOffset());
+                      offsetSets.remove(response.getOffset());
                     } catch (Exception e) {
                       LOG.severe("Thread execution failed: " + e.getMessage());
                     }
