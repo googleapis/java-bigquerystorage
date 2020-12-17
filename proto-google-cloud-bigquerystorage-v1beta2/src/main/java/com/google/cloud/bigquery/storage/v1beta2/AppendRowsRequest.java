@@ -39,7 +39,6 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
 
   private AppendRowsRequest() {
     writeStream_ = "";
-    traceId_ = "";
   }
 
   @java.lang.Override
@@ -115,11 +114,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
               rowsCase_ = 4;
               break;
             }
-          case 50:
+          case 40:
             {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              traceId_ = s;
+              ignoreUnknownFields_ = input.readBool();
               break;
             }
           default:
@@ -1476,55 +1473,24 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
         .getDefaultInstance();
   }
 
-  public static final int TRACE_ID_FIELD_NUMBER = 6;
-  private volatile java.lang.Object traceId_;
+  public static final int IGNORE_UNKNOWN_FIELDS_FIELD_NUMBER = 5;
+  private boolean ignoreUnknownFields_;
   /**
    *
    *
    * <pre>
-   * Id set by client to annotate its identity. Only initial request setting is
-   * respected.
+   * Only initial request setting is respected. If true, drop unknown input
+   * fields. Otherwise, the extra fields will cause append to fail. Default
+   * value is false.
    * </pre>
    *
-   * <code>string trace_id = 6;</code>
+   * <code>bool ignore_unknown_fields = 5;</code>
    *
-   * @return The traceId.
+   * @return The ignoreUnknownFields.
    */
   @java.lang.Override
-  public java.lang.String getTraceId() {
-    java.lang.Object ref = traceId_;
-    if (ref instanceof java.lang.String) {
-      return (java.lang.String) ref;
-    } else {
-      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-      java.lang.String s = bs.toStringUtf8();
-      traceId_ = s;
-      return s;
-    }
-  }
-  /**
-   *
-   *
-   * <pre>
-   * Id set by client to annotate its identity. Only initial request setting is
-   * respected.
-   * </pre>
-   *
-   * <code>string trace_id = 6;</code>
-   *
-   * @return The bytes for traceId.
-   */
-  @java.lang.Override
-  public com.google.protobuf.ByteString getTraceIdBytes() {
-    java.lang.Object ref = traceId_;
-    if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b =
-          com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-      traceId_ = b;
-      return b;
-    } else {
-      return (com.google.protobuf.ByteString) ref;
-    }
+  public boolean getIgnoreUnknownFields() {
+    return ignoreUnknownFields_;
   }
 
   private byte memoizedIsInitialized = -1;
@@ -1557,8 +1523,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       output.writeMessage(
           4, (com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest.ProtoData) rows_);
     }
-    if (!getTraceIdBytes().isEmpty()) {
-      com.google.protobuf.GeneratedMessageV3.writeString(output, 6, traceId_);
+    if (ignoreUnknownFields_ != false) {
+      output.writeBool(5, ignoreUnknownFields_);
     }
     unknownFields.writeTo(output);
   }
@@ -1580,8 +1546,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
           com.google.protobuf.CodedOutputStream.computeMessageSize(
               4, (com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest.ProtoData) rows_);
     }
-    if (!getTraceIdBytes().isEmpty()) {
-      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, traceId_);
+    if (ignoreUnknownFields_ != false) {
+      size += com.google.protobuf.CodedOutputStream.computeBoolSize(5, ignoreUnknownFields_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -1604,7 +1570,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
     if (hasOffset()) {
       if (!getOffset().equals(other.getOffset())) return false;
     }
-    if (!getTraceId().equals(other.getTraceId())) return false;
+    if (getIgnoreUnknownFields() != other.getIgnoreUnknownFields()) return false;
     if (!getRowsCase().equals(other.getRowsCase())) return false;
     switch (rowsCase_) {
       case 4:
@@ -1630,8 +1596,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       hash = (37 * hash) + OFFSET_FIELD_NUMBER;
       hash = (53 * hash) + getOffset().hashCode();
     }
-    hash = (37 * hash) + TRACE_ID_FIELD_NUMBER;
-    hash = (53 * hash) + getTraceId().hashCode();
+    hash = (37 * hash) + IGNORE_UNKNOWN_FIELDS_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(getIgnoreUnknownFields());
     switch (rowsCase_) {
       case 4:
         hash = (37 * hash) + PROTO_ROWS_FIELD_NUMBER;
@@ -1794,7 +1760,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
         offset_ = null;
         offsetBuilder_ = null;
       }
-      traceId_ = "";
+      ignoreUnknownFields_ = false;
 
       rowsCase_ = 0;
       rows_ = null;
@@ -1838,7 +1804,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
           result.rows_ = protoRowsBuilder_.build();
         }
       }
-      result.traceId_ = traceId_;
+      result.ignoreUnknownFields_ = ignoreUnknownFields_;
       result.rowsCase_ = rowsCase_;
       onBuilt();
       return result;
@@ -1897,9 +1863,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       if (other.hasOffset()) {
         mergeOffset(other.getOffset());
       }
-      if (!other.getTraceId().isEmpty()) {
-        traceId_ = other.traceId_;
-        onChanged();
+      if (other.getIgnoreUnknownFields() != false) {
+        setIgnoreUnknownFields(other.getIgnoreUnknownFields());
       }
       switch (other.getRowsCase()) {
         case PROTO_ROWS:
@@ -2533,72 +2498,41 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       return protoRowsBuilder_;
     }
 
-    private java.lang.Object traceId_ = "";
+    private boolean ignoreUnknownFields_;
     /**
      *
      *
      * <pre>
-     * Id set by client to annotate its identity. Only initial request setting is
-     * respected.
+     * Only initial request setting is respected. If true, drop unknown input
+     * fields. Otherwise, the extra fields will cause append to fail. Default
+     * value is false.
      * </pre>
      *
-     * <code>string trace_id = 6;</code>
+     * <code>bool ignore_unknown_fields = 5;</code>
      *
-     * @return The traceId.
+     * @return The ignoreUnknownFields.
      */
-    public java.lang.String getTraceId() {
-      java.lang.Object ref = traceId_;
-      if (!(ref instanceof java.lang.String)) {
-        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        traceId_ = s;
-        return s;
-      } else {
-        return (java.lang.String) ref;
-      }
+    @java.lang.Override
+    public boolean getIgnoreUnknownFields() {
+      return ignoreUnknownFields_;
     }
     /**
      *
      *
      * <pre>
-     * Id set by client to annotate its identity. Only initial request setting is
-     * respected.
+     * Only initial request setting is respected. If true, drop unknown input
+     * fields. Otherwise, the extra fields will cause append to fail. Default
+     * value is false.
      * </pre>
      *
-     * <code>string trace_id = 6;</code>
+     * <code>bool ignore_unknown_fields = 5;</code>
      *
-     * @return The bytes for traceId.
-     */
-    public com.google.protobuf.ByteString getTraceIdBytes() {
-      java.lang.Object ref = traceId_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b =
-            com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-        traceId_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-    /**
-     *
-     *
-     * <pre>
-     * Id set by client to annotate its identity. Only initial request setting is
-     * respected.
-     * </pre>
-     *
-     * <code>string trace_id = 6;</code>
-     *
-     * @param value The traceId to set.
+     * @param value The ignoreUnknownFields to set.
      * @return This builder for chaining.
      */
-    public Builder setTraceId(java.lang.String value) {
-      if (value == null) {
-        throw new NullPointerException();
-      }
+    public Builder setIgnoreUnknownFields(boolean value) {
 
-      traceId_ = value;
+      ignoreUnknownFields_ = value;
       onChanged();
       return this;
     }
@@ -2606,40 +2540,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Id set by client to annotate its identity. Only initial request setting is
-     * respected.
+     * Only initial request setting is respected. If true, drop unknown input
+     * fields. Otherwise, the extra fields will cause append to fail. Default
+     * value is false.
      * </pre>
      *
-     * <code>string trace_id = 6;</code>
+     * <code>bool ignore_unknown_fields = 5;</code>
      *
      * @return This builder for chaining.
      */
-    public Builder clearTraceId() {
+    public Builder clearIgnoreUnknownFields() {
 
-      traceId_ = getDefaultInstance().getTraceId();
-      onChanged();
-      return this;
-    }
-    /**
-     *
-     *
-     * <pre>
-     * Id set by client to annotate its identity. Only initial request setting is
-     * respected.
-     * </pre>
-     *
-     * <code>string trace_id = 6;</code>
-     *
-     * @param value The bytes for traceId to set.
-     * @return This builder for chaining.
-     */
-    public Builder setTraceIdBytes(com.google.protobuf.ByteString value) {
-      if (value == null) {
-        throw new NullPointerException();
-      }
-      checkByteStringIsUtf8(value);
-
-      traceId_ = value;
+      ignoreUnknownFields_ = false;
       onChanged();
       return this;
     }

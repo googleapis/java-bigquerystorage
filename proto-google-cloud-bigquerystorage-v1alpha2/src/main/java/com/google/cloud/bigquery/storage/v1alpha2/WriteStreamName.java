@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,35 +23,21 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import javax.annotation.Generated;
 
-// AUTO-GENERATED DOCUMENTATION AND CLASS.
-@Generated("by gapic-generator-java")
+/** AUTO-GENERATED DOCUMENTATION AND CLASS */
+@javax.annotation.Generated("by GAPIC protoc plugin")
 public class WriteStreamName implements ResourceName {
-  private static final PathTemplate PROJECT_DATASET_TABLE_STREAM =
+
+  private static final PathTemplate PATH_TEMPLATE =
       PathTemplate.createWithoutUrlEncoding(
           "projects/{project}/datasets/{dataset}/tables/{table}/streams/{stream}");
+
   private volatile Map<String, String> fieldValuesMap;
+
   private final String project;
   private final String dataset;
   private final String table;
   private final String stream;
-
-  @Deprecated
-  protected WriteStreamName() {
-    project = null;
-    dataset = null;
-    table = null;
-    stream = null;
-  }
-
-  private WriteStreamName(Builder builder) {
-    project = Preconditions.checkNotNull(builder.getProject());
-    dataset = Preconditions.checkNotNull(builder.getDataset());
-    table = Preconditions.checkNotNull(builder.getTable());
-    stream = Preconditions.checkNotNull(builder.getStream());
-  }
 
   public String getProject() {
     return project;
@@ -75,6 +61,13 @@ public class WriteStreamName implements ResourceName {
 
   public Builder toBuilder() {
     return new Builder(this);
+  }
+
+  private WriteStreamName(Builder builder) {
+    project = Preconditions.checkNotNull(builder.getProject());
+    dataset = Preconditions.checkNotNull(builder.getDataset());
+    table = Preconditions.checkNotNull(builder.getTable());
+    stream = Preconditions.checkNotNull(builder.getStream());
   }
 
   public static WriteStreamName of(String project, String dataset, String table, String stream) {
@@ -101,7 +94,7 @@ public class WriteStreamName implements ResourceName {
       return null;
     }
     Map<String, String> matchMap =
-        PROJECT_DATASET_TABLE_STREAM.validatedMatch(
+        PATH_TEMPLATE.validatedMatch(
             formattedString, "WriteStreamName.parse: formattedString not in valid format");
     return of(
         matchMap.get("project"),
@@ -119,7 +112,7 @@ public class WriteStreamName implements ResourceName {
   }
 
   public static List<String> toStringList(List<WriteStreamName> values) {
-    List<String> list = new ArrayList<>(values.size());
+    List<String> list = new ArrayList<String>(values.size());
     for (WriteStreamName value : values) {
       if (value == null) {
         list.add("");
@@ -131,27 +124,18 @@ public class WriteStreamName implements ResourceName {
   }
 
   public static boolean isParsableFrom(String formattedString) {
-    return PROJECT_DATASET_TABLE_STREAM.matches(formattedString);
+    return PATH_TEMPLATE.matches(formattedString);
   }
 
-  @Override
   public Map<String, String> getFieldValuesMap() {
     if (fieldValuesMap == null) {
       synchronized (this) {
         if (fieldValuesMap == null) {
           ImmutableMap.Builder<String, String> fieldMapBuilder = ImmutableMap.builder();
-          if (project != null) {
-            fieldMapBuilder.put("project", project);
-          }
-          if (dataset != null) {
-            fieldMapBuilder.put("dataset", dataset);
-          }
-          if (table != null) {
-            fieldMapBuilder.put("table", table);
-          }
-          if (stream != null) {
-            fieldMapBuilder.put("stream", stream);
-          }
+          fieldMapBuilder.put("project", project);
+          fieldMapBuilder.put("dataset", dataset);
+          fieldMapBuilder.put("table", table);
+          fieldMapBuilder.put("stream", stream);
           fieldValuesMap = fieldMapBuilder.build();
         }
       }
@@ -165,47 +149,17 @@ public class WriteStreamName implements ResourceName {
 
   @Override
   public String toString() {
-    return PROJECT_DATASET_TABLE_STREAM.instantiate(
+    return PATH_TEMPLATE.instantiate(
         "project", project, "dataset", dataset, "table", table, "stream", stream);
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (o != null || getClass() == o.getClass()) {
-      WriteStreamName that = ((WriteStreamName) o);
-      return Objects.equals(this.project, that.project)
-          && Objects.equals(this.dataset, that.dataset)
-          && Objects.equals(this.table, that.table)
-          && Objects.equals(this.stream, that.stream);
-    }
-    return false;
-  }
-
-  @Override
-  public int hashCode() {
-    int h = 1;
-    h *= 1000003;
-    h ^= Objects.hashCode(project);
-    h *= 1000003;
-    h ^= Objects.hashCode(dataset);
-    h *= 1000003;
-    h ^= Objects.hashCode(table);
-    h *= 1000003;
-    h ^= Objects.hashCode(stream);
-    return h;
-  }
-
-  /** Builder for projects/{project}/datasets/{dataset}/tables/{table}/streams/{stream}. */
+  /** Builder for WriteStreamName. */
   public static class Builder {
+
     private String project;
     private String dataset;
     private String table;
     private String stream;
-
-    protected Builder() {}
 
     public String getProject() {
       return project;
@@ -243,6 +197,8 @@ public class WriteStreamName implements ResourceName {
       return this;
     }
 
+    private Builder() {}
+
     private Builder(WriteStreamName writeStreamName) {
       project = writeStreamName.project;
       dataset = writeStreamName.dataset;
@@ -253,5 +209,34 @@ public class WriteStreamName implements ResourceName {
     public WriteStreamName build() {
       return new WriteStreamName(this);
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (o instanceof WriteStreamName) {
+      WriteStreamName that = (WriteStreamName) o;
+      return (this.project.equals(that.project))
+          && (this.dataset.equals(that.dataset))
+          && (this.table.equals(that.table))
+          && (this.stream.equals(that.stream));
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= project.hashCode();
+    h *= 1000003;
+    h ^= dataset.hashCode();
+    h *= 1000003;
+    h ^= table.hashCode();
+    h *= 1000003;
+    h ^= stream.hashCode();
+    return h;
   }
 }
