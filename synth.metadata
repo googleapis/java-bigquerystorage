@@ -18,32 +18,32 @@
       "git": {
         "name": "googleapis",
         "remote": "https://github.com/googleapis/googleapis.git",
-        "sha": "abc43060f136ce77124754a48f367102e646844a",
-        "internalRef": "346405446"
+        "sha": "6d65640b1fcbdf26ea76cb720de0ac138cae9bed",
+        "internalRef": "347036369"
       }
     },
     {
       "git": {
         "name": "googleapis",
         "remote": "https://github.com/googleapis/googleapis.git",
-        "sha": "abc43060f136ce77124754a48f367102e646844a",
-        "internalRef": "346405446"
+        "sha": "6d65640b1fcbdf26ea76cb720de0ac138cae9bed",
+        "internalRef": "347036369"
       }
     },
     {
       "git": {
         "name": "googleapis",
         "remote": "https://github.com/googleapis/googleapis.git",
-        "sha": "abc43060f136ce77124754a48f367102e646844a",
-        "internalRef": "346405446"
+        "sha": "6d65640b1fcbdf26ea76cb720de0ac138cae9bed",
+        "internalRef": "347036369"
       }
     },
     {
       "git": {
         "name": "googleapis",
         "remote": "https://github.com/googleapis/googleapis.git",
-        "sha": "abc43060f136ce77124754a48f367102e646844a",
-        "internalRef": "346405446"
+        "sha": "6d65640b1fcbdf26ea76cb720de0ac138cae9bed",
+        "internalRef": "347036369"
       }
     },
     {
@@ -234,6 +234,7 @@
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/ReadRowsResponse.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/ReadRowsResponseOrBuilder.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/ReadSession.java",
+    "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/ReadSessionName.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/ReadSessionOrBuilder.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/ReadStream.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/ReadStreamName.java",
@@ -246,6 +247,7 @@
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/StreamProto.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/StreamStats.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/StreamStatsOrBuilder.java",
+    "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/TableName.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/ThrottleState.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/java/com/google/cloud/bigquery/storage/v1/ThrottleStateOrBuilder.java",
     "proto-google-cloud-bigquerystorage-v1/src/main/proto/google/cloud/bigquery/storage/v1/arrow.proto",
@@ -266,7 +268,9 @@
     "proto-google-cloud-bigquerystorage-v1beta1/src/main/java/com/google/cloud/bigquery/storage/v1beta1/AvroProto.java",
     "proto-google-cloud-bigquerystorage-v1beta1/src/main/java/com/google/cloud/bigquery/storage/v1beta1/ProjectName.java",
     "proto-google-cloud-bigquerystorage-v1beta1/src/main/java/com/google/cloud/bigquery/storage/v1beta1/ReadOptions.java",
+    "proto-google-cloud-bigquerystorage-v1beta1/src/main/java/com/google/cloud/bigquery/storage/v1beta1/ReadSessionName.java",
     "proto-google-cloud-bigquerystorage-v1beta1/src/main/java/com/google/cloud/bigquery/storage/v1beta1/Storage.java",
+    "proto-google-cloud-bigquerystorage-v1beta1/src/main/java/com/google/cloud/bigquery/storage/v1beta1/StreamName.java",
     "proto-google-cloud-bigquerystorage-v1beta1/src/main/java/com/google/cloud/bigquery/storage/v1beta1/TableReferenceProto.java",
     "proto-google-cloud-bigquerystorage-v1beta1/src/main/proto/google/cloud/bigquery/storage/v1beta1/arrow.proto",
     "proto-google-cloud-bigquerystorage-v1beta1/src/main/proto/google/cloud/bigquery/storage/v1beta1/avro.proto",
@@ -319,6 +323,7 @@
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/ReadRowsResponse.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/ReadRowsResponseOrBuilder.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/ReadSession.java",
+    "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/ReadSessionName.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/ReadSessionOrBuilder.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/ReadStream.java",
     "proto-google-cloud-bigquerystorage-v1beta2/src/main/java/com/google/cloud/bigquery/storage/v1beta2/ReadStreamName.java",
