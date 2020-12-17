@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,32 +23,20 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import javax.annotation.Generated;
 
-// AUTO-GENERATED DOCUMENTATION AND CLASS.
-@Generated("by gapic-generator-java")
+/** AUTO-GENERATED DOCUMENTATION AND CLASS */
+@javax.annotation.Generated("by GAPIC protoc plugin")
 public class ReadSessionName implements ResourceName {
-  private static final PathTemplate PROJECT_LOCATION_SESSION =
+
+  private static final PathTemplate PATH_TEMPLATE =
       PathTemplate.createWithoutUrlEncoding(
           "projects/{project}/locations/{location}/sessions/{session}");
+
   private volatile Map<String, String> fieldValuesMap;
+
   private final String project;
   private final String location;
   private final String session;
-
-  @Deprecated
-  protected ReadSessionName() {
-    project = null;
-    location = null;
-    session = null;
-  }
-
-  private ReadSessionName(Builder builder) {
-    project = Preconditions.checkNotNull(builder.getProject());
-    location = Preconditions.checkNotNull(builder.getLocation());
-    session = Preconditions.checkNotNull(builder.getSession());
-  }
 
   public String getProject() {
     return project;
@@ -70,6 +58,12 @@ public class ReadSessionName implements ResourceName {
     return new Builder(this);
   }
 
+  private ReadSessionName(Builder builder) {
+    project = Preconditions.checkNotNull(builder.getProject());
+    location = Preconditions.checkNotNull(builder.getLocation());
+    session = Preconditions.checkNotNull(builder.getSession());
+  }
+
   public static ReadSessionName of(String project, String location, String session) {
     return newBuilder().setProject(project).setLocation(location).setSession(session).build();
   }
@@ -88,7 +82,7 @@ public class ReadSessionName implements ResourceName {
       return null;
     }
     Map<String, String> matchMap =
-        PROJECT_LOCATION_SESSION.validatedMatch(
+        PATH_TEMPLATE.validatedMatch(
             formattedString, "ReadSessionName.parse: formattedString not in valid format");
     return of(matchMap.get("project"), matchMap.get("location"), matchMap.get("session"));
   }
@@ -102,7 +96,7 @@ public class ReadSessionName implements ResourceName {
   }
 
   public static List<String> toStringList(List<ReadSessionName> values) {
-    List<String> list = new ArrayList<>(values.size());
+    List<String> list = new ArrayList<String>(values.size());
     for (ReadSessionName value : values) {
       if (value == null) {
         list.add("");
@@ -114,24 +108,17 @@ public class ReadSessionName implements ResourceName {
   }
 
   public static boolean isParsableFrom(String formattedString) {
-    return PROJECT_LOCATION_SESSION.matches(formattedString);
+    return PATH_TEMPLATE.matches(formattedString);
   }
 
-  @Override
   public Map<String, String> getFieldValuesMap() {
     if (fieldValuesMap == null) {
       synchronized (this) {
         if (fieldValuesMap == null) {
           ImmutableMap.Builder<String, String> fieldMapBuilder = ImmutableMap.builder();
-          if (project != null) {
-            fieldMapBuilder.put("project", project);
-          }
-          if (location != null) {
-            fieldMapBuilder.put("location", location);
-          }
-          if (session != null) {
-            fieldMapBuilder.put("session", session);
-          }
+          fieldMapBuilder.put("project", project);
+          fieldMapBuilder.put("location", location);
+          fieldMapBuilder.put("session", session);
           fieldValuesMap = fieldMapBuilder.build();
         }
       }
@@ -145,43 +132,15 @@ public class ReadSessionName implements ResourceName {
 
   @Override
   public String toString() {
-    return PROJECT_LOCATION_SESSION.instantiate(
-        "project", project, "location", location, "session", session);
+    return PATH_TEMPLATE.instantiate("project", project, "location", location, "session", session);
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (o != null || getClass() == o.getClass()) {
-      ReadSessionName that = ((ReadSessionName) o);
-      return Objects.equals(this.project, that.project)
-          && Objects.equals(this.location, that.location)
-          && Objects.equals(this.session, that.session);
-    }
-    return false;
-  }
-
-  @Override
-  public int hashCode() {
-    int h = 1;
-    h *= 1000003;
-    h ^= Objects.hashCode(project);
-    h *= 1000003;
-    h ^= Objects.hashCode(location);
-    h *= 1000003;
-    h ^= Objects.hashCode(session);
-    return h;
-  }
-
-  /** Builder for projects/{project}/locations/{location}/sessions/{session}. */
+  /** Builder for ReadSessionName. */
   public static class Builder {
+
     private String project;
     private String location;
     private String session;
-
-    protected Builder() {}
 
     public String getProject() {
       return project;
@@ -210,6 +169,8 @@ public class ReadSessionName implements ResourceName {
       return this;
     }
 
+    private Builder() {}
+
     private Builder(ReadSessionName readSessionName) {
       project = readSessionName.project;
       location = readSessionName.location;
@@ -219,5 +180,31 @@ public class ReadSessionName implements ResourceName {
     public ReadSessionName build() {
       return new ReadSessionName(this);
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (o instanceof ReadSessionName) {
+      ReadSessionName that = (ReadSessionName) o;
+      return (this.project.equals(that.project))
+          && (this.location.equals(that.location))
+          && (this.session.equals(that.session));
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= project.hashCode();
+    h *= 1000003;
+    h ^= location.hashCode();
+    h *= 1000003;
+    h ^= session.hashCode();
+    return h;
   }
 }

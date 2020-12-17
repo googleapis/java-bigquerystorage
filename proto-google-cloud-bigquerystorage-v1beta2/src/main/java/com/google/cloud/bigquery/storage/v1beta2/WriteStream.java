@@ -40,6 +40,7 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
   private WriteStream() {
     name_ = "";
     type_ = 0;
+    externalId_ = "";
   }
 
   @java.lang.Override
@@ -130,6 +131,13 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
                 tableSchema_ = subBuilder.buildPartial();
               }
 
+              break;
+            }
+          case 50:
+            {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              externalId_ = s;
               break;
             }
           default:
@@ -615,6 +623,55 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
     return getTableSchema();
   }
 
+  public static final int EXTERNAL_ID_FIELD_NUMBER = 6;
+  private volatile java.lang.Object externalId_;
+  /**
+   *
+   *
+   * <pre>
+   * Id set by client to annotate its identity.
+   * </pre>
+   *
+   * <code>string external_id = 6;</code>
+   *
+   * @return The externalId.
+   */
+  @java.lang.Override
+  public java.lang.String getExternalId() {
+    java.lang.Object ref = externalId_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      externalId_ = s;
+      return s;
+    }
+  }
+  /**
+   *
+   *
+   * <pre>
+   * Id set by client to annotate its identity.
+   * </pre>
+   *
+   * <code>string external_id = 6;</code>
+   *
+   * @return The bytes for externalId.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString getExternalIdBytes() {
+    java.lang.Object ref = externalId_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b =
+          com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+      externalId_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
   private byte memoizedIsInitialized = -1;
 
   @java.lang.Override
@@ -646,6 +703,9 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
     if (tableSchema_ != null) {
       output.writeMessage(5, getTableSchema());
     }
+    if (!getExternalIdBytes().isEmpty()) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 6, externalId_);
+    }
     unknownFields.writeTo(output);
   }
 
@@ -671,6 +731,9 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
     }
     if (tableSchema_ != null) {
       size += com.google.protobuf.CodedOutputStream.computeMessageSize(5, getTableSchema());
+    }
+    if (!getExternalIdBytes().isEmpty()) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, externalId_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -702,6 +765,7 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
     if (hasTableSchema()) {
       if (!getTableSchema().equals(other.getTableSchema())) return false;
     }
+    if (!getExternalId().equals(other.getExternalId())) return false;
     if (!unknownFields.equals(other.unknownFields)) return false;
     return true;
   }
@@ -729,6 +793,8 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
       hash = (37 * hash) + TABLE_SCHEMA_FIELD_NUMBER;
       hash = (53 * hash) + getTableSchema().hashCode();
     }
+    hash = (37 * hash) + EXTERNAL_ID_FIELD_NUMBER;
+    hash = (53 * hash) + getExternalId().hashCode();
     hash = (29 * hash) + unknownFields.hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -897,6 +963,8 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
         tableSchema_ = null;
         tableSchemaBuilder_ = null;
       }
+      externalId_ = "";
+
       return this;
     }
 
@@ -941,6 +1009,7 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
       } else {
         result.tableSchema_ = tableSchemaBuilder_.build();
       }
+      result.externalId_ = externalId_;
       onBuilt();
       return result;
     }
@@ -1006,6 +1075,10 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
       }
       if (other.hasTableSchema()) {
         mergeTableSchema(other.getTableSchema());
+      }
+      if (!other.getExternalId().isEmpty()) {
+        externalId_ = other.externalId_;
+        onChanged();
       }
       this.mergeUnknownFields(other.unknownFields);
       onChanged();
@@ -1919,6 +1992,112 @@ public final class WriteStream extends com.google.protobuf.GeneratedMessageV3
         tableSchema_ = null;
       }
       return tableSchemaBuilder_;
+    }
+
+    private java.lang.Object externalId_ = "";
+    /**
+     *
+     *
+     * <pre>
+     * Id set by client to annotate its identity.
+     * </pre>
+     *
+     * <code>string external_id = 6;</code>
+     *
+     * @return The externalId.
+     */
+    public java.lang.String getExternalId() {
+      java.lang.Object ref = externalId_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        externalId_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Id set by client to annotate its identity.
+     * </pre>
+     *
+     * <code>string external_id = 6;</code>
+     *
+     * @return The bytes for externalId.
+     */
+    public com.google.protobuf.ByteString getExternalIdBytes() {
+      java.lang.Object ref = externalId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+        externalId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Id set by client to annotate its identity.
+     * </pre>
+     *
+     * <code>string external_id = 6;</code>
+     *
+     * @param value The externalId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setExternalId(java.lang.String value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+
+      externalId_ = value;
+      onChanged();
+      return this;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Id set by client to annotate its identity.
+     * </pre>
+     *
+     * <code>string external_id = 6;</code>
+     *
+     * @return This builder for chaining.
+     */
+    public Builder clearExternalId() {
+
+      externalId_ = getDefaultInstance().getExternalId();
+      onChanged();
+      return this;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Id set by client to annotate its identity.
+     * </pre>
+     *
+     * <code>string external_id = 6;</code>
+     *
+     * @param value The bytes for externalId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setExternalIdBytes(com.google.protobuf.ByteString value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      checkByteStringIsUtf8(value);
+
+      externalId_ = value;
+      onChanged();
+      return this;
     }
 
     @java.lang.Override
