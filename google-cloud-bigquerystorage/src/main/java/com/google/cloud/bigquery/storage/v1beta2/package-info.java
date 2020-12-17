@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,9 +15,11 @@
  */
 
 /**
- * The interfaces provided are listed below, along with usage samples.
+ * A client to BigQuery Storage API.
  *
- * <p>======================= BigQueryReadClient =======================
+ * <p>The interfaces provided are listed below, along with usage samples.
+ *
+ * <p>====================== BaseBigQueryReadClient ======================
  *
  * <p>Service Description: BigQuery Read API.
  *
@@ -26,17 +28,38 @@
  * <p>New code should use the v1 Read API going forward, if they don't use Write API at the same
  * time.
  *
- * <p>Sample for BigQueryReadClient:
+ * <p>Sample for BaseBigQueryReadClient:
  *
- * <p>======================= BigQueryWriteClient =======================
+ * <pre>
+ * <code>
+ * try (BaseBigQueryReadClient baseBigQueryReadClient = BaseBigQueryReadClient.create()) {
+ *   ProjectName parent = ProjectName.of("[PROJECT]");
+ *   ReadSession readSession = ReadSession.newBuilder().build();
+ *   int maxStreamCount = 0;
+ *   ReadSession response = baseBigQueryReadClient.createReadSession(parent, readSession, maxStreamCount);
+ * }
+ * </code>
+ * </pre>
+ *
+ * =================== BigQueryWriteClient ===================
  *
  * <p>Service Description: BigQuery Write API.
  *
  * <p>The Write API can be used to write data to BigQuery.
  *
  * <p>Sample for BigQueryWriteClient:
+ *
+ * <pre>
+ * <code>
+ * try (BigQueryWriteClient bigQueryWriteClient = BigQueryWriteClient.create()) {
+ *   TableName parent = TableName.of("[PROJECT]", "[DATASET]", "[TABLE]");
+ *   WriteStream writeStream = WriteStream.newBuilder().build();
+ *   WriteStream response = bigQueryWriteClient.createWriteStream(parent, writeStream);
+ * }
+ * </code>
+ * </pre>
  */
-@Generated("by gapic-generator-java")
+@Generated("by gapic-generator")
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import javax.annotation.Generated;

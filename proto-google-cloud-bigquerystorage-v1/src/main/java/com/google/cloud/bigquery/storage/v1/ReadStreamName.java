@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,35 +23,21 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import javax.annotation.Generated;
 
-// AUTO-GENERATED DOCUMENTATION AND CLASS.
-@Generated("by gapic-generator-java")
+/** AUTO-GENERATED DOCUMENTATION AND CLASS */
+@javax.annotation.Generated("by GAPIC protoc plugin")
 public class ReadStreamName implements ResourceName {
-  private static final PathTemplate PROJECT_LOCATION_SESSION_STREAM =
+
+  private static final PathTemplate PATH_TEMPLATE =
       PathTemplate.createWithoutUrlEncoding(
           "projects/{project}/locations/{location}/sessions/{session}/streams/{stream}");
+
   private volatile Map<String, String> fieldValuesMap;
+
   private final String project;
   private final String location;
   private final String session;
   private final String stream;
-
-  @Deprecated
-  protected ReadStreamName() {
-    project = null;
-    location = null;
-    session = null;
-    stream = null;
-  }
-
-  private ReadStreamName(Builder builder) {
-    project = Preconditions.checkNotNull(builder.getProject());
-    location = Preconditions.checkNotNull(builder.getLocation());
-    session = Preconditions.checkNotNull(builder.getSession());
-    stream = Preconditions.checkNotNull(builder.getStream());
-  }
 
   public String getProject() {
     return project;
@@ -75,6 +61,13 @@ public class ReadStreamName implements ResourceName {
 
   public Builder toBuilder() {
     return new Builder(this);
+  }
+
+  private ReadStreamName(Builder builder) {
+    project = Preconditions.checkNotNull(builder.getProject());
+    location = Preconditions.checkNotNull(builder.getLocation());
+    session = Preconditions.checkNotNull(builder.getSession());
+    stream = Preconditions.checkNotNull(builder.getStream());
   }
 
   public static ReadStreamName of(String project, String location, String session, String stream) {
@@ -101,7 +94,7 @@ public class ReadStreamName implements ResourceName {
       return null;
     }
     Map<String, String> matchMap =
-        PROJECT_LOCATION_SESSION_STREAM.validatedMatch(
+        PATH_TEMPLATE.validatedMatch(
             formattedString, "ReadStreamName.parse: formattedString not in valid format");
     return of(
         matchMap.get("project"),
@@ -119,7 +112,7 @@ public class ReadStreamName implements ResourceName {
   }
 
   public static List<String> toStringList(List<ReadStreamName> values) {
-    List<String> list = new ArrayList<>(values.size());
+    List<String> list = new ArrayList<String>(values.size());
     for (ReadStreamName value : values) {
       if (value == null) {
         list.add("");
@@ -131,27 +124,18 @@ public class ReadStreamName implements ResourceName {
   }
 
   public static boolean isParsableFrom(String formattedString) {
-    return PROJECT_LOCATION_SESSION_STREAM.matches(formattedString);
+    return PATH_TEMPLATE.matches(formattedString);
   }
 
-  @Override
   public Map<String, String> getFieldValuesMap() {
     if (fieldValuesMap == null) {
       synchronized (this) {
         if (fieldValuesMap == null) {
           ImmutableMap.Builder<String, String> fieldMapBuilder = ImmutableMap.builder();
-          if (project != null) {
-            fieldMapBuilder.put("project", project);
-          }
-          if (location != null) {
-            fieldMapBuilder.put("location", location);
-          }
-          if (session != null) {
-            fieldMapBuilder.put("session", session);
-          }
-          if (stream != null) {
-            fieldMapBuilder.put("stream", stream);
-          }
+          fieldMapBuilder.put("project", project);
+          fieldMapBuilder.put("location", location);
+          fieldMapBuilder.put("session", session);
+          fieldMapBuilder.put("stream", stream);
           fieldValuesMap = fieldMapBuilder.build();
         }
       }
@@ -165,47 +149,17 @@ public class ReadStreamName implements ResourceName {
 
   @Override
   public String toString() {
-    return PROJECT_LOCATION_SESSION_STREAM.instantiate(
+    return PATH_TEMPLATE.instantiate(
         "project", project, "location", location, "session", session, "stream", stream);
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (o != null || getClass() == o.getClass()) {
-      ReadStreamName that = ((ReadStreamName) o);
-      return Objects.equals(this.project, that.project)
-          && Objects.equals(this.location, that.location)
-          && Objects.equals(this.session, that.session)
-          && Objects.equals(this.stream, that.stream);
-    }
-    return false;
-  }
-
-  @Override
-  public int hashCode() {
-    int h = 1;
-    h *= 1000003;
-    h ^= Objects.hashCode(project);
-    h *= 1000003;
-    h ^= Objects.hashCode(location);
-    h *= 1000003;
-    h ^= Objects.hashCode(session);
-    h *= 1000003;
-    h ^= Objects.hashCode(stream);
-    return h;
-  }
-
-  /** Builder for projects/{project}/locations/{location}/sessions/{session}/streams/{stream}. */
+  /** Builder for ReadStreamName. */
   public static class Builder {
+
     private String project;
     private String location;
     private String session;
     private String stream;
-
-    protected Builder() {}
 
     public String getProject() {
       return project;
@@ -243,6 +197,8 @@ public class ReadStreamName implements ResourceName {
       return this;
     }
 
+    private Builder() {}
+
     private Builder(ReadStreamName readStreamName) {
       project = readStreamName.project;
       location = readStreamName.location;
@@ -253,5 +209,34 @@ public class ReadStreamName implements ResourceName {
     public ReadStreamName build() {
       return new ReadStreamName(this);
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (o instanceof ReadStreamName) {
+      ReadStreamName that = (ReadStreamName) o;
+      return (this.project.equals(that.project))
+          && (this.location.equals(that.location))
+          && (this.session.equals(that.session))
+          && (this.stream.equals(that.stream));
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= project.hashCode();
+    h *= 1000003;
+    h ^= location.hashCode();
+    h *= 1000003;
+    h ^= session.hashCode();
+    h *= 1000003;
+    h ^= stream.hashCode();
+    return h;
   }
 }

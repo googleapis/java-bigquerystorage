@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,21 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.core.BetaApi;
 import com.google.cloud.bigquery.storage.v1alpha2.BigQueryWriteGrpc.BigQueryWriteImplBase;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.BatchCommitWriteStreamsRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.BatchCommitWriteStreamsResponse;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.CreateWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.FinalizeWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.FinalizeWriteStreamResponse;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.FlushRowsRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.FlushRowsResponse;
+import com.google.cloud.bigquery.storage.v1alpha2.Storage.GetWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1alpha2.Stream.WriteStream;
 import com.google.protobuf.AbstractMessage;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import javax.annotation.Generated;
 
+@javax.annotation.Generated("by GAPIC")
 @BetaApi
-@Generated("by gapic-generator-java")
 public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
   private List<AbstractMessage> requests;
   private Queue<Object> responses;
@@ -60,33 +69,32 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
 
   @Override
   public void createWriteStream(
-      Storage.CreateWriteStreamRequest request,
-      StreamObserver<Stream.WriteStream> responseObserver) {
+      CreateWriteStreamRequest request, StreamObserver<WriteStream> responseObserver) {
     Object response = responses.remove();
-    if (response instanceof Stream.WriteStream) {
+    if (response instanceof WriteStream) {
       requests.add(request);
-      responseObserver.onNext(((Stream.WriteStream) response));
+      responseObserver.onNext((WriteStream) response);
       responseObserver.onCompleted();
     } else if (response instanceof Exception) {
-      responseObserver.onError(((Exception) response));
+      responseObserver.onError((Exception) response);
     } else {
       responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
     }
   }
 
   @Override
-  public StreamObserver<Storage.AppendRowsRequest> appendRows(
-      final StreamObserver<Storage.AppendRowsResponse> responseObserver) {
-    StreamObserver<Storage.AppendRowsRequest> requestObserver =
-        new StreamObserver<Storage.AppendRowsRequest>() {
+  public StreamObserver<AppendRowsRequest> appendRows(
+      final StreamObserver<AppendRowsResponse> responseObserver) {
+    StreamObserver<AppendRowsRequest> requestObserver =
+        new StreamObserver<AppendRowsRequest>() {
           @Override
-          public void onNext(Storage.AppendRowsRequest value) {
+          public void onNext(AppendRowsRequest value) {
             requests.add(value);
             final Object response = responses.remove();
-            if (response instanceof Storage.AppendRowsResponse) {
-              responseObserver.onNext(((Storage.AppendRowsResponse) response));
+            if (response instanceof AppendRowsResponse) {
+              responseObserver.onNext((AppendRowsResponse) response);
             } else if (response instanceof Exception) {
-              responseObserver.onError(((Exception) response));
+              responseObserver.onError((Exception) response);
             } else {
               responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
             }
@@ -107,14 +115,14 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
 
   @Override
   public void getWriteStream(
-      Storage.GetWriteStreamRequest request, StreamObserver<Stream.WriteStream> responseObserver) {
+      GetWriteStreamRequest request, StreamObserver<WriteStream> responseObserver) {
     Object response = responses.remove();
-    if (response instanceof Stream.WriteStream) {
+    if (response instanceof WriteStream) {
       requests.add(request);
-      responseObserver.onNext(((Stream.WriteStream) response));
+      responseObserver.onNext((WriteStream) response);
       responseObserver.onCompleted();
     } else if (response instanceof Exception) {
-      responseObserver.onError(((Exception) response));
+      responseObserver.onError((Exception) response);
     } else {
       responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
     }
@@ -122,15 +130,15 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
 
   @Override
   public void finalizeWriteStream(
-      Storage.FinalizeWriteStreamRequest request,
-      StreamObserver<Storage.FinalizeWriteStreamResponse> responseObserver) {
+      FinalizeWriteStreamRequest request,
+      StreamObserver<FinalizeWriteStreamResponse> responseObserver) {
     Object response = responses.remove();
-    if (response instanceof Storage.FinalizeWriteStreamResponse) {
+    if (response instanceof FinalizeWriteStreamResponse) {
       requests.add(request);
-      responseObserver.onNext(((Storage.FinalizeWriteStreamResponse) response));
+      responseObserver.onNext((FinalizeWriteStreamResponse) response);
       responseObserver.onCompleted();
     } else if (response instanceof Exception) {
-      responseObserver.onError(((Exception) response));
+      responseObserver.onError((Exception) response);
     } else {
       responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
     }
@@ -138,15 +146,15 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
 
   @Override
   public void batchCommitWriteStreams(
-      Storage.BatchCommitWriteStreamsRequest request,
-      StreamObserver<Storage.BatchCommitWriteStreamsResponse> responseObserver) {
+      BatchCommitWriteStreamsRequest request,
+      StreamObserver<BatchCommitWriteStreamsResponse> responseObserver) {
     Object response = responses.remove();
-    if (response instanceof Storage.BatchCommitWriteStreamsResponse) {
+    if (response instanceof BatchCommitWriteStreamsResponse) {
       requests.add(request);
-      responseObserver.onNext(((Storage.BatchCommitWriteStreamsResponse) response));
+      responseObserver.onNext((BatchCommitWriteStreamsResponse) response);
       responseObserver.onCompleted();
     } else if (response instanceof Exception) {
-      responseObserver.onError(((Exception) response));
+      responseObserver.onError((Exception) response);
     } else {
       responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
     }
@@ -154,15 +162,14 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
 
   @Override
   public void flushRows(
-      Storage.FlushRowsRequest request,
-      StreamObserver<Storage.FlushRowsResponse> responseObserver) {
+      FlushRowsRequest request, StreamObserver<FlushRowsResponse> responseObserver) {
     Object response = responses.remove();
-    if (response instanceof Storage.FlushRowsResponse) {
+    if (response instanceof FlushRowsResponse) {
       requests.add(request);
-      responseObserver.onNext(((Storage.FlushRowsResponse) response));
+      responseObserver.onNext((FlushRowsResponse) response);
       responseObserver.onCompleted();
     } else if (response instanceof Exception) {
-      responseObserver.onError(((Exception) response));
+      responseObserver.onError((Exception) response);
     } else {
       responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
     }
