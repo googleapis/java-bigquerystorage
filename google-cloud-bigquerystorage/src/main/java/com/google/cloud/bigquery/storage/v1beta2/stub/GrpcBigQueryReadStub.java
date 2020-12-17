@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.cloud.bigquery.storage.v1beta2.stub;
 
+import com.google.api.core.BetaApi;
 import com.google.api.gax.core.BackgroundResource;
 import com.google.api.gax.core.BackgroundResourceAggregation;
 import com.google.api.gax.grpc.GrpcCallSettings;
@@ -31,7 +31,6 @@ import com.google.cloud.bigquery.storage.v1beta2.ReadSession;
 import com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest;
 import com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse;
 import com.google.common.collect.ImmutableMap;
-import com.google.longrunning.stub.GrpcOperationsStub;
 import io.grpc.MethodDescriptor;
 import io.grpc.protobuf.ProtoUtils;
 import java.io.IOException;
@@ -39,14 +38,16 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Generated;
 
-// AUTO-GENERATED DOCUMENTATION AND CLASS.
+// AUTO-GENERATED DOCUMENTATION AND CLASS
 /**
- * gRPC stub implementation for the BigQueryRead service API.
+ * gRPC stub implementation for BigQuery Storage API.
  *
  * <p>This class is for advanced usage and reflects the underlying API directly.
  */
-@Generated("by gapic-generator-java")
+@Generated("by gapic-generator")
+@BetaApi("A restructuring of stub classes is planned, so this may break in the future")
 public class GrpcBigQueryReadStub extends BigQueryReadStub {
+
   private static final MethodDescriptor<CreateReadSessionRequest, ReadSession>
       createReadSessionMethodDescriptor =
           MethodDescriptor.<CreateReadSessionRequest, ReadSession>newBuilder()
@@ -57,7 +58,6 @@ public class GrpcBigQueryReadStub extends BigQueryReadStub {
                   ProtoUtils.marshaller(CreateReadSessionRequest.getDefaultInstance()))
               .setResponseMarshaller(ProtoUtils.marshaller(ReadSession.getDefaultInstance()))
               .build();
-
   private static final MethodDescriptor<ReadRowsRequest, ReadRowsResponse>
       readRowsMethodDescriptor =
           MethodDescriptor.<ReadRowsRequest, ReadRowsResponse>newBuilder()
@@ -66,7 +66,6 @@ public class GrpcBigQueryReadStub extends BigQueryReadStub {
               .setRequestMarshaller(ProtoUtils.marshaller(ReadRowsRequest.getDefaultInstance()))
               .setResponseMarshaller(ProtoUtils.marshaller(ReadRowsResponse.getDefaultInstance()))
               .build();
-
   private static final MethodDescriptor<SplitReadStreamRequest, SplitReadStreamResponse>
       splitReadStreamMethodDescriptor =
           MethodDescriptor.<SplitReadStreamRequest, SplitReadStreamResponse>newBuilder()
@@ -79,13 +78,13 @@ public class GrpcBigQueryReadStub extends BigQueryReadStub {
                   ProtoUtils.marshaller(SplitReadStreamResponse.getDefaultInstance()))
               .build();
 
+  private final BackgroundResource backgroundResources;
+
   private final UnaryCallable<CreateReadSessionRequest, ReadSession> createReadSessionCallable;
   private final ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> readRowsCallable;
   private final UnaryCallable<SplitReadStreamRequest, SplitReadStreamResponse>
       splitReadStreamCallable;
 
-  private final BackgroundResource backgroundResources;
-  private final GrpcOperationsStub operationsStub;
   private final GrpcStubCallableFactory callableFactory;
 
   public static final GrpcBigQueryReadStub create(BigQueryReadStubSettings settings)
@@ -103,18 +102,27 @@ public class GrpcBigQueryReadStub extends BigQueryReadStub {
         BigQueryReadStubSettings.newBuilder().build(), clientContext, callableFactory);
   }
 
+  /**
+   * Constructs an instance of GrpcBigQueryReadStub, using the given settings. This is protected so
+   * that it is easy to make a subclass, but otherwise, the static factory methods should be
+   * preferred.
+   */
   protected GrpcBigQueryReadStub(BigQueryReadStubSettings settings, ClientContext clientContext)
       throws IOException {
     this(settings, clientContext, new GrpcBigQueryReadCallableFactory());
   }
 
+  /**
+   * Constructs an instance of GrpcBigQueryReadStub, using the given settings. This is protected so
+   * that it is easy to make a subclass, but otherwise, the static factory methods should be
+   * preferred.
+   */
   protected GrpcBigQueryReadStub(
       BigQueryReadStubSettings settings,
       ClientContext clientContext,
       GrpcStubCallableFactory callableFactory)
       throws IOException {
     this.callableFactory = callableFactory;
-    this.operationsStub = GrpcOperationsStub.create(clientContext, callableFactory);
 
     GrpcCallSettings<CreateReadSessionRequest, ReadSession> createReadSessionTransportSettings =
         GrpcCallSettings.<CreateReadSessionRequest, ReadSession>newBuilder()
@@ -170,12 +178,7 @@ public class GrpcBigQueryReadStub extends BigQueryReadStub {
         callableFactory.createUnaryCallable(
             splitReadStreamTransportSettings, settings.splitReadStreamSettings(), clientContext);
 
-    this.backgroundResources =
-        new BackgroundResourceAggregation(clientContext.getBackgroundResources());
-  }
-
-  public GrpcOperationsStub getOperationsStub() {
-    return operationsStub;
+    backgroundResources = new BackgroundResourceAggregation(clientContext.getBackgroundResources());
   }
 
   public UnaryCallable<CreateReadSessionRequest, ReadSession> createReadSessionCallable() {
