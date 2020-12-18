@@ -127,12 +127,13 @@ public class JsonStreamWriter implements AutoCloseable {
     synchronized (this) {
       data.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
       data.setRows(rowsBuilder.build());
+      AppendRowsRequest.Builder request = AppendRowsRequest.newBuilder()
+          .setProtoRows(data.build());
+      if (offset >= 0) {
+        request.setOffset(Int64Value.of(offset));
+      }
       final ApiFuture<AppendRowsResponse> appendResponseFuture =
-          this.streamWriter.append(
-              AppendRowsRequest.newBuilder()
-                  .setProtoRows(data.build())
-                  .setOffset(Int64Value.of(offset))
-                  .build());
+          this.streamWriter.append(request.build());
       return appendResponseFuture;
     }
   }
