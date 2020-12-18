@@ -127,8 +127,7 @@ public class JsonStreamWriter implements AutoCloseable {
     synchronized (this) {
       data.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
       data.setRows(rowsBuilder.build());
-      AppendRowsRequest.Builder request = AppendRowsRequest.newBuilder()
-          .setProtoRows(data.build());
+      AppendRowsRequest.Builder request = AppendRowsRequest.newBuilder().setProtoRows(data.build());
       if (offset >= 0) {
         request.setOffset(Int64Value.of(offset));
       }
@@ -224,7 +223,9 @@ public class JsonStreamWriter implements AutoCloseable {
    * StreamWriter by default.
    *
    * @param streamOrTableName name of the stream that must follow
-   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+"
+   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+" or if it is default stream
+   *     (createDefaultStream is true on builder), then the name here should be a table name
+   *     ""projects/[^/]+/datasets/[^/]+/tables/[^/]+"
    * @param tableSchema The schema of the table when the stream was created, which is passed back
    *     through {@code WriteStream}
    * @return Builder
@@ -240,7 +241,9 @@ public class JsonStreamWriter implements AutoCloseable {
    * StreamWriter by default.
    *
    * @param streamOrTableName name of the stream that must follow
-   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+"
+   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+" or if it is default stream
+   *     (createDefaultStream is true on builder), then the name here should be a table name
+   *     ""projects/[^/]+/datasets/[^/]+/tables/[^/]+"
    * @param tableSchema The schema of the table when the stream was created, which is passed back
    *     through {@code WriteStream}
    * @return Builder

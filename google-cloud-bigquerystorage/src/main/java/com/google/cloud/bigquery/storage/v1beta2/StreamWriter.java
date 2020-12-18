@@ -592,6 +592,17 @@ public class StreamWriter implements AutoCloseable {
    *   //...
    * }
    * }</pre>
+   *
+   * <p>Example of creating a default {@code WriteStream}, which is COMMIT only and doesn't support
+   * offset. But it will support higher thoughput per stream and not subject to CreateWriteStream
+   * quotas.
+   *
+   * <pre>{@code
+   * String table = "projects/my_project/datasets/my_dataset/tables/my_table";
+   * try (WriteStream writer = WriteStream.newBuilder(table).createDefaultStream().build()) {
+   *   //...
+   * }
+   * }</pre>
    */
   public static Builder newBuilder(String streamOrTableName) {
     Preconditions.checkNotNull(streamOrTableName, "streamOrTableName is null.");
