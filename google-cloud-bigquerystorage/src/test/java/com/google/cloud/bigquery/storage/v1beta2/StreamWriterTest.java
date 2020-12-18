@@ -59,7 +59,7 @@ import org.threeten.bp.Instant;
 public class StreamWriterTest {
   private static final Logger LOG = Logger.getLogger(StreamWriterTest.class.getName());
   private static final String TEST_STREAM = "projects/p/datasets/d/tables/t/streams/s";
-  private static final String TEST_DEFAULT_STREAM = "projects/p/datasets/d/tables/t/_default";
+  private static final String TEST_TABLE = "projects/p/datasets/d/tables/t";
   private static final ExecutorProvider SINGLE_THREAD_EXECUTOR =
       InstantiatingExecutorProvider.newBuilder().setExecutorThreadCount(1).build();
   private static LocalChannelProvider channelProvider;
@@ -104,10 +104,6 @@ public class StreamWriterTest {
     return getTestStreamWriterBuilder(TEST_STREAM);
   }
 
-  private StreamWriter.Builder getDefaultTestStreamWriterBuilder() {
-    return getTestStreamWriterBuilder(TEST_DEFAULT_STREAM);
-  }
-
   private AppendRowsRequest createAppendRequest(String[] messages, long offset) {
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     AppendRowsRequest.ProtoData.Builder dataBuilder = AppendRowsRequest.ProtoData.newBuilder();
@@ -150,8 +146,15 @@ public class StreamWriterTest {
 
   @Test
   public void testDefaultStream() throws Exception {
-    try (StreamWriter writer = getDefaultTestStreamWriterBuilder().build()) {
+    try (StreamWriter writer =
+        StreamWriter.newBuilder(TEST_TABLE)
+            .createDefaultStream()
+            .setChannelProvider(channelProvider)
+            .setExecutorProvider(SINGLE_THREAD_EXECUTOR)
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .build()) {
       assertEquals("projects/p/datasets/d/tables/t", writer.getTableNameString());
+      assertEquals("projects/p/datasets/d/tables/t/_default", writer.getStreamNameString());
     }
   }
 

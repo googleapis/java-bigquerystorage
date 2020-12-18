@@ -77,9 +77,11 @@ public class StreamWriter implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(StreamWriter.class.getName());
 
   private static String streamPatternString =
-      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/(streams/[^/]+|_default)";
+      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
+  private static String tablePatternString = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)";
 
   private static Pattern streamPattern = Pattern.compile(streamPatternString);
+  private static Pattern tablePattern = Pattern.compile(tablePatternString);
 
   private final String streamName;
   private final String tableName;
@@ -128,12 +130,21 @@ public class StreamWriter implements AutoCloseable {
 
   private StreamWriter(Builder builder)
       throws IllegalArgumentException, IOException, InterruptedException {
-    Matcher matcher = streamPattern.matcher(builder.streamName);
-    if (!matcher.matches()) {
-      throw new IllegalArgumentException("Invalid stream name: " + builder.streamName);
+    if (builder.createDefaultStream) {
+      Matcher matcher = tablePattern.matcher(builder.streamOrTableName);
+      if (!matcher.matches()) {
+        throw new IllegalArgumentException("Invalid table name: " + builder.streamOrTableName);
+      }
+      streamName = builder.streamOrTableName + "/_default";
+      tableName = builder.streamOrTableName;
+    } else {
+      Matcher matcher = streamPattern.matcher(builder.streamOrTableName);
+      if (!matcher.matches()) {
+        throw new IllegalArgumentException("Invalid stream name: " + builder.streamOrTableName);
+      }
+      streamName = builder.streamOrTableName;
+      tableName = matcher.group(1);
     }
-    streamName = builder.streamName;
-    tableName = matcher.group(1);
 
     this.batchingSettings = builder.batchingSettings;
     this.retrySettings = builder.retrySettings;
@@ -563,7 +574,8 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
-   * Constructs a new {@link Builder} using the given stream.
+   * Constructs a new {@link Builder} using the given stream. If builder has createDefaultStream set
+   * to true, then user should pass in a table name here.
    *
    * <p>Example of creating a {@code WriteStream}.
    *
@@ -580,18 +592,18 @@ public class StreamWriter implements AutoCloseable {
    * }
    * }</pre>
    */
-  public static Builder newBuilder(String streamName) {
-    Preconditions.checkNotNull(streamName, "StreamName is null.");
-    return new Builder(streamName, null);
+  public static Builder newBuilder(String streamOrTableName) {
+    Preconditions.checkNotNull(streamOrTableName, "streamOrTableName is null.");
+    return new Builder(streamOrTableName, null);
   }
 
   /**
    * Constructs a new {@link Builder} using the given stream and an existing BigQueryWriteClient.
    */
-  public static Builder newBuilder(String streamName, BigQueryWriteClient client) {
-    Preconditions.checkNotNull(streamName, "StreamName is null.");
+  public static Builder newBuilder(String streamOrTableName, BigQueryWriteClient client) {
+    Preconditions.checkNotNull(streamOrTableName, "streamOrTableName is null.");
     Preconditions.checkNotNull(client, "Client is null.");
-    return new Builder(streamName, client);
+    return new Builder(streamOrTableName, client);
   }
 
   /** A builder of {@link StreamWriter}s. */
@@ -619,14 +631,13 @@ public class StreamWriter implements AutoCloseable {
             .setInitialRetryDelay(Duration.ofMillis(100))
             .setMaxAttempts(3)
             .build();
-    static final boolean DEFAULT_ENABLE_MESSAGE_ORDERING = false;
     private static final int THREADS_PER_CPU = 5;
     static final ExecutorProvider DEFAULT_EXECUTOR_PROVIDER =
         InstantiatingExecutorProvider.newBuilder()
             .setExecutorThreadCount(THREADS_PER_CPU * Runtime.getRuntime().availableProcessors())
             .build();
 
-    private String streamName;
+    private String streamOrTableName;
     private String endpoint = BigQueryWriteSettings.getDefaultEndpoint();
 
     private BigQueryWriteClient client = null;
@@ -635,8 +646,6 @@ public class StreamWriter implements AutoCloseable {
     BatchingSettings batchingSettings = DEFAULT_BATCHING_SETTINGS;
 
     RetrySettings retrySettings = DEFAULT_RETRY_SETTINGS;
-
-    private boolean enableMessageOrdering = DEFAULT_ENABLE_MESSAGE_ORDERING;
 
     private TransportChannelProvider channelProvider =
         BigQueryWriteSettings.defaultGrpcTransportProviderBuilder().setChannelsPerCpu(1).build();
@@ -647,8 +656,10 @@ public class StreamWriter implements AutoCloseable {
 
     private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
 
-    private Builder(String stream, BigQueryWriteClient client) {
-      this.streamName = Preconditions.checkNotNull(stream);
+    private boolean createDefaultStream = false;
+
+    private Builder(String streamOrTableName, BigQueryWriteClient client) {
+      this.streamOrTableName = Preconditions.checkNotNull(streamOrTableName);
       this.client = client;
     }
 
@@ -774,6 +785,12 @@ public class StreamWriter implements AutoCloseable {
     public Builder setOnSchemaUpdateRunnable(OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
       this.onSchemaUpdateRunnable =
           Preconditions.checkNotNull(onSchemaUpdateRunnable, "onSchemaUpdateRunnable is null.");
+      return this;
+    }
+
+    /** If the stream is a default stream. */
+    public Builder createDefaultStream() {
+      this.createDefaultStream = true;
       return this;
     }
 
