@@ -305,6 +305,7 @@ public class ITBigQueryWriteManualClientTest {
                     Schema.of(
                         com.google.cloud.bigquery.Field.newBuilder(
                                 "test_str", StandardSQLTypeName.STRING)
+                            .setMode(Field.Mode.NULLABLE)
                             .build(),
                         com.google.cloud.bigquery.Field.newBuilder(
                                 "test_numerics", StandardSQLTypeName.NUMERIC)
@@ -312,12 +313,14 @@ public class ITBigQueryWriteManualClientTest {
                             .build(),
                         com.google.cloud.bigquery.Field.newBuilder(
                                 "test_datetime", StandardSQLTypeName.DATETIME)
+                            .setMode(Field.Mode.NULLABLE)
                             .build())))
             .build();
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo.getDefinition().getSchema())
+            .createDefaultStream()
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
@@ -336,7 +339,9 @@ public class ITBigQueryWriteManualClientTest {
       ApiFuture<AppendRowsResponse> response1 =
           jsonStreamWriter.append(jsonArr1, -1, /* allowUnknownFields */ false);
 
-      assertEquals(0, response1.get().getAppendResult().getOffset().getValue());
+      // TODO: backend shouldn't return offset.
+      // assertFalse(response1.get().getAppendResult().hasOffset());
+      response1.get();
 
       JSONObject row2 = new JSONObject();
       row1.put("test_str", "bbb");
@@ -357,8 +362,10 @@ public class ITBigQueryWriteManualClientTest {
       LOG.info("Sending one more message");
       ApiFuture<AppendRowsResponse> response3 =
           jsonStreamWriter.append(jsonArr3, -1, /* allowUnknownFields */ false);
-      assertEquals(1, response2.get().getAppendResult().getOffset().getValue());
-      assertEquals(3, response3.get().getAppendResult().getOffset().getValue());
+      // TODO: backend shouldn't return offset.
+      // assertFalse(response2.get().getAppendResult().hasOffset());
+      // assertFalse(response3.get().getAppendResult().hasOffset());
+      response3.get();
 
       TableResult result =
           bigquery.listTableData(
