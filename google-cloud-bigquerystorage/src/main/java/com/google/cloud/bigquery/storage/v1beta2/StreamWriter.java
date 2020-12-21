@@ -29,15 +29,10 @@ import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.core.InstantiatingExecutorProvider;
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.retrying.RetrySettings;
-import com.google.api.gax.rpc.AbortedException;
-import com.google.api.gax.rpc.BidiStreamingCallable;
-import com.google.api.gax.rpc.ClientStream;
-import com.google.api.gax.rpc.ResponseObserver;
-import com.google.api.gax.rpc.StreamController;
-import com.google.api.gax.rpc.TransportChannelProvider;
+import com.google.api.gax.rpc.*;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.bigquery.storage.v1beta2.StorageProto.*;
 import com.google.common.base.Preconditions;
+import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
@@ -82,9 +77,11 @@ public class StreamWriter implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(StreamWriter.class.getName());
 
   private static String streamPatternString =
-      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/(streams/[^/]+|_default)";
+      "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
+  private static String tablePatternString = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)";
 
   private static Pattern streamPattern = Pattern.compile(streamPatternString);
+  private static Pattern tablePattern = Pattern.compile(tablePatternString);
 
   private final String streamName;
   private final String tableName;
@@ -133,12 +130,21 @@ public class StreamWriter implements AutoCloseable {
 
   private StreamWriter(Builder builder)
       throws IllegalArgumentException, IOException, InterruptedException {
-    Matcher matcher = streamPattern.matcher(builder.streamName);
-    if (!matcher.matches()) {
-      throw new IllegalArgumentException("Invalid stream name: " + builder.streamName);
+    if (builder.createDefaultStream) {
+      Matcher matcher = tablePattern.matcher(builder.streamOrTableName);
+      if (!matcher.matches()) {
+        throw new IllegalArgumentException("Invalid table name: " + builder.streamOrTableName);
+      }
+      streamName = builder.streamOrTableName + "/_default";
+      tableName = builder.streamOrTableName;
+    } else {
+      Matcher matcher = streamPattern.matcher(builder.streamOrTableName);
+      if (!matcher.matches()) {
+        throw new IllegalArgumentException("Invalid stream name: " + builder.streamOrTableName);
+      }
+      streamName = builder.streamOrTableName;
+      tableName = matcher.group(1);
     }
-    streamName = builder.streamName;
-    tableName = matcher.group(1);
 
     this.batchingSettings = builder.batchingSettings;
     this.retrySettings = builder.retrySettings;
@@ -412,7 +418,7 @@ public class StreamWriter implements AutoCloseable {
       this.inflightRequests = inflightRequests;
       this.offsetList = new ArrayList<Long>(inflightRequests.size());
       for (AppendRequestAndFutureResponse request : inflightRequests) {
-        if (request.message.getOffset().getValue() > 0) {
+        if (request.message.hasOffset()) {
           offsetList.add(new Long(request.message.getOffset().getValue()));
         } else {
           offsetList.add(new Long(-1));
@@ -485,17 +491,16 @@ public class StreamWriter implements AutoCloseable {
     private void onSuccess(AppendRowsResponse response) {
       for (int i = 0; i < inflightRequests.size(); i++) {
         AppendRowsResponse.Builder singleResponse = response.toBuilder();
-        // if (offsetList.get(i) > 0) {
-        //   singleResponse.setOffset(offsetList.get(i));
-        // } else {
-        //   long actualOffset = response.getOffset();
-        //   for (int j = 0; j < i; j++) {
-        //     actualOffset +=
-        //
-        // inflightRequests.get(j).message.getProtoRows().getRows().getSerializedRowsCount();
-        //   }
-        //  singleResponse.setOffset(actualOffset);
-        // }
+        if (response.getAppendResult().hasOffset()) {
+          long actualOffset = response.getAppendResult().getOffset().getValue();
+          for (int j = 0; j < i; j++) {
+            actualOffset +=
+                inflightRequests.get(j).message.getProtoRows().getRows().getSerializedRowsCount();
+          }
+          LOG.info("Acutal offset:" + actualOffset);
+          singleResponse.setAppendResult(
+              AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(actualOffset)));
+        }
         inflightRequests.get(i).appendResult.set(singleResponse.build());
       }
     }
@@ -570,7 +575,8 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
-   * Constructs a new {@link Builder} using the given stream.
+   * Constructs a new {@link Builder} using the given stream. If builder has createDefaultStream set
+   * to true, then user should pass in a table name here.
    *
    * <p>Example of creating a {@code WriteStream}.
    *
@@ -586,19 +592,30 @@ public class StreamWriter implements AutoCloseable {
    *   //...
    * }
    * }</pre>
+   *
+   * <p>Example of creating a default {@code WriteStream}, which is COMMIT only and doesn't support
+   * offset. But it will support higher thoughput per stream and not subject to CreateWriteStream
+   * quotas.
+   *
+   * <pre>{@code
+   * String table = "projects/my_project/datasets/my_dataset/tables/my_table";
+   * try (WriteStream writer = WriteStream.newBuilder(table).createDefaultStream().build()) {
+   *   //...
+   * }
+   * }</pre>
    */
-  public static Builder newBuilder(String streamName) {
-    Preconditions.checkNotNull(streamName, "StreamName is null.");
-    return new Builder(streamName, null);
+  public static Builder newBuilder(String streamOrTableName) {
+    Preconditions.checkNotNull(streamOrTableName, "streamOrTableName is null.");
+    return new Builder(streamOrTableName, null);
   }
 
   /**
    * Constructs a new {@link Builder} using the given stream and an existing BigQueryWriteClient.
    */
-  public static Builder newBuilder(String streamName, BigQueryWriteClient client) {
-    Preconditions.checkNotNull(streamName, "StreamName is null.");
+  public static Builder newBuilder(String streamOrTableName, BigQueryWriteClient client) {
+    Preconditions.checkNotNull(streamOrTableName, "streamOrTableName is null.");
     Preconditions.checkNotNull(client, "Client is null.");
-    return new Builder(streamName, client);
+    return new Builder(streamOrTableName, client);
   }
 
   /** A builder of {@link StreamWriter}s. */
@@ -626,14 +643,13 @@ public class StreamWriter implements AutoCloseable {
             .setInitialRetryDelay(Duration.ofMillis(100))
             .setMaxAttempts(3)
             .build();
-    static final boolean DEFAULT_ENABLE_MESSAGE_ORDERING = false;
     private static final int THREADS_PER_CPU = 5;
     static final ExecutorProvider DEFAULT_EXECUTOR_PROVIDER =
         InstantiatingExecutorProvider.newBuilder()
             .setExecutorThreadCount(THREADS_PER_CPU * Runtime.getRuntime().availableProcessors())
             .build();
 
-    private String streamName;
+    private String streamOrTableName;
     private String endpoint = BigQueryWriteSettings.getDefaultEndpoint();
 
     private BigQueryWriteClient client = null;
@@ -642,8 +658,6 @@ public class StreamWriter implements AutoCloseable {
     BatchingSettings batchingSettings = DEFAULT_BATCHING_SETTINGS;
 
     RetrySettings retrySettings = DEFAULT_RETRY_SETTINGS;
-
-    private boolean enableMessageOrdering = DEFAULT_ENABLE_MESSAGE_ORDERING;
 
     private TransportChannelProvider channelProvider =
         BigQueryWriteSettings.defaultGrpcTransportProviderBuilder().setChannelsPerCpu(1).build();
@@ -654,8 +668,10 @@ public class StreamWriter implements AutoCloseable {
 
     private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
 
-    private Builder(String stream, BigQueryWriteClient client) {
-      this.streamName = Preconditions.checkNotNull(stream);
+    private boolean createDefaultStream = false;
+
+    private Builder(String streamOrTableName, BigQueryWriteClient client) {
+      this.streamOrTableName = Preconditions.checkNotNull(streamOrTableName);
       this.client = client;
     }
 
@@ -784,6 +800,12 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
+    /** If the stream is a default stream. */
+    public Builder createDefaultStream() {
+      this.createDefaultStream = true;
+      return this;
+    }
+
     /** Builds the {@code StreamWriter}. */
     public StreamWriter build() throws IllegalArgumentException, IOException, InterruptedException {
       return new StreamWriter(this);
@@ -850,27 +872,28 @@ public class StreamWriter implements AutoCloseable {
         }
         // Currently there is nothing retryable. If the error is already exists, then ignore it.
         if (response.hasError()) {
-          if (response.getError().getCode() != 6 /* ALREADY_EXISTS */) {
-            StatusRuntimeException exception =
-                new StatusRuntimeException(
-                    Status.fromCodeValue(response.getError().getCode())
-                        .withDescription(response.getError().getMessage()));
+          StatusRuntimeException exception =
+              new StatusRuntimeException(
+                  Status.fromCodeValue(response.getError().getCode())
+                      .withDescription(response.getError().getMessage()));
+          inflightBatch.onFailure(exception);
+        } else {
+          if (inflightBatch.getExpectedOffset() > 0
+              && (response.getAppendResult().hasOffset()
+                  && response.getAppendResult().getOffset().getValue()
+                      != inflightBatch.getExpectedOffset())) {
+            IllegalStateException exception =
+                new IllegalStateException(
+                    String.format(
+                        "The append result offset %s does not match " + "the expected offset %s.",
+                        response.getAppendResult().getOffset().getValue(),
+                        inflightBatch.getExpectedOffset()));
             inflightBatch.onFailure(exception);
+            abortInflightRequests(exception);
+          } else {
+            inflightBatch.onSuccess(response);
           }
         }
-        // Temp for Breaking Change.
-        // if (inflightBatch.getExpectedOffset() > 0
-        //     && response.getOffset() != inflightBatch.getExpectedOffset()) {
-        //   IllegalStateException exception =
-        //      new IllegalStateException(
-        //          String.format(
-        //              "The append result offset %s does not match " + "the expected offset %s.",
-        //              response.getOffset(), inflightBatch.getExpectedOffset()));
-        //  inflightBatch.onFailure(exception);
-        //  abortInflightRequests(exception);
-        // } else {
-        inflightBatch.onSuccess(response);
-        // }
       } finally {
         streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
       }
