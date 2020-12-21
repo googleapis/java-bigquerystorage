@@ -31,7 +31,6 @@ import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.*;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.bigquery.storage.v1beta2.StorageProto.*;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Int64Value;
 import io.grpc.Status;
@@ -487,7 +486,6 @@ public class StreamWriter implements AutoCloseable {
             actualOffset +=
                 inflightRequests.get(j).message.getProtoRows().getRows().getSerializedRowsCount();
           }
-          LOG.info("Acutal offset:" + actualOffset);
           singleResponse.setAppendResult(
               AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(actualOffset)));
         }
