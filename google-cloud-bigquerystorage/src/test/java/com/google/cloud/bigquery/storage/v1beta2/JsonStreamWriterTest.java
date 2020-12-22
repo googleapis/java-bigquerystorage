@@ -934,7 +934,7 @@ public class JsonStreamWriterTest {
                   .build());
         }
 
-        offset_sets.add((long) i);
+        offsetSets.add((long) i);
         Thread t =
             new Thread(
                 new Runnable() {
@@ -956,7 +956,7 @@ public class JsonStreamWriterTest {
       for (int i = 0; i < numberThreads; i++) {
         thread_arr[i].join();
       }
-      assertTrue(offset_sets.size() == 0);
+      assertTrue(offsetSets.size() == 0);
       for (int i = 0; i < numberThreads; i++) {
         assertEquals(
             1,
@@ -1020,7 +1020,7 @@ public class JsonStreamWriterTest {
       for (int i = 0; i < numberThreads; i++) {
         thread_arr[i].join();
       }
-      assertTrue(offset_sets.size() == 0);
+      assertTrue(offsetSets.size() == 0);
       for (int i = 0; i < numberThreads; i++) {
         assertEquals(
             1,
