@@ -305,7 +305,6 @@ public class ITBigQueryWriteManualClientTest {
                     Schema.of(
                         com.google.cloud.bigquery.Field.newBuilder(
                                 "test_str", StandardSQLTypeName.STRING)
-                            .setMode(Field.Mode.NULLABLE)
                             .build(),
                         com.google.cloud.bigquery.Field.newBuilder(
                                 "test_numerics", StandardSQLTypeName.NUMERIC)
@@ -313,14 +312,12 @@ public class ITBigQueryWriteManualClientTest {
                             .build(),
                         com.google.cloud.bigquery.Field.newBuilder(
                                 "test_datetime", StandardSQLTypeName.DATETIME)
-                            .setMode(Field.Mode.NULLABLE)
                             .build())))
             .build();
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo.getDefinition().getSchema())
-            .createDefaultStream()
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
@@ -339,9 +336,7 @@ public class ITBigQueryWriteManualClientTest {
       ApiFuture<AppendRowsResponse> response1 =
           jsonStreamWriter.append(jsonArr1, -1, /* allowUnknownFields */ false);
 
-      // TODO: backend shouldn't return offset.
-      // assertFalse(response1.get().getAppendResult().hasOffset());
-      response1.get();
+      assertEquals(0, response1.get().getAppendResult().getOffset().getValue());
 
       JSONObject row2 = new JSONObject();
       row1.put("test_str", "bbb");

@@ -248,6 +248,22 @@ public class JsonStreamWriter implements AutoCloseable {
    *     through {@code WriteStream}
    * @return Builder
    */
+  public static Builder newBuilder(String streamOrTableName, TableSchema tableSchema) {
+    Preconditions.checkNotNull(streamOrTableName, "StreamOrTableName is null.");
+    Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
+    return new Builder(streamOrTableName, tableSchema, null);
+  }
+
+  /**
+   * newBuilder that constructs a JsonStreamWriter builder with BigQuery client being initialized by
+   * StreamWriter by default.
+   *
+   * @param streamOrTableName name of the stream that must follow
+   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+"
+   * @param tableSchema The schema of the table when the stream was created, which is passed back
+   *     through {@code WriteStream}
+   * @return Builder
+   */
   public static Builder newBuilder(String streamOrTableName, Schema tableSchema) {
     Preconditions.checkNotNull(streamOrTableName, "StreamOrTableName is null.");
     Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
