@@ -362,10 +362,8 @@ public class ITBigQueryWriteManualClientTest {
       LOG.info("Sending one more message");
       ApiFuture<AppendRowsResponse> response3 =
           jsonStreamWriter.append(jsonArr3, -1, /* allowUnknownFields */ false);
-      // TODO: backend shouldn't return offset.
-      // assertFalse(response2.get().getAppendResult().hasOffset());
-      // assertFalse(response3.get().getAppendResult().hasOffset());
-      response3.get();
+      assertEquals(1, response2.get().getAppendResult().getOffset().getValue());
+      assertEquals(3, response3.get().getAppendResult().getOffset().getValue());
 
       TableResult result =
           bigquery.listTableData(
