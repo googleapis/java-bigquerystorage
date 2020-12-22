@@ -217,7 +217,7 @@ public class JsonStreamWriterTest {
       getTestJsonStreamWriterBuilder(null, TABLE_SCHEMA);
       Assert.fail("expected NullPointerException");
     } catch (NullPointerException e) {
-      assertEquals(e.getMessage(), "StreamName is null.");
+      assertEquals(e.getMessage(), "StreamOrTableName is null.");
     }
   }
 
