@@ -297,7 +297,7 @@ public class ITBigQueryWriteManualClientTest {
   public void testJsonStreamWriterBatchWriteWithDefaultStream()
       throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
-    String tableName = "JsonTable";
+    String tableName = "JsonTableDefaultStream";
     TableInfo tableInfo =
         TableInfo.newBuilder(
                 TableId.of(DATASET, tableName),
