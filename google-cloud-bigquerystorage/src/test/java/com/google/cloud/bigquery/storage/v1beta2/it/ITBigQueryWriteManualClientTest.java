@@ -318,6 +318,7 @@ public class ITBigQueryWriteManualClientTest {
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo.getDefinition().getSchema())
+            .createDefaultStream()
             .setBatchingSettings(
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()

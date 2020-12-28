@@ -18,6 +18,7 @@ package com.google.cloud.bigquery.storage.v1beta2;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.StandardSQLTypeName;
+import com.google.cloud.bigquery.storage.v1alpha2.Table;
 import com.google.common.collect.ImmutableMap;
 
 /** Converts structure from BigQuery v2 API to BigQueryStorage API */
@@ -66,6 +67,9 @@ public class BQV2ToBQStorageConverter {
    */
   public static TableFieldSchema ConvertFieldSchema(Field field) {
     TableFieldSchema.Builder result = TableFieldSchema.newBuilder();
+    if (field.getMode() == null) {
+      field = field.toBuilder().setMode(Field.Mode.NULLABLE).build();
+    }
     result.setMode(BQTableSchemaModeMap.get(field.getMode()));
     result.setName(field.getName());
     result.setType(BQTableSchemaTypeMap.get(field.getType().getStandardType()));
