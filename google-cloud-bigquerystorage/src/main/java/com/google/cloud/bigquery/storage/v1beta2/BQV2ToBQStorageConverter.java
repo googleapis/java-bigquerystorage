@@ -18,7 +18,6 @@ package com.google.cloud.bigquery.storage.v1beta2;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.StandardSQLTypeName;
-import com.google.cloud.bigquery.storage.v1alpha2.Table;
 import com.google.common.collect.ImmutableMap;
 
 /** Converts structure from BigQuery v2 API to BigQueryStorage API */
