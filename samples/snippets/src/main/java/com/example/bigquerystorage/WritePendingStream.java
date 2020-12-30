@@ -57,7 +57,7 @@ public class WritePendingStream {
           JSONArray jsonArr = new JSONArray();
           jsonArr.put(record);
 
-          ApiFuture<AppendRowsResponse> future = writer.append(jsonArr, false);
+          ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
           AppendRowsResponse response = future.get();
         }
         FinalizeWriteStreamResponse finalizeResponse =

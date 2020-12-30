@@ -69,7 +69,7 @@ public class WriteCommittedStream {
           JSONArray jsonArr = new JSONArray();
           jsonArr.put(record);
 
-          ApiFuture<AppendRowsResponse> future = writer.append(jsonArr, i, false);
+          ApiFuture<AppendRowsResponse> future = writer.append(jsonArr, i);
           AppendRowsResponse response = future.get();
         }
 
@@ -106,7 +106,7 @@ public class WriteCommittedStream {
         JSONArray jsonArr = new JSONArray();
         jsonArr.put(record);
 
-        ApiFuture<AppendRowsResponse> future = writer.append(jsonArr, false);
+        ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
         AppendRowsResponse response = future.get();
       }
     } catch (Exception e) {
