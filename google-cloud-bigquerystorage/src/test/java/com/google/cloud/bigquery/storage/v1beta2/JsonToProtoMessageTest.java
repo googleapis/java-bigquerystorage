@@ -304,6 +304,7 @@ public class JsonToProtoMessageTest {
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(TestInt32.getDescriptor(), json);
+      Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
       assertEquals("JSONObject does not have a int32 field at root.int.", e.getMessage());
     }
@@ -399,6 +400,7 @@ public class JsonToProtoMessageTest {
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(TestRequired.getDescriptor(), json);
+      Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
       assertEquals(
           "JSONObject does not have the required field root.required_double.", e.getMessage());
@@ -430,6 +432,7 @@ public class JsonToProtoMessageTest {
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(MessageType.getDescriptor(), json);
+      Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
       assertEquals(
           "JSONObject does not have a string field at root.test_field_type.test_field_type.",
@@ -503,6 +506,7 @@ public class JsonToProtoMessageTest {
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(ComplexRoot.getDescriptor(), json);
+      Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
       assertEquals(
           "JSONObject does not have a int64 field at root.complex_lvl1.test_int.", e.getMessage());
@@ -516,6 +520,7 @@ public class JsonToProtoMessageTest {
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(RepeatedDouble.getDescriptor(), json);
+      Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
       assertEquals(
           "JSONObject does not have a double field at root.test_repeated[2].", e.getMessage());
@@ -577,6 +582,7 @@ public class JsonToProtoMessageTest {
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(NestedRepeated.getDescriptor(), json);
+      Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
       assertEquals(
           "JSONObject does not have a string field at root.repeated_string.test_repeated[0].",
