@@ -251,7 +251,7 @@ public class JsonStreamWriterTest {
                   AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
               .build());
 
-      ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr, -1);
+      ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
       assertEquals(0L, appendFuture.get().getAppendResult().getOffset().getValue());
       appendFuture.get();
       assertEquals(
@@ -355,7 +355,7 @@ public class JsonStreamWriterTest {
               .build());
       ApiFuture<AppendRowsResponse> appendFuture;
       for (int i = 0; i < 4; i++) {
-        appendFuture = writer.append(jsonArr, -1);
+        appendFuture = writer.append(jsonArr);
         assertEquals((long) i, appendFuture.get().getAppendResult().getOffset().getValue());
         appendFuture.get();
         assertEquals(
@@ -492,7 +492,7 @@ public class JsonStreamWriterTest {
       JSONArray jsonArr = new JSONArray();
       jsonArr.put(foo);
 
-      ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(jsonArr, -1);
+      ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(jsonArr);
 
       int millis = 0;
       while (millis <= 10000) {
