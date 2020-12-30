@@ -121,16 +121,6 @@
         <differenceType>7002</differenceType>
         <method>com.google.protobuf.ByteString getExternalIdBytes()</method>
     </difference>
-    <difference>
-        <className>com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter</className>
-        <differenceType>7002</differenceType>
-        <method>com.google.api.core.ApiFuture append(org.json.JSONArray jsonArr, boolean ignoreUnknownFields)</method>
-    </difference>
-    <difference>
-        <className>com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter</className>
-        <differenceType>7002</differenceType>
-        <method>com.google.api.core.ApiFuture append(org.json.JSONArray jsonArr, long offset, boolean ignoreUnknownFields)</method>
-    </difference>
 
     <!-- METHODS ADDED -->
     <difference>
@@ -183,14 +173,20 @@
         <differenceType>7012</differenceType>
         <method>java.util.List getStreamErrorsOrBuilderList()</method>
     </difference>
+    
     <difference>
         <className>com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter</className>
-        <differenceType>7012</differenceType>
-        <method>com.google.api.core.ApiFuture append(org.json.JSONArray jsonArr)</method>
+        <differenceType>7005</differenceType>
+        <method>public com.google.api.core.ApiFuture append(org.json.JSONArray, boolean)</method>
     </difference>
     <difference>
         <className>com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter</className>
-        <differenceType>7012</differenceType>
-        <method>com.google.api.core.ApiFuture append(org.json.JSONArray jsonArr, long offset)</method>
+        <differenceType>7004</differenceType>
+        <method>public com.google.api.core.ApiFuture append(org.json.JSONArray, long, boolean)</method>
+    </difference>
+    <difference>
+        <className>com/google/cloud/bigquery/storage/v1beta2/JsonToProtoMessage</className>
+        <differenceType>7004</differenceType>
+        <method>public com.google.protobuf.DynamicMessage convertJsonToProtoMessage(com.google.protobuf.Descriptors$Descriptor, org.json.JSONObject, boolean)</method>
     </difference>
 </differences>
