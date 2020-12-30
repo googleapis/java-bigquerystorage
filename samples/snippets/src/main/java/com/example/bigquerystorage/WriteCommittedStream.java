@@ -1,0 +1,100 @@
+package com.example.bigquerystorage;
+
+import com.google.api.core.ApiFuture;
+import com.google.cloud.bigquery.*;
+import com.google.cloud.bigquery.storage.v1beta2.*;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import java.util.concurrent.ExecutionException;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class WriteCommittedStream {
+
+  public static Status.Code getStatusCode(StatusRuntimeException e) {
+    return e.getStatus().getCode();
+  }
+
+  public static void runWriteCommittedStream() {
+    // TODO(developer): Replace these variables before running the sample.
+    String projectId = "MY_PROJECT_ID";
+    String datasetName = "MY_DATASET_NAME";
+    String tableName = "MY_TABLE_NAME";
+    writeCommittedStream(projectId, datasetName, tableName);
+  }
+
+  public static void writeCommittedStream(String projectId, String datasetName, String tableName) {
+
+    try (BigQueryWriteClient client = BigQueryWriteClient.create()) {
+
+      // Initialize a write stream for the specified table.
+      WriteStream stream = WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build();
+
+      TableName parent = TableName.of(projectId, datasetName, tableName);
+
+      CreateWriteStreamRequest createWriteStreamRequest =
+          CreateWriteStreamRequest.newBuilder()
+              .setParent(parent.toString())
+              .setWriteStream(stream)
+              .build();
+      WriteStream writeStream = client.createWriteStream(createWriteStreamRequest);
+
+      // Use the JSON stream writer to send records in JSON format.
+      try (JsonStreamWriter writer =
+          JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema(), client)
+              .build()) {
+
+        int offsets[] = {0, 1, 2, 3, 4, 5, 5};
+        // The last offset is repeated. This will cause an ALREADY_EXISTS error.
+
+        for (int i : offsets) {
+          JSONObject record = new JSONObject();
+          record.put("col1", String.format("record %03d", i));
+          JSONArray jsonArr = new JSONArray();
+          jsonArr.put(record);
+
+          ApiFuture<AppendRowsResponse> future = writer.append(jsonArr, i, false);
+          AppendRowsResponse response = future.get();
+        }
+
+      } catch (ExecutionException ex) {
+        Throwable cause = ex.getCause();
+        if (cause instanceof StatusRuntimeException) {
+          System.out.println(
+              "Failed with status = " + getStatusCode((StatusRuntimeException) cause));
+        }
+        throw ex;
+      }
+
+      System.out.println("Appended records successfully.");
+
+    } catch (Exception e) {
+      System.out.println("Failed to append records. \n" + e.toString());
+    }
+  }
+
+  public static void writeToDefaultStream(String projectId, String datasetName, String tableName) {
+
+    TableName parent = TableName.of(projectId, datasetName, tableName);
+
+    BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
+    Table table = bigquery.getTable(datasetName, tableName);
+    Schema schema = table.getDefinition().getSchema();
+
+    try (JsonStreamWriter writer =
+        JsonStreamWriter.newBuilder(parent.toString(), schema).createDefaultStream().build()) {
+
+      for (int i = 0; i < 10; i++) {
+        JSONObject record = new JSONObject();
+        record.put("col1", String.format("record %03d", i));
+        JSONArray jsonArr = new JSONArray();
+        jsonArr.put(record);
+
+        ApiFuture<AppendRowsResponse> future = writer.append(jsonArr, false);
+        AppendRowsResponse response = future.get();
+      }
+    } catch (Exception e) {
+      System.out.println(e);
+    }
+  }
+}
