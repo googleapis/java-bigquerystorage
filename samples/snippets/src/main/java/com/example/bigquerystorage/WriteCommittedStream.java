@@ -16,7 +16,6 @@
 
 package com.example.bigquerystorage;
 
-import com.google.api.client.util.*;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.storage.v1beta2.*;
@@ -28,18 +27,8 @@ import org.json.JSONObject;
 
 public class WriteCommittedStream {
 
-  static Status.Code getStatusCode(StatusRuntimeException e) {
+  public static Status.Code getStatusCode(StatusRuntimeException e) {
     return e.getStatus().getCode();
-  }
-
-  // Returns true if the operation should be retried.
-  static Boolean isRetryable(ExecutionException e) {
-    Throwable cause = e.getCause();
-    if (cause instanceof StatusRuntimeException) {
-        Status status = ((StatusRuntimeException)cause).getStatus();
-	return (status == Status.ABORTED);
-    }
-    return false;
   }
 
   public static void runWriteCommittedStream() {
@@ -96,7 +85,7 @@ public class WriteCommittedStream {
       System.out.println("Appended records successfully.");
 
     } catch (Exception e) {
-      System.out.println("Failed to append records.\n" + e.toString());
+      System.out.println("Failed to append records. \n" + e.toString());
     }
   }
 
@@ -111,41 +100,17 @@ public class WriteCommittedStream {
     try (JsonStreamWriter writer =
         JsonStreamWriter.newBuilder(parent.toString(), schema).createDefaultStream().build()) {
 
-      ExponentialBackOff backoff = new ExponentialBackOff();
-
       for (int i = 0; i < 10; i++) {
         JSONObject record = new JSONObject();
         record.put("col1", String.format("record %03d", i));
         JSONArray jsonArr = new JSONArray();
         jsonArr.put(record);
 
-	backoff.reset();
-	Boolean retry = true;
-        while (retry) {
-	  try {
-
-            ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
-            AppendRowsResponse response = future.get();
-	    retry = false;
-
-	  } catch (ExecutionException ex) {
-	    // If the error is retryable, retry the operation with exponential backoff.
-	    // Don't retry past the maximum retry interval.
-	    long backOffMillis = backoff.nextBackOffMillis();
-            if (isRetryable(ex) && backOffMillis != BackOff.STOP) {
-	      Thread.sleep(backOffMillis);
-	    }
-	    else {
-              throw ex;
-	    }
-	  }
-	}
+        ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
+        AppendRowsResponse response = future.get();
       }
-
-      System.out.println("Appended records successfully.");
-
     } catch (Exception e) {
-      System.out.println("Failed to append records.\n" + e.toString());
+      System.out.println(e);
     }
   }
 }
