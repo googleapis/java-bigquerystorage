@@ -332,7 +332,7 @@ public class ITBigQueryWriteManualClientTest {
       JSONArray jsonArr1 = new JSONArray(new JSONObject[] {row1});
 
       ApiFuture<AppendRowsResponse> response1 =
-          jsonStreamWriter.append(jsonArr1, -1, /* allowUnknownFields */ false);
+          jsonStreamWriter.append(jsonArr1, -1);
 
       assertEquals(0, response1.get().getAppendResult().getOffset().getValue());
 
@@ -351,10 +351,10 @@ public class ITBigQueryWriteManualClientTest {
 
       LOG.info("Sending two more messages");
       ApiFuture<AppendRowsResponse> response2 =
-          jsonStreamWriter.append(jsonArr2, -1, /* allowUnknownFields */ false);
+          jsonStreamWriter.append(jsonArr2, -1);
       LOG.info("Sending one more message");
       ApiFuture<AppendRowsResponse> response3 =
-          jsonStreamWriter.append(jsonArr3, -1, /* allowUnknownFields */ false);
+          jsonStreamWriter.append(jsonArr3, -1);
       assertEquals(1, response2.get().getAppendResult().getOffset().getValue());
       assertEquals(3, response3.get().getAppendResult().getOffset().getValue());
 
