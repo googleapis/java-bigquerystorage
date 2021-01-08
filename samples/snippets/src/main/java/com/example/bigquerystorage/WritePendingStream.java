@@ -104,4 +104,4 @@ public class WritePendingStream {
     }
   }
 }
-// [START bigquerystorage_jsonstreamwriter_pending]
+// [END bigquerystorage_jsonstreamwriter_pending]
