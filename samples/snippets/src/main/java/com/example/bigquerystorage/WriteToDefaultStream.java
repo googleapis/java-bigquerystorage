@@ -56,7 +56,6 @@ public class WriteToDefaultStream {
     // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1beta2/JstreamWriter.html
     try (JsonStreamWriter writer =
         JsonStreamWriter.newBuilder(parentTable.toString(), schema).createDefaultStream().build()) {
-
       // Append 10 JSON objects to the stream.
       for (int i = 0; i < 10; i++) {
 
