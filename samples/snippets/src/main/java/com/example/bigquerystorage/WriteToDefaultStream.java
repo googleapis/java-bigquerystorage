@@ -45,7 +45,6 @@ public class WriteToDefaultStream {
 
   public static void writeToDefaultStream(String projectId, String datasetName, String tableName)
       throws DescriptorValidationException, InterruptedException, IOException {
-
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
     Table table = bigquery.getTable(datasetName, tableName);
     TableName parentTable = TableName.of(projectId, datasetName, tableName);
