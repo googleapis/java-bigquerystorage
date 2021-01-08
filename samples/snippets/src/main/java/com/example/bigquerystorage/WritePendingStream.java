@@ -37,7 +37,6 @@ public class WritePendingStream {
 
   public static void runWritePendingStream()
       throws DescriptorValidationException, InterruptedException, IOException {
-
     // TODO(developer): Replace these variables before running the sample.
     String projectId = "MY_PROJECT_ID";
     String datasetName = "MY_DATASET_NAME";
