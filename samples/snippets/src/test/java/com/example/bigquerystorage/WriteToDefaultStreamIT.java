@@ -16,6 +16,7 @@
 
 package com.example.bigquerystorage;
 
+import static com.google.common.truth.Truth.assertThat;
 import static junit.framework.TestCase.assertNotNull;
 
 import java.io.ByteArrayOutputStream;
@@ -30,7 +31,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class WriteAPISampleIT {
+public class WriteToDefaultStreamIT {
 
   private static final String GOOGLE_CLOUD_PROJECT = System.getenv("GOOGLE_CLOUD_PROJECT");
   private static final String BIGQUERY_DATASET_NAME = System.getenv("BIGQUERY_DATASET_NAME");
@@ -70,20 +71,9 @@ public class WriteAPISampleIT {
   }
 
   @Test
-  public void testWriteCommittedStream() throws Exception {
-    WriteCommittedStream.writeCommittedStream(
-        GOOGLE_CLOUD_PROJECT, BIGQUERY_DATASET_NAME, BIGQUERY_TABLE_NAME);
-  }
-
-  @Test
   public void testWriteToDefaultStream() throws Exception {
-    WriteCommittedStream.writeToDefaultStream(
+    WriteToDefaultStream.writeToDefaultStream(
         GOOGLE_CLOUD_PROJECT, BIGQUERY_DATASET_NAME, BIGQUERY_TABLE_NAME);
-  }
-
-  @Test
-  public void testWritePendingStream() throws Exception {
-    WritePendingStream.writePendingStream(
-        GOOGLE_CLOUD_PROJECT, BIGQUERY_DATASET_NAME, BIGQUERY_TABLE_NAME);
+    assertThat(bout.toString()).contains("Appended records successfully.");
   }
 }
