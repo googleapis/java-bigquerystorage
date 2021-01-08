@@ -49,7 +49,6 @@ public class WritePendingStream {
       throws DescriptorValidationException, InterruptedException, IOException {
 
     try (BigQueryWriteClient client = BigQueryWriteClient.create()) {
-
       // Initialize a write stream for the specified table.
       // For more information on WriteStream.Type, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1beta2/WriteStream.Type.html
