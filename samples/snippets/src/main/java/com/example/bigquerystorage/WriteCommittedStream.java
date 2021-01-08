@@ -64,7 +64,6 @@ public class WriteCommittedStream {
       try (JsonStreamWriter writer =
           JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema(), client)
               .build()) {
-
         // Append 10 JSON objects to the stream.
         for (int i = 0; i < 10; i++) {
           // Create a JSON object that is compatible with the table schema.
