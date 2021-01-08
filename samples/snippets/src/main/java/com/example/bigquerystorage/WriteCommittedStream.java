@@ -67,7 +67,6 @@ public class WriteCommittedStream {
 
         // Append 10 JSON objects to the stream.
         for (int i = 0; i < 10; i++) {
-
           // Create a JSON object that is compatible with the table schema.
           JSONObject record = new JSONObject();
           record.put("col1", String.format("record %03d", i));
