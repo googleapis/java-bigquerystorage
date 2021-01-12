@@ -19,10 +19,20 @@ package com.example.bigquerystorage;
 import static com.google.common.truth.Truth.assertThat;
 import static junit.framework.TestCase.assertNotNull;
 
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.BigQuery.DatasetDeleteOption;
+import com.google.cloud.bigquery.BigQueryOptions;
+import com.google.cloud.bigquery.DatasetId;
+import com.google.cloud.bigquery.DatasetInfo;
+import com.google.cloud.bigquery.Field;
+import com.google.cloud.bigquery.Schema;
+import com.google.cloud.bigquery.StandardSQLTypeName;
+import com.google.cloud.bigquery.StandardTableDefinition;
+import com.google.cloud.bigquery.TableId;
+import com.google.cloud.bigquery.TableInfo;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -34,13 +44,12 @@ import org.junit.runners.JUnit4;
 public class WritePendingStreamIT {
 
   private static final String GOOGLE_CLOUD_PROJECT = System.getenv("GOOGLE_CLOUD_PROJECT");
-  private static final String BIGQUERY_DATASET_NAME = System.getenv("BIGQUERY_DATASET_NAME");
-  private static final String BIGQUERY_TABLE_NAME = System.getenv("BIGQUERY_TABLE_NAME");
 
-  private final Logger log = Logger.getLogger(this.getClass().getName());
   private ByteArrayOutputStream bout;
   private PrintStream out;
-  private PrintStream originalPrintStream;
+  private BigQuery bigquery;
+  private String datasetName;
+  private String tableName;
 
   private static void requireEnvVar(String varName) {
     assertNotNull(
@@ -51,29 +60,37 @@ public class WritePendingStreamIT {
   @BeforeClass
   public static void checkRequirements() {
     requireEnvVar("GOOGLE_CLOUD_PROJECT");
-    requireEnvVar("BIGQUERY_DATASET_NAME");
-    requireEnvVar("BIGQUERY_TABLE_NAME");
   }
 
   @Before
   public void setUp() {
     bout = new ByteArrayOutputStream();
     out = new PrintStream(bout);
-    originalPrintStream = System.out;
     System.setOut(out);
+
+    bigquery = BigQueryOptions.getDefaultInstance().getService();
+
+    // Create a new dataset and table for each test.
+    datasetName = "WRITE_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
+    tableName = "PENDING_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
+    Schema schema = Schema.of(Field.of("col1", StandardSQLTypeName.STRING));
+    bigquery.create(DatasetInfo.newBuilder(datasetName).build());
+    TableInfo tableInfo =
+        TableInfo.newBuilder(TableId.of(datasetName, tableName), StandardTableDefinition.of(schema))
+            .build();
+    bigquery.create(tableInfo);
   }
 
   @After
   public void tearDown() {
-    System.out.flush();
-    System.setOut(originalPrintStream);
-    log.log(Level.INFO, "\n" + bout.toString());
+    bigquery.delete(
+        DatasetId.of(GOOGLE_CLOUD_PROJECT, datasetName), DatasetDeleteOption.deleteContents());
+    System.setOut(null);
   }
 
   @Test
   public void testWritePendingStream() throws Exception {
-    WritePendingStream.writePendingStream(
-        GOOGLE_CLOUD_PROJECT, BIGQUERY_DATASET_NAME, BIGQUERY_TABLE_NAME);
+    WritePendingStream.writePendingStream(GOOGLE_CLOUD_PROJECT, datasetName, tableName);
     assertThat(bout.toString()).contains("Appended and committed records successfully.");
   }
 }
