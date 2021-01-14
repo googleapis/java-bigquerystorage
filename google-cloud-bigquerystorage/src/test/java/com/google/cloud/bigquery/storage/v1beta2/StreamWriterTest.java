@@ -523,8 +523,7 @@ public class StreamWriterTest {
                         StreamWriter.Builder.DEFAULT_FLOW_CONTROL_SETTINGS
                             .toBuilder()
                             .setMaxOutstandingElementCount(1L)
-                            .setLimitExceededBehavior(
-                                FlowController.LimitExceededBehavior.Block)
+                            .setLimitExceededBehavior(FlowController.LimitExceededBehavior.Block)
                             .build())
                     .build())
             .build();
