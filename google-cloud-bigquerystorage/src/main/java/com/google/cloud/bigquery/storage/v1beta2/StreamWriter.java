@@ -946,7 +946,7 @@ public class StreamWriter implements AutoCloseable {
             }
           }
         } catch (IOException | InterruptedException e) {
-          LOG.info("Got exception while retrying.");
+          LOG.info("Got exception while retrying: " + e.toString());
           inflightBatch.onFailure(e);
           abortInflightRequests(e);
           synchronized (streamWriter.currentRetries) {
