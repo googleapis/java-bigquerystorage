@@ -187,7 +187,14 @@ public class StreamWriter implements AutoCloseable {
       this.onSchemaUpdateRunnable.setStreamWriter(this);
     }
 
-    refreshAppend();
+    bidiStreamingCallable = stub.appendRowsCallable();
+    clientStream = bidiStreamingCallable.splitCall(responseObserver);
+    try {
+      while (!clientStream.isSendReady()) {
+        Thread.sleep(10);
+      }
+    } catch (InterruptedException e) {
+    }
   }
 
   /** Stream name we are writing to. */
@@ -296,9 +303,9 @@ public class StreamWriter implements AutoCloseable {
   /**
    * Re-establishes a stream connection.
    *
-   * @throws IOException
+   * @throws InterruptedException
    */
-  public void refreshAppend() throws IOException, InterruptedException {
+  public void refreshAppend() throws InterruptedException {
     appendAndRefreshAppendLock.lock();
     if (shutdown.get()) {
       LOG.warning("Cannot refresh on a already shutdown writer.");
@@ -313,11 +320,8 @@ public class StreamWriter implements AutoCloseable {
     messagesBatch.resetAttachSchema();
     bidiStreamingCallable = stub.appendRowsCallable();
     clientStream = bidiStreamingCallable.splitCall(responseObserver);
-    try {
-      while (!clientStream.isSendReady()) {
-        Thread.sleep(10);
-      }
-    } catch (InterruptedException expected) {
+    while (!clientStream.isSendReady()) {
+      Thread.sleep(10);
     }
     Thread.sleep(this.retrySettings.getInitialRetryDelay().toMillis());
     // Can only unlock here since need to sleep the full 7 seconds before stream can allow appends.
@@ -945,10 +949,10 @@ public class StreamWriter implements AutoCloseable {
               streamWriter.currentRetries = 0;
             }
           }
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
           LOG.info("Got exception while retrying: " + e.toString());
-          inflightBatch.onFailure(e);
-          abortInflightRequests(e);
+          inflightBatch.onFailure(new StatusRuntimeException(Status.ABORTED));
+          abortInflightRequests(new StatusRuntimeException(Status.ABORTED));
           synchronized (streamWriter.currentRetries) {
             streamWriter.currentRetries = 0;
           }

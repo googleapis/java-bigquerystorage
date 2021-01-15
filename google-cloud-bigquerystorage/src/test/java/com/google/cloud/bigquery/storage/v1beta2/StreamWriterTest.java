@@ -528,13 +528,12 @@ public class StreamWriterTest {
                     .build())
             .build();
 
-    StatusRuntimeException transientError = new StatusRuntimeException(Status.UNAVAILABLE);
     testBigQueryWrite.addResponse(
         AppendRowsResponse.newBuilder()
             .setAppendResult(
                 AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
             .build());
-    testBigQueryWrite.addException(transientError);
+    testBigQueryWrite.addException(new StatusRuntimeException(Status.UNAVAILABLE));
     testBigQueryWrite.addResponse(
         AppendRowsResponse.newBuilder()
             .setAppendResult(
