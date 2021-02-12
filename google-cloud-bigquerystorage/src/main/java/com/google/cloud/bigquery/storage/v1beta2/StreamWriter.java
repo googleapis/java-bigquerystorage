@@ -482,7 +482,7 @@ public class StreamWriter implements AutoCloseable {
         requestBuilder.setWriteStream(streamName);
         if (!inflightRequests.get(0).message.getTraceId().isEmpty()) {
           requestBuilder.setTraceId(inflightRequests.get(0).message.getTraceId());
-        } else if (streamWriter.traceId != null){
+        } else if (streamWriter.traceId != null) {
           requestBuilder.setTraceId(streamWriter.traceId);
         }
       }
