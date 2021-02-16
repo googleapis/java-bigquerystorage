@@ -1037,6 +1037,7 @@ public class StreamWriterTest {
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
     Thread.sleep(5000L);
+    // Move the needle for responses to be sent.
     fakeExecutor.advanceTime(Duration.ofSeconds(20));
     // Shutdown writer immediately and there will be some error happened when flushing the queue.
     writer.shutdown();
@@ -1045,7 +1046,7 @@ public class StreamWriterTest {
       appendFuture2.get();
       fail("Should fail with exception");
     } catch (java.util.concurrent.ExecutionException e) {
-      LOG.info("got: " + e.toString());
+      assertEquals("Request aborted due to previous failures", e.getCause().getMessage());
     }
   }
 }
