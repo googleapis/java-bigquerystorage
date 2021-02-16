@@ -73,6 +73,15 @@ class Waiter {
     notifyAll();
   }
 
+  public synchronized void clearAll() {
+    lock.lock();
+    pendingCount = 0;
+    pendingSize = 0;
+    notifyNextAcquires();
+    lock.unlock();
+    notifyAll();
+  }
+
   public void acquire(long messageSize) throws FlowController.FlowControlException {
     lock.lock();
     try {

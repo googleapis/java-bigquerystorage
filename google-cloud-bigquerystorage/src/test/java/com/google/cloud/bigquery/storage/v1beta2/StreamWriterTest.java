@@ -539,11 +539,73 @@ public class StreamWriterTest {
             .setAppendResult(
                 AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(1)).build())
             .build());
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(2)).build())
+            .build());
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(3)).build())
+            .build());
     ApiFuture<AppendRowsResponse> future1 = sendTestMessage(writer, new String[] {"m1"});
-    ApiFuture<AppendRowsResponse> future2 = sendTestMessage(writer, new String[] {"m1"});
+    ApiFuture<AppendRowsResponse> future2 = sendTestMessage(writer, new String[] {"m2"});
+    ApiFuture<AppendRowsResponse> future3 = sendTestMessage(writer, new String[] {"m3"});
+    ApiFuture<AppendRowsResponse> future4 = sendTestMessage(writer, new String[] {"m4"});
     assertEquals(0L, future1.get().getAppendResult().getOffset().getValue());
     assertEquals(1L, future2.get().getAppendResult().getOffset().getValue());
-    writer.close();
+    assertEquals(2L, future3.get().getAppendResult().getOffset().getValue());
+    assertEquals(3L, future4.get().getAppendResult().getOffset().getValue());
+  }
+
+  @Test
+  public void testStreamReconnectionTransientMoreInflight() throws Exception {
+    StreamWriter writer =
+        getTestStreamWriterBuilder()
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setDelayThreshold(Duration.ofSeconds(100000))
+                    .setElementCountThreshold(1L)
+                    .setFlowControlSettings(
+                        StreamWriter.Builder.DEFAULT_FLOW_CONTROL_SETTINGS
+                            .toBuilder()
+                            .setMaxOutstandingElementCount(3L)
+                            .setLimitExceededBehavior(FlowController.LimitExceededBehavior.Block)
+                            .build())
+                    .build())
+            .build();
+
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
+            .build());
+    testBigQueryWrite.addException(new StatusRuntimeException(Status.UNAVAILABLE));
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(1)).build())
+            .build());
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(2)).build())
+            .build());
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(3)).build())
+            .build());
+    ApiFuture<AppendRowsResponse> future1 = sendTestMessage(writer, new String[] {"m1"});
+    ApiFuture<AppendRowsResponse> future2 = sendTestMessage(writer, new String[] {"m2"});
+    ApiFuture<AppendRowsResponse> future3 = sendTestMessage(writer, new String[] {"m3"});
+    ApiFuture<AppendRowsResponse> future4 = sendTestMessage(writer, new String[] {"m4"});
+    assertEquals(0L, future1.get().getAppendResult().getOffset().getValue());
+    assertEquals(1L, future2.get().getAppendResult().getOffset().getValue());
+    assertEquals(2L, future3.get().getAppendResult().getOffset().getValue());
+    assertEquals(3L, future4.get().getAppendResult().getOffset().getValue());
   }
 
   @Test
