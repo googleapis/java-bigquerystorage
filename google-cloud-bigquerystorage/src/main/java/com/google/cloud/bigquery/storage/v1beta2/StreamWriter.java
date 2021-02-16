@@ -252,15 +252,15 @@ public class StreamWriter implements AutoCloseable {
     final AppendRequestAndFutureResponse outstandingAppend =
         new AppendRequestAndFutureResponse(message);
     List<InflightBatch> batchesToSend;
-      batchesToSend = messagesBatch.add(outstandingAppend);
-      // Setup the next duration based delivery alarm if there are messages batched.
-      setupAlarm();
-      if (!batchesToSend.isEmpty()) {
-        for (final InflightBatch batch : batchesToSend) {
-          LOG.fine("Scheduling a batch for immediate sending.");
-          writeBatch(batch);
-        }
+    batchesToSend = messagesBatch.add(outstandingAppend);
+    // Setup the next duration based delivery alarm if there are messages batched.
+    setupAlarm();
+    if (!batchesToSend.isEmpty()) {
+      for (final InflightBatch batch : batchesToSend) {
+        LOG.fine("Scheduling a batch for immediate sending.");
+        writeBatch(batch);
       }
+    }
 
     return outstandingAppend.appendResult;
   }
@@ -273,10 +273,10 @@ public class StreamWriter implements AutoCloseable {
    * @throws Exception
    */
   public void flushAll(long timeoutMillis) throws Exception {
-      writeAllOutstanding();
-      synchronized (messagesWaiter) {
-        messagesWaiter.waitComplete(timeoutMillis);
-      }
+    writeAllOutstanding();
+    synchronized (messagesWaiter) {
+      messagesWaiter.waitComplete(timeoutMillis);
+    }
     exceptionLock.lock();
     try {
       if (streamException != null) {
@@ -350,10 +350,10 @@ public class StreamWriter implements AutoCloseable {
    */
   public void writeAllOutstanding() {
     InflightBatch unorderedOutstandingBatch = null;
-      if (!messagesBatch.isEmpty()) {
-        writeBatch(messagesBatch.popBatch());
-      }
-      messagesBatch.reset();
+    if (!messagesBatch.isEmpty()) {
+      writeBatch(messagesBatch.popBatch());
+    }
+    messagesBatch.reset();
   }
 
   private void writeBatch(final InflightBatch inflightBatch) {
@@ -853,15 +853,21 @@ public class StreamWriter implements AutoCloseable {
     }
 
     private void abortInflightRequests(Throwable t) {
+      boolean firstError = true;
       synchronized (this.inflightBatches) {
         while (!this.inflightBatches.isEmpty()) {
           InflightBatch inflightBatch = this.inflightBatches.poll();
-          inflightBatch.onFailure(
-              new AbortedException(
-                  "Request aborted due to previous failures",
-                  t,
-                  GrpcStatusCode.of(Status.Code.ABORTED),
-                  true));
+          if (firstError) {
+            inflightBatch.onFailure(t);
+            firstError = false;
+          } else {
+            inflightBatch.onFailure(
+                new AbortedException(
+                    "Request aborted due to previous failures",
+                    t,
+                    GrpcStatusCode.of(Status.Code.ABORTED),
+                    true));
+          }
           streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
         }
       }
