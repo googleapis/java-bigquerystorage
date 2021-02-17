@@ -511,42 +511,6 @@ public class StreamWriterTest {
   }
 
   @Test
-  public void testStreamReconnectionTransient() throws Exception {
-    StreamWriter writer =
-        getTestStreamWriterBuilder()
-            .setBatchingSettings(
-                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                    .toBuilder()
-                    .setDelayThreshold(Duration.ofSeconds(100000))
-                    .setElementCountThreshold(1L)
-                    .setFlowControlSettings(
-                        StreamWriter.Builder.DEFAULT_FLOW_CONTROL_SETTINGS
-                            .toBuilder()
-                            .setMaxOutstandingElementCount(1L)
-                            .setLimitExceededBehavior(FlowController.LimitExceededBehavior.Block)
-                            .build())
-                    .build())
-            .build();
-
-    testBigQueryWrite.addResponse(
-        AppendRowsResponse.newBuilder()
-            .setAppendResult(
-                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
-            .build());
-    testBigQueryWrite.addException(new StatusRuntimeException(Status.UNAVAILABLE));
-    testBigQueryWrite.addResponse(
-        AppendRowsResponse.newBuilder()
-            .setAppendResult(
-                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(1)).build())
-            .build());
-    ApiFuture<AppendRowsResponse> future1 = sendTestMessage(writer, new String[] {"m1"});
-    ApiFuture<AppendRowsResponse> future2 = sendTestMessage(writer, new String[] {"m1"});
-    assertEquals(0L, future1.get().getAppendResult().getOffset().getValue());
-    assertEquals(1L, future2.get().getAppendResult().getOffset().getValue());
-    writer.close();
-  }
-
-  @Test
   public void testStreamReconnectionPermanant() throws Exception {
     StreamWriter writer =
         getTestStreamWriterBuilder()
@@ -565,36 +529,6 @@ public class StreamWriterTest {
       Assert.fail("This should fail.");
     } catch (ExecutionException e) {
       assertEquals(permanentError.toString(), e.getCause().getCause().toString());
-    }
-    writer.close();
-  }
-
-  @Test
-  public void testStreamReconnectionExceedRetry() throws Exception {
-    StreamWriter writer =
-        getTestStreamWriterBuilder()
-            .setBatchingSettings(
-                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                    .toBuilder()
-                    .setDelayThreshold(Duration.ofSeconds(100000))
-                    .setElementCountThreshold(1L)
-                    .build())
-            .setRetrySettings(
-                RetrySettings.newBuilder()
-                    .setMaxRetryDelay(Duration.ofMillis(100))
-                    .setMaxAttempts(1)
-                    .build())
-            .build();
-    assertEquals(1, writer.getRetrySettings().getMaxAttempts());
-    StatusRuntimeException transientError = new StatusRuntimeException(Status.UNAVAILABLE);
-    testBigQueryWrite.addException(transientError);
-    testBigQueryWrite.addException(transientError);
-    ApiFuture<AppendRowsResponse> future3 = sendTestMessage(writer, new String[] {"toomanyretry"});
-    try {
-      future3.get();
-      Assert.fail("This should fail.");
-    } catch (ExecutionException e) {
-      assertEquals(transientError.toString(), e.getCause().getCause().toString());
     }
     writer.close();
   }

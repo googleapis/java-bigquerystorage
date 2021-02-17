@@ -943,44 +943,8 @@ public class StreamWriter implements AutoCloseable {
         }
         inflightBatch = this.inflightBatches.poll();
       }
-      streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
-      if (isRecoverableError(t)) {
-        try {
-          if (streamWriter.currentRetries < streamWriter.getRetrySettings().getMaxAttempts()
-              && !streamWriter.shutdown.get()) {
-            synchronized (streamWriter.currentRetries) {
-              streamWriter.currentRetries++;
-            }
-            LOG.info(
-                "Try to reestablish connection due to transient error: "
-                    + t.toString()
-                    + " retry times: "
-                    + streamWriter.currentRetries);
-            streamWriter.refreshAppend();
-            LOG.info("Resending requests on after connection established");
-            streamWriter.writeBatch(inflightBatch);
-          } else {
-            inflightBatch.onFailure(t);
-            abortInflightRequests(t);
-            synchronized (streamWriter.currentRetries) {
-              streamWriter.currentRetries = 0;
-            }
-          }
-        } catch (InterruptedException e) {
-          LOG.info("Got exception while retrying: " + e.toString());
-          inflightBatch.onFailure(new StatusRuntimeException(Status.ABORTED));
-          abortInflightRequests(new StatusRuntimeException(Status.ABORTED));
-          synchronized (streamWriter.currentRetries) {
-            streamWriter.currentRetries = 0;
-          }
-        }
-      } else {
-        inflightBatch.onFailure(t);
-        abortInflightRequests(t);
-        synchronized (streamWriter.currentRetries) {
-          streamWriter.currentRetries = 0;
-        }
-      }
+      inflightBatch.onFailure(t);
+      abortInflightRequests(t);
     }
   };
 
