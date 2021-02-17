@@ -1049,4 +1049,28 @@ public class StreamWriterTest {
       assertEquals("Request aborted due to previous failures", e.getCause().getMessage());
     }
   }
+
+  @Test
+  public void testAppendAfterShutdown() throws Exception {
+    StreamWriter writer =
+        getTestStreamWriterBuilder()
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(1L)
+                    .build())
+            .build();
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(1)).build())
+            .build());
+    writer.shutdown();
+    try {
+      ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+      fail("Should fail with exception");
+    } catch (IllegalStateException e) {
+      assertEquals("Cannot append to a shutdown writer", e.getMessage());
+    }
+  }
 }
