@@ -45,7 +45,7 @@ permissionRules:
   permission: admin
 - team: yoshi-java-admins
   permission: admin
-- team: bigquerystorage-swes
+- team: api-bigquerystorage
   permission: admin
 - team: yoshi-java
   permission: push
