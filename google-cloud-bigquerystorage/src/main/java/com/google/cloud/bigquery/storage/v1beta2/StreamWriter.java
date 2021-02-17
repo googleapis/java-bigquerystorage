@@ -830,7 +830,9 @@ public class StreamWriter implements AutoCloseable {
           AppendRowsRequest request = batch.getMergedRequest();
           try {
             this.streamWriter.messagesWaiter.acquire(batch.getByteSize());
-            this.streamWriter.clientStream.send(request);
+            synchronized (this.streamWriter.clientStream) {
+              this.streamWriter.clientStream.send(request);
+            }
           } catch (FlowController.FlowControlException ex) {
             batch.onFailure(ex);
           }
