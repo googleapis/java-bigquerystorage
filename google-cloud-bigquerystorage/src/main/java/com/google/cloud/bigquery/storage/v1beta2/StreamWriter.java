@@ -988,7 +988,7 @@ public class StreamWriter implements AutoCloseable {
     // Get all the messages out in a batch.
     private InflightBatch popBatch() {
       InflightBatch batch;
-      synchronized (messages) {
+      synchronized (this) {
         batch =
             new InflightBatch(
                 messages, batchedBytes, this.streamName, this.attachSchema, this.streamWriter);
@@ -1000,25 +1000,25 @@ public class StreamWriter implements AutoCloseable {
     }
 
     private void resetAttachSchema() {
-      synchronized (messages) {
+      synchronized (this) {
         attachSchema = true;
       }
     }
 
     private boolean isEmpty() {
-      synchronized (messages) {
+      synchronized (this) {
         return messages.isEmpty();
       }
     }
 
     private long getBatchedBytes() {
-      synchronized (messages) {
+      synchronized (this) {
         return batchedBytes;
       }
     }
 
     private int getMessagesCount() {
-      synchronized (messages) {
+      synchronized (this) {
         return messages.size();
       }
     }
@@ -1043,7 +1043,7 @@ public class StreamWriter implements AutoCloseable {
         batchesToSend.add(popBatch());
       }
 
-      synchronized (messages) {
+      synchronized (this) {
         messages.add(outstandingAppend);
         batchedBytes += outstandingAppend.messageSize;
       }
