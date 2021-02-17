@@ -97,7 +97,6 @@ public class StreamWriter implements AutoCloseable {
   private final RetrySettings retrySettings;
   private BigQueryWriteSettings stubSettings;
 
-  private final Lock messagesBatchLock;
   private final Lock appendAndRefreshAppendLock;
   private final MessagesBatch messagesBatch;
 
@@ -157,7 +156,6 @@ public class StreamWriter implements AutoCloseable {
     this.batchingSettings = builder.batchingSettings;
     this.retrySettings = builder.retrySettings;
     this.messagesBatch = new MessagesBatch(batchingSettings, this.streamName, this);
-    messagesBatchLock = new ReentrantLock();
     appendAndRefreshAppendLock = new ReentrantLock();
     activeAlarm = new AtomicBoolean(false);
     this.exceptionLock = new ReentrantLock();
@@ -257,7 +255,6 @@ public class StreamWriter implements AutoCloseable {
     final AppendRequestAndFutureResponse outstandingAppend =
         new AppendRequestAndFutureResponse(message);
     List<InflightBatch> batchesToSend;
-    messagesBatchLock.lock();
     try {
       batchesToSend = messagesBatch.add(outstandingAppend);
       // Setup the next duration based delivery alarm if there are messages batched.
@@ -269,7 +266,6 @@ public class StreamWriter implements AutoCloseable {
         }
       }
     } finally {
-      messagesBatchLock.unlock();
       appendAndRefreshAppendLock.unlock();
     }
 
@@ -344,12 +340,7 @@ public class StreamWriter implements AutoCloseable {
                   public void run() {
                     LOG.fine("Sending messages based on schedule");
                     activeAlarm.getAndSet(false);
-                    messagesBatchLock.lock();
-                    try {
-                      writeBatch(messagesBatch.popBatch());
-                    } finally {
-                      messagesBatchLock.unlock();
-                    }
+                    writeBatch(messagesBatch.popBatch());
                   }
                 },
                 delayThresholdMs,
@@ -370,15 +361,9 @@ public class StreamWriter implements AutoCloseable {
    */
   public void writeAllOutstanding() {
     InflightBatch unorderedOutstandingBatch = null;
-    messagesBatchLock.lock();
-    try {
       if (!messagesBatch.isEmpty()) {
         writeBatch(messagesBatch.popBatch());
       }
-      messagesBatch.reset();
-    } finally {
-      messagesBatchLock.unlock();
-    }
   }
 
   private void writeBatch(final InflightBatch inflightBatch) {
@@ -986,8 +971,8 @@ public class StreamWriter implements AutoCloseable {
 
   // This class controls how many messages are going to be sent out in a batch.
   private static class MessagesBatch {
-    private List<AppendRequestAndFutureResponse> messages;
-    private long batchedBytes;
+    private List<AppendRequestAndFutureResponse> messages = new LinkedList<>();
+    private long batchedBytes = 0;
     private final BatchingSettings batchingSettings;
     private Boolean attachSchema = true;
     private final String streamName;
@@ -998,38 +983,43 @@ public class StreamWriter implements AutoCloseable {
       this.batchingSettings = batchingSettings;
       this.streamName = streamName;
       this.streamWriter = streamWriter;
-      reset();
     }
 
     // Get all the messages out in a batch.
     private InflightBatch popBatch() {
-      InflightBatch batch =
-          new InflightBatch(
-              messages, batchedBytes, this.streamName, this.attachSchema, this.streamWriter);
-      this.attachSchema = false;
-      reset();
+      InflightBatch batch;
+      synchronized (messages) {
+        batch = new InflightBatch(
+            messages, batchedBytes, this.streamName, this.attachSchema, this.streamWriter);
+        this.attachSchema = false;
+        messages = new LinkedList<>();
+        batchedBytes = 0;
+      }
       return batch;
     }
 
-    private void reset() {
-      messages = new LinkedList<>();
-      batchedBytes = 0;
-    }
-
     private void resetAttachSchema() {
-      attachSchema = true;
+      synchronized (messages) {
+        attachSchema = true;
+      }
     }
 
     private boolean isEmpty() {
-      return messages.isEmpty();
+      synchronized (messages) {
+        return messages.isEmpty();
+      }
     }
 
     private long getBatchedBytes() {
-      return batchedBytes;
+      synchronized (messages) {
+        return batchedBytes;
+      }
     }
 
     private int getMessagesCount() {
-      return messages.size();
+      synchronized (messages) {
+        return messages.size();
+      }
     }
 
     private boolean hasBatchingBytes() {
@@ -1052,8 +1042,10 @@ public class StreamWriter implements AutoCloseable {
         batchesToSend.add(popBatch());
       }
 
-      messages.add(outstandingAppend);
-      batchedBytes += outstandingAppend.messageSize;
+      synchronized (messages) {
+        messages.add(outstandingAppend);
+        batchedBytes += outstandingAppend.messageSize;
+      }
 
       // Border case: If the message to send is greater or equals to the max batch size then send it
       // immediately.
