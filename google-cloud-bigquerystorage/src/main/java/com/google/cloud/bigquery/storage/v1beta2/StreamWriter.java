@@ -98,7 +98,6 @@ public class StreamWriter implements AutoCloseable {
   private BigQueryWriteSettings stubSettings;
 
   private final Lock messagesBatchLock;
-  private final Lock appendAndRefreshAppendLock;
   private final MessagesBatch messagesBatch;
 
   // Indicates if a stream has some non recoverable exception happened.
@@ -158,7 +157,6 @@ public class StreamWriter implements AutoCloseable {
     this.retrySettings = builder.retrySettings;
     this.messagesBatch = new MessagesBatch(batchingSettings, this.streamName, this);
     messagesBatchLock = new ReentrantLock();
-    appendAndRefreshAppendLock = new ReentrantLock();
     activeAlarm = new AtomicBoolean(false);
     this.exceptionLock = new ReentrantLock();
     this.streamException = null;
@@ -191,12 +189,14 @@ public class StreamWriter implements AutoCloseable {
     }
 
     bidiStreamingCallable = stub.appendRowsCallable();
-    clientStream = bidiStreamingCallable.splitCall(responseObserver);
-    try {
-      while (!clientStream.isSendReady()) {
-        Thread.sleep(10);
+    synchronized (clientStream) {
+      clientStream = bidiStreamingCallable.splitCall(responseObserver);
+      try {
+        while (!clientStream.isSendReady()) {
+          Thread.sleep(10);
+        }
+      } catch (InterruptedException e) {
       }
-    } catch (InterruptedException e) {
     }
   }
 
@@ -251,7 +251,6 @@ public class StreamWriter implements AutoCloseable {
    * @return the message ID wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
-    appendAndRefreshAppendLock.lock();
     Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
     Preconditions.checkNotNull(message, "Message is null.");
     final AppendRequestAndFutureResponse outstandingAppend =
@@ -270,7 +269,6 @@ public class StreamWriter implements AutoCloseable {
       }
     } finally {
       messagesBatchLock.unlock();
-      appendAndRefreshAppendLock.unlock();
     }
 
     return outstandingAppend.appendResult;
@@ -284,14 +282,9 @@ public class StreamWriter implements AutoCloseable {
    * @throws Exception
    */
   public void flushAll(long timeoutMillis) throws Exception {
-    appendAndRefreshAppendLock.lock();
-    try {
-      writeAllOutstanding();
-      synchronized (messagesWaiter) {
-        messagesWaiter.waitComplete(timeoutMillis);
-      }
-    } finally {
-      appendAndRefreshAppendLock.unlock();
+    writeAllOutstanding();
+    synchronized (messagesWaiter) {
+      messagesWaiter.waitComplete(timeoutMillis);
     }
     exceptionLock.lock();
     try {
@@ -309,26 +302,24 @@ public class StreamWriter implements AutoCloseable {
    * @throws InterruptedException
    */
   public void refreshAppend() throws InterruptedException {
-    appendAndRefreshAppendLock.lock();
     if (shutdown.get()) {
       LOG.warning("Cannot refresh on a already shutdown writer.");
-      appendAndRefreshAppendLock.unlock();
       return;
     }
     // There could be a moment, stub is not yet initialized.
-    if (clientStream != null) {
-      LOG.info("Closing the stream " + streamName);
-      clientStream.closeSend();
-    }
-    messagesBatch.resetAttachSchema();
-    bidiStreamingCallable = stub.appendRowsCallable();
-    clientStream = bidiStreamingCallable.splitCall(responseObserver);
-    while (!clientStream.isSendReady()) {
-      Thread.sleep(10);
+    synchronized (clientStream) {
+      if (clientStream != null) {
+        LOG.info("Closing the stream " + streamName);
+        clientStream.closeSend();
+      }
+      messagesBatch.resetAttachSchema();
+      bidiStreamingCallable = stub.appendRowsCallable();
+      clientStream = bidiStreamingCallable.splitCall(responseObserver);
+      while (!clientStream.isSendReady()) {
+        Thread.sleep(10);
+      }
     }
     Thread.sleep(this.retrySettings.getInitialRetryDelay().toMillis());
-    // Can only unlock here since need to sleep the full 7 seconds before stream can allow appends.
-    appendAndRefreshAppendLock.unlock();
     LOG.info("Write Stream " + streamName + " connection established");
   }
 
@@ -387,7 +378,9 @@ public class StreamWriter implements AutoCloseable {
       try {
         messagesWaiter.acquire(inflightBatch.getByteSize());
         responseObserver.addInflightBatch(inflightBatch);
-        clientStream.send(request);
+        synchronized (clientStream) {
+          clientStream.send(request);
+        }
       } catch (FlowController.FlowControlException ex) {
         inflightBatch.onFailure(ex);
       }
@@ -574,8 +567,10 @@ public class StreamWriter implements AutoCloseable {
     } catch (InterruptedException e) {
       LOG.warning("Failed to wait for messages to return " + e.toString());
     }
-    if (clientStream.isSendReady()) {
-      clientStream.closeSend();
+    synchronized (clientStream) {
+      if (clientStream.isSendReady()) {
+        clientStream.closeSend();
+      }
     }
     backgroundResources.shutdown();
   }
