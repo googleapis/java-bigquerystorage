@@ -866,14 +866,21 @@ public class StreamWriter implements AutoCloseable {
 
     private void abortInflightRequests(Throwable t) {
       synchronized (this.inflightBatches) {
+        boolean first_request = true;
         while (!this.inflightBatches.isEmpty()) {
+
           InflightBatch inflightBatch = this.inflightBatches.poll();
-          inflightBatch.onFailure(
-              new AbortedException(
-                  "Request aborted due to previous failures",
-                  t,
-                  GrpcStatusCode.of(Status.Code.ABORTED),
-                  true));
+          if (first_request) {
+            inflightBatch.onFailure(
+                t);
+          } else {
+            inflightBatch.onFailure(
+                new AbortedException(
+                    "Request aborted due to previous failures",
+                    t,
+                    GrpcStatusCode.of(Status.Code.ABORTED),
+                    true));
+          }
           streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
         }
       }
@@ -915,7 +922,6 @@ public class StreamWriter implements AutoCloseable {
                         "The append result offset %s does not match " + "the expected offset %s.",
                         response.getAppendResult().getOffset().getValue(),
                         inflightBatch.getExpectedOffset()));
-            inflightBatch.onFailure(exception);
             abortInflightRequests(exception);
           } else {
             inflightBatch.onSuccess(response);
@@ -963,7 +969,6 @@ public class StreamWriter implements AutoCloseable {
             LOG.info("Resending requests on after connection established");
             streamWriter.writeBatch(inflightBatch);
           } else {
-            inflightBatch.onFailure(t);
             abortInflightRequests(t);
             synchronized (streamWriter.currentRetries) {
               streamWriter.currentRetries = 0;
@@ -971,14 +976,12 @@ public class StreamWriter implements AutoCloseable {
           }
         } catch (InterruptedException e) {
           LOG.info("Got exception while retrying: " + e.toString());
-          inflightBatch.onFailure(new StatusRuntimeException(Status.ABORTED));
           abortInflightRequests(new StatusRuntimeException(Status.ABORTED));
           synchronized (streamWriter.currentRetries) {
             streamWriter.currentRetries = 0;
           }
         }
       } else {
-        inflightBatch.onFailure(t);
         abortInflightRequests(t);
         synchronized (streamWriter.currentRetries) {
           streamWriter.currentRetries = 0;
