@@ -73,6 +73,8 @@ class Waiter {
     notifyAll();
   }
 
+  // This clearAll is used only for when we are reestablish connections. It will not notify the current waiters, so
+  // we can prevent appends that are waiting on the queue to occupy inflight quota.
   public synchronized void clearAll() {
     lock.lock();
     pendingCount = 0;
