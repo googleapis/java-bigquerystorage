@@ -361,9 +361,9 @@ public class StreamWriter implements AutoCloseable {
    */
   public void writeAllOutstanding() {
     InflightBatch unorderedOutstandingBatch = null;
-      if (!messagesBatch.isEmpty()) {
-        writeBatch(messagesBatch.popBatch());
-      }
+    if (!messagesBatch.isEmpty()) {
+      writeBatch(messagesBatch.popBatch());
+    }
   }
 
   private void writeBatch(final InflightBatch inflightBatch) {
@@ -989,8 +989,9 @@ public class StreamWriter implements AutoCloseable {
     private InflightBatch popBatch() {
       InflightBatch batch;
       synchronized (messages) {
-        batch = new InflightBatch(
-            messages, batchedBytes, this.streamName, this.attachSchema, this.streamWriter);
+        batch =
+            new InflightBatch(
+                messages, batchedBytes, this.streamName, this.attachSchema, this.streamWriter);
         this.attachSchema = false;
         messages = new LinkedList<>();
         batchedBytes = 0;
