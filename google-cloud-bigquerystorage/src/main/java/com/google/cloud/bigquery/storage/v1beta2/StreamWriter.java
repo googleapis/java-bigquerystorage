@@ -353,7 +353,6 @@ public class StreamWriter implements AutoCloseable {
     if (!messagesBatch.isEmpty()) {
       writeBatch(messagesBatch.popBatch());
     }
-    messagesBatch.reset();
   }
 
   private void writeBatch(final InflightBatch inflightBatch) {
