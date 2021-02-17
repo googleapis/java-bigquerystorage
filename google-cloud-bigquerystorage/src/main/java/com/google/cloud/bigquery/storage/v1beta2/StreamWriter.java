@@ -328,7 +328,6 @@ public class StreamWriter implements AutoCloseable {
       }
     }
     Thread.sleep(this.retrySettings.getInitialRetryDelay().toMillis());
-    LOG.info("Sending request");
     responseObserver.resendInflightBatch();
     LOG.info("Write Stream " + streamName + " connection established");
   }
