@@ -56,6 +56,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.threeten.bp.Duration;
+import sun.plugin.dom.exception.InvalidStateException;
 
 /**
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
@@ -249,6 +250,9 @@ public class StreamWriter implements AutoCloseable {
    * @return the message ID wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
+    if (shutdown.get()) {
+      throw new InvalidStateException("Cannot append to a shutdown writer");
+    }
     appendAndRefreshAppendLock.lock();
     Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
     Preconditions.checkNotNull(message, "Message is null.");
