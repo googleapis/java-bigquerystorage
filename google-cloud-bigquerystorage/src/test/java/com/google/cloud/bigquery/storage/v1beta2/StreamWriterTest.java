@@ -1046,11 +1046,7 @@ public class StreamWriterTest {
       appendFuture2.get();
       fail("Should fail with exception");
     } catch (java.util.concurrent.ExecutionException e) {
-<<<<<<< HEAD
       assertEquals("io.grpc.StatusRuntimeException: DATA_LOSS", e.getCause().getMessage());
-=======
-      assertEquals("Request aborted due to previous failures", e.getCause().getMessage());
->>>>>>> parent of 85f1240... .
     }
   }
 }

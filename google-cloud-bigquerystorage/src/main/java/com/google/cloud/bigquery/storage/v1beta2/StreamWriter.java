@@ -868,8 +868,7 @@ public class StreamWriter implements AutoCloseable {
 
           InflightBatch inflightBatch = this.inflightBatches.poll();
           if (first_request) {
-            inflightBatch.onFailure(
-                t);
+            inflightBatch.onFailure(t);
           } else {
             inflightBatch.onFailure(
                 new AbortedException(
