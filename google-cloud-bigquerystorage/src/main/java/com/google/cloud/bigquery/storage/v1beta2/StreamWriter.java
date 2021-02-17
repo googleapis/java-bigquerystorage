@@ -189,14 +189,13 @@ public class StreamWriter implements AutoCloseable {
     }
 
     bidiStreamingCallable = stub.appendRowsCallable();
-    synchronized (clientStream) {
+
       clientStream = bidiStreamingCallable.splitCall(responseObserver);
       try {
         while (!clientStream.isSendReady()) {
           Thread.sleep(10);
         }
       } catch (InterruptedException e) {
-      }
     }
   }
 
