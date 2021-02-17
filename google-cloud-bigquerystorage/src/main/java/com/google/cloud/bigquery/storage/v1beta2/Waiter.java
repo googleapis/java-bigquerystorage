@@ -77,13 +77,12 @@ class Waiter {
     lock.lock();
     pendingCount = 0;
     pendingSize = 0;
-    notifyNextAcquires();
     lock.unlock();
-    notifyAll();
   }
 
   public void acquire(long messageSize) throws FlowController.FlowControlException {
     lock.lock();
+    LOG.info("pendingCount:" + pendingCount);
     try {
       if (pendingCount >= countLimit
           && behavior == FlowController.LimitExceededBehavior.ThrowException) {
