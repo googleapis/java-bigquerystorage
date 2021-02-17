@@ -65,8 +65,7 @@ import org.threeten.bp.Duration;
  * without offset, please use a simpler writer {@code DirectWriter}.
  *
  * <p>A {@link StreamWrier} provides built-in capabilities to: handle batching of messages;
- * controlling memory utilization (through flow control); automatic connection re-establishment and
- * request cleanup (only keeps write schema on first request in the stream).
+ * controlling memory utilization (through flow control); request cleanup (only keeps write schema on first request in the stream).
  *
  * <p>With customizable options that control:
  *
@@ -496,6 +495,7 @@ public class StreamWriter implements AutoCloseable {
         return;
       } else {
         LOG.info("Setting " + t.toString() + " on response");
+        streamWriter.messagesWaiter.release(this.getByteSize());
         this.streamWriter.setException(t);
       }
 
@@ -871,7 +871,6 @@ public class StreamWriter implements AutoCloseable {
                   t,
                   GrpcStatusCode.of(Status.Code.ABORTED),
                   true));
-          streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
         }
       }
     }

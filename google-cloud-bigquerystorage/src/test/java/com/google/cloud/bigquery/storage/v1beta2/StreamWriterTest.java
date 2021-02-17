@@ -32,7 +32,6 @@ import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.LocalChannelProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
-import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.DataLossException;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.common.base.Strings;
@@ -886,43 +885,6 @@ public class StreamWriterTest {
     ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
     assertFalse(appendFuture3.isDone());
     writer.flushAll(100000);
-    assertTrue(appendFuture3.isDone());
-
-    writer.close();
-  }
-
-  @Test
-  public void testFlushAllFailed() throws Exception {
-    StreamWriter writer =
-        getTestStreamWriterBuilder()
-            .setBatchingSettings(
-                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                    .toBuilder()
-                    .setElementCountThreshold(2L)
-                    .setDelayThreshold(Duration.ofSeconds(100000))
-                    .build())
-            .build();
-
-    testBigQueryWrite.addException(Status.DATA_LOSS.asException());
-    testBigQueryWrite.addException(Status.DATA_LOSS.asException());
-    testBigQueryWrite.addException(Status.DATA_LOSS.asException());
-
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
-    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
-
-    assertFalse(appendFuture3.isDone());
-    try {
-      writer.flushAll(100000);
-      fail("Should have thrown an Exception");
-    } catch (Exception expected) {
-      if (expected.getCause() instanceof com.google.api.gax.rpc.DataLossException) {
-        LOG.info("got: " + expected.toString());
-      } else {
-        fail("Unexpected exception:" + expected.toString());
-      }
-    }
-
     assertTrue(appendFuture3.isDone());
 
     writer.close();
