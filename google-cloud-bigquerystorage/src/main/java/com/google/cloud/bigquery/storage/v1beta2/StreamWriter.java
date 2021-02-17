@@ -301,12 +301,12 @@ public class StreamWriter implements AutoCloseable {
    * @throws InterruptedException
    */
   public void refreshAppend() throws InterruptedException {
-    if (shutdown.get()) {
-      LOG.warning("Cannot refresh on a already shutdown writer.");
-      return;
-    }
     // There could be a moment, stub is not yet initialized.
     synchronized (clientStream) {
+      if (shutdown.get()) {
+        LOG.warning("Cannot refresh on a already shutdown writer.");
+        return;
+      }
       LOG.info("Closing the stream " + streamName);
       clientStream.closeSend();
       messagesBatch.resetAttachSchema();
