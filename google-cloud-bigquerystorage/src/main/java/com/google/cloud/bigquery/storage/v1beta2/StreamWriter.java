@@ -190,12 +190,12 @@ public class StreamWriter implements AutoCloseable {
 
     bidiStreamingCallable = stub.appendRowsCallable();
 
-      clientStream = bidiStreamingCallable.splitCall(responseObserver);
-      try {
-        while (!clientStream.isSendReady()) {
-          Thread.sleep(10);
-        }
-      } catch (InterruptedException e) {
+    clientStream = bidiStreamingCallable.splitCall(responseObserver);
+    try {
+      while (!clientStream.isSendReady()) {
+        Thread.sleep(10);
+      }
+    } catch (InterruptedException e) {
     }
   }
 
@@ -307,10 +307,8 @@ public class StreamWriter implements AutoCloseable {
     }
     // There could be a moment, stub is not yet initialized.
     synchronized (clientStream) {
-      if (clientStream != null) {
-        LOG.info("Closing the stream " + streamName);
-        clientStream.closeSend();
-      }
+      LOG.info("Closing the stream " + streamName);
+      clientStream.closeSend();
       messagesBatch.resetAttachSchema();
       bidiStreamingCallable = stub.appendRowsCallable();
       clientStream = bidiStreamingCallable.splitCall(responseObserver);
