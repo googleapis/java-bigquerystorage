@@ -919,11 +919,12 @@ public class StreamWriter implements AutoCloseable {
                         response.getAppendResult().getOffset().getValue(),
                         inflightBatch.getExpectedOffset()));
             inflightBatch.onFailure(exception);
-            abortInflightRequests(new AbortedException(
-                "Request aborted due to previous failures",
-                exception,
-                GrpcStatusCode.of(Status.Code.ABORTED),
-                true));
+            abortInflightRequests(
+                new AbortedException(
+                    "Request aborted due to previous failures",
+                    exception,
+                    GrpcStatusCode.of(Status.Code.ABORTED),
+                    true));
           } else {
             inflightBatch.onSuccess(response);
           }
