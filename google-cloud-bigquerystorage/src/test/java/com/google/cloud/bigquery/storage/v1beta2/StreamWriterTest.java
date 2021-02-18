@@ -954,7 +954,7 @@ public class StreamWriterTest {
     try {
       appendFuture2.get();
       fail("Should fail with exception future2");
-    } catch (java.util.concurrent.ExecutionException e) {
+    } catch (ExecutionException e) {
       assertThat(e.getCause()).isInstanceOf(DataLossException.class);
     }
     try {
