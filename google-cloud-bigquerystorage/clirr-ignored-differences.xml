@@ -26,6 +26,6 @@
     <difference>
         <className>com/google/cloud/bigquery/storage/v1beta2/StreamWriter</className>
         <differenceType>7002</differenceType>
-        <method>public void flushAll(long)</method>
+        <method>void flushAll(long)</method>
     </difference>
 </differences>
