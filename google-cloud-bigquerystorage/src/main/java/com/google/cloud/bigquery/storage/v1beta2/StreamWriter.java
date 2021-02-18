@@ -863,14 +863,20 @@ public class StreamWriter implements AutoCloseable {
 
     private void abortInflightRequests(Throwable t) {
       synchronized (this.inflightBatches) {
+        boolean first_error = true;
         while (!this.inflightBatches.isEmpty()) {
           InflightBatch inflightBatch = this.inflightBatches.poll();
-          inflightBatch.onFailure(
-              new AbortedException(
-                  "Request aborted due to previous failures",
-                  t,
-                  GrpcStatusCode.of(Status.Code.ABORTED),
-                  true));
+          if (first_error) {
+            inflightBatch.onFailure(t);
+            first_error = true;
+          } else {
+            inflightBatch.onFailure(
+                new AbortedException(
+                    "Request aborted due to previous failures",
+                    t,
+                    GrpcStatusCode.of(Status.Code.ABORTED),
+                    true));
+          }
           streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
         }
       }
@@ -913,7 +919,11 @@ public class StreamWriter implements AutoCloseable {
                         response.getAppendResult().getOffset().getValue(),
                         inflightBatch.getExpectedOffset()));
             inflightBatch.onFailure(exception);
-            abortInflightRequests(exception);
+            abortInflightRequests(new AbortedException(
+                "Request aborted due to previous failures",
+                exception,
+                GrpcStatusCode.of(Status.Code.ABORTED),
+                true));
           } else {
             inflightBatch.onSuccess(response);
           }
@@ -931,24 +941,7 @@ public class StreamWriter implements AutoCloseable {
     @Override
     public void onError(Throwable t) {
       LOG.fine("OnError called");
-      if (streamWriter.shutdown.get()) {
-        abortInflightRequests(t);
-        return;
-      }
-      InflightBatch inflightBatch = null;
-      synchronized (this.inflightBatches) {
-        if (inflightBatches.isEmpty()) {
-          // The batches could have been aborted.
-          return;
-        }
-        inflightBatch = this.inflightBatches.poll();
-      }
-      streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
-      inflightBatch.onFailure(t);
       abortInflightRequests(t);
-      synchronized (streamWriter.currentRetries) {
-        streamWriter.currentRetries = 0;
-      }
     }
   };
 
