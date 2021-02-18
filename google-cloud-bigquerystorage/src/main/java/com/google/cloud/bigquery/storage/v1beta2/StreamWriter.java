@@ -65,7 +65,8 @@ import org.threeten.bp.Duration;
  * without offset, please use a simpler writer {@code DirectWriter}.
  *
  * <p>A {@link StreamWrier} provides built-in capabilities to: handle batching of messages;
- * controlling memory utilization (through flow control); request cleanup (only keeps write schema on first request in the stream).
+ * controlling memory utilization (through flow control); request cleanup (only keeps write schema
+ * on first request in the stream).
  *
  * <p>With customizable options that control:
  *
