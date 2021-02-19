@@ -34,7 +34,6 @@ import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
 import com.google.api.gax.rpc.AbortedException;
 import com.google.api.gax.rpc.DataLossException;
-import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.common.base.Strings;
 import com.google.protobuf.DescriptorProtos;
