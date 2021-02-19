@@ -64,7 +64,7 @@ class Waiter {
     }
   }
 
-  public synchronized void release(long messageSize) throws IllegalStateException {
+  public void release(long messageSize) throws IllegalStateException {
     lock.lock();
     --pendingCount;
     if (pendingCount < 0) {
