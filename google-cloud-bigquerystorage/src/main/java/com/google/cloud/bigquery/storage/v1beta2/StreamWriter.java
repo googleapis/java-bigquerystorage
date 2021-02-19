@@ -272,7 +272,6 @@ public class StreamWriter implements AutoCloseable {
       messagesBatchLock.unlock();
       appendAndRefreshAppendLock.unlock();
     }
-
     return outstandingAppend.appendResult;
   }
 
