@@ -64,10 +64,6 @@ public class ParallelWriteCommittedStreamIT {
 
   @Before
   public void setUp() {
-    bout = new ByteArrayOutputStream();
-    out = new PrintStream(bout);
-    System.setOut(out);
-
     bigquery = BigQueryOptions.getDefaultInstance().getService();
 
     // Create a new dataset and table for each test.
@@ -79,14 +75,18 @@ public class ParallelWriteCommittedStreamIT {
         TableInfo.newBuilder(TableId.of(datasetName, tableName), StandardTableDefinition.of(schema))
             .build();
     bigquery.create(tableInfo);
+
+    bout = new ByteArrayOutputStream();
+    out = new PrintStream(bout);
+    System.setOut(out);
   }
 
   @After
   public void tearDown() {
+    System.setOut(null);
     bigquery.delete(TableId.of(GOOGLE_CLOUD_PROJECT, datasetName, tableName));
     bigquery.delete(
         DatasetId.of(GOOGLE_CLOUD_PROJECT, datasetName), DatasetDeleteOption.deleteContents());
-    System.setOut(null);
   }
 
   @Test
