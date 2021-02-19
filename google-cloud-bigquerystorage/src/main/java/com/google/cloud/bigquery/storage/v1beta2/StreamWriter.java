@@ -261,7 +261,7 @@ public class StreamWriter implements AutoCloseable {
       setupAlarm();
       if (!batchesToSend.isEmpty()) {
         for (final InflightBatch batch : batchesToSend) {
-          LOG.info("Scheduling a batch for immediate sending:" + batch.getExpectedOffset());
+          LOG.fine("Scheduling a batch for immediate sending");
           writeBatch(batch);
         }
       }
@@ -335,7 +335,6 @@ public class StreamWriter implements AutoCloseable {
         messagesWaiter.acquire(inflightBatch.getByteSize());
         appendAndRefreshAppendLock.lock();
         if (shutdown.get() && streamException.get() != null) {
-          LOG.info("here");
           String err_msg = null;
           if (shutdown.get()) {
             err_msg = "Stream closed, abort append";
@@ -457,7 +456,7 @@ public class StreamWriter implements AutoCloseable {
         LOG.warning("Ignore " + t.toString() + " since error has already been set");
         return;
       } else {
-        LOG.info("Setting " + t.toString() + " on response");
+        LOG.fine("Setting " + t.toString() + " on response");
         this.streamWriter.streamException.set(t);
       }
 
@@ -520,7 +519,6 @@ public class StreamWriter implements AutoCloseable {
    * pending messages are lost.
    */
   protected void shutdown() {
-    LOG.info("AAAA");
     appendAndRefreshAppendLock.lock();
     try {
       if (shutdown.getAndSet(true)) {
@@ -534,12 +532,10 @@ public class StreamWriter implements AutoCloseable {
       writeAllOutstanding();
       try {
         appendAndRefreshAppendLock.unlock();
-        LOG.info("BBBB");
         messagesWaiter.waitComplete(0);
       } catch (InterruptedException e) {
         LOG.warning("Failed to wait for messages to return " + e.toString());
       }
-      LOG.info("CCCC");
       appendAndRefreshAppendLock.lock();
       if (clientStream.isSendReady()) {
         clientStream.closeSend();
@@ -911,7 +907,7 @@ public class StreamWriter implements AutoCloseable {
 
     @Override
     public void onError(Throwable t) {
-      LOG.info("OnError called!!!!!!!!!!!!!");
+      LOG.info("OnError called with " + t.toString());
       streamWriter.streamException.set(t);
       abortInflightRequests(t);
     }
@@ -984,7 +980,6 @@ public class StreamWriter implements AutoCloseable {
       if (!isEmpty()
           && hasBatchingBytes()
           && getBatchedBytes() + outstandingAppend.messageSize >= getMaxBatchBytes()) {
-        LOG.info("add batches to send");
         batchesToSend.add(popBatch());
       }
 
