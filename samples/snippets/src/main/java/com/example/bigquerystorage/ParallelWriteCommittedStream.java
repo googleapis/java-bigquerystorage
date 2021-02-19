@@ -20,9 +20,6 @@ package com.example.bigquerystorage;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
-import com.google.api.gax.batching.BatchingSettings;
-import com.google.api.gax.batching.FlowControlSettings;
-import com.google.api.gax.batching.FlowController.LimitExceededBehavior;
 import com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1beta2.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1beta2.CreateWriteStreamRequest;
@@ -62,16 +59,22 @@ public class ParallelWriteCommittedStream {
 
   @GuardedBy("this")
   private long inflightCount = 0;
+
   @GuardedBy("this")
   private long successCount = 0;
+
   @GuardedBy("this")
   private long failureCount = 0;
+
   @GuardedBy("this")
   private Throwable error = null;
+
   @GuardedBy("this")
   private long lastMetricsTimeMillis = 0;
+
   @GuardedBy("this")
   private long lastMetricsSuccessCount = 0;
+
   @GuardedBy("this")
   private long lastMetricsFailureCount = 0;
 
@@ -106,10 +109,15 @@ public class ParallelWriteCommittedStream {
       sleepIgnoringInterruption(Duration.ofMinutes(1));
       streamSwitchCount++;
     }
-    LOG.info("Finish writeLoop. Success row count: " + successRowCount +
-        " Failure row count: " + failureRowCount +
-        " Logged error: " + loggedError +
-        " Stream switch count: " + streamSwitchCount);
+    LOG.info(
+        "Finish writeLoop. Success row count: "
+            + successRowCount
+            + " Failure row count: "
+            + failureRowCount
+            + " Logged error: "
+            + loggedError
+            + " Stream switch count: "
+            + streamSwitchCount);
     if (successRowCount > 0 && failureRowCount == 0 && loggedError == null) {
       System.out.println("All records are appended successfully.");
     }
@@ -150,20 +158,18 @@ public class ParallelWriteCommittedStream {
         JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema(), client)
             .build()) {
       while (System.currentTimeMillis() < deadlineMillis) {
-        synchronized(this) {
+        synchronized (this) {
           if (error != null) {
             // Stop writing once we get an error.
             throw error;
           }
         }
         ApiFuture<AppendRowsResponse> future = writer.append(createPayload(), -1);
-        synchronized(this) {
+        synchronized (this) {
           inflightCount++;
         }
         ApiFutures.addCallback(
-            future,
-            new AppendCompleteCallback(this),
-            MoreExecutors.directExecutor());
+            future, new AppendCompleteCallback(this), MoreExecutors.directExecutor());
       }
     }
   }
@@ -231,12 +237,19 @@ public class ParallelWriteCommittedStream {
           long successCountInIteration = parent.successCount - parent.lastMetricsSuccessCount;
           long failureCountInIteration = parent.failureCount - parent.lastMetricsFailureCount;
           long metricsTimeMillis = nowMillis - parent.lastMetricsTimeMillis;
-          LOG.info("Success append: " + successCountInIteration +
-              " failure append: " + failureCountInIteration +
-              " in " + metricsTimeMillis +
-              "ms. Successful MB Per Second: " +
-              (double)(successCountInIteration * BATCH_SIZE * ROW_SIZE) / metricsTimeMillis / 1000 +
-              " Current inflight: " + parent.inflightCount);
+          LOG.info(
+              "Success append: "
+                  + successCountInIteration
+                  + " failure append: "
+                  + failureCountInIteration
+                  + " in "
+                  + metricsTimeMillis
+                  + "ms. Successful MB Per Second: "
+                  + (double) (successCountInIteration * BATCH_SIZE * ROW_SIZE)
+                      / metricsTimeMillis
+                      / 1000
+                  + " Current inflight: "
+                  + parent.inflightCount);
           parent.lastMetricsTimeMillis = System.currentTimeMillis();
           parent.lastMetricsSuccessCount = parent.successCount;
           parent.lastMetricsFailureCount = parent.failureCount;
