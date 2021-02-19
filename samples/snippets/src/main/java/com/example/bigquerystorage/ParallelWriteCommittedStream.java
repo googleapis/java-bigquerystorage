@@ -88,7 +88,7 @@ public class ParallelWriteCommittedStream {
     long deadlineMillis = System.currentTimeMillis() + TEST_TIME.toMillis();
     while (System.currentTimeMillis() < deadlineMillis) {
       try {
-        WriteStream writeStream = CreateStream(projectId, datasetName, tableName, client);
+        WriteStream writeStream = createStream(projectId, datasetName, tableName, client);
         writeToStream(client, writeStream, deadlineMillis);
       } catch (Throwable e) {
         LOG.warning("Unexpected error writing to stream: " + e.toString());
@@ -123,7 +123,7 @@ public class ParallelWriteCommittedStream {
     }
   }
 
-  private WriteStream CreateStream(
+  private WriteStream createStream(
       String projectId, String datasetName, String tableName, BigQueryWriteClient client) {
     LOG.info("Creating a new stream");
     // Initialize a write stream for the specified table.
