@@ -41,7 +41,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class WriteToDefaultStreamIT {
+public class ParallelWriteCommittedStreamIT {
 
   private static final String GOOGLE_CLOUD_PROJECT = System.getenv("GOOGLE_CLOUD_PROJECT");
 
@@ -71,8 +71,8 @@ public class WriteToDefaultStreamIT {
     bigquery = BigQueryOptions.getDefaultInstance().getService();
 
     // Create a new dataset and table for each test.
-    datasetName = "WRITE_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
-    tableName = "DEFAULT_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
+    datasetName = "PARALLEL_WRITE_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
+    tableName = "PARALLEL_WRITE_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
     Schema schema = Schema.of(Field.of("col1", StandardSQLTypeName.STRING));
     bigquery.create(DatasetInfo.newBuilder(datasetName).build());
     TableInfo tableInfo =
@@ -83,14 +83,15 @@ public class WriteToDefaultStreamIT {
 
   @After
   public void tearDown() {
+    bigquery.delete(TableId.of(GOOGLE_CLOUD_PROJECT, datasetName, tableName));
     bigquery.delete(
         DatasetId.of(GOOGLE_CLOUD_PROJECT, datasetName), DatasetDeleteOption.deleteContents());
     System.setOut(null);
   }
 
   @Test
-  public void testWriteToDefaultStream() throws Exception {
-    WriteToDefaultStream.writeToDefaultStream(GOOGLE_CLOUD_PROJECT, datasetName, tableName);
-    assertThat(bout.toString()).contains("Appended records successfully.");
+  public void testParallelWriteCommittedStream() throws Exception {
+    ParallelWriteCommittedStream.writeCommittedStream(GOOGLE_CLOUD_PROJECT, datasetName, tableName);
+    assertThat(bout.toString()).contains("All records are appended successfully.");
   }
 }
