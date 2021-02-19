@@ -452,11 +452,11 @@ public class StreamWriterTest {
     assertEquals(true, t.isAlive());
     assertEquals(false, appendFuture1.isDone());
     // Wait is necessary for response to be scheduled before timer is advanced.
-    Thread.sleep(5000L);
+    testBigQueryWrite.waitForResponseScheduled();
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
     // The first requests gets back while the second one is blocked.
     assertEquals(2L, appendFuture1.get().getAppendResult().getOffset().getValue());
-    Thread.sleep(5000L);
+    testBigQueryWrite.waitForResponseScheduled();
     // Wait is necessary for response to be scheduled before timer is advanced.
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
     t.join();
@@ -496,7 +496,7 @@ public class StreamWriterTest {
       ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
       ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
       // Wait is necessary for response to be scheduled before timer is advanced.
-      Thread.sleep(5000L);
+      testBigQueryWrite.waitForResponseScheduled();
       fakeExecutor.advanceTime(Duration.ofSeconds(10));
       try {
         appendFuture2.get();
@@ -944,8 +944,11 @@ public class StreamWriterTest {
 
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
-    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"B"});
-    Thread.sleep(5000L);
+    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
+    // Wait for all 3 response arrives.
+    testBigQueryWrite.waitForResponseScheduled();
+    testBigQueryWrite.waitForResponseScheduled();
+    testBigQueryWrite.waitForResponseScheduled();
     // Move the needle for responses to be sent.
     fakeExecutor.advanceTime(Duration.ofSeconds(20));
     // Shutdown writer immediately and there will be some error happened when flushing the queue.
