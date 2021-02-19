@@ -552,8 +552,6 @@ public class StreamWriterTest {
                 // This request will be send out immediately because there is space in inflight queue.
                 assertEquals(3L, appendFuture2.get().getAppendResult().getOffset().getValue());
                 return new Exception("Should be aborted future3");
-              } catch (InterruptedException e) {
-                return e;
               } catch (ExecutionException e) {
                 if (e.getCause().getClass() != DataLossException.class) {
                   return e;
