@@ -291,8 +291,8 @@ public class StreamWriter implements AutoCloseable {
                   @Override
                   public void run() {
                     LOG.fine("Sending messages based on schedule");
-                    activeAlarm.getAndSet(false);
                     appendAndRefreshAppendLock.lock();
+                    activeAlarm.getAndSet(false);
                     try {
                       writeBatch(messagesBatch.popBatch());
                     } finally {
