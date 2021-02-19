@@ -672,6 +672,9 @@ public class StreamWriterTest {
   }
 
   @Test
+  public void testShutdownWillFlushBatch() throws Exception {}
+
+  @Test
   public void testFlowControlBehaviorBlockAbortOnShutdown() throws Exception {
     StreamWriter writer =
         getTestStreamWriterBuilder()
