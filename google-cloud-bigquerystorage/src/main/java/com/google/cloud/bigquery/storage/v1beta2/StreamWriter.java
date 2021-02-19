@@ -65,8 +65,8 @@ import org.threeten.bp.Duration;
  * without offset, please use a simpler writer {@code DirectWriter}.
  *
  * <p>A {@link StreamWrier} provides built-in capabilities to: handle batching of messages;
- * controlling memory utilization (through flow control); automatic connection re-establishment and
- * request cleanup (only keeps write schema on first request in the stream).
+ * controlling memory utilization (through flow control) and request cleanup (only keeps write
+ * schema on first request in the stream).
  *
  * <p>With customizable options that control:
  *
@@ -90,6 +90,8 @@ public class StreamWriter implements AutoCloseable {
 
   private final String streamName;
   private final String tableName;
+
+  private final String traceId;
 
   private final BatchingSettings batchingSettings;
   private final RetrySettings retrySettings;
@@ -151,6 +153,7 @@ public class StreamWriter implements AutoCloseable {
       tableName = matcher.group(1);
     }
 
+    this.traceId = builder.traceId;
     this.batchingSettings = builder.batchingSettings;
     this.retrySettings = builder.retrySettings;
     this.messagesBatch = new MessagesBatch(batchingSettings, this.streamName, this);
@@ -477,6 +480,11 @@ public class StreamWriter implements AutoCloseable {
               "The first message on the connection must have writer schema set");
         }
         requestBuilder.setWriteStream(streamName);
+        if (!inflightRequests.get(0).message.getTraceId().isEmpty()) {
+          requestBuilder.setTraceId(inflightRequests.get(0).message.getTraceId());
+        } else if (streamWriter.traceId != null) {
+          requestBuilder.setTraceId(streamWriter.traceId);
+        }
       }
       return requestBuilder.setProtoRows(data.build()).build();
     }
@@ -660,6 +668,8 @@ public class StreamWriter implements AutoCloseable {
     private String streamOrTableName;
     private String endpoint = BigQueryWriteSettings.getDefaultEndpoint();
 
+    private String traceId;
+
     private BigQueryWriteClient client = null;
 
     // Batching options
@@ -814,6 +824,12 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
+    /** Mark the request as coming from Dataflow. */
+    public Builder setDataflowTraceId() {
+      this.traceId = "Dataflow";
+      return this;
+    }
+
     /** Builds the {@code StreamWriter}. */
     public StreamWriter build() throws IllegalArgumentException, IOException, InterruptedException {
       return new StreamWriter(this);
@@ -847,14 +863,20 @@ public class StreamWriter implements AutoCloseable {
 
     private void abortInflightRequests(Throwable t) {
       synchronized (this.inflightBatches) {
+        boolean first_error = true;
         while (!this.inflightBatches.isEmpty()) {
           InflightBatch inflightBatch = this.inflightBatches.poll();
-          inflightBatch.onFailure(
-              new AbortedException(
-                  "Request aborted due to previous failures",
-                  t,
-                  GrpcStatusCode.of(Status.Code.ABORTED),
-                  true));
+          if (first_error) {
+            inflightBatch.onFailure(t);
+            first_error = false;
+          } else {
+            inflightBatch.onFailure(
+                new AbortedException(
+                    "Request aborted due to previous failures",
+                    t,
+                    GrpcStatusCode.of(Status.Code.ABORTED),
+                    true));
+          }
           streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
         }
       }
@@ -897,7 +919,12 @@ public class StreamWriter implements AutoCloseable {
                         response.getAppendResult().getOffset().getValue(),
                         inflightBatch.getExpectedOffset()));
             inflightBatch.onFailure(exception);
-            abortInflightRequests(exception);
+            abortInflightRequests(
+                new AbortedException(
+                    "Request aborted due to previous failures",
+                    exception,
+                    GrpcStatusCode.of(Status.Code.ABORTED),
+                    true));
           } else {
             inflightBatch.onSuccess(response);
           }
@@ -915,55 +942,7 @@ public class StreamWriter implements AutoCloseable {
     @Override
     public void onError(Throwable t) {
       LOG.fine("OnError called");
-      if (streamWriter.shutdown.get()) {
-        return;
-      }
-      InflightBatch inflightBatch = null;
-      synchronized (this.inflightBatches) {
-        if (inflightBatches.isEmpty()) {
-          // The batches could have been aborted.
-          return;
-        }
-        inflightBatch = this.inflightBatches.poll();
-      }
-      streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
-      if (isRecoverableError(t)) {
-        try {
-          if (streamWriter.currentRetries < streamWriter.getRetrySettings().getMaxAttempts()
-              && !streamWriter.shutdown.get()) {
-            synchronized (streamWriter.currentRetries) {
-              streamWriter.currentRetries++;
-            }
-            LOG.info(
-                "Try to reestablish connection due to transient error: "
-                    + t.toString()
-                    + " retry times: "
-                    + streamWriter.currentRetries);
-            streamWriter.refreshAppend();
-            LOG.info("Resending requests on after connection established");
-            streamWriter.writeBatch(inflightBatch);
-          } else {
-            inflightBatch.onFailure(t);
-            abortInflightRequests(t);
-            synchronized (streamWriter.currentRetries) {
-              streamWriter.currentRetries = 0;
-            }
-          }
-        } catch (InterruptedException e) {
-          LOG.info("Got exception while retrying: " + e.toString());
-          inflightBatch.onFailure(new StatusRuntimeException(Status.ABORTED));
-          abortInflightRequests(new StatusRuntimeException(Status.ABORTED));
-          synchronized (streamWriter.currentRetries) {
-            streamWriter.currentRetries = 0;
-          }
-        }
-      } else {
-        inflightBatch.onFailure(t);
-        abortInflightRequests(t);
-        synchronized (streamWriter.currentRetries) {
-          streamWriter.currentRetries = 0;
-        }
-      }
+      abortInflightRequests(t);
     }
   };
 
