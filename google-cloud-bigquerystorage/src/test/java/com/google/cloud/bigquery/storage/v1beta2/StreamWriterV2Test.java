@@ -42,6 +42,7 @@ import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.threeten.bp.Duration;
@@ -124,15 +125,18 @@ public class StreamWriterV2Test {
   }
 
   private static <T extends Throwable> T assertFutureException(
-      Class<T> expectedThrowable, Future<?> future) {
+      Class<T> expectedThrowable, final Future<?> future) {
     return assertThrows(
         expectedThrowable,
-        () -> {
-          try {
-            future.get();
-          } catch (ExecutionException ex) {
-            // Future wraps exception with ExecutionException. So unwrapper it here.
-            throw ex.getCause();
+        new ThrowingRunnable() {
+          @Override
+          public void run() throws Throwable {
+            try {
+              future.get();
+            } catch (ExecutionException ex) {
+              // Future wraps exception with ExecutionException. So unwrapper it here.
+              throw ex.getCause();
+            }
           }
         });
   }
@@ -229,17 +233,20 @@ public class StreamWriterV2Test {
 
   @Test
   public void userCloseWhileRequestInflight() throws Exception {
-    StreamWriterV2 writer = getTestStreamWriterV2();
+    final StreamWriterV2 writer = getTestStreamWriterV2();
     // Server will sleep 2 seconds before sending back the response.
     testBigQueryWrite.setResponseSleep(Duration.ofSeconds(2));
     testBigQueryWrite.addResponse(createAppendResponse(0));
 
     // Send a request and close the stream in separate thread while the request is inflight.
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    final ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     Thread closeThread =
         new Thread(
-            () -> {
-              writer.close();
+            new Runnable() {
+              @Override
+              public void run() {
+                writer.close();
+              }
             });
     closeThread.start();
 
@@ -247,8 +254,11 @@ public class StreamWriterV2Test {
     // is being closed.
     assertThrows(
         TimeoutException.class,
-        () -> {
-          appendFuture1.get(1, TimeUnit.SECONDS);
+        new ThrowingRunnable() {
+          @Override
+          public void run() throws Throwable {
+            appendFuture1.get(1, TimeUnit.SECONDS);
+          }
         });
 
     // Within 2 seconds, the request should be done and stream should be closed.

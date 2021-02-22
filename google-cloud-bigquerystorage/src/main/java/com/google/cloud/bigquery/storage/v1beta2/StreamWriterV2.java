@@ -17,6 +17,8 @@ package com.google.cloud.bigquery.storage.v1beta2;
 
 import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
+import com.google.cloud.bigquery.storage.v1beta2.StreamConnection.DoneCallback;
+import com.google.cloud.bigquery.storage.v1beta2.StreamConnection.RequestCallback;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.Uninterruptibles;
 import io.grpc.Status;
@@ -102,8 +104,23 @@ public class StreamWriterV2 implements AutoCloseable {
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.streamConnection =
-        new StreamConnection(builder.client, this::requestCallback, this::doneCallback);
-    this.appendThread = new Thread(this::appendLoop);
+        new StreamConnection(builder.client, new RequestCallback() {
+          @Override
+          public void run(AppendRowsResponse response) {
+            requestCallback(response);
+          }
+        }, new DoneCallback() {
+          @Override
+          public void run(Throwable finalStatus) {
+            doneCallback(finalStatus);
+          }
+        });
+    this.appendThread = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        appendLoop();
+      }
+    });
     this.appendThread.start();
   }
 
@@ -328,9 +345,7 @@ public class StreamWriterV2 implements AutoCloseable {
 
     private Builder(String streamName, BigQueryWriteClient client) {
       this.streamName = Preconditions.checkNotNull(streamName);
-      ;
       this.client = Preconditions.checkNotNull(client);
-      ;
     }
 
     /** Builds the {@code StreamWriterV2}. */
