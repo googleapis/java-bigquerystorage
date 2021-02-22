@@ -23,7 +23,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.Uninterruptibles;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import java.time.Duration;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
@@ -52,8 +51,6 @@ import javax.annotation.concurrent.GuardedBy;
  */
 public class StreamWriterV2 implements AutoCloseable {
   private static final Logger log = Logger.getLogger(StreamWriterV2.class.getName());
-
-  private static final Duration DONE_CALLBACK_WAIT_TIMEOUT = Duration.ofMinutes(10);
 
   private Lock lock;
   private Condition hasMessageInWaitingQueue;
@@ -104,23 +101,28 @@ public class StreamWriterV2 implements AutoCloseable {
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.streamConnection =
-        new StreamConnection(builder.client, new RequestCallback() {
-          @Override
-          public void run(AppendRowsResponse response) {
-            requestCallback(response);
-          }
-        }, new DoneCallback() {
-          @Override
-          public void run(Throwable finalStatus) {
-            doneCallback(finalStatus);
-          }
-        });
-    this.appendThread = new Thread(new Runnable() {
-      @Override
-      public void run() {
-        appendLoop();
-      }
-    });
+        new StreamConnection(
+            builder.client,
+            new RequestCallback() {
+              @Override
+              public void run(AppendRowsResponse response) {
+                requestCallback(response);
+              }
+            },
+            new DoneCallback() {
+              @Override
+              public void run(Throwable finalStatus) {
+                doneCallback(finalStatus);
+              }
+            });
+    this.appendThread =
+        new Thread(
+            new Runnable() {
+              @Override
+              public void run() {
+                appendLoop();
+              }
+            });
     this.appendThread.start();
   }
 
@@ -210,10 +212,16 @@ public class StreamWriterV2 implements AutoCloseable {
       try {
         hasMessageInWaitingQueue.await(100, TimeUnit.MILLISECONDS);
         while (!this.waitingRequestQueue.isEmpty()) {
-          localQueue.addLast(this.waitingRequestQueue.pollFirst());
+          AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
+          this.inflightRequestQueue.addLast(requestWrapper);
+          localQueue.addLast(requestWrapper);
         }
       } catch (InterruptedException e) {
-        log.warning("Interrupted while waiting for message. Error: " + e.toString());
+        log.warning(
+            "Interrupted while waiting for message. Stream: "
+                + streamName
+                + " Error: "
+                + e.toString());
       } finally {
         this.lock.unlock();
       }
@@ -223,16 +231,8 @@ public class StreamWriterV2 implements AutoCloseable {
       }
 
       // TODO: Add reconnection here.
-
-      this.lock.lock();
-      try {
-        while (!localQueue.isEmpty()) {
-          AppendRequestAndResponse requestWrapper = localQueue.pollFirst();
-          this.inflightRequestQueue.addLast(requestWrapper);
-          this.streamConnection.send(requestWrapper.message);
-        }
-      } finally {
-        this.lock.unlock();
+      while (!localQueue.isEmpty()) {
+        this.streamConnection.send(localQueue.pollFirst().message);
       }
     }
 
@@ -240,26 +240,7 @@ public class StreamWriterV2 implements AutoCloseable {
     // At this point, the waiting queue is drained, so no more requests.
     // We can close the stream connection and handle the remaining inflight requests.
     this.streamConnection.close();
-
-    log.info("Waiting for done callback from stream connection. Stream: " + streamName);
-    long waitDeadlineMs = System.currentTimeMillis() + DONE_CALLBACK_WAIT_TIMEOUT.toMillis();
-    while (true) {
-      if (System.currentTimeMillis() > waitDeadlineMs) {
-        log.warning(
-            "Timeout waiting for done wallback. Skip inflight cleanup. Stream: " + streamName);
-        return;
-      }
-      this.lock.lock();
-      try {
-        if (connectionFinalStatus != null) {
-          // Done callback is received, break.
-          break;
-        }
-      } finally {
-        this.lock.unlock();
-      }
-      Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
-    }
+    waitForDoneCallback();
 
     // At this point, there cannot be more callback. It is safe to clean up all inflight requests.
     log.info(
@@ -281,6 +262,22 @@ public class StreamWriterV2 implements AutoCloseable {
           && this.waitingRequestQueue.isEmpty();
     } finally {
       this.lock.unlock();
+    }
+  }
+
+  private void waitForDoneCallback() {
+    log.info("Waiting for done callback from stream connection. Stream: " + streamName);
+    while (true) {
+      this.lock.lock();
+      try {
+        if (connectionFinalStatus != null) {
+          // Done callback is received, return.
+          return;
+        }
+      } finally {
+        this.lock.unlock();
+      }
+      Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
     }
   }
 
