@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -45,7 +46,9 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   private boolean autoPublishResponse;
   private ScheduledExecutorService executor = null;
   private Duration responseDelay = Duration.ZERO;
+
   private Duration responseSleep = Duration.ZERO;
+  private Semaphore responseSemaphore = new Semaphore(0, true);
 
   /** Class used to save the state of a possible response. */
   private static class Response {
@@ -113,6 +116,10 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     }
   }
 
+  public void waitForResponseScheduled() throws InterruptedException {
+    responseSemaphore.acquire();
+  }
+
   @Override
   public StreamObserver<AppendRowsRequest> appendRows(
       final StreamObserver<AppendRowsResponse> responseObserver) {
@@ -144,6 +151,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
                   responseDelay.toMillis(),
                   TimeUnit.MILLISECONDS);
             }
+            responseSemaphore.release();
           }
 
           @Override
