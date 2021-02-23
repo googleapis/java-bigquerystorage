@@ -253,6 +253,7 @@ public class StreamWriter implements AutoCloseable {
     try {
       Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
       Preconditions.checkNotNull(message, "Message is null.");
+      Preconditions.checkState(streamException.get() == null, "Stream already failed.");
       final AppendRequestAndFutureResponse outstandingAppend =
           new AppendRequestAndFutureResponse(message);
       List<InflightBatch> batchesToSend;
@@ -456,9 +457,6 @@ public class StreamWriter implements AutoCloseable {
         // Error has been set already.
         LOG.warning("Ignore " + t.toString() + " since error has already been set");
         return;
-      } else {
-        LOG.fine("Setting " + t.toString() + " on response");
-        this.streamWriter.streamException.set(t);
       }
 
       for (AppendRequestAndFutureResponse request : inflightRequests) {
@@ -531,6 +529,14 @@ public class StreamWriter implements AutoCloseable {
         currentAlarmFuture.cancel(false);
       }
       writeAllOutstanding();
+      if (streamException.get() != null) {
+        this.responseObserver.abortInflightRequests(
+            new AbortedException(
+                "Request aborted due to previous failures",
+                streamException.get(),
+                GrpcStatusCode.of(Status.Code.ABORTED),
+                true));
+      }
       try {
         appendAndRefreshAppendLock.unlock();
         messagesWaiter.waitComplete(0);
@@ -833,7 +839,7 @@ public class StreamWriter implements AutoCloseable {
         boolean first_error = true;
         while (!this.inflightBatches.isEmpty()) {
           InflightBatch inflightBatch = this.inflightBatches.poll();
-          if (first_error) {
+          if (first_error || t.getCause().getClass() == AbortedException.class) {
             inflightBatch.onFailure(t);
             first_error = false;
           } else {
@@ -908,7 +914,7 @@ public class StreamWriter implements AutoCloseable {
 
     @Override
     public void onError(Throwable t) {
-      LOG.info("OnError called with " + t.toString());
+      LOG.info("OnError called" + t.toString());
       streamWriter.streamException.set(t);
       abortInflightRequests(t);
     }
@@ -995,7 +1001,6 @@ public class StreamWriter implements AutoCloseable {
           || getMessagesCount() == batchingSettings.getElementCountThreshold()) {
         batchesToSend.add(popBatch());
       }
-
       return batchesToSend;
     }
   }

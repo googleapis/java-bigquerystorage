@@ -613,11 +613,13 @@ public class StreamWriterTest {
             .setAppendResult(
                 AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(2)).build())
             .build());
-    for (int i = 3; i < 15; i++) {
+    for (int i = 1; i < 13; i++) {
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()
               .setAppendResult(
-                  AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(i)).build())
+                  AppendRowsResponse.AppendResult.newBuilder()
+                      .setOffset(Int64Value.of(i * 3 + 2))
+                      .build())
               .build());
     }
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"}, 2);
@@ -705,9 +707,11 @@ public class StreamWriterTest {
     for (int i = 2; i < 6; i++) {
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()
-              .setError(com.google.rpc.Status.newBuilder().setCode(3).build())
+              .setError(
+                  com.google.rpc.Status.newBuilder().setCode(3).setMessage("error " + i).build())
               .build());
     }
+    // Stream failed at 7th request.
     for (int i = 6; i < 10; i++) {
       testBigQueryWrite.addException(new UnsupportedOperationException("Strange exception"));
     }
@@ -721,13 +725,16 @@ public class StreamWriterTest {
               LinkedList<ApiFuture<AppendRowsResponse>> responses =
                   new LinkedList<ApiFuture<AppendRowsResponse>>();
               int last_count = 0;
+              LOG.info(
+                  "Send 30 messages, will be batched into 10 messages, start fail at 7th message");
               for (int i = 0; i < 30; i++) {
                 try {
                   responses.add(sendTestMessage(writer1, new String[] {"B"}, i));
                 } catch (IllegalStateException ex) {
-                  LOG.info("Stopped at " + i + " responses:" + responses.size());
+                  LOG.info("Stopped at sending request no." + i + " ex: " + ex.toString());
                   last_count = i;
-                  if ("Cannot append on a shut-down writer." != ex.getMessage()) {
+                  if ("Stream already failed." != ex.getMessage()
+                      && "Cannot append on a shut-down writer." != ex.getMessage()) {
                     return new Exception("Got unexpected message:" + ex.getMessage());
                   }
                   break;
@@ -767,17 +774,7 @@ public class StreamWriterTest {
                   responses.get(i).get();
                   return new Exception("Expect response return an error after a stream exception");
                 } catch (Exception e) {
-                  if (i == 8) {
-                    if (e.getCause().getClass() != UnsupportedOperationException.class) {
-                      return new Exception(
-                          "Expect first error of stream exception to be the original exception but got"
-                              + e.getCause().toString());
-                    } else if (e.getCause().getClass() != AbortedException.class) {
-                      return new Exception(
-                          "Expect following error of stream exception to be aborted exception but got"
-                              + e.getCause().toString());
-                    }
-                  }
+                  LOG.info("Got !!!!!" + e.toString());
                 }
               }
               return null;
@@ -789,8 +786,10 @@ public class StreamWriterTest {
     Future<Throwable> future = executor.submit(callable);
     // Wait for at least 7 request (after batch) to reach server.
     for (int i = 0; i < 7; i++) {
+      LOG.info("Wait for " + i + " response scheduled");
       testBigQueryWrite.waitForResponseScheduled();
     }
+    LOG.info("@@@@@@@@");
     writer.close();
     if (future.get() != null) {
       future.get().printStackTrace();
@@ -1326,19 +1325,24 @@ public class StreamWriterTest {
             .build());
     testBigQueryWrite.addException(Status.DATA_LOSS.asException());
     testBigQueryWrite.addException(Status.DATA_LOSS.asException());
+    testBigQueryWrite.addException(Status.DATA_LOSS.asException());
     testBigQueryWrite.setResponseDelay(Duration.ofSeconds(10));
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
-    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"}, 1);
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"}, 2);
+    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"}, 3);
     testBigQueryWrite.waitForResponseScheduled();
     testBigQueryWrite.waitForResponseScheduled();
     testBigQueryWrite.waitForResponseScheduled();
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
     // This will will never be in inflight and aborted by previous failure, because its delay is set
-    // after timer
-    // advance.
-    ApiFuture<AppendRowsResponse> appendFuture4 = sendTestMessage(writer, new String[] {"D"});
+    // after timer advance.
+    Thread.sleep(500);
+    try {
+      ApiFuture<AppendRowsResponse> appendFuture4 = sendTestMessage(writer, new String[] {"D"}, 4);
+    } catch (IllegalStateException ex) {
+      assertEquals("Stream already failed.", ex.getMessage());
+    }
     // Shutdown writer immediately and there will be some error happened when flushing the queue.
     writer.shutdown();
     assertEquals(1, appendFuture1.get().getAppendResult().getOffset().getValue());
@@ -1350,12 +1354,6 @@ public class StreamWriterTest {
     }
     try {
       appendFuture3.get();
-      fail("Should fail with exception future3");
-    } catch (ExecutionException e) {
-      assertThat(e.getCause()).isInstanceOf(AbortedException.class);
-    }
-    try {
-      appendFuture4.get();
       fail("Should fail with exception future3");
     } catch (ExecutionException e) {
       assertThat(e.getCause()).isInstanceOf(AbortedException.class);
