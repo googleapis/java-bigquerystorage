@@ -530,7 +530,7 @@ public class StreamWriter implements AutoCloseable {
         return;
       }
       shutdown = true;
-      LOG.fine("Shutdown called on writer");
+      LOG.info("Shutdown called on writer: " + streamName);
       if (currentAlarmFuture != null && activeAlarm) {
         currentAlarmFuture.cancel(false);
         activeAlarm = false;
@@ -842,6 +842,7 @@ public class StreamWriter implements AutoCloseable {
     }
 
     private void abortInflightRequests(Throwable t) {
+      LOG.fine("Aborting all inflight requests");
       synchronized (this.inflightBatches) {
         boolean first_error = true;
         while (!this.inflightBatches.isEmpty()) {
@@ -921,7 +922,7 @@ public class StreamWriter implements AutoCloseable {
 
     @Override
     public void onError(Throwable t) {
-      LOG.info("OnError called" + t.toString());
+      LOG.info("OnError called: " + t.toString());
       streamWriter.streamException.set(t);
       abortInflightRequests(t);
     }

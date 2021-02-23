@@ -34,6 +34,7 @@ import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
 import com.google.api.gax.rpc.AbortedException;
 import com.google.api.gax.rpc.DataLossException;
+import com.google.api.gax.rpc.UnknownException;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.common.base.Strings;
 import com.google.protobuf.DescriptorProtos;
@@ -684,6 +685,7 @@ public class StreamWriterTest {
                     .toBuilder()
                     // When shutdown, we should have something in batch.
                     .setElementCountThreshold(3L)
+                    .setDelayThreshold(Duration.ofSeconds(10))
                     .setFlowControlSettings(
                         StreamWriter.Builder.DEFAULT_FLOW_CONTROL_SETTINGS
                             .toBuilder()
@@ -724,12 +726,13 @@ public class StreamWriterTest {
             try {
               LinkedList<ApiFuture<AppendRowsResponse>> responses =
                   new LinkedList<ApiFuture<AppendRowsResponse>>();
-              int last_count = 0;
+              int last_count = 30;
               LOG.info(
                   "Send 30 messages, will be batched into 10 messages, start fail at 7th message");
               for (int i = 0; i < 30; i++) {
                 try {
                   responses.add(sendTestMessage(writer1, new String[] {"B"}, i));
+                  Thread.sleep(500);
                 } catch (IllegalStateException ex) {
                   LOG.info("Stopped at sending request no." + i + " ex: " + ex.toString());
                   last_count = i;
@@ -769,12 +772,16 @@ public class StreamWriterTest {
                   }
                 }
               }
+              LOG.info("Last count is:" + last_count);
               for (int i = 6 * 3; i < last_count; i++) {
                 try {
                   responses.get(i).get();
                   return new Exception("Expect response return an error after a stream exception");
                 } catch (Exception e) {
-                  LOG.info("Got !!!!!" + e.toString());
+                  if (e.getCause().getClass() != UnknownException.class
+                      && e.getCause().getClass() != AbortedException.class) {
+                    return new Exception("Unexpected stream exception:" + e.toString());
+                  }
                 }
               }
               return null;
@@ -789,7 +796,7 @@ public class StreamWriterTest {
       LOG.info("Wait for " + i + " response scheduled");
       testBigQueryWrite.waitForResponseScheduled();
     }
-    LOG.info("@@@@@@@@");
+    Thread.sleep(500);
     writer.close();
     if (future.get() != null) {
       future.get().printStackTrace();
