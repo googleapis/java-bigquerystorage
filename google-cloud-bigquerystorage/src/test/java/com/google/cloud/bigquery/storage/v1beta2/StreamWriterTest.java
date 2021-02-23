@@ -570,7 +570,7 @@ public class StreamWriterTest {
     writer.close();
     if (future.get() != null) {
       future.get().printStackTrace();
-      fail("Call got exception");
+      fail("Call got exception: " + future.get().toString());
     }
     // Everything should come back.
     executor.shutdown();
@@ -649,7 +649,7 @@ public class StreamWriterTest {
     writer.close();
     if (future.get() != null) {
       future.get().printStackTrace();
-      fail("Call got exception");
+      fail("Call got exception: " + future.get().toString());
     }
     // Everything should come back.
     executor.shutdown();
@@ -735,7 +735,7 @@ public class StreamWriterTest {
     writer.close();
     if (future.get() != null) {
       future.get().printStackTrace();
-      fail("Call got exception");
+      fail("Call got exception: " + future.get().toString());
     }
     // Everything should come back.
     executor.shutdown();
