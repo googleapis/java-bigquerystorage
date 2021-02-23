@@ -424,14 +424,14 @@ public class StreamWriterTest {
   @Test
   public void testBatchIsFlushed() throws Exception {
     try (StreamWriter writer =
-             getTestStreamWriterBuilder()
-                 .setBatchingSettings(
-                     StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                         .toBuilder()
-                         .setElementCountThreshold(2L)
-                         .setDelayThreshold(Duration.ofSeconds(1))
-                         .build())
-                 .build()) {
+        getTestStreamWriterBuilder()
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(2L)
+                    .setDelayThreshold(Duration.ofSeconds(1))
+                    .build())
+            .build()) {
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()
               .setAppendResult(
@@ -454,14 +454,14 @@ public class StreamWriterTest {
   @Test
   public void testBatchIsFlushedWithError() throws Exception {
     try (StreamWriter writer =
-             getTestStreamWriterBuilder()
-                 .setBatchingSettings(
-                     StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                         .toBuilder()
-                         .setElementCountThreshold(2L)
-                         .setDelayThreshold(Duration.ofSeconds(1))
-                         .build())
-                 .build()) {
+        getTestStreamWriterBuilder()
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(2L)
+                    .setDelayThreshold(Duration.ofSeconds(1))
+                    .build())
+            .build()) {
       testBigQueryWrite.addException(Status.DATA_LOSS.asException());
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()
@@ -486,7 +486,7 @@ public class StreamWriterTest {
       }
     }
   }
-  
+
   @Test
   public void testFlowControlBehaviorBlock() throws Exception {
     StreamWriter writer =
