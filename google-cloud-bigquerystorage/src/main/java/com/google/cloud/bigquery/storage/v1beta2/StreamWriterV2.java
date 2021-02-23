@@ -41,8 +41,6 @@ import javax.annotation.concurrent.GuardedBy;
  *
  * <p>TODO: Attach schema.
  *
- * <p>TODO: Add inflight control.
- *
  * <p>TODO: Attach traceId.
  *
  * <p>TODO: Support batching.
@@ -54,11 +52,34 @@ public class StreamWriterV2 implements AutoCloseable {
 
   private Lock lock;
   private Condition hasMessageInWaitingQueue;
+  private Condition inflightReduced;
 
   /*
    * The identifier of stream to write to.
    */
   private final String streamName;
+
+  /*
+   * Max allowed inflight requests in the stream. Method append is blocked at this.
+   */
+  private final long maxInflightRequests;
+
+  /*
+   * Max allowed inflight bytes in the stream. Method append is blocked at this.
+   */
+  private final long maxInflightBytes;
+
+  /*
+   * Tracks current inflight requests in the stream.
+   */
+  @GuardedBy("lock")
+  private long inflightRequests = 0;
+
+  /*
+   * Tracks current inflight bytes in the stream.
+   */
+  @GuardedBy("lock")
+  private long inflightBytes = 0;
 
   /*
    * Indicates whether user has called Close() or not.
@@ -112,7 +133,10 @@ public class StreamWriterV2 implements AutoCloseable {
   private StreamWriterV2(Builder builder) throws IOException {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
+    this.inflightReduced = lock.newCondition();
     this.streamName = builder.streamName;
+    this.maxInflightRequests = builder.maxInflightRequest;
+    this.maxInflightBytes = builder.maxInflightBytes;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     if (builder.client == null) {
@@ -210,11 +234,35 @@ public class StreamWriterV2 implements AutoCloseable {
                         "Stream is closed due to " + connectionFinalStatus.toString())));
         return requestWrapper.appendResult;
       }
+
+      ++this.inflightRequests;
+      this.inflightBytes += requestWrapper.messageSize;
       waitingRequestQueue.addLast(requestWrapper);
       hasMessageInWaitingQueue.signal();
+      maybeWaitForInflightQuota();
       return requestWrapper.appendResult;
     } finally {
       this.lock.unlock();
+    }
+  }
+
+  @GuardedBy("lock")
+  private void maybeWaitForInflightQuota() {
+    while (this.inflightRequests >= this.maxInflightRequests
+        || this.inflightBytes >= this.maxInflightBytes) {
+      try {
+        inflightReduced.await(100, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException e) {
+        log.warning(
+            "Interrupted while waiting for inflight quota. Stream: "
+                + streamName
+                + " Error: "
+                + e.toString());
+        throw new StatusRuntimeException(
+            Status.fromCode(Code.CANCELLED)
+                .withCause(e)
+                .withDescription("Interrupted while waiting for quota."));
+      }
     }
   }
 
@@ -330,7 +378,7 @@ public class StreamWriterV2 implements AutoCloseable {
     try {
       finalStatus = this.connectionFinalStatus;
       while (!this.inflightRequestQueue.isEmpty()) {
-        localQueue.addLast(this.inflightRequestQueue.pollFirst());
+        localQueue.addLast(pollInflightRequestQueue());
       }
     } finally {
       this.lock.unlock();
@@ -349,7 +397,7 @@ public class StreamWriterV2 implements AutoCloseable {
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
     try {
-      requestWrapper = this.inflightRequestQueue.pollFirst();
+      requestWrapper = pollInflightRequestQueue();
     } finally {
       this.lock.unlock();
     }
@@ -370,6 +418,15 @@ public class StreamWriterV2 implements AutoCloseable {
     }
   }
 
+  @GuardedBy("lock")
+  private AppendRequestAndResponse pollInflightRequestQueue() {
+    AppendRequestAndResponse requestWrapper = this.inflightRequestQueue.pollFirst();
+    --this.inflightRequests;
+    this.inflightBytes -= requestWrapper.messageSize;
+    this.inflightReduced.signal();
+    return requestWrapper;
+  }
+
   /** Constructs a new {@link StreamWriterV2.Builder} using the given stream and client. */
   public static StreamWriterV2.Builder newBuilder(String streamName, BigQueryWriteClient client) {
     return new StreamWriterV2.Builder(streamName, client);
@@ -383,9 +440,17 @@ public class StreamWriterV2 implements AutoCloseable {
   /** A builder of {@link StreamWriterV2}s. */
   public static final class Builder {
 
+    private static final long DEFAULT_MAX_INFLIGHT_REQUESTS = 1000L;
+
+    private static final long DEFAULT_MAX_INFLIGHT_BYTES = 100 * 1024 * 1024; // 100Mb.
+
     private String streamName;
 
     private BigQueryWriteClient client;
+
+    private long maxInflightRequest = DEFAULT_MAX_INFLIGHT_REQUESTS;
+
+    private long maxInflightBytes = DEFAULT_MAX_INFLIGHT_BYTES;
 
     private String endpoint = BigQueryWriteSettings.getDefaultEndpoint();
 
@@ -403,6 +468,16 @@ public class StreamWriterV2 implements AutoCloseable {
     private Builder(String streamName, BigQueryWriteClient client) {
       this.streamName = Preconditions.checkNotNull(streamName);
       this.client = Preconditions.checkNotNull(client);
+    }
+
+    public Builder setMaxInflightRequests(long value) {
+      this.maxInflightRequest = value;
+      return this;
+    }
+
+    public Builder setMaxInflightBytes(long value) {
+      this.maxInflightBytes = value;
+      return this;
     }
 
     /** Gives the ability to override the gRPC endpoint. */
