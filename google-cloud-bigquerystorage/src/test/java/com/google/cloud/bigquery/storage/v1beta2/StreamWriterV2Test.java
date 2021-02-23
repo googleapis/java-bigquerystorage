@@ -26,6 +26,7 @@ import com.google.api.gax.grpc.testing.MockServiceHelper;
 import com.google.api.gax.rpc.ApiException;
 import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
+import com.google.common.base.Strings;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Int64Value;
 import io.grpc.Status;
@@ -104,7 +105,7 @@ public class StreamWriterV2Test {
       FooType foo = FooType.newBuilder().setFoo(message).build();
       rows.addSerializedRows(foo.toByteString());
     }
-    if (offset > -1) {
+    if (offset > 0) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
     return requestBuilder
@@ -366,6 +367,21 @@ public class StreamWriterV2Test {
     for (int i = 0; i < appendCount; i++) {
       assertEquals(i, testBigQueryWrite.getAppendRequests().get(i).getOffset().getValue());
     }
+    writer.close();
+  }
+
+  @Test
+  public void testMessageTooLarge() {
+    StreamWriterV2 writer = getTestStreamWriterV2();
+
+    String oversized = Strings.repeat("a", (int) (StreamWriterV2.getApiMaxRequestBytes() + 1));
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {oversized});
+    assertTrue(appendFuture1.isDone());
+    StatusRuntimeException actualError =
+        assertFutureException(StatusRuntimeException.class, appendFuture1);
+    assertEquals(Status.Code.INVALID_ARGUMENT, actualError.getStatus().getCode());
+    assertTrue(actualError.getStatus().getDescription().contains("MessageSize is too large"));
+
     writer.close();
   }
 }

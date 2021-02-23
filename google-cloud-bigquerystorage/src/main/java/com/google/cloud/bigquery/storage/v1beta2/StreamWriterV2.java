@@ -40,8 +40,6 @@ import javax.annotation.concurrent.GuardedBy;
  *
  * <p>TODO: Attach schema.
  *
- * <p>TODO: Add max size check.
- *
  * <p>TODO: Attach traceId.
  *
  * <p>TODO: Support batching.
@@ -116,6 +114,11 @@ public class StreamWriterV2 implements AutoCloseable {
    */
   private Thread appendThread;
 
+  /** The maximum size of one request. Defined by the API. */
+  public static long getApiMaxRequestBytes() {
+    return 8L * 1000L * 1000L; // 8 megabytes (https://en.wikipedia.org/wiki/Megabyte)
+  }
+
   private StreamWriterV2(Builder builder) {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
@@ -179,6 +182,17 @@ public class StreamWriterV2 implements AutoCloseable {
    */
   public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
     AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message);
+    if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
+      requestWrapper.appendResult.setException(
+          new StatusRuntimeException(
+              Status.fromCode(Code.INVALID_ARGUMENT)
+                  .withDescription(
+                      "MessageSize is too large. Max allow: "
+                          + getApiMaxRequestBytes()
+                          + " Actual: "
+                          + requestWrapper.messageSize)));
+      return requestWrapper.appendResult;
+    }
     this.lock.lock();
     try {
       if (userClosed) {
