@@ -865,7 +865,7 @@ public class StreamWriterTest {
     writer.close();
     if (future.get() != null) {
       future.get().printStackTrace();
-      fail("Callback got exception");
+      fail("Callback got exception" + future.get().toString());
     }
     // Everything should come back.
     executor.shutdown();
@@ -952,7 +952,10 @@ public class StreamWriterTest {
     assertEquals(2L, appendFuture1.get().getAppendResult().getOffset().getValue());
     // When close is called, there should be one inflight request waiting.
     writer.close();
-    assertEquals(future.get(), null);
+    if (future.get() != null) {
+      future.get().printStackTrace();
+      fail("Callback got exception" + future.get().toString());
+    }
     // Everything should come back.
     executor.shutdown();
   }
