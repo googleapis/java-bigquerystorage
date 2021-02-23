@@ -452,6 +452,7 @@ public class StreamWriterTest {
       assertFalse(appendFuture1.isDone());
       writer.shutdown();
       // Write triggered by shutdown.
+      assertTrue(appendFuture1.isDone());
       try {
         assertEquals(0L, appendFuture1.get().getAppendResult().getOffset().getValue());
       } catch (ExecutionException ex) {
