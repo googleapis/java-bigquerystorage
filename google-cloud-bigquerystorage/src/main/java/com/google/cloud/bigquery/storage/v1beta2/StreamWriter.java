@@ -339,13 +339,15 @@ public class StreamWriter implements AutoCloseable {
         appendAndRefreshAppendLock.unlock();
         messagesWaiter.acquire(inflightBatch.getByteSize());
         appendAndRefreshAppendLock.lock();
-        if (streamException.get() != null) {
+        if (shutdown || streamException.get() != null) {
           appendAndRefreshAppendLock.unlock();
           messagesWaiter.release(inflightBatch.getByteSize());
           appendAndRefreshAppendLock.lock();
           inflightBatch.onFailure(
               new AbortedException(
-                  "Stream has previous errors, abort append",
+                  shutdown
+                      ? "Stream closed, abort append"
+                      : "Stream has previous errors, abort append",
                   null,
                   GrpcStatusCode.of(Status.Code.ABORTED),
                   true));
@@ -527,7 +529,6 @@ public class StreamWriter implements AutoCloseable {
         LOG.fine("Already shutdown.");
         return;
       }
-      shutdown = true;
       LOG.info("Shutdown called on writer: " + streamName);
       if (currentAlarmFuture != null && activeAlarm) {
         currentAlarmFuture.cancel(false);
@@ -542,6 +543,7 @@ public class StreamWriter implements AutoCloseable {
                 GrpcStatusCode.of(Status.Code.ABORTED),
                 true));
       }
+      shutdown = true;
       try {
         appendAndRefreshAppendLock.unlock();
         messagesWaiter.waitComplete(0);
