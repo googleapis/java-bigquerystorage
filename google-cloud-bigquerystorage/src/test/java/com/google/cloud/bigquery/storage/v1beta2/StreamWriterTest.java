@@ -446,7 +446,7 @@ public class StreamWriterTest {
       ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
       assertFalse(appendFuture1.isDone());
       writer.shutdown();
-      // Write triggered by batch size
+      // Write triggered by shutdown.
       assertEquals(0L, appendFuture1.get().getAppendResult().getOffset().getValue());
     }
   }
