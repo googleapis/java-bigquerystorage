@@ -422,6 +422,72 @@ public class StreamWriterTest {
   }
 
   @Test
+  public void testBatchIsFlushed() throws Exception {
+    try (StreamWriter writer =
+             getTestStreamWriterBuilder()
+                 .setBatchingSettings(
+                     StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                         .toBuilder()
+                         .setElementCountThreshold(2L)
+                         .setDelayThreshold(Duration.ofSeconds(1))
+                         .build())
+                 .build()) {
+      testBigQueryWrite.addResponse(
+          AppendRowsResponse.newBuilder()
+              .setAppendResult(
+                  AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
+              .build());
+      testBigQueryWrite.addResponse(
+          AppendRowsResponse.newBuilder()
+              .setAppendResult(
+                  AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(3)).build())
+              .build());
+
+      ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+      assertFalse(appendFuture1.isDone());
+      writer.shutdown();
+      // Write triggered by batch size
+      assertEquals(0L, appendFuture1.get().getAppendResult().getOffset().getValue());
+    }
+  }
+
+  @Test
+  public void testBatchIsFlushedWithError() throws Exception {
+    try (StreamWriter writer =
+             getTestStreamWriterBuilder()
+                 .setBatchingSettings(
+                     StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                         .toBuilder()
+                         .setElementCountThreshold(2L)
+                         .setDelayThreshold(Duration.ofSeconds(1))
+                         .build())
+                 .build()) {
+      testBigQueryWrite.addException(Status.DATA_LOSS.asException());
+      testBigQueryWrite.addResponse(
+          AppendRowsResponse.newBuilder()
+              .setAppendResult(
+                  AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(3)).build())
+              .build());
+
+      ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+      ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
+      ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
+      try {
+        appendFuture2.get();
+      } catch (ExecutionException ex) {
+        assertEquals(DataLossException.class, ex.getCause().getClass());
+      }
+      assertFalse(appendFuture3.isDone());
+      writer.shutdown();
+      try {
+        appendFuture3.get();
+      } catch (ExecutionException ex) {
+        assertEquals(AbortedException.class, ex.getCause().getClass());
+      }
+    }
+  }
+  
+  @Test
   public void testFlowControlBehaviorBlock() throws Exception {
     StreamWriter writer =
         getTestStreamWriterBuilder()
