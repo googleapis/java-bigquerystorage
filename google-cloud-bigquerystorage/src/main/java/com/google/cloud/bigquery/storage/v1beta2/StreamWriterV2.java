@@ -215,27 +215,30 @@ public class StreamWriterV2 implements AutoCloseable {
       this.inflightBytes += requestWrapper.messageSize;
       waitingRequestQueue.addLast(requestWrapper);
       hasMessageInWaitingQueue.signal();
-
-      // Maybe block until we are below inflight limit.
-      while (this.inflightRequests >= this.maxInflightRequests
-          || this.inflightBytes >= this.maxInflightBytes) {
-        try {
-          inflightReduced.await(100, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-          log.warning(
-              "Interrupted while waiting for inflight quota. Stream: "
-                  + streamName
-                  + " Error: "
-                  + e.toString());
-          throw new StatusRuntimeException(
-              Status.fromCode(Code.CANCELLED)
-                  .withCause(e)
-                  .withDescription("Interrupted while waiting for quota."));
-        }
-      }
+      maybeWaitForInflightQuota();
       return requestWrapper.appendResult;
     } finally {
       this.lock.unlock();
+    }
+  }
+
+  @GuardedBy("lock")
+  private void maybeWaitForInflightQuota() {
+    while (this.inflightRequests >= this.maxInflightRequests
+        || this.inflightBytes >= this.maxInflightBytes) {
+      try {
+        inflightReduced.await(100, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException e) {
+        log.warning(
+            "Interrupted while waiting for inflight quota. Stream: "
+                + streamName
+                + " Error: "
+                + e.toString());
+        throw new StatusRuntimeException(
+            Status.fromCode(Code.CANCELLED)
+                .withCause(e)
+                .withDescription("Interrupted while waiting for quota."));
+      }
     }
   }
 
