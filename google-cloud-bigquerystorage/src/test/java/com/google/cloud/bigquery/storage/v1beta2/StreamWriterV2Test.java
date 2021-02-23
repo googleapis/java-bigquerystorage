@@ -104,7 +104,7 @@ public class StreamWriterV2Test {
       FooType foo = FooType.newBuilder().setFoo(message).build();
       rows.addSerializedRows(foo.toByteString());
     }
-    if (offset > 0) {
+    if (offset > -1) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
     return requestBuilder
@@ -354,7 +354,7 @@ public class StreamWriterV2Test {
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     long appendStartTimeMs = System.currentTimeMillis();
     for (int i = 0; i < appendCount; i++) {
-      futures.add(sendTestMessage(writer, new String[] {String.valueOf(i)}));
+      futures.add(writer.append(createAppendRequest(new String[] {String.valueOf(i)}, i)));
     }
     long appendElapsedMs = System.currentTimeMillis() - appendStartTimeMs;
     assertTrue(appendElapsedMs >= 1000);
@@ -363,6 +363,9 @@ public class StreamWriterV2Test {
       assertEquals(i, futures.get(i).get().getAppendResult().getOffset().getValue());
     }
     assertEquals(appendCount, testBigQueryWrite.getAppendRequests().size());
+    for (int i = 0; i < appendCount; i++) {
+      assertEquals(i, testBigQueryWrite.getAppendRequests().get(i).getOffset().getValue());
+    }
     writer.close();
   }
 }
