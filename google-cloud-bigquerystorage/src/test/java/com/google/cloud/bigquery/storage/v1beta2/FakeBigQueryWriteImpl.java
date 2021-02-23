@@ -127,7 +127,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
         new StreamObserver<AppendRowsRequest>() {
           @Override
           public void onNext(AppendRowsRequest value) {
-            LOG.info("Get request:" + value.toString());
+            LOG.fine("Get request:" + value.toString());
             final Response response = responses.remove();
             requests.add(value);
             if (responseSleep.compareTo(Duration.ZERO) > 0) {
@@ -140,7 +140,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
             } else {
               final Response responseToSend = response;
               // TODO(yirutang): This is very wrong because it messes up response/complete ordering.
-              LOG.info("Schedule a response to be sent at delay");
+              LOG.fine("Schedule a response to be sent at delay");
               executor.schedule(
                   new Runnable() {
                     @Override
@@ -169,7 +169,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
 
   private void sendResponse(
       Response response, StreamObserver<AppendRowsResponse> responseObserver) {
-    LOG.info("Sending response: " + response.toString());
+    LOG.fine("Sending response: " + response.toString());
     if (response.isError()) {
       responseObserver.onError(response.getError());
     } else {
