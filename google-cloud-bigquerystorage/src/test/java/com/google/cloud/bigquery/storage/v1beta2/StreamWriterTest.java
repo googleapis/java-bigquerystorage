@@ -602,7 +602,7 @@ public class StreamWriterTest {
 
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"}, 2);
     final StreamWriter writer1 = writer;
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    ExecutorService executor = Executors.newFixedThreadPool(2);
     Callable<Throwable> callable =
         new Callable<Throwable>() {
           @Override
@@ -690,7 +690,7 @@ public class StreamWriterTest {
     }
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"}, 2);
     final StreamWriter writer1 = writer;
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    ExecutorService executor = Executors.newFixedThreadPool(2);
     Callable<Throwable> callable =
         new Callable<Throwable>() {
           @Override
@@ -783,7 +783,7 @@ public class StreamWriterTest {
       testBigQueryWrite.addException(new UnsupportedOperationException("Strange exception"));
     }
     final StreamWriter writer1 = writer;
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    ExecutorService executor = Executors.newFixedThreadPool(2);
     Callable<Throwable> callable =
         new Callable<Throwable>() {
           @Override
@@ -908,7 +908,7 @@ public class StreamWriterTest {
 
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"}, 2);
     final StreamWriter writer1 = writer;
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    ExecutorService executor = Executors.newFixedThreadPool(2);
     Callable<Throwable> callable =
         new Callable<Throwable>() {
           @Override
