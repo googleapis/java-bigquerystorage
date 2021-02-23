@@ -122,10 +122,14 @@ public class StreamWriter implements AutoCloseable {
 
   private final ScheduledExecutorService executor;
 
-  private final AtomicBoolean shutdown;
+  @GuardedBy("appendAndRefreshAppendLock")
+  private boolean shutdown;
+
   private final Waiter messagesWaiter;
+
   @GuardedBy("appendAndRefreshAppendLock")
   private boolean activeAlarm;
+
   private ScheduledFuture<?> currentAlarmFuture;
 
   private Integer currentRetries = 0;
@@ -191,7 +195,7 @@ public class StreamWriter implements AutoCloseable {
       stub = builder.client;
     }
     backgroundResources = new BackgroundResourceAggregation(backgroundResourceList);
-    shutdown = new AtomicBoolean(false);
+    shutdown = false;
     if (builder.onSchemaUpdateRunnable != null) {
       this.onSchemaUpdateRunnable = builder.onSchemaUpdateRunnable;
       this.onSchemaUpdateRunnable.setStreamWriter(this);
@@ -252,7 +256,7 @@ public class StreamWriter implements AutoCloseable {
   public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
     appendAndRefreshAppendLock.lock();
     try {
-      Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
+      Preconditions.checkState(!shutdown, "Cannot append on a shut-down writer.");
       Preconditions.checkNotNull(message, "Message is null.");
       Preconditions.checkState(streamException.get() == null, "Stream already failed.");
       final AppendRequestAndFutureResponse outstandingAppend =
@@ -335,9 +339,9 @@ public class StreamWriter implements AutoCloseable {
         appendAndRefreshAppendLock.unlock();
         messagesWaiter.acquire(inflightBatch.getByteSize());
         appendAndRefreshAppendLock.lock();
-        if (shutdown.get() && streamException.get() != null) {
+        if (shutdown && streamException.get() != null) {
           String err_msg = null;
-          if (shutdown.get()) {
+          if (shutdown) {
             err_msg = "Stream closed, abort append";
           } else {
             err_msg = "Stream has previous errors, abort append";
@@ -521,13 +525,15 @@ public class StreamWriter implements AutoCloseable {
   protected void shutdown() {
     appendAndRefreshAppendLock.lock();
     try {
-      if (shutdown.getAndSet(true)) {
+      if (shutdown) {
         LOG.fine("Already shutdown.");
         return;
       }
+      shutdown = true;
       LOG.fine("Shutdown called on writer");
-      if (currentAlarmFuture != null && activeAlarm.getAndSet(false)) {
+      if (currentAlarmFuture != null && activeAlarm) {
         currentAlarmFuture.cancel(false);
+        activeAlarm = false;
       }
       writeAllOutstanding();
       if (streamException.get() != null) {

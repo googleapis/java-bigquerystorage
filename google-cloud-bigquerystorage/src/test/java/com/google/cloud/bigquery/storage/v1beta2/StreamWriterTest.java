@@ -1020,6 +1020,40 @@ public class StreamWriterTest {
   }
 
   @Test
+  public void testStreamAppendDirectException() throws Exception {
+    StreamWriter writer =
+        getTestStreamWriterBuilder()
+            .setBatchingSettings(
+                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
+                    .toBuilder()
+                    .setElementCountThreshold(1L)
+                    .setDelayThreshold(Duration.ofSeconds(5))
+                    .build())
+            .build();
+    testBigQueryWrite.addException(Status.DATA_LOSS.asException());
+    ApiFuture<AppendRowsResponse> future1 = sendTestMessage(writer, new String[] {"A"});
+    try {
+      future1.get();
+      fail("Expected furture1 to fail");
+    } catch (ExecutionException ex) {
+      assertEquals(DataLossException.class, ex.getCause().getClass());
+    }
+    try {
+      sendTestMessage(writer, new String[] {"B"});
+      fail("Expected furture2 to fail");
+    } catch (IllegalStateException ex) {
+      assertEquals("Stream already failed.", ex.getMessage());
+    }
+    writer.shutdown();
+    try {
+      sendTestMessage(writer, new String[] {"C"});
+      fail("Expected furture3 to fail");
+    } catch (IllegalStateException ex) {
+      assertEquals("Cannot append on a shut-down writer.", ex.getMessage());
+    }
+  }
+
+  @Test
   public void testErrorPropagation() throws Exception {
     StreamWriter writer =
         getTestStreamWriterBuilder()
