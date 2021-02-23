@@ -339,7 +339,7 @@ public class StreamWriter implements AutoCloseable {
         appendAndRefreshAppendLock.unlock();
         messagesWaiter.acquire(inflightBatch.getByteSize());
         appendAndRefreshAppendLock.lock();
-        if (shutdown && streamException.get() != null) {
+        if (shutdown || streamException.get() != null) {
           String err_msg = null;
           if (shutdown) {
             err_msg = "Stream closed, abort append";
