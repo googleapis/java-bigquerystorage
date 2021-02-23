@@ -638,7 +638,6 @@ public class StreamWriterTest {
           }
         };
     Future<Throwable> future = executor.submit(callable);
-    assertEquals(false, appendFuture1.isDone());
     // Wait is necessary for response to be scheduled before timer is advanced.
     testBigQueryWrite.waitForResponseScheduled();
     testBigQueryWrite.waitForResponseScheduled();
