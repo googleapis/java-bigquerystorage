@@ -16,7 +16,7 @@
 
 package com.example.bigquerystorage;
 
-// [START bigquerystorage_jsonstreamwriter_committed]
+// [START bigquerystorage_jsonstreamwriter_parallelcommitted]
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
@@ -276,4 +276,4 @@ public class ParallelWriteCommittedStream {
     }
   }
 }
-// [END bigquerystorage_jsonstreamwriter_committed]
+// [END bigquerystorage_jsonstreamwriter_parallelcommitted]
