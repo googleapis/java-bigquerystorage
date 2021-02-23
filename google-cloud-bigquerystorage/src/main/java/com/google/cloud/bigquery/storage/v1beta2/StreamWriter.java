@@ -339,18 +339,16 @@ public class StreamWriter implements AutoCloseable {
         appendAndRefreshAppendLock.unlock();
         messagesWaiter.acquire(inflightBatch.getByteSize());
         appendAndRefreshAppendLock.lock();
-        if (shutdown || streamException.get() != null) {
-          String err_msg = null;
-          if (shutdown) {
-            err_msg = "Stream closed, abort append";
-          } else {
-            err_msg = "Stream has previous errors, abort append";
-          }
+        if (streamException.get() != null) {
           appendAndRefreshAppendLock.unlock();
           messagesWaiter.release(inflightBatch.getByteSize());
           appendAndRefreshAppendLock.lock();
           inflightBatch.onFailure(
-              new AbortedException(err_msg, null, GrpcStatusCode.of(Status.Code.ABORTED), true));
+              new AbortedException(
+                  "Stream has previous errors, abort append",
+                  null,
+                  GrpcStatusCode.of(Status.Code.ABORTED),
+                  true));
           return;
         }
         responseObserver.addInflightBatch(inflightBatch);

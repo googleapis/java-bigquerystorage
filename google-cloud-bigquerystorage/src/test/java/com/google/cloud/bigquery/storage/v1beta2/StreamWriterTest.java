@@ -355,13 +355,8 @@ public class StreamWriterTest {
     // Verify the appends completed
     assertTrue(appendFuture1.isDone());
     assertTrue(appendFuture2.isDone());
-    try {
-      assertEquals(0L, appendFuture1.get().getAppendResult().getOffset().getValue());
-      assertEquals(1L, appendFuture2.get().getAppendResult().getOffset().getValue());
-    } catch (ExecutionException ex) {
-      // Sometimes the append will fail if we close before the writeBatch.
-      assertEquals("Stream closed, abort append", ex.getCause().getMessage());
-    }
+    assertEquals(0L, appendFuture1.get().getAppendResult().getOffset().getValue());
+    assertEquals(1L, appendFuture2.get().getAppendResult().getOffset().getValue());
   }
 
   @Test
@@ -453,12 +448,7 @@ public class StreamWriterTest {
       writer.shutdown();
       // Write triggered by shutdown.
       assertTrue(appendFuture1.isDone());
-      try {
-        assertEquals(0L, appendFuture1.get().getAppendResult().getOffset().getValue());
-      } catch (ExecutionException ex) {
-        // Sometimes it will be aborted since we closed the stream before the actual writeBatch.
-        assertEquals("Stream closed, abort append", ex.getCause().getMessage());
-      }
+      assertEquals(0L, appendFuture1.get().getAppendResult().getOffset().getValue());
     }
   }
 
