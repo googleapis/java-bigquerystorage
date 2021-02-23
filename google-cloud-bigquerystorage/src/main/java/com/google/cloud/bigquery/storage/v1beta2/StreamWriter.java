@@ -124,7 +124,8 @@ public class StreamWriter implements AutoCloseable {
 
   private final AtomicBoolean shutdown;
   private final Waiter messagesWaiter;
-  private final AtomicBoolean activeAlarm;
+  @GuardedBy("appendAndRefreshAppendLock")
+  private boolean activeAlarm;
   private ScheduledFuture<?> currentAlarmFuture;
 
   private Integer currentRetries = 0;
@@ -166,7 +167,7 @@ public class StreamWriter implements AutoCloseable {
     this.messagesBatch = new MessagesBatch(batchingSettings, this.streamName, this);
     messagesBatchLock = new ReentrantLock();
     appendAndRefreshAppendLock = new ReentrantLock();
-    activeAlarm = new AtomicBoolean(false);
+    activeAlarm = false;
     this.streamException = new AtomicReference<Throwable>(null);
 
     executor = builder.executorProvider.getExecutor();
@@ -281,9 +282,10 @@ public class StreamWriter implements AutoCloseable {
     throw new UnimplementedException(null, GrpcStatusCode.of(Status.Code.UNIMPLEMENTED), false);
   }
 
+  @GuardedBy("appendAndRefreshAppendLock")
   private void setupAlarm() {
     if (!messagesBatch.isEmpty()) {
-      if (!activeAlarm.getAndSet(true)) {
+      if (!activeAlarm) {
         long delayThresholdMs = getBatchingSettings().getDelayThreshold().toMillis();
         LOG.log(Level.FINE, "Setting up alarm for the next {0} ms.", delayThresholdMs);
         currentAlarmFuture =
@@ -293,7 +295,7 @@ public class StreamWriter implements AutoCloseable {
                   public void run() {
                     LOG.fine("Sending messages based on schedule");
                     appendAndRefreshAppendLock.lock();
-                    activeAlarm.getAndSet(false);
+                    activeAlarm = false;
                     try {
                       writeBatch(messagesBatch.popBatch());
                     } finally {
@@ -306,9 +308,8 @@ public class StreamWriter implements AutoCloseable {
       }
     } else if (currentAlarmFuture != null) {
       LOG.log(Level.FINER, "Cancelling alarm, no more messages");
-      if (activeAlarm.getAndSet(false)) {
-        currentAlarmFuture.cancel(false);
-      }
+      currentAlarmFuture.cancel(false);
+      activeAlarm = false;
     }
   }
 
