@@ -255,7 +255,7 @@ public class StreamWriter implements AutoCloseable {
    */
   public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
     appendAndRefreshAppendLock.lock();
-    
+
     try {
       Preconditions.checkState(!shutdown, "Cannot append on a shut-down writer.");
       Preconditions.checkNotNull(message, "Message is null.");
