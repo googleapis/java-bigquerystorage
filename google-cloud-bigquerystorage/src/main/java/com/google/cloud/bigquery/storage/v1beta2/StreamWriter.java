@@ -530,21 +530,48 @@ public class StreamWriter implements AutoCloseable {
         LOG.fine("Already shutdown.");
         return;
       }
+      shutdown = true;
       LOG.info("Shutdown called on writer: " + streamName);
       if (currentAlarmFuture != null && activeAlarm) {
         currentAlarmFuture.cancel(false);
         activeAlarm = false;
       }
-      writeAllOutstanding();
-      if (streamException.get() != null) {
-        this.responseObserver.abortInflightRequests(
-            new AbortedException(
-                "Request aborted due to previous failures",
-                streamException.get(),
-                GrpcStatusCode.of(Status.Code.ABORTED),
-                true));
+      // Wait for current inflight to drain.
+      try {
+        appendAndRefreshAppendLock.unlock();
+        messagesWaiter.waitComplete(0);
+      } catch (InterruptedException e) {
+        LOG.warning("Failed to wait for messages to return " + e.toString());
       }
-      shutdown = true;
+      appendAndRefreshAppendLock.lock();
+      // Try to send out what's left in batch.
+      if (!messagesBatch.isEmpty()) {
+        InflightBatch inflightBatch = messagesBatch.popBatch();
+        AppendRowsRequest request = inflightBatch.getMergedRequest();
+        if (streamException.get() != null) {
+          inflightBatch.onFailure(
+              new AbortedException(
+                  shutdown
+                      ? "Stream closed, abort append."
+                      : "Stream has previous errors, abort append.",
+                  null,
+                  GrpcStatusCode.of(Status.Code.ABORTED),
+                  true));
+        } else {
+          try {
+            appendAndRefreshAppendLock.unlock();
+            messagesWaiter.acquire(inflightBatch.getByteSize());
+            appendAndRefreshAppendLock.lock();
+            responseObserver.addInflightBatch(inflightBatch);
+            clientStream.send(request);
+          } catch (FlowController.FlowControlException ex) {
+            appendAndRefreshAppendLock.lock();
+            LOG.warning(
+                "Unexpected flow control exception when sending batch leftover: " + ex.toString());
+          }
+        }
+      }
+      // Close the stream.
       try {
         appendAndRefreshAppendLock.unlock();
         messagesWaiter.waitComplete(0);
