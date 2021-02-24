@@ -710,6 +710,13 @@ public class StreamWriterTest {
                     return new Exception("Got unexpected message:" + ex.getMessage());
                   }
                   break;
+                } catch (AbortedException ex) {
+                  LOG.info("Stopped at " + i + " responses:" + responses.size());
+                  last_count = i;
+                  if ("Stream closed, abort append." != ex.getMessage()) {
+                    return new Exception("Got unexpected message:" + ex.getMessage());
+                  }
+                  break;
                 }
               }
               // For all the requests that are sent in, we should get a finished callback.
@@ -732,6 +739,7 @@ public class StreamWriterTest {
     assertEquals(false, appendFuture1.isDone());
     // The first requests gets back while the second one is blocked.
     assertEquals(2L, appendFuture1.get().getAppendResult().getOffset().getValue());
+    Thread.sleep(500);
     // When close is called, there should be one inflight request waiting.
     writer.close();
     if (future.get() != null) {

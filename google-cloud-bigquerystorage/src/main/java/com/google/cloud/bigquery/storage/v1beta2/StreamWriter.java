@@ -347,8 +347,8 @@ public class StreamWriter implements AutoCloseable {
           inflightBatch.onFailure(
               new AbortedException(
                   shutdown
-                      ? "Stream closed, abort append"
-                      : "Stream has previous errors, abort append",
+                      ? "Stream closed, abort append."
+                      : "Stream has previous errors, abort append.",
                   null,
                   GrpcStatusCode.of(Status.Code.ABORTED),
                   true));
