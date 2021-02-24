@@ -131,6 +131,7 @@ public class StreamWriterV2 implements AutoCloseable {
   }
 
   private StreamWriterV2(Builder builder) throws IOException {
+    log.info("Creating StreamWriterV2 for stream: " + builder.streamName);
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
     this.inflightReduced = lock.newCondition();
