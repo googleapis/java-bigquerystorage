@@ -739,7 +739,6 @@ public class StreamWriterTest {
     assertEquals(false, appendFuture1.isDone());
     // The first requests gets back while the second one is blocked.
     assertEquals(2L, appendFuture1.get().getAppendResult().getOffset().getValue());
-    Thread.sleep(500);
     // When close is called, there should be one inflight request waiting.
     writer.close();
     if (future.get() != null) {
