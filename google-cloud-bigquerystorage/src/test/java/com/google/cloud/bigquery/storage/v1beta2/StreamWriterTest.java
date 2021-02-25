@@ -946,7 +946,8 @@ public class StreamWriterTest {
             } catch (ExecutionException e) {
               return e;
             } catch (IllegalStateException e) {
-              // In very rare cases, the stream is shutdown before the request is send, ignore this error.
+              // In very rare cases, the stream is shutdown before the request is send, ignore this
+              // error.
             }
             return null;
           }
