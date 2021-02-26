@@ -250,19 +250,6 @@ public class StreamWriterV2Test {
 
     verifyAppendRequests(appendCount);
 
-    for (int i = 0; i < appendCount; i++) {
-      AppendRowsRequest serverRequest = testBigQueryWrite.getAppendRequests().get(i);
-      if (i == 0) {
-        // First request received by server should have schema and stream name.
-        assertTrue(serverRequest.getProtoRows().hasWriterSchema());
-        assertEquals(serverRequest.getWriteStream(), TEST_STREAM);
-      } else {
-        // Following request should not have schema and stream name.
-        assertFalse(serverRequest.getProtoRows().hasWriterSchema());
-        assertEquals(serverRequest.getWriteStream(), "");
-      }
-    }
-
     writer.close();
   }
 
