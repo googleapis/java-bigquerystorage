@@ -254,6 +254,22 @@ public class StreamWriterV2Test {
   }
 
   @Test
+  public void testAppendWithRowsNoSchema() throws Exception {
+    final StreamWriterV2 writer = getTestStreamWriterV2();
+    StatusRuntimeException ex =
+        assertThrows(
+            StatusRuntimeException.class,
+            new ThrowingRunnable() {
+              @Override
+              public void run() throws Throwable {
+                writer.append(createProtoRows(new String[] {"A"}), -1);
+              }
+            });
+    assertEquals(ex.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
+    assertTrue(ex.getStatus().getDescription().contains("Writer schema must be provided"));
+  }
+
+  @Test
   public void testAppendSuccessAndConnectionError() throws Exception {
     StreamWriterV2 writer = getTestStreamWriterV2();
     testBigQueryWrite.addResponse(createAppendResponse(0));
