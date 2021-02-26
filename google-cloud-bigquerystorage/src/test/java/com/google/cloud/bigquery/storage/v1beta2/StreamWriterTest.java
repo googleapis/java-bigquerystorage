@@ -637,6 +637,10 @@ public class StreamWriterTest {
                 }
               }
               return null;
+            } catch (IllegalStateException ex) {
+              // Sometimes the append will happen after the stream is shutdown.
+              ex.printStackTrace();
+              return null;
             } catch (Exception e) {
               return e;
             }
@@ -650,6 +654,7 @@ public class StreamWriterTest {
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
     // The first requests gets back while the second one is blocked.
     assertEquals(2L, appendFuture1.get().getAppendResult().getOffset().getValue());
+    Thread.sleep(500);
     // When close is called, there should be one inflight request waiting.
     writer.close();
     if (future.get() != null) {
