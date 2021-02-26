@@ -532,9 +532,9 @@ public class StreamWriterTest {
           public Throwable call() {
             try {
               ApiFuture<AppendRowsResponse> appendFuture2 =
-                  sendTestMessage(writer1, new String[] {"B"}, 3);
+                  sendTestMessage(writer1, new String[]{"B"}, 3);
               ApiFuture<AppendRowsResponse> appendFuture3 =
-                  sendTestMessage(writer1, new String[] {"C"}, 4);
+                  sendTestMessage(writer1, new String[]{"C"}, 4);
               // This request will be send out immediately because there is space in inflight queue.
               // The time advance in the main thread will cause it to be sent back.
               if (3 != appendFuture2.get().getAppendResult().getOffset().getValue()) {
@@ -557,6 +557,7 @@ public class StreamWriterTest {
               return null;
             } catch (IllegalStateException ex) {
               // Sometimes the close will race before these calls.
+              return null;
             } catch (Exception e) {
               return e;
             }
