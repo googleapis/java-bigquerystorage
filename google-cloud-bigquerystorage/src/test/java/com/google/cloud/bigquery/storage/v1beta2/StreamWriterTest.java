@@ -555,6 +555,8 @@ public class StreamWriterTest {
                         + appendFuture3.get().getAppendResult().getOffset().getValue());
               }
               return null;
+            } catch (IllegalStateException ex) {
+              // Sometimes the close will race before these calls.
             } catch (Exception e) {
               return e;
             }
@@ -567,6 +569,7 @@ public class StreamWriterTest {
     // This will trigger the previous two responses to come back.
     fakeExecutor.advanceTime(Duration.ofSeconds(10));
     assertEquals(2L, appendFuture1.get().getAppendResult().getOffset().getValue());
+    Thread.sleep(500);
     // When close is called, there should be one inflight request waiting.
     writer.close();
     if (future.get() != null) {
