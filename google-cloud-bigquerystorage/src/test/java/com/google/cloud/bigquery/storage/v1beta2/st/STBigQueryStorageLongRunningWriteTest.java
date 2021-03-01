@@ -41,26 +41,17 @@ import org.threeten.bp.LocalDateTime;
 public class STBigQueryStorageLongRunningWriteTest {
   private static final Logger LOG =
       Logger.getLogger(ITBigQueryStorageLongRunningTest.class.getName());
-
   private static final String LONG_TESTS_ENABLED_PROPERTY =
       "bigquery.storage.enable_long_running_tests";
 
-  private static final String LONG_TESTS_DISABLED_MESSAGE =
-      String.format(
-          "BigQuery Storage long running tests are not enabled and will be skipped. "
-              + "To enable them, set system property '%s' to true.",
-          LONG_TESTS_ENABLED_PROPERTY);
   private static BigQueryWriteClient client;
   private static String parentProjectId;
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
-  private static final String TABLE2 = "testtable2";
   private static final String DESCRIPTION = "BigQuery Write Java long test dataset";
 
   private static TableInfo tableInfo;
-  private static TableInfo tableInfo2;
   private static String tableId;
-  private static String tableId2;
   private static BigQuery bigquery;
 
   private static JSONObject MakeJsonObject(int size) throws IOException {
@@ -79,7 +70,7 @@ public class STBigQueryStorageLongRunningWriteTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
-    Assume.assumeTrue(LONG_TESTS_DISABLED_MESSAGE, Boolean.getBoolean(LONG_TESTS_ENABLED_PROPERTY));
+    //Assume.assumeTrue(LONG_TESTS_DISABLED_MESSAGE, Boolean.getBoolean(LONG_TESTS_ENABLED_PROPERTY));
     client = BigQueryWriteClient.create();
     parentProjectId = String.format("projects/%s", ServiceOptions.getDefaultProjectId());
     RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
@@ -104,29 +95,11 @@ public class STBigQueryStorageLongRunningWriteTest {
                 .setMode(Field.Mode.REPEATED)
                 .build());
 
-    tableInfo2 =
-        TableInfo.newBuilder(
-            TableId.of(DATASET, TABLE2),
-            StandardTableDefinition.of(
-                Schema.of(
-                    Field.newBuilder(
-                        "nested_repeated_type",
-                        LegacySQLTypeName.RECORD,
-                        innerTypeFieldBuilder.setMode(Field.Mode.REPEATED).build())
-                        .setMode(Field.Mode.REPEATED)
-                        .build(),
-                    innerTypeFieldBuilder.setMode(Field.Mode.NULLABLE).build())))
-            .build();
     bigquery.create(tableInfo);
-    bigquery.create(tableInfo2);
     tableId =
         String.format(
             "projects/%s/datasets/%s/tables/%s",
             ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
-    tableId2 =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE2);
     LOG.info(
         String.format(
             "%s tests running with parent project: %s",
@@ -187,6 +160,7 @@ public class STBigQueryStorageLongRunningWriteTest {
 
         LocalDateTime start = LocalDateTime.now();
         Date startTime = new Date();
+        //TODO(jstocklass): Make asynchronized calls instead of synchronized calls
         ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, -1);
         assertEquals(0, response.get().getAppendResult().getOffset().getValue());
         Assert.assertFalse(response.get().getAppendResult().hasOffset());
