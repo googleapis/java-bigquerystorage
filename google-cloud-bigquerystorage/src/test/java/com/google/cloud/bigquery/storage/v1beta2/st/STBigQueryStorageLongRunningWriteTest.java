@@ -92,19 +92,8 @@ public class STBigQueryStorageLongRunningWriteTest {
       object.put("test_numerics", new JSONArray(new String[]{"1234", "-900000"}));
       object.put("test_datetime", String.valueOf(LocalDateTime.now()));
     }
-    else if (size == 2) {  // make it complicated and slow
-      // test_str
-      JSONObject test_str = new JSONObject();
-      JSONObject test_str_nest = new JSONObject();
-      test_str.put("testing", "lorem");
-      test_str_nest.put("testing_testing", new JSONArray(new String[]{"ipsum","I","don't","know","this whole thing"}));
-      test_str.put("testing2", test_str_nest);
-      object.put("test_str", "testing testing");
-
-      // test_numerics
-      object.put("test_numerics", test_str);
-
-      object.put("test_datetime", String.valueOf(LocalDateTime.now()));
+    else if (size == 2) {  // make it complicated and large
+      // TODO(jstocklass): Make a better json object that doesn't break the format rules.
     }
     return object;
   }
@@ -211,12 +200,10 @@ public class STBigQueryStorageLongRunningWriteTest {
                     .setDelayThreshold(Duration.ofSeconds(2))
                     .build())
             .build()) {
-      // TODO: Instead of just sending one message and then two messages, send generated messages
-      // for like a minute, we can scale this up later to as long as we want.
       for (int i = 0; i < 5; i++){
         LOG.info("Sending a message");
         // Ramping up the size increases the latency
-        JSONObject row = MakeJsonObject(2);
+        JSONObject row = MakeJsonObject(1);
         JSONArray jsonArr = new JSONArray(new JSONObject[] {row});
 
         LocalDateTime start = LocalDateTime.now();
@@ -234,22 +221,17 @@ public class STBigQueryStorageLongRunningWriteTest {
           bigquery.listTableData(
               tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
       Iterator<FieldValueList> iter = result.getValues().iterator();
-//      FieldValueList currentRow;
-//      for (int i = 0; i < 5; i++) {
-//        currentRow = iter.next();
-//        assertEquals("aaa", currentRow.get(0).getStringValue());
-//      }
-//      assertEquals(false, iter.hasNext());
+      FieldValueList currentRow;
+      for (int i = 0; i < 5; i++) {
+        currentRow = iter.next();
+        assertEquals("aaa", currentRow.get(0).getStringValue());
+      }
+      assertEquals(false, iter.hasNext());
     }
   }
 
   @Test
   public void testDedicatedStream() {
-    WriteStream writeStream = client.createWriteStream(CreateWriteStreamRequest.newBuilder()
-        .setParent(tableId)
-        .setWriteStream(
-            WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
-        .build());
     // set up a dedicated stream. Write to it for a long time, (a few minutes) and make
     // sure that everything goes well.
   }
@@ -260,53 +242,4 @@ public class STBigQueryStorageLongRunningWriteTest {
     // (a few minutes) and make sure that everything goes well.
 
   }
-//  public void testLongRunningReadSession() throws InterruptedException, ExecutionException {
-//    // This test writes a larger table with the goal of doing a simple validation of timeout settings
-//    // for a longer running session.
-//
-//    String table =
-//        BigQueryResource.FormatTableResource(
-//            /* projectId = */ "bigquery-public-data",
-//            /* datasetId = */ "samples",
-//            /* tableId = */ "wikipedia");
-//
-//    WriteStream stream = client.createWriteStream();
-//
-//    ReadSession session =
-//        client.createReadSession(
-//            /* parent = */ parentProjectId,
-//            /* readSession = */ ReadSession.newBuilder()
-//                .setTable(table)
-//                .setDataFormat(DataFormat.AVRO)
-//                .build(),
-//            /* maxStreamCount = */ 5);
-//
-//    assertEquals(
-//        String.format(
-//            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
-//            table, session.toString()),
-//        5,
-//        session.getStreamsCount());
-//
-//    List<Callable<Long>> tasks = new ArrayList<>(session.getStreamsCount());
-//    for (final ReadStream stream : session.getStreamsList()) {
-//      tasks.add(
-//          new Callable<Long>() {
-//            @Override
-//            public Long call() throws Exception {
-//              return readAllRowsFromStream(stream);
-//            }
-//          });
-//    }
-//
-//    ExecutorService executor = Executors.newFixedThreadPool(tasks.size());
-//    List<Future<Long>> results = executor.invokeAll(tasks);
-//
-//    long rowCount = 0;
-//    for (Future<Long> result : results) {
-//      rowCount += result.get();
-//    }
-//
-//    assertEquals(313_797_035, rowCount);
-//  }
 }
