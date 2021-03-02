@@ -600,8 +600,16 @@ public class StreamWriterV2 implements AutoCloseable {
       return this;
     }
 
-    /** TraceId for debuging purpose. */
+    /**
+     * Sets traceId for debuging purpose. TraceId must follow the format of
+     * CustomerDomain:DebugString, e.g. DATAFLOW:job_id_x.
+     */
     public Builder setTraceId(String traceId) {
+      int colonIndex = traceId.indexOf(':');
+      if (colonIndex == -1 || colonIndex == 0 || colonIndex == traceId.length() - 1) {
+        throw new IllegalArgumentException(
+            "TraceId must follow the format of A:B. Actual:" + traceId);
+      }
       this.traceId = traceId;
       return this;
     }

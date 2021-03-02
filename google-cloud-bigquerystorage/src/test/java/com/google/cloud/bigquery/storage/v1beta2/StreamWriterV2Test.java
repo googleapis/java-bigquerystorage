@@ -54,7 +54,7 @@ import org.threeten.bp.Duration;
 public class StreamWriterV2Test {
   private static final Logger log = Logger.getLogger(StreamWriterV2Test.class.getName());
   private static final String TEST_STREAM = "projects/p/datasets/d/tables/t/streams/s";
-  private static final String TEST_TRACE_ID = "test trace id";
+  private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
   private FakeScheduledExecutorService fakeExecutor;
   private FakeBigQueryWrite testBigQueryWrite;
   private static MockServiceHelper serviceHelper;
@@ -212,7 +212,10 @@ public class StreamWriterV2Test {
   @Test
   public void testAppendWithRowsSuccess() throws Exception {
     StreamWriterV2 writer =
-        StreamWriterV2.newBuilder(TEST_STREAM, client).setWriterSchema(createProtoSchema()).build();
+        StreamWriterV2.newBuilder(TEST_STREAM, client)
+            .setWriterSchema(createProtoSchema())
+            .setTraceId(TEST_TRACE_ID)
+            .build();
 
     long appendCount = 100;
     for (int i = 0; i < appendCount; i++) {
@@ -270,6 +273,34 @@ public class StreamWriterV2Test {
             });
     assertEquals(ex.getStatus().getCode(), Status.INVALID_ARGUMENT.getCode());
     assertTrue(ex.getStatus().getDescription().contains("Writer schema must be provided"));
+  }
+
+  @Test
+  public void testInvalidTraceId() throws Exception {
+    assertThrows(
+        IllegalArgumentException.class,
+        new ThrowingRunnable() {
+          @Override
+          public void run() throws Throwable {
+            StreamWriterV2.newBuilder(TEST_STREAM).setTraceId("abc");
+          }
+        });
+    assertThrows(
+        IllegalArgumentException.class,
+        new ThrowingRunnable() {
+          @Override
+          public void run() throws Throwable {
+            StreamWriterV2.newBuilder(TEST_STREAM).setTraceId("abc:");
+          }
+        });
+    assertThrows(
+        IllegalArgumentException.class,
+        new ThrowingRunnable() {
+          @Override
+          public void run() throws Throwable {
+            StreamWriterV2.newBuilder(TEST_STREAM).setTraceId(":abc");
+          }
+        });
   }
 
   @Test
