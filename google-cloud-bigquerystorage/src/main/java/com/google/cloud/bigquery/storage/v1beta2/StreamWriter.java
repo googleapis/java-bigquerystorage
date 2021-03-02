@@ -743,7 +743,6 @@ public class StreamWriter implements AutoCloseable {
       if (batchingSettings.getFlowControlSettings() == null) {
         builder.setFlowControlSettings(DEFAULT_FLOW_CONTROL_SETTINGS);
       } else {
-
         if (batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() == null) {
           builder.setFlowControlSettings(
               batchingSettings
@@ -777,7 +776,9 @@ public class StreamWriter implements AutoCloseable {
           Preconditions.checkArgument(
               batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() > 0);
         }
-        if (batchingSettings.getFlowControlSettings().getLimitExceededBehavior() == null) {
+        if (batchingSettings.getFlowControlSettings().getLimitExceededBehavior() == null
+            || batchingSettings.getFlowControlSettings().getLimitExceededBehavior()
+                == FlowController.LimitExceededBehavior.Ignore) {
           builder.setFlowControlSettings(
               batchingSettings
                   .getFlowControlSettings()
@@ -785,10 +786,6 @@ public class StreamWriter implements AutoCloseable {
                   .setLimitExceededBehavior(
                       DEFAULT_FLOW_CONTROL_SETTINGS.getLimitExceededBehavior())
                   .build());
-        } else {
-          Preconditions.checkArgument(
-              batchingSettings.getFlowControlSettings().getLimitExceededBehavior()
-                  != FlowController.LimitExceededBehavior.Ignore);
         }
       }
       this.batchingSettings = builder.build();
