@@ -16,6 +16,7 @@
 package com.google.cloud.bigquery.storage.v1beta2.st;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.ServiceOptions;
@@ -23,7 +24,6 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldValueList;
-import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.StandardTableDefinition;
@@ -33,7 +33,6 @@ import com.google.cloud.bigquery.TableResult;
 import com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1beta2.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1beta2.JsonStreamWriter;
-import com.google.cloud.bigquery.storage.v1beta2.StreamWriter;
 import com.google.cloud.bigquery.storage.v1beta2.TableName;
 import com.google.cloud.bigquery.storage.v1beta2.it.ITBigQueryStorageLongRunningTest;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
@@ -48,10 +47,14 @@ import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
-import org.threeten.bp.Duration;
 import org.threeten.bp.LocalDateTime;
 
 public class STBigQueryStorageLongRunningWriteTest {
+  public enum Complexity {
+    SIMPLE,
+    COMPLEX
+  }
+
   private static final Logger LOG =
       Logger.getLogger(ITBigQueryStorageLongRunningTest.class.getName());
   private static final String LONG_TESTS_ENABLED_PROPERTY =
@@ -67,15 +70,20 @@ public class STBigQueryStorageLongRunningWriteTest {
   private static String tableId;
   private static BigQuery bigquery;
 
-  private static JSONObject MakeJsonObject(int size) throws IOException {
+  private static JSONObject MakeJsonObject(Complexity complexity) throws IOException {
     JSONObject object = new JSONObject();
     // size: (1, simple)(2,complex)()
-    if (size == 1) {
-      object.put("test_str", "aaa");
-      object.put("test_numerics", new JSONArray(new String[] {"1234", "-900000"}));
-      object.put("test_datetime", String.valueOf(LocalDateTime.now()));
-    } else if (size == 2) { // make it complicated and large
-      // TODO(jstocklass): Make a better json object that doesn't break the format rules.
+    switch (complexity) {
+      case SIMPLE:
+        object.put("test_str", "aaa");
+        object.put("test_numerics", new JSONArray(new String[] {"1234", "-900000"}));
+        object.put("test_datetime", String.valueOf(LocalDateTime.now()));
+        break;
+      case COMPLEX:
+        // TODO(jstocklass): Make a better json object that doesn't break the format rules.
+        break;
+      default:
+        break;
     }
     return object;
   }
@@ -95,8 +103,8 @@ public class STBigQueryStorageLongRunningWriteTest {
   public void testDefaultStream()
       throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
-    // Set up a default stream. Write to it for a long time, (a few minutes for now) and make
-    // sure that everything goes well.
+    // TODO(jstocklass): Set up a default stream. Write to it for a long time,
+    // (a few minutes for now) and make sure that everything goes well, report stats.
     parentProjectId = String.format("projects/%s", ServiceOptions.getDefaultProjectId());
     RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
     bigquery = bigqueryHelper.getOptions().getService();
@@ -104,32 +112,11 @@ public class STBigQueryStorageLongRunningWriteTest {
     DatasetInfo datasetInfo =
         DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
     bigquery.create(datasetInfo);
-    tableInfo =
-        TableInfo.newBuilder(
-                TableId.of(DATASET, TABLE),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
-                            .setMode(Field.Mode.NULLABLE)
-                            .build())))
-            .build();
-    com.google.cloud.bigquery.Field.Builder innerTypeFieldBuilder =
-        com.google.cloud.bigquery.Field.newBuilder(
-            "inner_type",
-            LegacySQLTypeName.RECORD,
-            com.google.cloud.bigquery.Field.newBuilder("value", LegacySQLTypeName.STRING)
-                .setMode(Field.Mode.REPEATED)
-                .build());
-
-    bigquery.create(tableInfo);
-    tableId =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
     LOG.info(
         String.format(
             "%s tests running with parent project: %s",
             ITBigQueryStorageLongRunningTest.class.getSimpleName(), parentProjectId));
+
     String tableName = "JsonTableDefaultStream";
     TableInfo tableInfo =
         TableInfo.newBuilder(
@@ -152,33 +139,19 @@ public class STBigQueryStorageLongRunningWriteTest {
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo.getDefinition().getSchema())
             .createDefaultStream()
-            .setBatchingSettings(
-                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                    .toBuilder()
-                    .setRequestByteThreshold(1024 * 1024L) // 1 Mb
-                    .setElementCountThreshold(2L)
-                    .setDelayThreshold(Duration.ofSeconds(2))
-                    .build())
             .build()) {
       for (int i = 0; i < 5; i++) {
-        LOG.info("Sending a message");
-        // Ramping up the size increases the latency
-        JSONObject row = MakeJsonObject(1);
+        JSONObject row = MakeJsonObject(Complexity.SIMPLE);
         JSONArray jsonArr = new JSONArray(new JSONObject[] {row});
-
         LocalDateTime start = LocalDateTime.now();
         Date startTime = new Date();
         // TODO(jstocklass): Make asynchronized calls instead of synchronized calls
         ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, -1);
-        assertEquals(0, response.get().getAppendResult().getOffset().getValue());
-        Assert.assertFalse(response.get().getAppendResult().hasOffset());
         Date finishTime = new Date();
-        LOG.info(
-            "Latency: "
-                .concat(String.valueOf(finishTime.getTime() - startTime.getTime()))
-                .concat(" ms"));
-        // seems like 2 or 3 seconds on average
-        // LOG.info(String.valueOf((Math.abs(finish.getSecond())-start.getSecond())));
+        Assert.assertFalse(response.get().getAppendResult().hasOffset());
+        // TODO(jstocklass): Compute aggregate statistics instead of logging. Once we have a large
+        // number of requests, this won't be very usable.
+        LOG.info("Latency: " + String.valueOf(finishTime.getTime() - startTime.getTime()) + " ms");
       }
 
       TableResult result =
@@ -187,23 +160,11 @@ public class STBigQueryStorageLongRunningWriteTest {
       Iterator<FieldValueList> iter = result.getValues().iterator();
       FieldValueList currentRow;
       for (int i = 0; i < 5; i++) {
+        assertTrue(iter.hasNext());
         currentRow = iter.next();
         assertEquals("aaa", currentRow.get(0).getStringValue());
       }
       assertEquals(false, iter.hasNext());
     }
-  }
-
-  @Test
-  public void testDedicatedStream() {
-    // set up a dedicated stream. Write to it for a long time, (a few minutes) and make
-    // sure that everything goes well.
-  }
-
-  @Test
-  public void testBufferedStreamWithFlushOperation() {
-    // Set up a buffered stream with an ongoing flush operation and write to it for a long time,
-    // (a few minutes) and make sure that everything goes well.
-
   }
 }
