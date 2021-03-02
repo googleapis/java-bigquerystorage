@@ -32,7 +32,6 @@ import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
 import com.google.cloud.bigquery.TableResult;
 import com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse;
-import com.google.cloud.bigquery.storage.v1beta2.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1beta2.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1beta2.StreamWriter;
 import com.google.cloud.bigquery.storage.v1beta2.TableName;
@@ -57,7 +56,6 @@ public class STBigQueryStorageLongRunningWriteTest {
   private static final Logger LOG =
       Logger.getLogger(ITBigQueryStorageLongRunningTest.class.getName());
 
-  private static BigQueryWriteClient client;
   private static String parentProjectId;
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
@@ -84,7 +82,6 @@ public class STBigQueryStorageLongRunningWriteTest {
   @BeforeClass
   public static void beforeClass() throws IOException {
     //Assume.assumeTrue(LONG_TESTS_DISABLED_MESSAGE, Boolean.getBoolean(LONG_TESTS_ENABLED_PROPERTY));
-    client = BigQueryWriteClient.create();
     parentProjectId = String.format("projects/%s", ServiceOptions.getDefaultProjectId());
     RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
     bigquery = bigqueryHelper.getOptions().getService();
@@ -121,9 +118,6 @@ public class STBigQueryStorageLongRunningWriteTest {
 
   @AfterClass
   public static void afterClass() {
-    if (client != null) {
-      client.close();
-    }
     if (bigquery != null) {
       RemoteBigQueryHelper.forceDelete(bigquery, DATASET);
       LOG.info("Deleted test dataset: " + DATASET);
