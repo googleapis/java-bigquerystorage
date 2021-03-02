@@ -47,7 +47,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.threeten.bp.Duration;
 import org.threeten.bp.LocalDateTime;
@@ -107,12 +106,12 @@ public class STBigQueryStorageLongRunningWriteTest {
     bigquery.create(datasetInfo);
     tableInfo =
         TableInfo.newBuilder(
-            TableId.of(DATASET, TABLE),
-            StandardTableDefinition.of(
-                Schema.of(
-                    com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
-                        .setMode(Field.Mode.NULLABLE)
-                        .build())))
+                TableId.of(DATASET, TABLE),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .setMode(Field.Mode.NULLABLE)
+                            .build())))
             .build();
     com.google.cloud.bigquery.Field.Builder innerTypeFieldBuilder =
         com.google.cloud.bigquery.Field.newBuilder(
