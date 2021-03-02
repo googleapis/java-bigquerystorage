@@ -472,8 +472,8 @@ public class StreamWriterTest {
 
       ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
       try {
-        ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"B"});
-        ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[]{"C"});
+        ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
+        ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
         try {
           appendFuture2.get();
         } catch (ExecutionException ex) {
