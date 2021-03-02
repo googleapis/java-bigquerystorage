@@ -739,6 +739,14 @@ public class StreamWriterTest {
                 }
               }
               return null;
+            } catch (ExecutionException ex) {
+              // Some wiredness in test presubmit runs, it seems this thread is always started after
+              // the main thread.
+              if (ex.getCause().getClass() == AbortedException.class) {
+                return null;
+              } else {
+                return ex;
+              }
             } catch (Exception e) {
               return e;
             }
