@@ -178,10 +178,14 @@ public class JsonStreamWriter implements AutoCloseable {
       streamWriterBuilder.setCredentialsProvider(credentialsProvider);
     }
     BatchingSettings.Builder batchSettingBuilder =
-        BatchingSettings.newBuilder().setElementCountThreshold(1L);
+        BatchingSettings.newBuilder()
+            .setElementCountThreshold(1L)
+            .setRequestByteThreshold(4 * 1024 * 1024L);
     if (flowControlSettings != null) {
       streamWriterBuilder.setBatchingSettings(
           batchSettingBuilder.setFlowControlSettings(flowControlSettings).build());
+    } else {
+      streamWriterBuilder.setBatchingSettings(batchSettingBuilder.build());
     }
     if (endpoint != null) {
       streamWriterBuilder.setEndpoint(endpoint);

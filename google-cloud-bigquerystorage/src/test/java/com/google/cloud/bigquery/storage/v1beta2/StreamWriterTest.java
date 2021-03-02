@@ -1305,16 +1305,6 @@ public class StreamWriterTest {
       builder.setBatchingSettings(
           StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
               .toBuilder()
-              .setDelayThreshold(null)
-              .build());
-      fail("Should have thrown an NullPointerException");
-    } catch (NullPointerException expected) {
-      // Expected
-    }
-    try {
-      builder.setBatchingSettings(
-          StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-              .toBuilder()
               .setDelayThreshold(Duration.ofMillis(-1))
               .build());
       fail("Should have thrown an IllegalArgumentException");
@@ -1383,8 +1373,7 @@ public class StreamWriterTest {
     } catch (IllegalArgumentException expected) {
       // Expected
     }
-
-    try {
+    {
       FlowControlSettings flowControlSettings =
           FlowControlSettings.newBuilder()
               .setLimitExceededBehavior(FlowController.LimitExceededBehavior.Ignore)
@@ -1394,11 +1383,7 @@ public class StreamWriterTest {
               .toBuilder()
               .setFlowControlSettings(flowControlSettings)
               .build());
-      fail("Should have thrown an IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-      // Expected
     }
-
     try {
       FlowControlSettings flowControlSettings =
           FlowControlSettings.newBuilder().setLimitExceededBehavior(null).build();

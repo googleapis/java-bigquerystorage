@@ -711,6 +711,11 @@ public class JsonStreamWriterTest {
               .setAppendResult(
                   AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(2)).build())
               .build());
+      testBigQueryWrite.addResponse(
+          AppendRowsResponse.newBuilder()
+              .setAppendResult(
+                  AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(3)).build())
+              .build());
       // First append
       JSONObject foo = new JSONObject();
       foo.put("foo", "allen");
@@ -778,18 +783,19 @@ public class JsonStreamWriterTest {
       ApiFuture<AppendRowsResponse> appendFuture4 = writer.append(updatedJsonArr);
 
       assertEquals(3L, appendFuture4.get().getAppendResult().getOffset().getValue());
+      assertEquals(4, testBigQueryWrite.getAppendRequests().size());
       assertEquals(
           1,
           testBigQueryWrite
               .getAppendRequests()
-              .get(2)
+              .get(3)
               .getProtoRows()
               .getRows()
               .getSerializedRowsCount());
       assertEquals(
           testBigQueryWrite
               .getAppendRequests()
-              .get(2)
+              .get(3)
               .getProtoRows()
               .getRows()
               .getSerializedRows(0),
@@ -797,8 +803,8 @@ public class JsonStreamWriterTest {
 
       assertTrue(testBigQueryWrite.getAppendRequests().get(0).getProtoRows().hasWriterSchema());
       assertTrue(
-          testBigQueryWrite.getAppendRequests().get(1).getProtoRows().hasWriterSchema()
-              || testBigQueryWrite.getAppendRequests().get(2).getProtoRows().hasWriterSchema());
+          testBigQueryWrite.getAppendRequests().get(2).getProtoRows().hasWriterSchema()
+              || testBigQueryWrite.getAppendRequests().get(3).getProtoRows().hasWriterSchema());
     }
   }
 
@@ -850,7 +856,6 @@ public class JsonStreamWriterTest {
                       AppendRowsResponse response = appendFuture.get();
                       offsetSets.remove(response.getAppendResult().getOffset().getValue());
                     } catch (Exception e) {
-
                       LOG.severe("Thread execution failed: " + e.getMessage());
                     }
                   }
@@ -864,6 +869,7 @@ public class JsonStreamWriterTest {
       }
       assertTrue(offsetSets.size() == 0);
       for (int i = 0; i < thread_nums; i++) {
+        LOG.info(testBigQueryWrite.getAppendRequests().get(i).toString());
         assertEquals(
             1,
             testBigQueryWrite
