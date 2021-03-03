@@ -698,7 +698,7 @@ public class StreamWriterTest {
           AppendRowsResponse.newBuilder()
               .setAppendResult(
                   AppendRowsResponse.AppendResult.newBuilder()
-                      .setOffset(Int64Value.of(i * 3))
+                      .setOffset(Int64Value.of(i * 3 + 2))
                       .build())
               .build());
     }
