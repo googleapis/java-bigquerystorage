@@ -46,14 +46,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.threeten.bp.LocalDateTime;
 
 public class STBigQueryStorageLongRunningWriteTest {
-
-
-
-  public enum Complexity {
+  public enum RowComplexity {
     SIMPLE,
     COMPLEX
   }
@@ -63,14 +61,14 @@ public class STBigQueryStorageLongRunningWriteTest {
   private static final String LONG_TESTS_ENABLED_PROPERTY =
       "bigquery.storage.enable_long_running_tests";
 
-  private static String DATASET;
+  private static String dataset;
   private static final String DESCRIPTION = "BigQuery Write Java long test dataset";
 
   private static BigQueryWriteClient client;
   private static String parentProjectId;
   private static BigQuery bigquery;
 
-  private static JSONObject MakeJsonObject(Complexity complexity) throws IOException {
+  private static JSONObject MakeJsonObject(RowComplexity complexity) throws IOException {
     JSONObject object = new JSONObject();
     // size: (1, simple)(2,complex)()
     // TODO(jstocklass): Add option for testing protobuf format using StreamWriter2
@@ -89,14 +87,27 @@ public class STBigQueryStorageLongRunningWriteTest {
     return object;
   }
 
+  @BeforeClass
+  public  static void beforeClass() throws IOException{
+    parentProjectId = String.format("projects/%s", ServiceOptions.getDefaultProjectId());
+
+    client = BigQueryWriteClient.create();
+    RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
+    bigquery = bigqueryHelper.getOptions().getService();
+    dataset = RemoteBigQueryHelper.generateDatasetName();
+    DatasetInfo datasetInfo =
+        DatasetInfo.newBuilder(/* datasetId = */ dataset).setDescription(DESCRIPTION).build();
+    bigquery.create(datasetInfo);
+  }
+
   @AfterClass
   public static void afterClass() {
     if (client != null) {
       client.close();
     }
-    if (bigquery != null && DATASET != null) {
-      RemoteBigQueryHelper.forceDelete(bigquery, DATASET);
-      LOG.info("Deleted test dataset: " + DATASET);
+    if (bigquery != null && dataset != null) {
+      RemoteBigQueryHelper.forceDelete(bigquery, dataset);
+      LOG.info("Deleted test dataset: " + dataset);
     }
   }
 
@@ -106,23 +117,15 @@ public class STBigQueryStorageLongRunningWriteTest {
           Descriptors.DescriptorValidationException {
     // TODO(jstocklass): Set up a default stream. Write to it for a long time,
     // (a few minutes for now) and make sure that everything goes well, report stats.
-    parentProjectId = String.format("projects/%s", ServiceOptions.getDefaultProjectId());
-    client = BigQueryWriteClient.create();
-    RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
-    bigquery = bigqueryHelper.getOptions().getService();
-    DATASET = RemoteBigQueryHelper.generateDatasetName();
-    DatasetInfo datasetInfo =
-        DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
-    bigquery.create(datasetInfo);
     LOG.info(
         String.format(
             "%s tests running with parent project: %s",
-            ITBigQueryStorageLongRunningTest.class.getSimpleName(), parentProjectId));
+            STBigQueryStorageLongRunningWriteTest.class.getSimpleName(), parentProjectId));
 
     String tableName = "JsonTableDefaultStream";
     TableInfo tableInfo =
         TableInfo.newBuilder(
-                TableId.of(DATASET, tableName),
+                TableId.of(dataset, tableName),
                 StandardTableDefinition.of(
                     Schema.of(
                         com.google.cloud.bigquery.Field.newBuilder(
@@ -137,13 +140,13 @@ public class STBigQueryStorageLongRunningWriteTest {
                             .build())))
             .build();
     bigquery.create(tableInfo);
-    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), dataset, tableName);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo.getDefinition().getSchema())
             .createDefaultStream()
             .build()) {
       for (int i = 0; i < 5; i++) {
-        JSONObject row = MakeJsonObject(Complexity.SIMPLE);
+        JSONObject row = MakeJsonObject(RowComplexity.SIMPLE);
         JSONArray jsonArr = new JSONArray(new JSONObject[] {row});
         LocalDateTime start = LocalDateTime.now();
         Date startTime = new Date();
@@ -168,5 +171,6 @@ public class STBigQueryStorageLongRunningWriteTest {
       }
       assertEquals(false, iter.hasNext());
     }
+
   }
 }
