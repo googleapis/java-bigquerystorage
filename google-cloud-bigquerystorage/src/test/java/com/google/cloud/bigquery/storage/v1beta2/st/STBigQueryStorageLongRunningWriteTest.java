@@ -50,6 +50,9 @@ import org.junit.Test;
 import org.threeten.bp.LocalDateTime;
 
 public class STBigQueryStorageLongRunningWriteTest {
+
+
+
   public enum Complexity {
     SIMPLE,
     COMPLEX
@@ -60,19 +63,17 @@ public class STBigQueryStorageLongRunningWriteTest {
   private static final String LONG_TESTS_ENABLED_PROPERTY =
       "bigquery.storage.enable_long_running_tests";
 
-  private static BigQueryWriteClient client;
-  private static String parentProjectId;
-  private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
-  private static final String TABLE = "testtable";
+  private static String DATASET;
   private static final String DESCRIPTION = "BigQuery Write Java long test dataset";
 
-  private static TableInfo tableInfo;
-  private static String tableId;
+  private static BigQueryWriteClient client;
+  private static String parentProjectId;
   private static BigQuery bigquery;
 
   private static JSONObject MakeJsonObject(Complexity complexity) throws IOException {
     JSONObject object = new JSONObject();
     // size: (1, simple)(2,complex)()
+    // TODO(jstocklass): Add option for testing protobuf format using StreamWriter2
     switch (complexity) {
       case SIMPLE:
         object.put("test_str", "aaa");
@@ -93,7 +94,7 @@ public class STBigQueryStorageLongRunningWriteTest {
     if (client != null) {
       client.close();
     }
-    if (bigquery != null) {
+    if (bigquery != null && DATASET != null) {
       RemoteBigQueryHelper.forceDelete(bigquery, DATASET);
       LOG.info("Deleted test dataset: " + DATASET);
     }
@@ -106,9 +107,10 @@ public class STBigQueryStorageLongRunningWriteTest {
     // TODO(jstocklass): Set up a default stream. Write to it for a long time,
     // (a few minutes for now) and make sure that everything goes well, report stats.
     parentProjectId = String.format("projects/%s", ServiceOptions.getDefaultProjectId());
+    client = BigQueryWriteClient.create();
     RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
     bigquery = bigqueryHelper.getOptions().getService();
-    client = BigQueryWriteClient.create();
+    DATASET = RemoteBigQueryHelper.generateDatasetName();
     DatasetInfo datasetInfo =
         DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
     bigquery.create(datasetInfo);
