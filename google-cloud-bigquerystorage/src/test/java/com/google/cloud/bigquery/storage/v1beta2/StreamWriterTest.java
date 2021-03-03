@@ -678,6 +678,7 @@ public class StreamWriterTest {
                     .toBuilder()
                     // When shutdown, we should have something in batch.
                     .setElementCountThreshold(3L)
+                    .setDelayThreshold(Duration.ofSeconds(1000))
                     .setFlowControlSettings(
                         StreamWriter.Builder.DEFAULT_FLOW_CONTROL_SETTINGS
                             .toBuilder()
@@ -698,7 +699,7 @@ public class StreamWriterTest {
           AppendRowsResponse.newBuilder()
               .setAppendResult(
                   AppendRowsResponse.AppendResult.newBuilder()
-                      .setOffset(Int64Value.of(i * 3))
+                      .setOffset(Int64Value.of(i * 3 + 2))
                       .build())
               .build());
     }
