@@ -88,7 +88,7 @@ public class STBigQueryStorageLongRunningWriteTest {
   }
 
   @BeforeClass
-  public  static void beforeClass() throws IOException{
+  public static void beforeClass() throws IOException {
     parentProjectId = String.format("projects/%s", ServiceOptions.getDefaultProjectId());
 
     client = BigQueryWriteClient.create();
@@ -171,6 +171,5 @@ public class STBigQueryStorageLongRunningWriteTest {
       }
       assertEquals(false, iter.hasNext());
     }
-
   }
 }
