@@ -1073,6 +1073,7 @@ public class StreamWriterTest {
                 StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
                     .toBuilder()
                     .setElementCountThreshold(2L)
+                    .setDelayThreshold(Duration.ofSeconds(1000))
                     .build())
             .build()) {
 
