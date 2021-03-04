@@ -39,7 +39,6 @@ import com.google.cloud.bigquery.storage.v1beta2.it.ITBigQueryStorageLongRunning
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.protobuf.Descriptors;
 import java.io.IOException;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -80,7 +79,6 @@ public class ITBigQueryStorageLongRunningWriteTest {
         object.put("test_datetime", String.valueOf(LocalDateTime.now()));
         break;
       case COMPLEX:
-        // TODO(jstocklass): Make a better json object that doesn't break the format rules.
         object.put("test_str", "aaa");
         object.put(
             "test_numerics1",
@@ -138,6 +136,11 @@ public class ITBigQueryStorageLongRunningWriteTest {
                   true, true, false, true, false, true, false, true, false, true, false, true,
                   false, true,
                 }));
+        JSONObject sub = new JSONObject();
+        sub.put("sub_bool", true);
+        sub.put("sub_int", 12);
+        sub.put("sub_string", "Test Test Test");
+        object.put("test_subs", new JSONArray(new JSONObject[] {sub, sub, sub, sub, sub, sub}));
         break;
       default:
         break;
@@ -206,61 +209,63 @@ public class ITBigQueryStorageLongRunningWriteTest {
                 TableId.of(dataset, complexTableName),
                 StandardTableDefinition.of(
                     Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_str", StandardSQLTypeName.STRING)
-                            .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_numerics1", StandardSQLTypeName.NUMERIC)
+                        Field.newBuilder("test_str", StandardSQLTypeName.STRING).build(),
+                        Field.newBuilder("test_numerics1", StandardSQLTypeName.NUMERIC)
                             .setMode(Mode.REPEATED)
                             .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_numerics2", StandardSQLTypeName.NUMERIC)
+                        Field.newBuilder("test_numerics2", StandardSQLTypeName.NUMERIC)
                             .setMode(Mode.REPEATED)
                             .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_numerics3", StandardSQLTypeName.NUMERIC)
+                        Field.newBuilder("test_numerics3", StandardSQLTypeName.NUMERIC)
                             .setMode(Mode.REPEATED)
                             .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_datetime", StandardSQLTypeName.DATETIME)
-                            .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_bools", StandardSQLTypeName.BOOL)
+                        Field.newBuilder("test_datetime", StandardSQLTypeName.DATETIME).build(),
+                        Field.newBuilder("test_bools", StandardSQLTypeName.BOOL)
                             .setMode(Mode.REPEATED)
-                            .build()
-                        // How do i add sublevels here??
-                        )))
+                            .build(),
+                        Field.newBuilder(
+                                "test_subs",
+                                StandardSQLTypeName.STRUCT,
+                                Field.of("sub_bool", StandardSQLTypeName.BOOL),
+                                Field.of("sub_int", StandardSQLTypeName.INT64),
+                                Field.of("sub_string", StandardSQLTypeName.STRING))
+                            .setMode(Mode.REPEATED)
+                            .build())))
             .build();
     bigquery.create(tableInfo2);
 
+    int requestLimit = 1000;
+    long averageLatency = 0;
+    long totalLatency = 0;
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), dataset, tableName);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo.getDefinition().getSchema())
             .createDefaultStream()
             .build()) {
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < requestLimit; i++) {
         JSONObject row = MakeJsonObject(RowComplexity.SIMPLE);
         JSONArray jsonArr = new JSONArray(new JSONObject[] {row});
-        LocalDateTime start = LocalDateTime.now();
-        Date startTime = new Date();
+        long startTime = System.nanoTime();
         // TODO(jstocklass): Make asynchronized calls instead of synchronized calls
         ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, -1);
-        Date finishTime = new Date();
+        long finishTime = System.nanoTime();
         Assert.assertFalse(response.get().getAppendResult().hasOffset());
-        // TODO(jstocklass): Compute aggregate statistics instead of logging. Once we have a large
-        // number of requests, this won't be very usable.
-        LOG.info(
-            "Simple Latency: "
-                + String.valueOf(finishTime.getTime() - startTime.getTime())
-                + " ms");
+        // Ignore first entry, it is way slower than the others and ruins expected behavior
+        if (i != 0) {
+          totalLatency += (finishTime - startTime);
+        }
       }
+      averageLatency = totalLatency / requestLimit;
+      // TODO(jstocklass): Is there a better way to get this than to log it?
+      LOG.info("Simple average Latency: " + String.valueOf(averageLatency) + " ns");
+      averageLatency = totalLatency = 0;
 
       TableResult result =
           bigquery.listTableData(
               tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
       Iterator<FieldValueList> iter = result.getValues().iterator();
       FieldValueList currentRow;
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < requestLimit; i++) {
         assertTrue(iter.hasNext());
         currentRow = iter.next();
         assertEquals("aaa", currentRow.get(0).getStringValue());
@@ -272,28 +277,26 @@ public class ITBigQueryStorageLongRunningWriteTest {
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo2.getDefinition().getSchema())
             .createDefaultStream()
             .build()) {
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < requestLimit; i++) {
         JSONObject row = MakeJsonObject(RowComplexity.COMPLEX);
         JSONArray jsonArr = new JSONArray(new JSONObject[] {row});
-        Date startTime = new Date();
+        long startTime = System.nanoTime();
         // TODO(jstocklass): Make asynchronized calls instead of synchronized calls
         ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, -1);
-        Date finishTime = new Date();
+        long finishTime = System.nanoTime();
         Assert.assertFalse(response.get().getAppendResult().hasOffset());
-        // TODO(jstocklass): Compute aggregate statistics instead of logging. Once we have a large
-        // number of requests, this won't be very usable.
-        LOG.info(
-            "Complex Latency: "
-                + String.valueOf(finishTime.getTime() - startTime.getTime())
-                + " ms");
+        if (i != 0) {
+          totalLatency += (finishTime - startTime);
+        }
       }
-
+      averageLatency = totalLatency / requestLimit;
+      LOG.info("Complex average Latency: " + String.valueOf(averageLatency) + " ns");
       TableResult result2 =
           bigquery.listTableData(
               tableInfo2.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
       Iterator<FieldValueList> iter = result2.getValues().iterator();
       FieldValueList currentRow2;
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < requestLimit; i++) {
         assertTrue(iter.hasNext());
         currentRow2 = iter.next();
         assertEquals("aaa", currentRow2.get(0).getStringValue());
