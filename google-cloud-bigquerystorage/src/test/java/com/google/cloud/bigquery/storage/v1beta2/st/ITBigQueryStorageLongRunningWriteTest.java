@@ -110,7 +110,7 @@ public class ITBigQueryStorageLongRunningWriteTest {
   }
 
   @Test
-  public void testSimpleDefaultStream()
+  public void testDefaultStreamSimpleSchema()
       throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     // TODO(jstocklass): Set up a default stream. Write to it for a long time,
