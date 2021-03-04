@@ -23,6 +23,7 @@ import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.Field;
+import com.google.cloud.bigquery.Field.Mode;
 import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.StandardSQLTypeName;
@@ -65,6 +66,7 @@ public class ITBigQueryStorageLongRunningWriteTest {
   private static BigQueryWriteClient client;
   private static String parentProjectId;
   private static BigQuery bigquery;
+  private static int requestLimit = 10;
 
   private static JSONObject MakeJsonObject(RowComplexity complexity) throws IOException {
     JSONObject object = new JSONObject();
@@ -77,7 +79,69 @@ public class ITBigQueryStorageLongRunningWriteTest {
         object.put("test_datetime", String.valueOf(LocalDateTime.now()));
         break;
       case COMPLEX:
-        // TODO(jstocklass): make a complex object
+        object.put("test_str", "aaa");
+        object.put(
+            "test_numerics1",
+            new JSONArray(
+                new String[] {
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                    "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
+                    "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
+                    "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54",
+                    "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
+                    "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
+                    "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93",
+                    "94", "95", "96", "97", "98", "99", "100"
+                }));
+        object.put(
+            "test_numerics2",
+            new JSONArray(
+                new String[] {
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                    "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
+                    "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
+                    "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54",
+                    "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
+                    "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
+                    "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93",
+                    "94", "95", "96", "97", "98", "99", "100"
+                }));
+        object.put(
+            "test_numerics3",
+            new JSONArray(
+                new String[] {
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                    "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
+                    "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
+                    "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54",
+                    "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
+                    "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
+                    "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93",
+                    "94", "95", "96", "97", "98", "99", "100"
+                }));
+        object.put("test_datetime", String.valueOf(LocalDateTime.now()));
+        object.put(
+            "test_bools",
+            new JSONArray(
+                new boolean[] {
+                    false, true, false, true, false, true, false, true, false, true, false, true,
+                    false, true, false, true, false, true, true, false, true, false, true, false,
+                    true, false, true, false, true, false, true, true, false, true, false, true,
+                    false, true, false, true, false, true, false, true, true, false, true, false,
+                    true, false, true, false, true, false, true, false, true, true, false, true,
+                    false, true, false, true, false, true, false, true, false, true, true, false,
+                    true, false, true, false, true, false, true, false, true, false, true, true,
+                    false, true, false, true, false, true, false, true, false, true, false, true,
+                    true, false, true, false, true, false, true, false, true, false, true, false,
+                    true, true, false, true, false, true, false, true, false, true, false, true,
+                    false, true,
+                }));
+        JSONObject sub = new JSONObject();
+        sub.put("sub_bool", true);
+        sub.put("sub_int", 12);
+        sub.put("sub_string", "Test Test Test");
+        object.put("test_subs", new JSONArray(new JSONObject[] {sub, sub, sub, sub, sub, sub}));
+        break;
       default:
         break;
     }
@@ -139,7 +203,6 @@ public class ITBigQueryStorageLongRunningWriteTest {
             .build();
     bigquery.create(tableInfo);
 
-    int requestLimit = 10;
     long averageLatency = 0;
     long totalLatency = 0;
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), dataset, tableName);
@@ -178,4 +241,77 @@ public class ITBigQueryStorageLongRunningWriteTest {
       assertEquals(false, iter.hasNext());
     }
   }
+
+  @Test
+  public void testDefaultStreamComplexSchema()
+      throws IOException, InterruptedException, ExecutionException,
+      Descriptors.DescriptorValidationException {
+    StandardSQLTypeName[] array = new StandardSQLTypeName[] {StandardSQLTypeName.INT64};
+    String complexTableName = "JsonComplexTableDefaultStream";
+    TableInfo tableInfo2 =
+        TableInfo.newBuilder(
+            TableId.of(dataset, complexTableName),
+            StandardTableDefinition.of(
+                Schema.of(
+                    Field.newBuilder("test_str", StandardSQLTypeName.STRING).build(),
+                    Field.newBuilder("test_numerics1", StandardSQLTypeName.NUMERIC)
+                        .setMode(Mode.REPEATED)
+                        .build(),
+                    Field.newBuilder("test_numerics2", StandardSQLTypeName.NUMERIC)
+                        .setMode(Mode.REPEATED)
+                        .build(),
+                    Field.newBuilder("test_numerics3", StandardSQLTypeName.NUMERIC)
+                        .setMode(Mode.REPEATED)
+                        .build(),
+                    Field.newBuilder("test_datetime", StandardSQLTypeName.DATETIME).build(),
+                    Field.newBuilder("test_bools", StandardSQLTypeName.BOOL)
+                        .setMode(Mode.REPEATED)
+                        .build(),
+                    Field.newBuilder(
+                        "test_subs",
+                        StandardSQLTypeName.STRUCT,
+                        Field.of("sub_bool", StandardSQLTypeName.BOOL),
+                        Field.of("sub_int", StandardSQLTypeName.INT64),
+                        Field.of("sub_string", StandardSQLTypeName.STRING))
+                        .setMode(Mode.REPEATED)
+                        .build())))
+            .build();
+    bigquery.create(tableInfo2);
+
+    long totalLatency = 0;
+    long averageLatency = 0;
+    TableName parent =
+        TableName.of(ServiceOptions.getDefaultProjectId(), dataset, complexTableName);
+    try (JsonStreamWriter jsonStreamWriter =
+        JsonStreamWriter.newBuilder(parent.toString(), tableInfo2.getDefinition().getSchema())
+            .createDefaultStream()
+            .build()) {
+      for (int i = 0; i < requestLimit; i++) {
+        JSONObject row = MakeJsonObject(RowComplexity.COMPLEX);
+        JSONArray jsonArr = new JSONArray(new JSONObject[] {row});
+        long startTime = System.nanoTime();
+        // TODO(jstocklass): Make asynchronized calls instead of synchronized calls
+        ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, -1);
+        long finishTime = System.nanoTime();
+        Assert.assertFalse(response.get().getAppendResult().hasOffset());
+        if (i != 0) {
+          totalLatency += (finishTime - startTime);
+        }
+      }
+      averageLatency = totalLatency / requestLimit;
+      LOG.info("Complex average Latency: " + String.valueOf(averageLatency) + " ns");
+      TableResult result2 =
+          bigquery.listTableData(
+              tableInfo2.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+      Iterator<FieldValueList> iter = result2.getValues().iterator();
+      FieldValueList currentRow2;
+      for (int i = 0; i < requestLimit; i++) {
+        assertTrue(iter.hasNext());
+        currentRow2 = iter.next();
+        assertEquals("aaa", currentRow2.get(0).getStringValue());
+      }
+      assertEquals(false, iter.hasNext());
+    }
+  }
+
 }
