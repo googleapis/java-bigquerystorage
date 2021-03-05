@@ -61,7 +61,8 @@ import javax.annotation.concurrent.GuardedBy;
 import org.threeten.bp.Duration;
 
 /**
- * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
+ * DEPRECATED: A BigQuery Stream Writer that can be used to write data into BigQuery Table.
+ * You should use StreamWriterV2 for forwarding supportability.
  *
  * <p>This is to be used to managed streaming write when you are working with PENDING streams or
  * want to explicitly manage offset. In that most common cases when writing with COMMITTED stream
