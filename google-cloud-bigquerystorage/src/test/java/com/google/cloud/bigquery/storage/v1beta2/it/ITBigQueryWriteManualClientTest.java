@@ -459,7 +459,8 @@ public class ITBigQueryWriteManualClientTest {
       JSONArray updatedJsonArr = new JSONArray();
       updatedJsonArr.put(updatedFoo);
       for (int i = 0; i < 10; i++) {
-        ApiFuture<AppendRowsResponse> response3 = jsonStreamWriter.append(updatedJsonArr, next + 1 + i);
+        ApiFuture<AppendRowsResponse> response3 =
+            jsonStreamWriter.append(updatedJsonArr, next + 1 + i);
         assertEquals(next + 1 + i, response3.get().getAppendResult().getOffset().getValue());
         response3.get();
       }
