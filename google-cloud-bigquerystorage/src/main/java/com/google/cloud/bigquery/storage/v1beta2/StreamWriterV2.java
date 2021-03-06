@@ -226,10 +226,10 @@ public class StreamWriterV2 implements AutoCloseable {
     if (offset >= 0) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
-    return append(requestBuilder.build());
+    return appendInternal(requestBuilder.build());
   }
 
-  private ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
+  private ApiFuture<AppendRowsResponse> appendInternal(AppendRowsRequest message) {
     AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
