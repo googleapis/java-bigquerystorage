@@ -143,11 +143,6 @@ public class StreamWriterV2 implements AutoCloseable {
     this.hasMessageInWaitingQueue = lock.newCondition();
     this.inflightReduced = lock.newCondition();
     this.streamName = builder.streamName;
-    if (builder.writerSchema == null) {
-      throw new StatusRuntimeException(
-          Status.fromCode(Code.INVALID_ARGUMENT)
-              .withDescription("Writer schema must be provided when building this writer."));
-    }
     this.writerSchema = builder.writerSchema;
     this.maxInflightRequests = builder.maxInflightRequest;
     this.maxInflightBytes = builder.maxInflightBytes;
@@ -221,15 +216,48 @@ public class StreamWriterV2 implements AutoCloseable {
    * @return the append response wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
+    // TODO: Move this check to builder after the other append is removed.
+    if (this.writerSchema == null) {
+      throw new StatusRuntimeException(
+          Status.fromCode(Code.INVALID_ARGUMENT)
+              .withDescription("Writer schema must be provided when building this writer."));
+    }
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(ProtoData.newBuilder().setRows(rows).build());
     if (offset >= 0) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
-    return appendInternal(requestBuilder.build());
+    return append(requestBuilder.build());
   }
 
-  private ApiFuture<AppendRowsResponse> appendInternal(AppendRowsRequest message) {
+  /**
+   * Schedules the writing of a message.
+   *
+   * <p>Example of writing a message.
+   *
+   * <pre>{@code
+   * AppendRowsRequest message;
+   * ApiFuture<AppendRowsResponse> messageIdFuture = writer.append(message);
+   * ApiFutures.addCallback(messageIdFuture, new ApiFutureCallback<AppendRowsResponse>() {
+   *   public void onSuccess(AppendRowsResponse response) {
+   *     if (!response.hasError()) {
+   *       System.out.println("written with offset: " + response.getAppendResult().getOffset());
+   *     } else {
+   *       System.out.println("received an in stream error: " + response.getError().toString());
+   *     }
+   *   }
+   *
+   *   public void onFailure(Throwable t) {
+   *     System.out.println("failed to write: " + t);
+   *   }
+   * }, MoreExecutors.directExecutor());
+   * }</pre>
+   *
+   * @param message the message in serialized format to write to BigQuery.
+   * @return the append response wrapped in a future.
+   */
+  @Deprecated
+  public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
     AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
