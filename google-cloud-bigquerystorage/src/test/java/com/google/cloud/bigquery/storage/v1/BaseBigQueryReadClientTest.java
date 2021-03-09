@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,7 @@ public class BaseBigQueryReadClientTest {
         ReadSession.newBuilder()
             .setName(ReadSessionName.of("[PROJECT]", "[LOCATION]", "[SESSION]").toString())
             .setExpireTime(Timestamp.newBuilder().build())
+            .setDataFormat(DataFormat.forNumber(0))
             .setTable(TableName.of("[PROJECT]", "[DATASET]", "[TABLE]").toString())
             .setTableModifiers(ReadSession.TableModifiers.newBuilder().build())
             .setReadOptions(ReadSession.TableReadOptions.newBuilder().build())
@@ -136,6 +137,7 @@ public class BaseBigQueryReadClientTest {
         ReadSession.newBuilder()
             .setName(ReadSessionName.of("[PROJECT]", "[LOCATION]", "[SESSION]").toString())
             .setExpireTime(Timestamp.newBuilder().build())
+            .setDataFormat(DataFormat.forNumber(0))
             .setTable(TableName.of("[PROJECT]", "[DATASET]", "[TABLE]").toString())
             .setTableModifiers(ReadSession.TableModifiers.newBuilder().build())
             .setReadOptions(ReadSession.TableReadOptions.newBuilder().build())

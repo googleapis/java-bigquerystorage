@@ -205,7 +205,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testJsonStreamWriterBatchWriteWithCommittedStream()
+  public void testJsonStreamWriterCommittedStream()
       throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "JsonTable";
@@ -235,15 +235,7 @@ public class ITBigQueryWriteManualClientTest {
                     WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
                 .build());
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
-            .setBatchingSettings(
-                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                    .toBuilder()
-                    .setRequestByteThreshold(1024 * 1024L) // 1 Mb
-                    .setElementCountThreshold(2L)
-                    .setDelayThreshold(Duration.ofSeconds(2))
-                    .build())
-            .build()) {
+        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
       LOG.info("Sending one message");
       JSONObject row1 = new JSONObject();
       row1.put("test_str", "aaa");
@@ -291,7 +283,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testJsonStreamWriterBatchWriteWithDefaultStream()
+  public void testJsonStreamWriterWithDefaultStream()
       throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "JsonTableDefaultStream";
@@ -316,13 +308,6 @@ public class ITBigQueryWriteManualClientTest {
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo.getDefinition().getSchema())
             .createDefaultStream()
-            .setBatchingSettings(
-                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                    .toBuilder()
-                    .setRequestByteThreshold(1024 * 1024L) // 1 Mb
-                    .setElementCountThreshold(2L)
-                    .setDelayThreshold(Duration.ofSeconds(2))
-                    .build())
             .build()) {
       LOG.info("Sending one message");
       JSONObject row1 = new JSONObject();
@@ -384,8 +369,10 @@ public class ITBigQueryWriteManualClientTest {
                             .build())))
             .build();
 
+    // Create a Bigquery table.
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    // Create a Write Api stream.
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -395,20 +382,14 @@ public class ITBigQueryWriteManualClientTest {
                 .build());
 
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
-            .setBatchingSettings(
-                StreamWriter.Builder.DEFAULT_BATCHING_SETTINGS
-                    .toBuilder()
-                    .setElementCountThreshold(1L)
-                    .build())
-            .build()) {
+        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
       // 1). Send 1 row
       JSONObject foo = new JSONObject();
       foo.put("foo", "aaa");
       JSONArray jsonArr = new JSONArray();
       jsonArr.put(foo);
 
-      ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, -1);
+      ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, 0);
       assertEquals(0, response.get().getAppendResult().getOffset().getValue());
       // 2). Schema update and wait until querying it returns a new schema.
       try {
@@ -451,7 +432,7 @@ public class ITBigQueryWriteManualClientTest {
 
       int next = 0;
       for (int i = 1; i < 100; i++) {
-        ApiFuture<AppendRowsResponse> response2 = jsonStreamWriter.append(jsonArr2, -1);
+        ApiFuture<AppendRowsResponse> response2 = jsonStreamWriter.append(jsonArr2, i);
         assertEquals(i, response2.get().getAppendResult().getOffset().getValue());
         if (response2.get().hasUpdatedSchema()) {
           next = i;
@@ -478,7 +459,8 @@ public class ITBigQueryWriteManualClientTest {
       JSONArray updatedJsonArr = new JSONArray();
       updatedJsonArr.put(updatedFoo);
       for (int i = 0; i < 10; i++) {
-        ApiFuture<AppendRowsResponse> response3 = jsonStreamWriter.append(updatedJsonArr, -1);
+        ApiFuture<AppendRowsResponse> response3 =
+            jsonStreamWriter.append(updatedJsonArr, next + 1 + i);
         assertEquals(next + 1 + i, response3.get().getAppendResult().getOffset().getValue());
         response3.get();
       }
@@ -503,6 +485,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testComplicateSchemaWithPendingStream()
       throws IOException, InterruptedException, ExecutionException {
+    LOG.info("Create a write stream");
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
@@ -533,6 +516,7 @@ public class ITBigQueryWriteManualClientTest {
       Iterator<FieldValueList> iter = result.getValues().iterator();
       assertEquals(false, iter.hasNext());
 
+      LOG.info("Finalize a write stream");
       finalizeResponse =
           client.finalizeWriteStream(
               FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build());
@@ -549,8 +533,8 @@ public class ITBigQueryWriteManualClientTest {
         LOG.info("Got exception: " + expected.toString());
       }
     }
-    // Finalize row count is not populated.
     assertEquals(2, finalizeResponse.getRowCount());
+    LOG.info("Commit a write stream");
     BatchCommitWriteStreamsResponse batchCommitWriteStreamsResponse =
         client.batchCommitWriteStreams(
             BatchCommitWriteStreamsRequest.newBuilder()

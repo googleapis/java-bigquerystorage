@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -286,28 +286,34 @@ public class GrpcBigQueryWriteStub extends BigQueryWriteStub {
     return operationsStub;
   }
 
+  @Override
   public UnaryCallable<CreateWriteStreamRequest, WriteStream> createWriteStreamCallable() {
     return createWriteStreamCallable;
   }
 
+  @Override
   public BidiStreamingCallable<AppendRowsRequest, AppendRowsResponse> appendRowsCallable() {
     return appendRowsCallable;
   }
 
+  @Override
   public UnaryCallable<GetWriteStreamRequest, WriteStream> getWriteStreamCallable() {
     return getWriteStreamCallable;
   }
 
+  @Override
   public UnaryCallable<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>
       finalizeWriteStreamCallable() {
     return finalizeWriteStreamCallable;
   }
 
+  @Override
   public UnaryCallable<BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>
       batchCommitWriteStreamsCallable() {
     return batchCommitWriteStreamsCallable;
   }
 
+  @Override
   public UnaryCallable<FlushRowsRequest, FlushRowsResponse> flushRowsCallable() {
     return flushRowsCallable;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,13 @@ public class MockBigQueryStorageImpl extends BigQueryStorageImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method CreateReadSession, expected %s or %s",
+                  response.getClass().getName(),
+                  Storage.ReadSession.class.getName(),
+                  Exception.class.getName())));
     }
   }
 
@@ -86,7 +92,13 @@ public class MockBigQueryStorageImpl extends BigQueryStorageImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method ReadRows, expected %s or %s",
+                  response.getClass().getName(),
+                  Storage.ReadRowsResponse.class.getName(),
+                  Exception.class.getName())));
     }
   }
 
@@ -102,7 +114,13 @@ public class MockBigQueryStorageImpl extends BigQueryStorageImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method BatchCreateReadSessionStreams, expected %s or %s",
+                  response.getClass().getName(),
+                  Storage.BatchCreateReadSessionStreamsResponse.class.getName(),
+                  Exception.class.getName())));
     }
   }
 
@@ -117,7 +135,13 @@ public class MockBigQueryStorageImpl extends BigQueryStorageImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method FinalizeStream, expected %s or %s",
+                  response.getClass().getName(),
+                  Empty.class.getName(),
+                  Exception.class.getName())));
     }
   }
 
@@ -133,7 +157,13 @@ public class MockBigQueryStorageImpl extends BigQueryStorageImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method SplitReadStream, expected %s or %s",
+                  response.getClass().getName(),
+                  Storage.SplitReadStreamResponse.class.getName(),
+                  Exception.class.getName())));
     }
   }
 }

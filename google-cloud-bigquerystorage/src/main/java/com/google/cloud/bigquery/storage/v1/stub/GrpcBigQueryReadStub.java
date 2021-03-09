@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,14 +186,17 @@ public class GrpcBigQueryReadStub extends BigQueryReadStub {
     return operationsStub;
   }
 
+  @Override
   public UnaryCallable<CreateReadSessionRequest, ReadSession> createReadSessionCallable() {
     return createReadSessionCallable;
   }
 
+  @Override
   public ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> readRowsCallable() {
     return readRowsCallable;
   }
 
+  @Override
   public UnaryCallable<SplitReadStreamRequest, SplitReadStreamResponse> splitReadStreamCallable() {
     return splitReadStreamCallable;
   }

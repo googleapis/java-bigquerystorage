@@ -16,11 +16,13 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import com.google.common.base.Optional;
+import com.google.common.util.concurrent.Uninterruptibles;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -44,6 +46,9 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   private boolean autoPublishResponse;
   private ScheduledExecutorService executor = null;
   private Duration responseDelay = Duration.ZERO;
+
+  private Duration responseSleep = Duration.ZERO;
+  private Semaphore responseSemaphore = new Semaphore(0, true);
 
   /** Class used to save the state of a possible response. */
   private static class Response {
@@ -111,6 +116,10 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     }
   }
 
+  public void waitForResponseScheduled() throws InterruptedException {
+    responseSemaphore.acquire();
+  }
+
   @Override
   public StreamObserver<AppendRowsRequest> appendRows(
       final StreamObserver<AppendRowsResponse> responseObserver) {
@@ -118,14 +127,20 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
         new StreamObserver<AppendRowsRequest>() {
           @Override
           public void onNext(AppendRowsRequest value) {
-            LOG.info("Get request:" + value.toString());
+            LOG.fine("Get request:" + value.toString());
             final Response response = responses.remove();
             requests.add(value);
+            if (responseSleep.compareTo(Duration.ZERO) > 0) {
+              LOG.info("Sleeping before response for " + responseSleep.toString());
+              Uninterruptibles.sleepUninterruptibly(
+                  responseSleep.toMillis(), TimeUnit.MILLISECONDS);
+            }
             if (responseDelay == Duration.ZERO) {
               sendResponse(response, responseObserver);
             } else {
               final Response responseToSend = response;
-              LOG.info("Schedule a response to be sent at delay");
+              // TODO(yirutang): This is very wrong because it messes up response/complete ordering.
+              LOG.fine("Schedule a response to be sent at delay");
               executor.schedule(
                   new Runnable() {
                     @Override
@@ -136,6 +151,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
                   responseDelay.toMillis(),
                   TimeUnit.MILLISECONDS);
             }
+            responseSemaphore.release();
           }
 
           @Override
@@ -153,7 +169,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
 
   private void sendResponse(
       Response response, StreamObserver<AppendRowsResponse> responseObserver) {
-    LOG.info("Sending response: " + response.toString());
+    LOG.fine("Sending response: " + response.toString());
     if (response.isError()) {
       responseObserver.onError(response.getError());
     } else {
@@ -170,6 +186,12 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   /** Set an amount of time by which to delay publish responses. */
   public FakeBigQueryWriteImpl setResponseDelay(Duration responseDelay) {
     this.responseDelay = responseDelay;
+    return this;
+  }
+
+  /** Set an amount of time by which to sleep before publishing responses. */
+  public FakeBigQueryWriteImpl setResponseSleep(Duration responseSleep) {
+    this.responseSleep = responseSleep;
     return this;
   }
 

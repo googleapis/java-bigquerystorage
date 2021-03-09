@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -281,16 +281,19 @@ public class GrpcBigQueryStorageStub extends BigQueryStorageStub {
     return operationsStub;
   }
 
+  @Override
   public UnaryCallable<Storage.CreateReadSessionRequest, Storage.ReadSession>
       createReadSessionCallable() {
     return createReadSessionCallable;
   }
 
+  @Override
   public ServerStreamingCallable<Storage.ReadRowsRequest, Storage.ReadRowsResponse>
       readRowsCallable() {
     return readRowsCallable;
   }
 
+  @Override
   public UnaryCallable<
           Storage.BatchCreateReadSessionStreamsRequest,
           Storage.BatchCreateReadSessionStreamsResponse>
@@ -298,10 +301,12 @@ public class GrpcBigQueryStorageStub extends BigQueryStorageStub {
     return batchCreateReadSessionStreamsCallable;
   }
 
+  @Override
   public UnaryCallable<Storage.FinalizeStreamRequest, Empty> finalizeStreamCallable() {
     return finalizeStreamCallable;
   }
 
+  @Override
   public UnaryCallable<Storage.SplitReadStreamRequest, Storage.SplitReadStreamResponse>
       splitReadStreamCallable() {
     return splitReadStreamCallable;
