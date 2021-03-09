@@ -68,7 +68,6 @@ public class ITBigQueryStorageLongRunningWriteTest {
   private static BigQuery bigquery;
   private static int requestLimit = 10;
 
-
   private static JSONObject MakeJsonObject(RowComplexity complexity) throws IOException {
     JSONObject object = new JSONObject();
     // size: (1, simple)(2,complex)()
@@ -241,6 +240,7 @@ public class ITBigQueryStorageLongRunningWriteTest {
       assertEquals(false, iter.hasNext());
     }
   }
+
   @Test
   public void testDefaultStreamComplexSchema()
       throws IOException, InterruptedException, ExecutionException,
