@@ -84,57 +84,57 @@ public class ITBigQueryStorageLongRunningWriteTest {
             "test_numerics1",
             new JSONArray(
                 new String[] {
-                  "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                  "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
-                  "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
-                  "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54",
-                  "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
-                  "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
-                  "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93",
-                  "94", "95", "96", "97", "98", "99", "100"
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                    "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
+                    "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
+                    "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54",
+                    "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
+                    "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
+                    "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93",
+                    "94", "95", "96", "97", "98", "99", "100"
                 }));
         object.put(
             "test_numerics2",
             new JSONArray(
                 new String[] {
-                  "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                  "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
-                  "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
-                  "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54",
-                  "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
-                  "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
-                  "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93",
-                  "94", "95", "96", "97", "98", "99", "100"
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                    "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
+                    "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
+                    "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54",
+                    "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
+                    "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
+                    "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93",
+                    "94", "95", "96", "97", "98", "99", "100"
                 }));
         object.put(
             "test_numerics3",
             new JSONArray(
                 new String[] {
-                  "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                  "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
-                  "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
-                  "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54",
-                  "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
-                  "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
-                  "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93",
-                  "94", "95", "96", "97", "98", "99", "100"
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                    "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28",
+                    "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
+                    "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54",
+                    "55", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
+                    "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
+                    "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93",
+                    "94", "95", "96", "97", "98", "99", "100"
                 }));
         object.put("test_datetime", String.valueOf(LocalDateTime.now()));
         object.put(
             "test_bools",
             new JSONArray(
                 new boolean[] {
-                  false, true, false, true, false, true, false, true, false, true, false, true,
-                  false, true, false, true, false, true, true, false, true, false, true, false,
-                  true, false, true, false, true, false, true, true, false, true, false, true,
-                  false, true, false, true, false, true, false, true, true, false, true, false,
-                  true, false, true, false, true, false, true, false, true, true, false, true,
-                  false, true, false, true, false, true, false, true, false, true, true, false,
-                  true, false, true, false, true, false, true, false, true, false, true, true,
-                  false, true, false, true, false, true, false, true, false, true, false, true,
-                  true, false, true, false, true, false, true, false, true, false, true, false,
-                  true, true, false, true, false, true, false, true, false, true, false, true,
-                  false, true,
+                    false, true, false, true, false, true, false, true, false, true, false, true,
+                    false, true, false, true, false, true, true, false, true, false, true, false,
+                    true, false, true, false, true, false, true, true, false, true, false, true,
+                    false, true, false, true, false, true, false, true, true, false, true, false,
+                    true, false, true, false, true, false, true, false, true, true, false, true,
+                    false, true, false, true, false, true, false, true, false, true, true, false,
+                    true, false, true, false, true, false, true, false, true, false, true, true,
+                    false, true, false, true, false, true, false, true, false, true, false, true,
+                    true, false, true, false, true, false, true, false, true, false, true, false,
+                    true, true, false, true, false, true, false, true, false, true, false, true,
+                    false, true,
                 }));
         JSONObject sub = new JSONObject();
         sub.put("sub_bool", true);
@@ -176,7 +176,7 @@ public class ITBigQueryStorageLongRunningWriteTest {
   @Test
   public void testDefaultStreamSimpleSchema()
       throws IOException, InterruptedException, ExecutionException,
-          Descriptors.DescriptorValidationException {
+      Descriptors.DescriptorValidationException {
     // TODO(jstocklass): Set up a default stream. Write to it for a long time,
     // (a few minutes for now) and make sure that everything goes well, report stats.
     LOG.info(
@@ -187,21 +187,22 @@ public class ITBigQueryStorageLongRunningWriteTest {
     String tableName = "JsonSimpleTableDefaultStream";
     TableInfo tableInfo =
         TableInfo.newBuilder(
-                TableId.of(dataset, tableName),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_str", StandardSQLTypeName.STRING)
-                            .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_numerics", StandardSQLTypeName.NUMERIC)
-                            .setMode(Field.Mode.REPEATED)
-                            .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_datetime", StandardSQLTypeName.DATETIME)
-                            .build())))
+            TableId.of(dataset, tableName),
+            StandardTableDefinition.of(
+                Schema.of(
+                    com.google.cloud.bigquery.Field.newBuilder(
+                        "test_str", StandardSQLTypeName.STRING)
+                        .build(),
+                    com.google.cloud.bigquery.Field.newBuilder(
+                        "test_numerics", StandardSQLTypeName.NUMERIC)
+                        .setMode(Field.Mode.REPEATED)
+                        .build(),
+                    com.google.cloud.bigquery.Field.newBuilder(
+                        "test_datetime", StandardSQLTypeName.DATETIME)
+                        .build())))
             .build();
     bigquery.create(tableInfo);
+
     long averageLatency = 0;
     long totalLatency = 0;
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), dataset, tableName);
@@ -244,36 +245,36 @@ public class ITBigQueryStorageLongRunningWriteTest {
   @Test
   public void testDefaultStreamComplexSchema()
       throws IOException, InterruptedException, ExecutionException,
-          Descriptors.DescriptorValidationException {
+      Descriptors.DescriptorValidationException {
     StandardSQLTypeName[] array = new StandardSQLTypeName[] {StandardSQLTypeName.INT64};
     String complexTableName = "JsonComplexTableDefaultStream";
     TableInfo tableInfo2 =
         TableInfo.newBuilder(
-                TableId.of(dataset, complexTableName),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        Field.newBuilder("test_str", StandardSQLTypeName.STRING).build(),
-                        Field.newBuilder("test_numerics1", StandardSQLTypeName.NUMERIC)
-                            .setMode(Mode.REPEATED)
-                            .build(),
-                        Field.newBuilder("test_numerics2", StandardSQLTypeName.NUMERIC)
-                            .setMode(Mode.REPEATED)
-                            .build(),
-                        Field.newBuilder("test_numerics3", StandardSQLTypeName.NUMERIC)
-                            .setMode(Mode.REPEATED)
-                            .build(),
-                        Field.newBuilder("test_datetime", StandardSQLTypeName.DATETIME).build(),
-                        Field.newBuilder("test_bools", StandardSQLTypeName.BOOL)
-                            .setMode(Mode.REPEATED)
-                            .build(),
-                        Field.newBuilder(
-                                "test_subs",
-                                StandardSQLTypeName.STRUCT,
-                                Field.of("sub_bool", StandardSQLTypeName.BOOL),
-                                Field.of("sub_int", StandardSQLTypeName.INT64),
-                                Field.of("sub_string", StandardSQLTypeName.STRING))
-                            .setMode(Mode.REPEATED)
-                            .build())))
+            TableId.of(dataset, complexTableName),
+            StandardTableDefinition.of(
+                Schema.of(
+                    Field.newBuilder("test_str", StandardSQLTypeName.STRING).build(),
+                    Field.newBuilder("test_numerics1", StandardSQLTypeName.NUMERIC)
+                        .setMode(Mode.REPEATED)
+                        .build(),
+                    Field.newBuilder("test_numerics2", StandardSQLTypeName.NUMERIC)
+                        .setMode(Mode.REPEATED)
+                        .build(),
+                    Field.newBuilder("test_numerics3", StandardSQLTypeName.NUMERIC)
+                        .setMode(Mode.REPEATED)
+                        .build(),
+                    Field.newBuilder("test_datetime", StandardSQLTypeName.DATETIME).build(),
+                    Field.newBuilder("test_bools", StandardSQLTypeName.BOOL)
+                        .setMode(Mode.REPEATED)
+                        .build(),
+                    Field.newBuilder(
+                        "test_subs",
+                        StandardSQLTypeName.STRUCT,
+                        Field.of("sub_bool", StandardSQLTypeName.BOOL),
+                        Field.of("sub_int", StandardSQLTypeName.INT64),
+                        Field.of("sub_string", StandardSQLTypeName.STRING))
+                        .setMode(Mode.REPEATED)
+                        .build())))
             .build();
     bigquery.create(tableInfo2);
 
@@ -313,3 +314,4 @@ public class ITBigQueryStorageLongRunningWriteTest {
     }
   }
 }
+
