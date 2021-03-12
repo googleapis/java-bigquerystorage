@@ -84,7 +84,7 @@ public final class CivilTimeEncoder {
    *                    | H ||  M ||  S |
    * </pre>
    *
-   * @see #decodePacked32TimeSecondsAsJavaTime(int)
+   * @see #decodePacked32TimeSeconds(int)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
   public static int encodePacked32TimeSeconds(java.time.LocalTime time) {
@@ -94,31 +94,6 @@ public final class CivilTimeEncoder {
     bitFieldTimeSeconds |= time.getMinute() << MINUTE_SHIFT;
     bitFieldTimeSeconds |= time.getSecond() << SECOND_SHIFT;
     return bitFieldTimeSeconds;
-  }
-
-  /**
-   * Decodes {@code bitFieldTimeSeconds} as a {@link LocalTime} with seconds precision.
-   *
-   * <p>Encoding is as the following:
-   *
-   * <pre>
-   *      3         2         1
-   * MSB 10987654321098765432109876543210 LSB
-   *                    | H ||  M ||  S |
-   * </pre>
-   *
-   * @see #encodePacked32TimeSeconds(LocalTime)
-   * @see #encodePacked32TimeSecondsAsJavaTime(int)
-   */
-  @SuppressWarnings("GoodTime") // should return a java.time.LocalTime
-  public static LocalTime decodePacked32TimeSeconds(int bitFieldTimeSeconds) {
-    checkValidBitField(bitFieldTimeSeconds, TIME_SECONDS_MASK);
-    int hourOfDay = getFieldFromBitField(bitFieldTimeSeconds, HOUR_MASK, HOUR_SHIFT);
-    int minuteOfHour = getFieldFromBitField(bitFieldTimeSeconds, MINUTE_MASK, MINUTE_SHIFT);
-    int secondOfMinute = getFieldFromBitField(bitFieldTimeSeconds, SECOND_MASK, SECOND_SHIFT);
-    LocalTime time = LocalTime.of(hourOfDay, minuteOfHour, secondOfMinute);
-    checkValidTimeSeconds(time);
-    return time;
   }
 
   /**
@@ -135,7 +110,7 @@ public final class CivilTimeEncoder {
    * @see #encodePacked32TimeSeconds(java.time.LocalTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalTime decodePacked32TimeSecondsAsJavaTime(int bitFieldTimeSeconds) {
+  public static java.time.LocalTime decodePacked32TimeSeconds(int bitFieldTimeSeconds) {
     checkValidBitField(bitFieldTimeSeconds, TIME_SECONDS_MASK);
     int hourOfDay = getFieldFromBitField(bitFieldTimeSeconds, HOUR_MASK, HOUR_SHIFT);
     int minuteOfHour = getFieldFromBitField(bitFieldTimeSeconds, MINUTE_MASK, MINUTE_SHIFT);
@@ -183,10 +158,10 @@ public final class CivilTimeEncoder {
    * @see #encodePacked64TimeMicros(java.time.LocalTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalTime decodePacked64TimeMicrosAsJavaTime(long bitFieldTimeMicros) {
+  public static java.time.LocalTime decodePacked64TimeMicros(long bitFieldTimeMicros) {
     checkValidBitField(bitFieldTimeMicros, TIME_MICROS_MASK);
     int bitFieldTimeSeconds = (int) (bitFieldTimeMicros >> MICRO_LENGTH);
-    java.time.LocalTime timeSeconds = decodePacked32TimeSecondsAsJavaTime(bitFieldTimeSeconds);
+    java.time.LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
     int microOfSecond = getFieldFromBitField(bitFieldTimeMicros, MICRO_MASK, MICRO_SHIFT);
     checkValidMicroOfSecond(microOfSecond);
     return timeSeconds.withNano(microOfSecond * 1_000);
@@ -203,7 +178,7 @@ public final class CivilTimeEncoder {
    *                      | H ||  M ||  S ||---------- nanos -----------|
    * </pre>
    *
-   * @see #decodePacked64TimeNanosAsJavaTime(long)
+   * @see #decodePacked64TimeNanos(long)
    */
   @SuppressWarnings({"GoodTime-ApiWithNumericTimeUnit", "JavaLocalTimeGetNano"})
   public static long encodePacked64TimeNanos(java.time.LocalTime time) {
@@ -225,10 +200,10 @@ public final class CivilTimeEncoder {
    * @see #encodePacked64TimeNanos(java.time.LocalTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalTime decodePacked64TimeNanosAsJavaTime(long bitFieldTimeNanos) {
+  public static java.time.LocalTime decodePacked64TimeNanos(long bitFieldTimeNanos) {
     checkValidBitField(bitFieldTimeNanos, TIME_NANOS_MASK);
     int bitFieldTimeSeconds = (int) (bitFieldTimeNanos >> NANO_LENGTH);
-    java.time.LocalTime timeSeconds = decodePacked32TimeSecondsAsJavaTime(bitFieldTimeSeconds);
+    java.time.LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
     int nanoOfSecond = getFieldFromBitField(bitFieldTimeNanos, NANO_MASK, NANO_SHIFT);
     checkValidNanoOfSecond(nanoOfSecond);
     return timeSeconds.withNano(nanoOfSecond);
@@ -247,7 +222,7 @@ public final class CivilTimeEncoder {
    *                             |--- year ---||m || D || H ||  M ||  S |
    * </pre>
    *
-   * @see #decodePacked64DatetimeSecondsAsJavaTime(long)
+   * @see #decodePacked64DatetimeSeconds(long)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
   public static long encodePacked64DatetimeSeconds(java.time.LocalDateTime dateTime) {
@@ -274,11 +249,11 @@ public final class CivilTimeEncoder {
    * @see #encodePacked64DatetimeSeconds(java.time.LocalDateTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalDateTime decodePacked64DatetimeSecondsAsJavaTime(
+  public static java.time.LocalDateTime decodePacked64DatetimeSeconds(
       long bitFieldDatetimeSeconds) {
     checkValidBitField(bitFieldDatetimeSeconds, DATETIME_SECONDS_MASK);
     int bitFieldTimeSeconds = (int) (bitFieldDatetimeSeconds & TIME_SECONDS_MASK);
-    java.time.LocalTime timeSeconds = decodePacked32TimeSecondsAsJavaTime(bitFieldTimeSeconds);
+    java.time.LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
     int year = getFieldFromBitField(bitFieldDatetimeSeconds, YEAR_MASK, YEAR_SHIFT);
     int monthOfYear = getFieldFromBitField(bitFieldDatetimeSeconds, MONTH_MASK, MONTH_SHIFT);
     int dayOfMonth = getFieldFromBitField(bitFieldDatetimeSeconds, DAY_MASK, DAY_SHIFT);
@@ -309,7 +284,7 @@ public final class CivilTimeEncoder {
    *         |--- year ---||m || D || H ||  M ||  S ||-------micros-----|
    * </pre>
    *
-   * @see #decodePacked64DatetimeMicrosAsJavaTime(long)
+   * @see #decodePacked64DatetimeMicros(long)
    */
   @SuppressWarnings({"GoodTime-ApiWithNumericTimeUnit", "JavaLocalDateTimeGetNano"})
   public static long encodePacked64DatetimeMicros(java.time.LocalDateTime dateTime) {
@@ -333,12 +308,12 @@ public final class CivilTimeEncoder {
    * @see #encodePacked64DatetimeMicros(java.time.LocalDateTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalDateTime decodePacked64DatetimeMicrosAsJavaTime(
+  public static java.time.LocalDateTime decodePacked64DatetimeMicros(
       long bitFieldDatetimeMicros) {
     checkValidBitField(bitFieldDatetimeMicros, DATETIME_MICROS_MASK);
     long bitFieldDatetimeSeconds = bitFieldDatetimeMicros >> MICRO_LENGTH;
     java.time.LocalDateTime dateTimeSeconds =
-        decodePacked64DatetimeSecondsAsJavaTime(bitFieldDatetimeSeconds);
+        decodePacked64DatetimeSeconds(bitFieldDatetimeSeconds);
     int microOfSecond = getFieldFromBitField(bitFieldDatetimeMicros, MICRO_MASK, MICRO_SHIFT);
     checkValidMicroOfSecond(microOfSecond);
     java.time.LocalDateTime dateTime = dateTimeSeconds.withNano(microOfSecond * 1_000);
