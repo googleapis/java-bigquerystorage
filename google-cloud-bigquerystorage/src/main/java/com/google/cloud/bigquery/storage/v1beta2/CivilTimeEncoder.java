@@ -22,6 +22,9 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 
 /**
+ * Ported from ZetaSQL CivilTimeEncoder
+ * Original code can be found at:
+ * https://github.com/google/zetasql/blob/master/java/com/google/zetasql/CivilTimeEncoder.java
  * Encoder for TIME and DATETIME values, according to civil_time encoding.
  *
  * <p>The valid range and number of bits required by each date/time field is as the following:
@@ -86,7 +89,7 @@ public final class CivilTimeEncoder {
    * @see #decodePacked32TimeSeconds(int)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static int encodePacked32TimeSeconds(java.time.LocalTime time) {
+  private static int encodePacked32TimeSeconds(java.time.LocalTime time) {
     checkValidTimeSeconds(time);
     int bitFieldTimeSeconds = 0x0;
     bitFieldTimeSeconds |= time.getHour() << HOUR_SHIFT;
@@ -109,7 +112,7 @@ public final class CivilTimeEncoder {
    * @see #encodePacked32TimeSeconds(java.time.LocalTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalTime decodePacked32TimeSeconds(int bitFieldTimeSeconds) {
+  private static java.time.LocalTime decodePacked32TimeSeconds(int bitFieldTimeSeconds) {
     checkValidBitField(bitFieldTimeSeconds, TIME_SECONDS_MASK);
     int hourOfDay = getFieldFromBitField(bitFieldTimeSeconds, HOUR_MASK, HOUR_SHIFT);
     int minuteOfHour = getFieldFromBitField(bitFieldTimeSeconds, MINUTE_MASK, MINUTE_SHIFT);
@@ -136,7 +139,7 @@ public final class CivilTimeEncoder {
    * @see #decodePacked64TimeMicros(long)
    * @see #encodePacked64TimeMicros(java.time.LocalTime)
    */
-  @SuppressWarnings("GoodTime") // should accept a java.time.LocalTime
+  @SuppressWarnings("GoodTime")
   public static long encodePacked64TimeMicros(java.time.LocalTime time) {
     checkValidTimeMillis(time);
     return (((long) encodePacked32TimeSeconds(time)) << MICRO_LENGTH) | (time.getNano() / 1_000L);
@@ -165,50 +168,6 @@ public final class CivilTimeEncoder {
     checkValidMicroOfSecond(microOfSecond);
     return timeSeconds.withNano(microOfSecond * 1_000);
   }
-
-  /**
-   * Encodes {@code time} as a 8-byte integer with nanoseconds precision.
-   *
-   * <p>Encoding is as the following:
-   *
-   * <pre>
-   *        6         5         4         3         2         1
-   * MSB 3210987654321098765432109876543210987654321098765432109876543210 LSB
-   *                      | H ||  M ||  S ||---------- nanos -----------|
-   * </pre>
-   *
-   * @see #decodePacked64TimeNanos(long)
-   */
-  @SuppressWarnings({"GoodTime-ApiWithNumericTimeUnit", "JavaLocalTimeGetNano"})
-  public static long encodePacked64TimeNanos(java.time.LocalTime time) {
-    checkValidTimeNanos(time);
-    return (((long) encodePacked32TimeSeconds(time)) << NANO_LENGTH) | time.getNano();
-  }
-
-  /**
-   * Decodes {@code bitFieldTimeNanos} as a {@link java.time.LocalTime} with nanoseconds precision.
-   *
-   * <p>Encoding is as the following:
-   *
-   * <pre>
-   *        6         5         4         3         2         1
-   * MSB 3210987654321098765432109876543210987654321098765432109876543210 LSB
-   *                      | H ||  M ||  S ||---------- nanos -----------|
-   * </pre>
-   *
-   * @see #encodePacked64TimeNanos(java.time.LocalTime)
-   */
-  @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalTime decodePacked64TimeNanos(long bitFieldTimeNanos) {
-    checkValidBitField(bitFieldTimeNanos, TIME_NANOS_MASK);
-    int bitFieldTimeSeconds = (int) (bitFieldTimeNanos >> NANO_LENGTH);
-    java.time.LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
-    int nanoOfSecond = getFieldFromBitField(bitFieldTimeNanos, NANO_MASK, NANO_SHIFT);
-    checkValidNanoOfSecond(nanoOfSecond);
-    return timeSeconds.withNano(nanoOfSecond);
-  }
-
-  // tested to here???
 
   /**
    * Encodes {@code dateTime} as a 8-byte integer with seconds precision.
