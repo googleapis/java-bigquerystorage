@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package com.google.cloud.bigquery.storage.v1beta2;
 
@@ -308,8 +307,7 @@ public final class CivilTimeEncoder {
    * @see #encodePacked64DatetimeMicros(java.time.LocalDateTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalDateTime decodePacked64DatetimeMicros(
-      long bitFieldDatetimeMicros) {
+  public static java.time.LocalDateTime decodePacked64DatetimeMicros(long bitFieldDatetimeMicros) {
     checkValidBitField(bitFieldDatetimeMicros, DATETIME_MICROS_MASK);
     long bitFieldDatetimeSeconds = bitFieldDatetimeMicros >> MICRO_LENGTH;
     java.time.LocalDateTime dateTimeSeconds =
