@@ -1,8 +1,23 @@
+/*
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import static org.junit.Assert.assertEquals;
 
-import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.logging.Logger;
@@ -45,14 +60,11 @@ public class CivilTimeEncoderTest {
     // 00:01:02 -> 0b000000000000000|00000|000001|000010 -> 0x42
     assertEquals(LocalTime.of(0, 1, 2), CivilTimeEncoder.decodePacked32TimeSeconds(0x42));
     // 12:00:00 -> 0b000000000000000|01100|000000|000000 -> 0xC000
-    assertEquals(
-        LocalTime.of(12, 0, 0), CivilTimeEncoder.decodePacked32TimeSeconds(0xC000));
+    assertEquals(LocalTime.of(12, 0, 0), CivilTimeEncoder.decodePacked32TimeSeconds(0xC000));
     // 13:14:15 -> 0b000000000000000|01101|001110|001111 -> 0xD38F
-    assertEquals(
-        LocalTime.of(13, 14, 15), CivilTimeEncoder.decodePacked32TimeSeconds(0xD38F));
+    assertEquals(LocalTime.of(13, 14, 15), CivilTimeEncoder.decodePacked32TimeSeconds(0xD38F));
     // 23:59:59 -> 0b000000000000000|10111|111011|111011 -> 0x17EFB
-    assertEquals(
-        LocalTime.of(23, 59, 59), CivilTimeEncoder.decodePacked32TimeSeconds(0x17EFB));
+    assertEquals(LocalTime.of(23, 59, 59), CivilTimeEncoder.decodePacked32TimeSeconds(0x17EFB));
 
     try {
       // 00:00:00 -> 0b000000000000001|00000|000000|000000 -> 0x20000
@@ -100,20 +112,16 @@ public class CivilTimeEncoderTest {
         CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(23, 59, 59, 999_000_000)));
 
     // 00:00:00.000000->0b000000000000000000000000000|00000|000000|000000|00000000000000000000->0x0
-    assertEquals(
-        LocalTime.of(0, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeMicros(0x0L));
+    assertEquals(LocalTime.of(0, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeMicros(0x0L));
     // 00:01:02.000003->0b000000000000000000000000000|00000|000001|000010|00000000000000000011->0x4200003
     assertEquals(
-        LocalTime.of(0, 1, 2, 3_000),
-        CivilTimeEncoder.decodePacked64TimeMicros(0x4200003L));
+        LocalTime.of(0, 1, 2, 3_000), CivilTimeEncoder.decodePacked64TimeMicros(0x4200003L));
     // 12:00:00.000000->0b000000000000000000000000000|01100|000000|000000|00000000000000000000->0xC00000000
     assertEquals(
-        LocalTime.of(12, 0, 0, 0),
-        CivilTimeEncoder.decodePacked64TimeMicros(0xC00000000L));
+        LocalTime.of(12, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeMicros(0xC00000000L));
     // 13:14:15.000016->0b000000000000000000000000000|01101|001110|001111|00000000000000010000->0xD38F00010
     assertEquals(
-        LocalTime.of(13, 14, 15, 16_000),
-        CivilTimeEncoder.decodePacked64TimeMicros(0xD38F00010L));
+        LocalTime.of(13, 14, 15, 16_000), CivilTimeEncoder.decodePacked64TimeMicros(0xD38F00010L));
     // 23:59:59.999999->0b000000000000000000000000000|10111|111011|111011|11110100001000111111->0x17EFBF423F
     assertEquals(
         LocalTime.of(23, 59, 59, 999_999_000),
@@ -188,19 +196,23 @@ public class CivilTimeEncoderTest {
 
     // 00:00:00.000000000->0b00000000000000000|00000|000000|000000|000000000000000000000000000000
     // ->0x0
-    assertEquals(LocalTime.of(0,0,0,0), CivilTimeEncoder.decodePacked64TimeNanos(0x0L));
+    assertEquals(LocalTime.of(0, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeNanos(0x0L));
     // 00:01:02.000000003->0b00000000000000000|00000|000001|000010|000000000000000000000000000011
     // ->0x1080000003
     assertEquals(LocalTime.of(0, 1, 2, 3), CivilTimeEncoder.decodePacked64TimeNanos(0x1080000003L));
     // 12:00:00.000000000->0b00000000000000000|01100|000000|000000|000000000000000000000000000000
     // ->0x300000000000
-    assertEquals(LocalTime.of(12, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeNanos(0x300000000000L));
+    assertEquals(
+        LocalTime.of(12, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeNanos(0x300000000000L));
     // 13:14:15.000000016->0b00000000000000000|01101|001110|001111|000000000000000000000000010000
     // ->0x34E3C0000010
-    assertEquals(LocalTime.of(13, 14, 15, 16), CivilTimeEncoder.decodePacked64TimeNanos(0x34E3C0000010L));
+    assertEquals(
+        LocalTime.of(13, 14, 15, 16), CivilTimeEncoder.decodePacked64TimeNanos(0x34E3C0000010L));
     // 23:59:59.999999999->0b00000000000000000|10111|111011|111011|111011100110101100100111111111
     // ->0x5FBEFB9AC9FF
-    assertEquals(LocalTime.of(23, 59, 59, 999_999_999), CivilTimeEncoder.decodePacked64TimeNanos(0x5FBEFB9AC9FFL));
+    assertEquals(
+        LocalTime.of(23, 59, 59, 999_999_999),
+        CivilTimeEncoder.decodePacked64TimeNanos(0x5FBEFB9AC9FFL));
 
     try {
       // 00:00:00.000000000->0b00000000000000001|00000|000000|000000|000000000000000000000000000000
@@ -246,42 +258,62 @@ public class CivilTimeEncoderTest {
 
   @Test
   public void Packed64DateTimeSecondsTest() {
-    //encode
+    // encode
     // 0001/01/01 00:00:00->0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
     // ->0x4420000
-    assertEquals(0x4420000L, CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1,1,1,0,0,0)));
+    assertEquals(
+        0x4420000L,
+        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 0, 0, 0)));
     // 0001/02/03 00:01:02->0b0000000000000000000000|00000000000001|0010|00011|00000|000001|000010
     // 0x4860042
-    assertEquals(0x4860042L, CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 2, 3, 0, 1, 2)));
+    assertEquals(
+        0x4860042L,
+        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 2, 3, 0, 1, 2)));
     // 0001/01/01 12:00:00->0b0000000000000000000000|00000000000001|0001|00001|01100|000000|000000
     // ->0x442C000
-    assertEquals(0x442C000L, CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 12, 0, 0)));
+    assertEquals(
+        0x442C000L,
+        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 12, 0, 0)));
     // 0001/01/01 13:14:15->0b0000000000000000000000|00000000000001|0001|00001|01101|001110|001111
     // ->0x442D38F
-    assertEquals(0x442D38FL, CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 13, 14, 15)));
+    assertEquals(
+        0x442D38FL,
+        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 13, 14, 15)));
     // 9999/12/31 23:59:59
     // 0b0000000000000000000000|10011100001111|1100|11111|10111|111011|111011
     // 0x9C3F3F7EFB
-    assertEquals(0x9C3F3F7EFBL, CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(9999, 12, 31, 23, 59, 59)));
+    assertEquals(
+        0x9C3F3F7EFBL,
+        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(9999, 12, 31, 23, 59, 59)));
 
-    //decode
+    // decode
     // 0001/01/01 00:00:00->0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
     // ->0x4420000
-    assertEquals(LocalDateTime.of(1,1,1,0,0,0), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4420000L));
+    assertEquals(
+        LocalDateTime.of(1, 1, 1, 0, 0, 0),
+        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4420000L));
     // 0001/02/03 00:01:02->0b0000000000000000000000|00000000000001|0010|00011|00000|000001|000010
     // ->0x4860042
-    assertEquals(LocalDateTime.of(1, 2, 3, 0, 1, 2), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4860042L));
+    assertEquals(
+        LocalDateTime.of(1, 2, 3, 0, 1, 2),
+        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4860042L));
     // 0001/01/01 12:00:00->0b0000000000000000000000|00000000000001|0001|00001|01100|000000|000000
     // ->0x442C000
-    assertEquals(LocalDateTime.of(1, 1, 1, 12, 0, 0), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442C000L));
+    assertEquals(
+        LocalDateTime.of(1, 1, 1, 12, 0, 0),
+        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442C000L));
     // 0001/01/01 13:14:15->0b0000000000000000000000|00000000000001|0001|00001|01101|001110|001111
     // ->0x442D38F
-    assertEquals(LocalDateTime.of(1, 1, 1, 13, 14, 15), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442D38FL));
+    assertEquals(
+        LocalDateTime.of(1, 1, 1, 13, 14, 15),
+        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442D38FL));
     // 9999/12/31 23:59:59->0b0000000000000000000000|10011100001111|1100|11111|10111|111011|111011
     // ->0x9C3F3F7EFB
-    assertEquals(LocalDateTime.of(9999, 12, 31, 23, 59, 59), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x9C3F3F7EFBL));
+    assertEquals(
+        LocalDateTime.of(9999, 12, 31, 23, 59, 59),
+        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x9C3F3F7EFBL));
 
-    //encode and decode failures
+    // encode and decode failures
     // 10000/01/01 00:00:00->0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
     // ->0x9C40420000
     LocalDateTime dateTime = LocalDateTime.of(10000, 1, 1, 0, 0, 0);
@@ -300,7 +332,7 @@ public class CivilTimeEncoderTest {
     try {
       // 0001/01/01 00:00:00->0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
       // ->0x10004420000
-      //invalid bit field
+      // invalid bit field
       CivilTimeEncoder.decodePacked64DatetimeSeconds(0x10004420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
@@ -357,42 +389,65 @@ public class CivilTimeEncoderTest {
 
   @Test
   public void Packed64DateTimeMicrosTest() {
-    //encode
+    // encode
     // 0001/01/01 00:00:00->0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
     // ->0x4420000
-    assertEquals(0x442000000000L, CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1,1,1,0,0,0, 0)));
+    assertEquals(
+        0x442000000000L,
+        CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1, 1, 1, 0, 0, 0, 0)));
     // 0001/02/03 00:01:02->0b0000000000000000000000|00000000000001|0010|00011|00000|000001|000010
     // 0x4860042
-    assertEquals(0x486004200BB8L, CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1, 2, 3, 0, 1, 2, 3_000_000)));
+    assertEquals(
+        0x486004200BB8L,
+        CivilTimeEncoder.encodePacked64DatetimeMicros(
+            LocalDateTime.of(1, 2, 3, 0, 1, 2, 3_000_000)));
     // 0001/01/01 12:00:00->0b0000000000000000000000|00000000000001|0001|00001|01100|000000|000000
     // ->0x442C000
-    assertEquals(0x442C00000000L, CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1, 1, 1, 12, 0, 0, 0)));
+    assertEquals(
+        0x442C00000000L,
+        CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1, 1, 1, 12, 0, 0, 0)));
     // 0001/01/01 13:14:15->0b0000000000000000000000|00000000000001|0001|00001|01101|001110|001111
     // ->0x442D38F
-    assertEquals(0x442D38F03E80L, CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1, 1, 1, 13, 14, 15, 16_000_000)));
+    assertEquals(
+        0x442D38F03E80L,
+        CivilTimeEncoder.encodePacked64DatetimeMicros(
+            LocalDateTime.of(1, 1, 1, 13, 14, 15, 16_000_000)));
     // 9999/12/31 23:59:59
     // 0b0000000000000000000000|10011100001111|1100|11111|10111|111011|111011
     // 0x9C3F3F7EFB
-    assertEquals(0x9C3F3F7EFBF3E58L, CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000)));
+    assertEquals(
+        0x9C3F3F7EFBF3E58L,
+        CivilTimeEncoder.encodePacked64DatetimeMicros(
+            LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000)));
 
-    //decode
+    // decode
     // 0001/01/01 00:00:00->0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
     // ->0x4420000
-    assertEquals(LocalDateTime.of(1,1,1,0,0,0, 0), CivilTimeEncoder.decodePacked64DatetimeMicros(0x442000000000L));
+    assertEquals(
+        LocalDateTime.of(1, 1, 1, 0, 0, 0, 0),
+        CivilTimeEncoder.decodePacked64DatetimeMicros(0x442000000000L));
     // 0001/02/03 00:01:02->0b0000000000000000000000|00000000000001|0010|00011|00000|000001|000010
     // ->0x4860042
-    assertEquals(LocalDateTime.of(1, 2, 3, 0, 1, 2, 3_000_000), CivilTimeEncoder.decodePacked64DatetimeMicros(0x486004200BB8L));
+    assertEquals(
+        LocalDateTime.of(1, 2, 3, 0, 1, 2, 3_000_000),
+        CivilTimeEncoder.decodePacked64DatetimeMicros(0x486004200BB8L));
     // 0001/01/01 12:00:00->0b0000000000000000000000|00000000000001|0001|00001|01100|000000|000000
     // ->0x442C000
-    assertEquals(LocalDateTime.of(1, 1, 1, 12, 0, 0, 0), CivilTimeEncoder.decodePacked64DatetimeMicros(0x442C00000000L));
+    assertEquals(
+        LocalDateTime.of(1, 1, 1, 12, 0, 0, 0),
+        CivilTimeEncoder.decodePacked64DatetimeMicros(0x442C00000000L));
     // 0001/01/01 13:14:15->0b0000000000000000000000|00000000000001|0001|00001|01101|001110|001111
     // ->0x442D38F
-    assertEquals(LocalDateTime.of(1, 1, 1, 13, 14, 15, 16_000_000), CivilTimeEncoder.decodePacked64DatetimeMicros(0x442D38F03E80L));
+    assertEquals(
+        LocalDateTime.of(1, 1, 1, 13, 14, 15, 16_000_000),
+        CivilTimeEncoder.decodePacked64DatetimeMicros(0x442D38F03E80L));
     // 9999/12/31 23:59:59->0b0000000000000000000000|10011100001111|1100|11111|10111|111011|111011
     // ->0x9C3F3F7EFB
-    assertEquals(LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000), CivilTimeEncoder.decodePacked64DatetimeMicros(0x9C3F3F7EFBF3E58L));
+    assertEquals(
+        LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000),
+        CivilTimeEncoder.decodePacked64DatetimeMicros(0x9C3F3F7EFBF3E58L));
 
-    //encode and decode failures
+    // encode and decode failures
     // 10000/01/01 00:00:00->0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
     // ->0x9C40420000
     LocalDateTime dateTime = LocalDateTime.of(10000, 1, 1, 0, 0, 0);
@@ -411,7 +466,7 @@ public class CivilTimeEncoderTest {
     try {
       // 0001/01/01 00:00:00->0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
       // ->0x10004420000
-      //invalid bit field
+      // invalid bit field
       CivilTimeEncoder.decodePacked64DatetimeMicros(0x10004420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
