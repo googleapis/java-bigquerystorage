@@ -41,18 +41,18 @@ public class CivilTimeEncoderTest {
     assertEquals(LocalTime.of(23, 59, 59), CivilTimeEncoder.decodePacked32TimeSeconds(0x17EFB));
 
     // 00:00:00 -> 0b000000000000000|00000|000000|000000 -> 0x0
-    assertEquals(LocalTime.of(0, 0, 0), CivilTimeEncoder.decodePacked32TimeSecondsAsJavaTime(0x0));
+    assertEquals(LocalTime.of(0, 0, 0), CivilTimeEncoder.decodePacked32TimeSeconds(0x0));
     // 00:01:02 -> 0b000000000000000|00000|000001|000010 -> 0x42
-    assertEquals(LocalTime.of(0, 1, 2), CivilTimeEncoder.decodePacked32TimeSecondsAsJavaTime(0x42));
+    assertEquals(LocalTime.of(0, 1, 2), CivilTimeEncoder.decodePacked32TimeSeconds(0x42));
     // 12:00:00 -> 0b000000000000000|01100|000000|000000 -> 0xC000
     assertEquals(
-        LocalTime.of(12, 0, 0), CivilTimeEncoder.decodePacked32TimeSecondsAsJavaTime(0xC000));
+        LocalTime.of(12, 0, 0), CivilTimeEncoder.decodePacked32TimeSeconds(0xC000));
     // 13:14:15 -> 0b000000000000000|01101|001110|001111 -> 0xD38F
     assertEquals(
-        LocalTime.of(13, 14, 15), CivilTimeEncoder.decodePacked32TimeSecondsAsJavaTime(0xD38F));
+        LocalTime.of(13, 14, 15), CivilTimeEncoder.decodePacked32TimeSeconds(0xD38F));
     // 23:59:59 -> 0b000000000000000|10111|111011|111011 -> 0x17EFB
     assertEquals(
-        LocalTime.of(23, 59, 59), CivilTimeEncoder.decodePacked32TimeSecondsAsJavaTime(0x17EFB));
+        LocalTime.of(23, 59, 59), CivilTimeEncoder.decodePacked32TimeSeconds(0x17EFB));
 
     try {
       // 00:00:00 -> 0b000000000000001|00000|000000|000000 -> 0x20000
@@ -63,13 +63,13 @@ public class CivilTimeEncoderTest {
     try {
       // 23:59:60 -> 0b000000000000000|10111|111011|111100 -> 0x17EFC
       CivilTimeEncoder.decodePacked32TimeSeconds(0x17EFC); // 1 second past 24 hrs
-    } catch (DateTimeException e) {
+    } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for SecondOfMinute (valid values 0 - 59): 60", e.getMessage());
     }
     try {
       // 00:60:00 -> 0b000000000000000|00000|111100|000000 -> 0xF00
       CivilTimeEncoder.decodePacked32TimeSeconds(0xF00);
-    } catch (DateTimeException e) {
+    } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for MinuteOfHour (valid values 0 - 59): 60", e.getMessage());
     }
     try {
@@ -101,29 +101,29 @@ public class CivilTimeEncoderTest {
 
     // 00:00:00.000000->0b000000000000000000000000000|00000|000000|000000|00000000000000000000->0x0
     assertEquals(
-        LocalTime.of(0, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0x0L));
+        LocalTime.of(0, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeMicros(0x0L));
     // 00:01:02.000003->0b000000000000000000000000000|00000|000001|000010|00000000000000000011->0x4200003
     assertEquals(
         LocalTime.of(0, 1, 2, 3_000),
-        CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0x4200003L));
+        CivilTimeEncoder.decodePacked64TimeMicros(0x4200003L));
     // 12:00:00.000000->0b000000000000000000000000000|01100|000000|000000|00000000000000000000->0xC00000000
     assertEquals(
         LocalTime.of(12, 0, 0, 0),
-        CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0xC00000000L));
+        CivilTimeEncoder.decodePacked64TimeMicros(0xC00000000L));
     // 13:14:15.000016->0b000000000000000000000000000|01101|001110|001111|00000000000000010000->0xD38F00010
     assertEquals(
         LocalTime.of(13, 14, 15, 16_000),
-        CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0xD38F00010L));
+        CivilTimeEncoder.decodePacked64TimeMicros(0xD38F00010L));
     // 23:59:59.999999->0b000000000000000000000000000|10111|111011|111011|11110100001000111111->0x17EFBF423F
     assertEquals(
         LocalTime.of(23, 59, 59, 999_999_000),
-        CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0x17EFBF423FL));
+        CivilTimeEncoder.decodePacked64TimeMicros(0x17EFBF423FL));
 
     try {
       // 00:00:00.000000
       // 0b000000000000000000000000001|00000|000000|000000|00000000000000000000
       // 0x2000000000
-      CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0x2000000000L);
+      CivilTimeEncoder.decodePacked64TimeMicros(0x2000000000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
       assertEquals(null, e.getMessage());
@@ -132,7 +132,7 @@ public class CivilTimeEncoderTest {
       // 00:00:00.1000000
       // 0b000000000000000000000000000|00000|000000|000000|11110100001001000000
       // 0xF4240
-      CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0xF4240L);
+      CivilTimeEncoder.decodePacked64TimeMicros(0xF4240L);
     } catch (IllegalArgumentException e) {
       assertEquals(null, e.getMessage());
     }
@@ -140,7 +140,7 @@ public class CivilTimeEncoderTest {
       // 00:00:60.000000
       // 0b000000000000000000000000000|00000|000000|111100|00000000000000000000
       // 0x3C00000
-      CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0x3C00000L);
+      CivilTimeEncoder.decodePacked64TimeMicros(0x3C00000L);
     } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for SecondOfMinute (valid values 0 - 59): 60", e.getMessage());
     }
@@ -148,7 +148,7 @@ public class CivilTimeEncoderTest {
       // 24:00:00.000000
       // 0b000000000000000000000000000|11000|000000|000000|00000000000000000000
       // 0x1800000000
-      CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0x1800000000L);
+      CivilTimeEncoder.decodePacked64TimeMicros(0x1800000000L);
     } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for HourOfDay (valid values 0 - 23): 24", e.getMessage());
     }
@@ -156,7 +156,7 @@ public class CivilTimeEncoderTest {
       // 00:60:00.000000
       // 0b000000000000000000000000000|00000|111100|000000|00000000000000000000
       // 0xF0000000
-      CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(0xF0000000L);
+      CivilTimeEncoder.decodePacked64TimeMicros(0xF0000000L);
     } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for MinuteOfHour (valid values 0 - 59): 60", e.getMessage());
     }
@@ -188,24 +188,24 @@ public class CivilTimeEncoderTest {
 
     // 00:00:00.000000000->0b00000000000000000|00000|000000|000000|000000000000000000000000000000
     // ->0x0
-    assertEquals(LocalTime.of(0,0,0,0), CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0x0L));
+    assertEquals(LocalTime.of(0,0,0,0), CivilTimeEncoder.decodePacked64TimeNanos(0x0L));
     // 00:01:02.000000003->0b00000000000000000|00000|000001|000010|000000000000000000000000000011
     // ->0x1080000003
-    assertEquals(LocalTime.of(0, 1, 2, 3), CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0x1080000003L));
+    assertEquals(LocalTime.of(0, 1, 2, 3), CivilTimeEncoder.decodePacked64TimeNanos(0x1080000003L));
     // 12:00:00.000000000->0b00000000000000000|01100|000000|000000|000000000000000000000000000000
     // ->0x300000000000
-    assertEquals(LocalTime.of(12, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0x300000000000L));
+    assertEquals(LocalTime.of(12, 0, 0, 0), CivilTimeEncoder.decodePacked64TimeNanos(0x300000000000L));
     // 13:14:15.000000016->0b00000000000000000|01101|001110|001111|000000000000000000000000010000
     // ->0x34E3C0000010
-    assertEquals(LocalTime.of(13, 14, 15, 16), CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0x34E3C0000010L));
+    assertEquals(LocalTime.of(13, 14, 15, 16), CivilTimeEncoder.decodePacked64TimeNanos(0x34E3C0000010L));
     // 23:59:59.999999999->0b00000000000000000|10111|111011|111011|111011100110101100100111111111
     // ->0x5FBEFB9AC9FF
-    assertEquals(LocalTime.of(23, 59, 59, 999_999_999), CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0x5FBEFB9AC9FFL));
+    assertEquals(LocalTime.of(23, 59, 59, 999_999_999), CivilTimeEncoder.decodePacked64TimeNanos(0x5FBEFB9AC9FFL));
 
     try {
       // 00:00:00.000000000->0b00000000000000001|00000|000000|000000|000000000000000000000000000000
       // 0x800000000000
-      CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0x800000000000L);
+      CivilTimeEncoder.decodePacked64TimeNanos(0x800000000000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
       assertEquals(null, e.getMessage());
@@ -213,7 +213,7 @@ public class CivilTimeEncoderTest {
     try {
       // 00:00:00.1000000000->0b00000000000000000|00000|000000|000000|111011100110101100101000000000
       // ->0x3B9ACA00
-      CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0x3B9ACA00L);
+      CivilTimeEncoder.decodePacked64TimeNanos(0x3B9ACA00L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
       assertEquals(null, e.getMessage());
@@ -221,7 +221,7 @@ public class CivilTimeEncoderTest {
     try {
       // 00:00:00.000000000->0b00000000000000000|00000|000000|111100|000000000000000000000000000000
       // 0xF00000000
-      CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0xF00000000L);
+      CivilTimeEncoder.decodePacked64TimeNanos(0xF00000000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for SecondOfMinute (valid values 0 - 59): 60", e.getMessage());
@@ -229,7 +229,7 @@ public class CivilTimeEncoderTest {
     try {
       // 00:00:00.000000000->0b00000000000000000|00000|111100|000000|000000000000000000000000000000
       // 0x3C000000000
-      CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0x3C000000000L);
+      CivilTimeEncoder.decodePacked64TimeNanos(0x3C000000000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for MinuteOfHour (valid values 0 - 59): 60", e.getMessage());
@@ -237,7 +237,7 @@ public class CivilTimeEncoderTest {
     try {
       // 00:00:00.000000000->0b00000000000000000|11000|000000|000000|000000000000000000000000000000
       // 0x600000000000
-      CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(0x600000000000L);
+      CivilTimeEncoder.decodePacked64TimeNanos(0x600000000000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for HourOfDay (valid values 0 - 23): 24", e.getMessage());
@@ -267,19 +267,19 @@ public class CivilTimeEncoderTest {
     //decode
     // 0001/01/01 00:00:00->0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
     // ->0x4420000
-    assertEquals(LocalDateTime.of(1,1,1,0,0,0), CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x4420000L));
+    assertEquals(LocalDateTime.of(1,1,1,0,0,0), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4420000L));
     // 0001/02/03 00:01:02->0b0000000000000000000000|00000000000001|0010|00011|00000|000001|000010
     // ->0x4860042
-    assertEquals(LocalDateTime.of(1, 2, 3, 0, 1, 2), CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x4860042L));
+    assertEquals(LocalDateTime.of(1, 2, 3, 0, 1, 2), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4860042L));
     // 0001/01/01 12:00:00->0b0000000000000000000000|00000000000001|0001|00001|01100|000000|000000
     // ->0x442C000
-    assertEquals(LocalDateTime.of(1, 1, 1, 12, 0, 0), CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x442C000L));
+    assertEquals(LocalDateTime.of(1, 1, 1, 12, 0, 0), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442C000L));
     // 0001/01/01 13:14:15->0b0000000000000000000000|00000000000001|0001|00001|01101|001110|001111
     // ->0x442D38F
-    assertEquals(LocalDateTime.of(1, 1, 1, 13, 14, 15), CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x442D38FL));
+    assertEquals(LocalDateTime.of(1, 1, 1, 13, 14, 15), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442D38FL));
     // 9999/12/31 23:59:59->0b0000000000000000000000|10011100001111|1100|11111|10111|111011|111011
     // ->0x9C3F3F7EFB
-    assertEquals(LocalDateTime.of(9999, 12, 31, 23, 59, 59), CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x9C3F3F7EFBL));
+    assertEquals(LocalDateTime.of(9999, 12, 31, 23, 59, 59), CivilTimeEncoder.decodePacked64DatetimeSeconds(0x9C3F3F7EFBL));
 
     //encode and decode failures
     // 10000/01/01 00:00:00->0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
@@ -293,7 +293,7 @@ public class CivilTimeEncoderTest {
     try {
       // 0001/01/01 00:00:00->0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
       // ->0x10004420000
-      CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x10004420000L);
+      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x10004420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -301,7 +301,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/01 00:00:00->0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
       // ->0x10004420000
       //invalid bit field
-      CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x10004420000L);
+      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x10004420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -309,7 +309,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/01 00:00:60
       // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|111100
       // 0x442003C
-      CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x442003CL);
+      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442003CL);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -317,7 +317,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/01 00:60:00
       // 0b0000000000000000000000|00000000000001|0001|00001|00000|111100|000000
       // 0x4420F00
-      CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x4420F00L);
+      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4420F00L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -325,7 +325,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/01 24:00:00
       // 0b0000000000000000000000|00000000000001|0001|00001|11000|000000|000000
       // 0x4438000
-      CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x4438000L);
+      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4438000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -333,7 +333,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/00 00:00:00
       // 0b0000000000000000000000|00000000000001|0001|00000|00000|000000|000000
       // 0x4400000
-      CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x4400000L);
+      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4400000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -341,7 +341,7 @@ public class CivilTimeEncoderTest {
       // 0001/13/01 00:00:00
       // 0b0000000000000000000000|00000000000001|1101|00001|00000|000000|000000
       // 0x7420000
-      CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x7420000L);
+      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x7420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -349,7 +349,7 @@ public class CivilTimeEncoderTest {
       // 10000/01/01 00:00:00
       // 0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
       // 0x9C40420000
-      CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(0x9C40420000L);
+      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x9C40420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -378,19 +378,19 @@ public class CivilTimeEncoderTest {
     //decode
     // 0001/01/01 00:00:00->0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
     // ->0x4420000
-    assertEquals(LocalDateTime.of(1,1,1,0,0,0, 0), CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x442000000000L));
+    assertEquals(LocalDateTime.of(1,1,1,0,0,0, 0), CivilTimeEncoder.decodePacked64DatetimeMicros(0x442000000000L));
     // 0001/02/03 00:01:02->0b0000000000000000000000|00000000000001|0010|00011|00000|000001|000010
     // ->0x4860042
-    assertEquals(LocalDateTime.of(1, 2, 3, 0, 1, 2, 3_000_000), CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x486004200BB8L));
+    assertEquals(LocalDateTime.of(1, 2, 3, 0, 1, 2, 3_000_000), CivilTimeEncoder.decodePacked64DatetimeMicros(0x486004200BB8L));
     // 0001/01/01 12:00:00->0b0000000000000000000000|00000000000001|0001|00001|01100|000000|000000
     // ->0x442C000
-    assertEquals(LocalDateTime.of(1, 1, 1, 12, 0, 0, 0), CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x442C00000000L));
+    assertEquals(LocalDateTime.of(1, 1, 1, 12, 0, 0, 0), CivilTimeEncoder.decodePacked64DatetimeMicros(0x442C00000000L));
     // 0001/01/01 13:14:15->0b0000000000000000000000|00000000000001|0001|00001|01101|001110|001111
     // ->0x442D38F
-    assertEquals(LocalDateTime.of(1, 1, 1, 13, 14, 15, 16_000_000), CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x442D38F03E80L));
+    assertEquals(LocalDateTime.of(1, 1, 1, 13, 14, 15, 16_000_000), CivilTimeEncoder.decodePacked64DatetimeMicros(0x442D38F03E80L));
     // 9999/12/31 23:59:59->0b0000000000000000000000|10011100001111|1100|11111|10111|111011|111011
     // ->0x9C3F3F7EFB
-    assertEquals(LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000), CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x9C3F3F7EFBF3E58L));
+    assertEquals(LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000), CivilTimeEncoder.decodePacked64DatetimeMicros(0x9C3F3F7EFBF3E58L));
 
     //encode and decode failures
     // 10000/01/01 00:00:00->0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
@@ -404,7 +404,7 @@ public class CivilTimeEncoderTest {
     try {
       // 0001/01/01 00:00:00->0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
       // ->0x10004420000
-      CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x10004420000L);
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x10004420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -412,7 +412,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/01 00:00:00->0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
       // ->0x10004420000
       //invalid bit field
-      CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x10004420000L);
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x10004420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -420,7 +420,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/01 00:00:60
       // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|111100
       // 0x442003C
-      CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x442003CL);
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x442003CL);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -428,7 +428,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/01 00:60:00
       // 0b0000000000000000000000|00000000000001|0001|00001|00000|111100|000000
       // 0x4420F00
-      CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x4420F00L);
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x4420F00L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -436,7 +436,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/01 24:00:00
       // 0b0000000000000000000000|00000000000001|0001|00001|11000|000000|000000
       // 0x4438000
-      CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x4438000L);
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x4438000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -444,7 +444,7 @@ public class CivilTimeEncoderTest {
       // 0001/01/00 00:00:00
       // 0b0000000000000000000000|00000000000001|0001|00000|00000|000000|000000
       // 0x4400000
-      CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x4400000L);
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x4400000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -452,7 +452,7 @@ public class CivilTimeEncoderTest {
       // 0001/13/01 00:00:00
       // 0b0000000000000000000000|00000000000001|1101|00001|00000|000000|000000
       // 0x7420000
-      CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x7420000L);
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x7420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
@@ -460,7 +460,7 @@ public class CivilTimeEncoderTest {
       // 10000/01/01 00:00:00
       // 0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
       // 0x9C40420000
-      CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(0x9C40420000L);
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x9C40420000L);
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }

@@ -108,7 +108,6 @@ public class ITBigQueryTimeEncoderTest {
     }
     if (bigquery != null) {
       RemoteBigQueryHelper.forceDelete(bigquery, DATASET);
-      LOG.info("Deleted test dataset: " + DATASET);
     }
   }
 
@@ -143,16 +142,16 @@ public class ITBigQueryTimeEncoderTest {
           CivilTimeEncoder.decodePacked32TimeSeconds(
               Integer.parseInt(currentRow.get(1).getStringValue())));
       assertEquals(LocalTime.of(1,1,0),
-          CivilTimeEncoder.decodePacked64TimeMicrosAsJavaTime(
+          CivilTimeEncoder.decodePacked64TimeMicros(
               Long.parseLong(currentRow.get(2).getStringValue())));
       assertEquals(LocalTime.of(1,1,0),
-          CivilTimeEncoder.decodePacked64TimeNanosAsJavaTime(
+          CivilTimeEncoder.decodePacked64TimeNanos(
               Long.parseLong(currentRow.get(3).getStringValue())));
       assertEquals(LocalDateTime.of(1,1,1,1,1,1),
-          CivilTimeEncoder.decodePacked64DatetimeSecondsAsJavaTime(
+          CivilTimeEncoder.decodePacked64DatetimeSeconds(
               Long.parseLong(currentRow.get(4).getStringValue())));
       assertEquals(LocalDateTime.of(1,1,1,1,1, 1,1_000_000),
-          CivilTimeEncoder.decodePacked64DatetimeMicrosAsJavaTime(
+          CivilTimeEncoder.decodePacked64DatetimeMicros(
               Long.parseLong(currentRow.get(5).getStringValue())));
     }
   }
