@@ -75,13 +75,7 @@ public class ITBigQueryTimeEncoderTest {
                                 "test_str", StandardSQLTypeName.STRING)
                             .build(),
                         com.google.cloud.bigquery.Field.newBuilder(
-                                "e32_time_seconds", StandardSQLTypeName.INT64)
-                            .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
                                 "e64_time_micros", StandardSQLTypeName.INT64)
-                            .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "e64_time_nanos", StandardSQLTypeName.INT64)
                             .build(),
                         com.google.cloud.bigquery.Field.newBuilder(
                                 "e64_datetime_seconds", StandardSQLTypeName.INT64)
@@ -114,10 +108,7 @@ public class ITBigQueryTimeEncoderTest {
             .build()) {
       JSONObject row = new JSONObject();
       row.put("test_str", "Start of the day");
-      row.put(
-          "e32_time_seconds", CivilTimeEncoder.encodePacked32TimeSeconds(LocalTime.of(1, 1, 0)));
       row.put("e64_time_micros", CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(1, 1, 0)));
-      row.put("e64_time_nanos", CivilTimeEncoder.encodePacked64TimeNanos(LocalTime.of(1, 1, 0)));
       row.put(
           "e64_datetime_seconds",
           CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 1, 1, 1)));
@@ -137,24 +128,16 @@ public class ITBigQueryTimeEncoderTest {
       assertEquals("Start of the day", currentRow.get(0).getValue());
       assertEquals(
           LocalTime.of(1, 1, 0),
-          CivilTimeEncoder.decodePacked32TimeSeconds(
-              Integer.parseInt(currentRow.get(1).getStringValue())));
-      assertEquals(
-          LocalTime.of(1, 1, 0),
           CivilTimeEncoder.decodePacked64TimeMicros(
-              Long.parseLong(currentRow.get(2).getStringValue())));
-      assertEquals(
-          LocalTime.of(1, 1, 0),
-          CivilTimeEncoder.decodePacked64TimeNanos(
-              Long.parseLong(currentRow.get(3).getStringValue())));
+              Long.parseLong(currentRow.get(1).getStringValue())));
       assertEquals(
           LocalDateTime.of(1, 1, 1, 1, 1, 1),
           CivilTimeEncoder.decodePacked64DatetimeSeconds(
-              Long.parseLong(currentRow.get(4).getStringValue())));
+              Long.parseLong(currentRow.get(2).getStringValue())));
       assertEquals(
           LocalDateTime.of(1, 1, 1, 1, 1, 1, 1_000_000),
           CivilTimeEncoder.decodePacked64DatetimeMicros(
-              Long.parseLong(currentRow.get(5).getStringValue())));
+              Long.parseLong(currentRow.get(3).getStringValue())));
     }
   }
 }
