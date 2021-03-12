@@ -106,6 +106,11 @@ public class CivilTimeEncoderTest {
     } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for MinuteOfHour (valid values 0 - 59): 60", e.getMessage());
     }
+
+    LocalTime time = LocalTime.of(1,1,1, 1_000_000);
+    long conversion = CivilTimeEncoder.encodePacked64TimeMicros(time);
+    assertEquals(time, CivilTimeEncoder.decodePacked64TimeMicros(conversion));
+
   }
 
   @Test
@@ -237,6 +242,10 @@ public class CivilTimeEncoderTest {
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
+    // Round Trip Test
+    dateTime = LocalDateTime.of(1,1,1,1,1,1);
+    long conversion = CivilTimeEncoder.encodePacked64DatetimeSeconds(dateTime);
+    assertEquals(dateTime, CivilTimeEncoder.decodePacked64DatetimeSeconds(conversion));
   }
 
   @Test
@@ -371,5 +380,11 @@ public class CivilTimeEncoderTest {
       Assert.fail();
     } catch (IllegalArgumentException e) {
     }
+
+    //Round Trip Test
+    // make a time, encode it, decode it, check against the original time
+    dateTime = LocalDateTime.of(1,1,1,1,1,1, 1_000_000);
+    long conversion = CivilTimeEncoder.encodePacked64DatetimeMicros(dateTime);
+    assertEquals(dateTime, CivilTimeEncoder.decodePacked64DatetimeMicros(conversion));
   }
 }
