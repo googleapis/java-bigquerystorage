@@ -37,8 +37,6 @@ import com.google.cloud.bigquery.storage.v1beta2.TableName;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.protobuf.Descriptors;
 import java.io.IOException;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.LocalDateTime;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import org.json.JSONArray;
@@ -47,6 +45,8 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.threeten.bp.LocalDateTime;
+import org.threeten.bp.LocalTime;
 
 public class ITBigQueryTimeEncoderTest {
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
@@ -108,28 +108,34 @@ public class ITBigQueryTimeEncoderTest {
             .build()) {
       JSONObject row = new JSONObject();
       row.put("test_str", "Start of the day");
-      row.put("e64_time_micros", CivilTimeEncoder.encodePacked64TimeMicros(
-          LocalTime.of(1, 1, 0)));
-      row.put("e64_datetime_seconds", CivilTimeEncoder.encodePacked64DatetimeSeconds(
-          LocalDateTime.of(1, 1, 1, 1, 1, 1)));
-      row.put("e64_datetime_micros", CivilTimeEncoder.encodePacked64DatetimeMicros(
+      row.put("e64_time_micros", CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(1, 1, 0)));
+      row.put(
+          "e64_datetime_seconds",
+          CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 1, 1, 1)));
+      row.put(
+          "e64_datetime_micros",
+          CivilTimeEncoder.encodePacked64DatetimeMicros(
               LocalDateTime.of(1, 1, 1, 1, 1, 1, 1_000_000)));
       JSONArray jsonArr = new JSONArray(new JSONObject[] {row});
       ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, -1);
       Assert.assertFalse(response.get().getAppendResult().hasOffset());
-      TableResult result = bigquery.listTableData(
+      TableResult result =
+          bigquery.listTableData(
               tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
       Iterator<FieldValueList> iter = result.getValues().iterator();
       FieldValueList currentRow;
       currentRow = iter.next();
       assertEquals("Start of the day", currentRow.get(0).getValue());
-      assertEquals(LocalTime.of(1, 1, 0),
+      assertEquals(
+          LocalTime.of(1, 1, 0),
           CivilTimeEncoder.decodePacked64TimeMicros(
               Long.parseLong(currentRow.get(1).getStringValue())));
-      assertEquals(LocalDateTime.of(1, 1, 1, 1, 1, 1),
+      assertEquals(
+          LocalDateTime.of(1, 1, 1, 1, 1, 1),
           CivilTimeEncoder.decodePacked64DatetimeSeconds(
               Long.parseLong(currentRow.get(2).getStringValue())));
-      assertEquals(LocalDateTime.of(1, 1, 1, 1, 1, 1, 1_000_000),
+      assertEquals(
+          LocalDateTime.of(1, 1, 1, 1, 1, 1, 1_000_000),
           CivilTimeEncoder.decodePacked64DatetimeMicros(
               Long.parseLong(currentRow.get(3).getStringValue())));
     }
