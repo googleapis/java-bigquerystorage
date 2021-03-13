@@ -16,13 +16,14 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import static com.google.common.base.Preconditions.checkArgument;
+
 import org.threeten.bp.DateTimeException;
-import org.threeten.bp.LocalTime;
 import org.threeten.bp.LocalDateTime;
+import org.threeten.bp.LocalTime;
 import org.threeten.bp.temporal.ChronoUnit;
+
 /**
- * Ported from ZetaSQL CivilTimeEncoder
- * Original code can be found at:
+ * Ported from ZetaSQL CivilTimeEncoder Original code can be found at:
  * https://github.com/google/zetasql/blob/master/java/com/google/zetasql/CivilTimeEncoder.java
  * Encoder for TIME and DATETIME values, according to civil_time encoding.
  *
@@ -144,8 +145,7 @@ public final class CivilTimeEncoder {
   }
 
   /**
-   * Decodes {@code bitFieldTimeMicros} as a {@link LocalTime} with microseconds
-   * precision.
+   * Decodes {@code bitFieldTimeMicros} as a {@link LocalTime} with microseconds precision.
    *
    * <p>Encoding is as the following:
    *
@@ -205,8 +205,7 @@ public final class CivilTimeEncoder {
    * @see #encodePacked64DatetimeSeconds(LocalDateTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static LocalDateTime decodePacked64DatetimeSeconds(
-      long bitFieldDatetimeSeconds) {
+  public static LocalDateTime decodePacked64DatetimeSeconds(long bitFieldDatetimeSeconds) {
     checkValidBitField(bitFieldDatetimeSeconds, DATETIME_SECONDS_MASK);
     int bitFieldTimeSeconds = (int) (bitFieldDatetimeSeconds & TIME_SECONDS_MASK);
     LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
@@ -250,8 +249,7 @@ public final class CivilTimeEncoder {
   }
 
   /**
-   * Decodes {@code bitFieldDatetimeMicros} as a {@link LocalDateTime} with microseconds
-   * precision.
+   * Decodes {@code bitFieldDatetimeMicros} as a {@link LocalDateTime} with microseconds precision.
    *
    * <p>Encoding is as the following:
    *
@@ -267,8 +265,7 @@ public final class CivilTimeEncoder {
   public static LocalDateTime decodePacked64DatetimeMicros(long bitFieldDatetimeMicros) {
     checkValidBitField(bitFieldDatetimeMicros, DATETIME_MICROS_MASK);
     long bitFieldDatetimeSeconds = bitFieldDatetimeMicros >> MICRO_LENGTH;
-    LocalDateTime dateTimeSeconds =
-        decodePacked64DatetimeSeconds(bitFieldDatetimeSeconds);
+    LocalDateTime dateTimeSeconds = decodePacked64DatetimeSeconds(bitFieldDatetimeSeconds);
     int microOfSecond = getFieldFromBitField(bitFieldDatetimeMicros, MICRO_MASK, MICRO_SHIFT);
     checkValidMicroOfSecond(microOfSecond);
     LocalDateTime dateTime = dateTimeSeconds.withNano(microOfSecond * 1_000);
