@@ -16,11 +16,10 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import static com.google.common.base.Preconditions.checkArgument;
-
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
-
+import org.threeten.bp.DateTimeException;
+import org.threeten.bp.LocalTime;
+import org.threeten.bp.LocalDateTime;
+import org.threeten.bp.temporal.ChronoUnit;
 /**
  * Ported from ZetaSQL CivilTimeEncoder
  * Original code can be found at:
@@ -49,7 +48,6 @@ import java.time.temporal.ChronoUnit;
 public final class CivilTimeEncoder {
   private static final int NANO_LENGTH = 30;
   private static final int MICRO_LENGTH = 20;
-  // private static final int SECOND_LENGTH = 10;
 
   private static final int NANO_SHIFT = 0;
   private static final int MICRO_SHIFT = 0;
@@ -89,7 +87,7 @@ public final class CivilTimeEncoder {
    * @see #decodePacked32TimeSeconds(int)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  private static int encodePacked32TimeSeconds(java.time.LocalTime time) {
+  private static int encodePacked32TimeSeconds(LocalTime time) {
     checkValidTimeSeconds(time);
     int bitFieldTimeSeconds = 0x0;
     bitFieldTimeSeconds |= time.getHour() << HOUR_SHIFT;
@@ -99,7 +97,7 @@ public final class CivilTimeEncoder {
   }
 
   /**
-   * Decodes {@code bitFieldTimeSeconds} as a {@link java.time.LocalTime} with seconds precision.
+   * Decodes {@code bitFieldTimeSeconds} as a {@link LocalTime} with seconds precision.
    *
    * <p>Encoding is as the following:
    *
@@ -109,18 +107,18 @@ public final class CivilTimeEncoder {
    *                    | H ||  M ||  S |
    * </pre>
    *
-   * @see #encodePacked32TimeSeconds(java.time.LocalTime)
+   * @see #encodePacked32TimeSeconds(LocalTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  private static java.time.LocalTime decodePacked32TimeSeconds(int bitFieldTimeSeconds) {
+  private static LocalTime decodePacked32TimeSeconds(int bitFieldTimeSeconds) {
     checkValidBitField(bitFieldTimeSeconds, TIME_SECONDS_MASK);
     int hourOfDay = getFieldFromBitField(bitFieldTimeSeconds, HOUR_MASK, HOUR_SHIFT);
     int minuteOfHour = getFieldFromBitField(bitFieldTimeSeconds, MINUTE_MASK, MINUTE_SHIFT);
     int secondOfMinute = getFieldFromBitField(bitFieldTimeSeconds, SECOND_MASK, SECOND_SHIFT);
-    // java.time.LocalTime validates the input parameters.
+    // LocalTime validates the input parameters.
     try {
-      return java.time.LocalTime.of(hourOfDay, minuteOfHour, secondOfMinute);
-    } catch (java.time.DateTimeException e) {
+      return LocalTime.of(hourOfDay, minuteOfHour, secondOfMinute);
+    } catch (DateTimeException e) {
       throw new IllegalArgumentException(e.getMessage(), e);
     }
   }
@@ -137,16 +135,16 @@ public final class CivilTimeEncoder {
    * </pre>
    *
    * @see #decodePacked64TimeMicros(long)
-   * @see #encodePacked64TimeMicros(java.time.LocalTime)
+   * @see #encodePacked64TimeMicros(LocalTime)
    */
   @SuppressWarnings("GoodTime")
-  public static long encodePacked64TimeMicros(java.time.LocalTime time) {
+  public static long encodePacked64TimeMicros(LocalTime time) {
     checkValidTimeMillis(time);
     return (((long) encodePacked32TimeSeconds(time)) << MICRO_LENGTH) | (time.getNano() / 1_000L);
   }
 
   /**
-   * Decodes {@code bitFieldTimeMicros} as a {@link java.time.LocalTime} with microseconds
+   * Decodes {@code bitFieldTimeMicros} as a {@link LocalTime} with microseconds
    * precision.
    *
    * <p>Encoding is as the following:
@@ -157,13 +155,13 @@ public final class CivilTimeEncoder {
    *                                | H ||  M ||  S ||-------micros-----|
    * </pre>
    *
-   * @see #encodePacked64TimeMicros(java.time.LocalTime)
+   * @see #encodePacked64TimeMicros(LocalTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalTime decodePacked64TimeMicros(long bitFieldTimeMicros) {
+  public static LocalTime decodePacked64TimeMicros(long bitFieldTimeMicros) {
     checkValidBitField(bitFieldTimeMicros, TIME_MICROS_MASK);
     int bitFieldTimeSeconds = (int) (bitFieldTimeMicros >> MICRO_LENGTH);
-    java.time.LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
+    LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
     int microOfSecond = getFieldFromBitField(bitFieldTimeMicros, MICRO_MASK, MICRO_SHIFT);
     checkValidMicroOfSecond(microOfSecond);
     return timeSeconds.withNano(microOfSecond * 1_000);
@@ -183,7 +181,7 @@ public final class CivilTimeEncoder {
    * @see #decodePacked64DatetimeSeconds(long)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static long encodePacked64DatetimeSeconds(java.time.LocalDateTime dateTime) {
+  public static long encodePacked64DatetimeSeconds(LocalDateTime dateTime) {
     checkValidDateTimeSeconds(dateTime);
     long bitFieldDatetimeSeconds = 0x0L;
     bitFieldDatetimeSeconds |= (long) dateTime.getYear() << YEAR_SHIFT;
@@ -204,20 +202,20 @@ public final class CivilTimeEncoder {
    *                             |--- year ---||m || D || H ||  M ||  S |
    * </pre>
    *
-   * @see #encodePacked64DatetimeSeconds(java.time.LocalDateTime)
+   * @see #encodePacked64DatetimeSeconds(LocalDateTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalDateTime decodePacked64DatetimeSeconds(
+  public static LocalDateTime decodePacked64DatetimeSeconds(
       long bitFieldDatetimeSeconds) {
     checkValidBitField(bitFieldDatetimeSeconds, DATETIME_SECONDS_MASK);
     int bitFieldTimeSeconds = (int) (bitFieldDatetimeSeconds & TIME_SECONDS_MASK);
-    java.time.LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
+    LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
     int year = getFieldFromBitField(bitFieldDatetimeSeconds, YEAR_MASK, YEAR_SHIFT);
     int monthOfYear = getFieldFromBitField(bitFieldDatetimeSeconds, MONTH_MASK, MONTH_SHIFT);
     int dayOfMonth = getFieldFromBitField(bitFieldDatetimeSeconds, DAY_MASK, DAY_SHIFT);
     try {
-      java.time.LocalDateTime dateTime =
-          java.time.LocalDateTime.of(
+      LocalDateTime dateTime =
+          LocalDateTime.of(
               year,
               monthOfYear,
               dayOfMonth,
@@ -226,7 +224,7 @@ public final class CivilTimeEncoder {
               timeSeconds.getSecond());
       checkValidDateTimeSeconds(dateTime);
       return dateTime;
-    } catch (java.time.DateTimeException e) {
+    } catch (DateTimeException e) {
       throw new IllegalArgumentException(e.getMessage(), e);
     }
   }
@@ -245,14 +243,14 @@ public final class CivilTimeEncoder {
    * @see #decodePacked64DatetimeMicros(long)
    */
   @SuppressWarnings({"GoodTime-ApiWithNumericTimeUnit", "JavaLocalDateTimeGetNano"})
-  public static long encodePacked64DatetimeMicros(java.time.LocalDateTime dateTime) {
+  public static long encodePacked64DatetimeMicros(LocalDateTime dateTime) {
     checkValidDateTimeMicros(dateTime);
     return (encodePacked64DatetimeSeconds(dateTime) << MICRO_LENGTH)
         | (dateTime.getNano() / 1_000L);
   }
 
   /**
-   * Decodes {@code bitFieldDatetimeMicros} as a {@link java.time.LocalDateTime} with microseconds
+   * Decodes {@code bitFieldDatetimeMicros} as a {@link LocalDateTime} with microseconds
    * precision.
    *
    * <p>Encoding is as the following:
@@ -263,17 +261,17 @@ public final class CivilTimeEncoder {
    *         |--- year ---||m || D || H ||  M ||  S ||-------micros-----|
    * </pre>
    *
-   * @see #encodePacked64DatetimeMicros(java.time.LocalDateTime)
+   * @see #encodePacked64DatetimeMicros(LocalDateTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static java.time.LocalDateTime decodePacked64DatetimeMicros(long bitFieldDatetimeMicros) {
+  public static LocalDateTime decodePacked64DatetimeMicros(long bitFieldDatetimeMicros) {
     checkValidBitField(bitFieldDatetimeMicros, DATETIME_MICROS_MASK);
     long bitFieldDatetimeSeconds = bitFieldDatetimeMicros >> MICRO_LENGTH;
-    java.time.LocalDateTime dateTimeSeconds =
+    LocalDateTime dateTimeSeconds =
         decodePacked64DatetimeSeconds(bitFieldDatetimeSeconds);
     int microOfSecond = getFieldFromBitField(bitFieldDatetimeMicros, MICRO_MASK, MICRO_SHIFT);
     checkValidMicroOfSecond(microOfSecond);
-    java.time.LocalDateTime dateTime = dateTimeSeconds.withNano(microOfSecond * 1_000);
+    LocalDateTime dateTime = dateTimeSeconds.withNano(microOfSecond * 1_000);
     checkValidDateTimeMicros(dateTime);
     return dateTime;
   }
@@ -309,10 +307,6 @@ public final class CivilTimeEncoder {
     checkArgument(time.equals(time.truncatedTo(ChronoUnit.MICROS)));
   }
 
-  private static void checkValidTimeNanos(LocalTime time) {
-    checkValidTimeSeconds(time);
-  }
-
   private static void checkValidDateTimeSeconds(LocalDateTime dateTime) {
     checkArgument(dateTime.getYear() >= 1 && dateTime.getYear() <= 9999);
     checkArgument(dateTime.getMonthValue() >= 1 && dateTime.getMonthValue() <= 12);
@@ -325,27 +319,18 @@ public final class CivilTimeEncoder {
     checkArgument(dateTime.getNano() >= 0 && dateTime.getNano() <= 999999999);
   }
 
-  private static void checkValidDateTimeMicros(java.time.LocalTime time) {
+  private static void checkValidDateTimeMicros(LocalTime time) {
     checkValidTimeSeconds(time);
     checkArgument(time.equals(time.truncatedTo(ChronoUnit.MICROS)));
   }
 
-  private static void checkValidDateTimeMicros(java.time.LocalDateTime dateTime) {
+  private static void checkValidDateTimeMicros(LocalDateTime dateTime) {
     checkValidDateTimeSeconds(dateTime);
     checkArgument(dateTime.equals(dateTime.truncatedTo(ChronoUnit.MICROS)));
   }
 
-  private static void checkValidDateTimeNanos(java.time.LocalDateTime dateTime) {
-    checkValidDateTimeSeconds(dateTime);
-    checkArgument(dateTime.equals(dateTime.truncatedTo(ChronoUnit.NANOS)));
-  }
-
   private static void checkValidMicroOfSecond(int microOfSecond) {
     checkArgument(microOfSecond >= 0 && microOfSecond <= 999999);
-  }
-
-  private static void checkValidNanoOfSecond(int nanoOfSecond) {
-    checkArgument(nanoOfSecond >= 0 && nanoOfSecond <= 999999999);
   }
 
   private static void checkValidBitField(long bitField, long mask) {
