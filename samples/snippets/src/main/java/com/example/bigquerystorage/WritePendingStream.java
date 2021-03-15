@@ -90,6 +90,10 @@ public class WritePendingStream {
               .build();
       BatchCommitWriteStreamsResponse commitResponse =
           client.batchCommitWriteStreams(commitRequest);
+      // If the response does not have a commit time, it means the commit operation failed.
+      if (commitResponse.hasCommitTime() == false) {
+        throw new RuntimeException("Error committing the streams");
+      }
       System.out.println("Appended and committed records successfully.");
     } catch (ExecutionException e) {
       // If the wrapped exception is a StatusRuntimeException, check the state of the operation.
