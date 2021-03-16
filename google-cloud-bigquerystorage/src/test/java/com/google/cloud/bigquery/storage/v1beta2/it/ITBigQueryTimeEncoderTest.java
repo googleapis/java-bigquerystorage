@@ -70,20 +70,20 @@ public class ITBigQueryTimeEncoderTest {
     bigquery.create(datasetInfo);
     tableInfo =
         TableInfo.newBuilder(
-            TableId.of(DATASET, TABLE),
-            StandardTableDefinition.of(
-                Schema.of(
-                    com.google.cloud.bigquery.Field.newBuilder(
-                        "test_str", StandardSQLTypeName.STRING)
-                        .build(),
-                    com.google.cloud.bigquery.Field.newBuilder(
-                        "test_time_micros", StandardSQLTypeName.TIME)
-                        .setMode(Mode.REPEATED)
-                        .build(),
-                    com.google.cloud.bigquery.Field.newBuilder(
-                        "test_datetime_micros", StandardSQLTypeName.DATETIME)
-                        .setMode(Mode.REPEATED)
-                        .build())))
+                TableId.of(DATASET, TABLE),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "test_str", StandardSQLTypeName.STRING)
+                            .build(),
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "test_time_micros", StandardSQLTypeName.TIME)
+                            .setMode(Mode.REPEATED)
+                            .build(),
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "test_datetime_micros", StandardSQLTypeName.DATETIME)
+                            .setMode(Mode.REPEATED)
+                            .build())))
             .build();
     bigquery.create(tableInfo);
   }
@@ -101,7 +101,7 @@ public class ITBigQueryTimeEncoderTest {
   @Test
   public void TestTimeEncoding()
       throws IOException, InterruptedException, ExecutionException,
-      Descriptors.DescriptorValidationException, DateTimeParseException {
+          Descriptors.DescriptorValidationException, DateTimeParseException {
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo.getDefinition().getSchema())
@@ -109,20 +109,31 @@ public class ITBigQueryTimeEncoderTest {
             .build()) {
       JSONObject row = new JSONObject();
       row.put("test_str", "Start of the day");
-      row.put("test_time_micros", new JSONArray( new long[] {
-          CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(13, 14, 15, 16_000_000)),
-          CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(23,59,59,999_999_000)),
-          CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(0,0,0,0)),
-          CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(1,2,3,4_000)),
-          CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(5,6,7,8_000))
-      }));
-      row.put("test_datetime_micros", new JSONArray( new long[] {
-          CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1, 1, 1, 12, 0, 0, 0)),
-          CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1995,5,19,10,30,45,0)),
-          CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(2000,1,1,0,0,0,0)),
-          CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(2026,3,11,5,45,12,9_000_000)),
-          CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(2050,1,2,3,4,5,6_000)),
-      }));
+      row.put(
+          "test_time_micros",
+          new JSONArray(
+              new long[] {
+                CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(13, 14, 15, 16_000_000)),
+                CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(23, 59, 59, 999_999_000)),
+                CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(0, 0, 0, 0)),
+                CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(1, 2, 3, 4_000)),
+                CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(5, 6, 7, 8_000))
+              }));
+      row.put(
+          "test_datetime_micros",
+          new JSONArray(
+              new long[] {
+                CivilTimeEncoder.encodePacked64DatetimeMicros(
+                    LocalDateTime.of(1, 1, 1, 12, 0, 0, 0)),
+                CivilTimeEncoder.encodePacked64DatetimeMicros(
+                    LocalDateTime.of(1995, 5, 19, 10, 30, 45, 0)),
+                CivilTimeEncoder.encodePacked64DatetimeMicros(
+                    LocalDateTime.of(2000, 1, 1, 0, 0, 0, 0)),
+                CivilTimeEncoder.encodePacked64DatetimeMicros(
+                    LocalDateTime.of(2026, 3, 11, 5, 45, 12, 9_000_000)),
+                CivilTimeEncoder.encodePacked64DatetimeMicros(
+                    LocalDateTime.of(2050, 1, 2, 3, 4, 5, 6_000)),
+              }));
       JSONArray jsonArr = new JSONArray(new JSONObject[] {row});
       ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, -1);
       Assert.assertFalse(response.get().getAppendResult().hasOffset());
@@ -133,27 +144,24 @@ public class ITBigQueryTimeEncoderTest {
       FieldValueList currentRow;
       currentRow = iter.next();
       assertEquals("Start of the day", currentRow.get(0).getValue());
-      assertEquals("13:14:15.016000"
-          , currentRow.get(1).getRepeatedValue().get(0).getStringValue());
-      assertEquals("23:59:59.999999"
-          , currentRow.get(1).getRepeatedValue().get(1).getStringValue());
-      assertEquals("00:00:00"
-          , currentRow.get(1).getRepeatedValue().get(2).getStringValue());
-      assertEquals("01:02:03.000004"
-          , currentRow.get(1).getRepeatedValue().get(3).getStringValue());
-      assertEquals("05:06:07.000008"
-          , currentRow.get(1).getRepeatedValue().get(4).getStringValue());
+      assertEquals("13:14:15.016000", currentRow.get(1).getRepeatedValue().get(0).getStringValue());
+      assertEquals("23:59:59.999999", currentRow.get(1).getRepeatedValue().get(1).getStringValue());
+      assertEquals("00:00:00", currentRow.get(1).getRepeatedValue().get(2).getStringValue());
+      assertEquals("01:02:03.000004", currentRow.get(1).getRepeatedValue().get(3).getStringValue());
+      assertEquals("05:06:07.000008", currentRow.get(1).getRepeatedValue().get(4).getStringValue());
 
-      assertEquals("0001-01-01T12:00:00"
-          , currentRow.get(2).getRepeatedValue().get(0).getStringValue());
-      assertEquals("1995-05-19T10:30:45"
-          , currentRow.get(2).getRepeatedValue().get(1).getStringValue());
-      assertEquals("2000-01-01T00:00:00"
-          , currentRow.get(2).getRepeatedValue().get(2).getStringValue());
-      assertEquals("2026-03-11T05:45:12.009000"
-          , currentRow.get(2).getRepeatedValue().get(3).getStringValue());
-      assertEquals("2050-01-02T03:04:05.000006"
-          , currentRow.get(2).getRepeatedValue().get(4).getStringValue());
+      assertEquals(
+          "0001-01-01T12:00:00", currentRow.get(2).getRepeatedValue().get(0).getStringValue());
+      assertEquals(
+          "1995-05-19T10:30:45", currentRow.get(2).getRepeatedValue().get(1).getStringValue());
+      assertEquals(
+          "2000-01-01T00:00:00", currentRow.get(2).getRepeatedValue().get(2).getStringValue());
+      assertEquals(
+          "2026-03-11T05:45:12.009000",
+          currentRow.get(2).getRepeatedValue().get(3).getStringValue());
+      assertEquals(
+          "2050-01-02T03:04:05.000006",
+          currentRow.get(2).getRepeatedValue().get(4).getStringValue());
     }
   }
 }
