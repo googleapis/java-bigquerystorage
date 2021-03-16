@@ -164,7 +164,7 @@ public final class CivilTimeEncoder {
     LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
     int microOfSecond = getFieldFromBitField(bitFieldTimeMicros, MICRO_MASK, MICRO_SHIFT);
     checkValidMicroOfSecond(microOfSecond);
-    LocalTime time = timeSeconds.withNano(microOfSecond*1000);
+    LocalTime time = timeSeconds.withNano(microOfSecond * 1000);
     checkValidTimeMicros(time);
     return time;
   }

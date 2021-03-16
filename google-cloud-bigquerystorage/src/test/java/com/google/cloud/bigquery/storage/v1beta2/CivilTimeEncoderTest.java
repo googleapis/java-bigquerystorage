@@ -59,13 +59,12 @@ public class CivilTimeEncoderTest {
     assertEquals(
         0x17EFBF3E58L,
         CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(23, 59, 59, 999_000_000)));
-
   }
 
   @Test
   public void encodePacked64TimeMicros_giveErrorWhenDataIsLos() {
 
-    try {// 00:00:00.000000999
+    try { // 00:00:00.000000999
       // 0b000000000000000000000000000|00000|000000|000000|00000000000000000000
       // 0x0
       assertEquals(0x0L, CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(0, 0, 0, 999)));
@@ -168,7 +167,7 @@ public class CivilTimeEncoderTest {
     }
   }
 
-  //Date Time
+  // Date Time
   @Test
   public void encodePacked64DatetimeMicros_validDateTime() {
     // 0001/01/01 00:00:00
@@ -211,7 +210,7 @@ public class CivilTimeEncoderTest {
     // 0001/01/01 00:00:00.000000999
     // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
     // 0x4420000
-    try{
+    try {
       CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1, 1, 1, 0, 0, 0, 999));
       Assert.fail();
     } catch (IllegalArgumentException e) {
@@ -263,7 +262,6 @@ public class CivilTimeEncoderTest {
     assertEquals(
         LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000),
         CivilTimeEncoder.decodePacked64DatetimeMicros(0x9C3F3F7EFBF3E58L));
-
   }
 
   @Test
