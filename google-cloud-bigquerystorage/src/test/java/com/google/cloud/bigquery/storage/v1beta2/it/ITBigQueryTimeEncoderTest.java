@@ -38,7 +38,6 @@ import com.google.cloud.bigquery.storage.v1beta2.TableName;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.protobuf.Descriptors;
 import java.io.IOException;
-import java.time.format.DateTimeParseException;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import org.json.JSONArray;
@@ -101,7 +100,7 @@ public class ITBigQueryTimeEncoderTest {
   @Test
   public void TestTimeEncoding()
       throws IOException, InterruptedException, ExecutionException,
-          Descriptors.DescriptorValidationException, DateTimeParseException {
+          Descriptors.DescriptorValidationException {
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableInfo.getDefinition().getSchema())

@@ -38,13 +38,13 @@ public class BQTableSchemaToProtoDescriptorTest {
               .put(TableFieldSchema.Type.BOOL, BoolType.getDescriptor())
               .put(TableFieldSchema.Type.BYTES, BytesType.getDescriptor())
               .put(TableFieldSchema.Type.DATE, Int32Type.getDescriptor())
-              .put(TableFieldSchema.Type.DATETIME, StringType.getDescriptor())
+              .put(TableFieldSchema.Type.DATETIME, Int64Type.getDescriptor())
               .put(TableFieldSchema.Type.DOUBLE, DoubleType.getDescriptor())
               .put(TableFieldSchema.Type.GEOGRAPHY, StringType.getDescriptor())
               .put(TableFieldSchema.Type.INT64, Int64Type.getDescriptor())
               .put(TableFieldSchema.Type.NUMERIC, StringType.getDescriptor())
               .put(TableFieldSchema.Type.STRING, StringType.getDescriptor())
-              .put(TableFieldSchema.Type.TIME, StringType.getDescriptor())
+              .put(TableFieldSchema.Type.TIME, Int64Type.getDescriptor())
               .put(TableFieldSchema.Type.TIMESTAMP, Int64Type.getDescriptor())
               .build();
 
@@ -199,7 +199,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .build();
     final TableFieldSchema TEST_TIME =
         TableFieldSchema.newBuilder()
-            .setType(TableFieldSchema.Type.TIME)
+            .setType(TableFieldSchema.Type.TIME)  // TODO(jstocklass): why is this breaking
             .setMode(TableFieldSchema.Mode.NULLABLE)
             .setName("test_time")
             .build();
@@ -216,7 +216,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(8, TEST_NUMERIC)
             .addFields(9, TEST_GEO)
             .addFields(10, TEST_TIMESTAMP)
-            .addFields(11, TEST_TIME)
+            .addFields(11, TEST_TIME)  // TODO(jstocklass): it's insisting this field should be a string no matter what I put at line 202
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
