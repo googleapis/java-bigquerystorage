@@ -279,31 +279,10 @@ public final class CivilTimeEncoder {
     return (int) ((bitField & mask) >> shift);
   }
 
-  private static void checkValidTimeSeconds(LocalDateTime time) {
-    checkArgument(time.getHour() >= 0 && time.getHour() <= 23);
-    checkArgument(time.getMinute() >= 0 && time.getMinute() <= 59);
-    checkArgument(time.getSecond() >= 0 && time.getSecond() <= 59);
-  }
-
   private static void checkValidTimeSeconds(LocalTime time) {
     checkArgument(time.getHour() >= 0 && time.getHour() <= 23);
     checkArgument(time.getMinute() >= 0 && time.getMinute() <= 59);
     checkArgument(time.getSecond() >= 0 && time.getSecond() <= 59);
-  }
-
-  private static void checkValidTimeMillis(LocalDateTime time) {
-    checkValidTimeSeconds(time);
-    checkArgument(time.getNano() >= 0 && time.getNano() < 999999999);
-  }
-
-  private static void checkValidTimeMillis(LocalTime time) {
-    checkValidTimeSeconds(time);
-    checkArgument(time.getNano() >= 0 && time.getNano() <= 999999999);
-  }
-
-  private static void checkValidTimeMicros(LocalTime time) {
-    checkValidTimeSeconds(time);
-    checkArgument(time.equals(time.truncatedTo(ChronoUnit.MICROS)));
   }
 
   private static void checkValidDateTimeSeconds(LocalDateTime dateTime) {
@@ -313,9 +292,9 @@ public final class CivilTimeEncoder {
     checkValidTimeSeconds(dateTime.toLocalTime());
   }
 
-  private static void checkValidDateTimeMillis(LocalDateTime dateTime) {
-    checkValidDateTimeSeconds(dateTime);
-    checkArgument(dateTime.getNano() >= 0 && dateTime.getNano() <= 999999999);
+  private static void checkValidTimeMicros(LocalTime time) {
+    checkValidTimeSeconds(time);
+    checkArgument(time.equals(time.truncatedTo(ChronoUnit.MICROS)));
   }
 
   private static void checkValidDateTimeMicros(LocalDateTime dateTime) {
