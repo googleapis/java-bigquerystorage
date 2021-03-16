@@ -140,7 +140,7 @@ public final class CivilTimeEncoder {
    */
   @SuppressWarnings("GoodTime")
   public static long encodePacked64TimeMicros(LocalTime time) {
-    checkValidTimeMillis(time);
+    checkValidTimeMicros(time);
     return (((long) encodePacked32TimeSeconds(time)) << MICRO_LENGTH) | (time.getNano() / 1_000L);
   }
 
@@ -164,7 +164,9 @@ public final class CivilTimeEncoder {
     LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
     int microOfSecond = getFieldFromBitField(bitFieldTimeMicros, MICRO_MASK, MICRO_SHIFT);
     checkValidMicroOfSecond(microOfSecond);
-    return timeSeconds.withNano(microOfSecond * 1_000);
+    LocalTime time = timeSeconds.withNano(microOfSecond*1000);
+    checkValidTimeMicros(time);
+    return time;
   }
 
   /**
@@ -181,7 +183,7 @@ public final class CivilTimeEncoder {
    * @see #decodePacked64DatetimeSeconds(long)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static long encodePacked64DatetimeSeconds(LocalDateTime dateTime) {
+  private static long encodePacked64DatetimeSeconds(LocalDateTime dateTime) {
     checkValidDateTimeSeconds(dateTime);
     long bitFieldDatetimeSeconds = 0x0L;
     bitFieldDatetimeSeconds |= (long) dateTime.getYear() << YEAR_SHIFT;
@@ -205,7 +207,7 @@ public final class CivilTimeEncoder {
    * @see #encodePacked64DatetimeSeconds(LocalDateTime)
    */
   @SuppressWarnings("GoodTime-ApiWithNumericTimeUnit")
-  public static LocalDateTime decodePacked64DatetimeSeconds(long bitFieldDatetimeSeconds) {
+  private static LocalDateTime decodePacked64DatetimeSeconds(long bitFieldDatetimeSeconds) {
     checkValidBitField(bitFieldDatetimeSeconds, DATETIME_SECONDS_MASK);
     int bitFieldTimeSeconds = (int) (bitFieldDatetimeSeconds & TIME_SECONDS_MASK);
     LocalTime timeSeconds = decodePacked32TimeSeconds(bitFieldTimeSeconds);
@@ -314,11 +316,6 @@ public final class CivilTimeEncoder {
   private static void checkValidDateTimeMillis(LocalDateTime dateTime) {
     checkValidDateTimeSeconds(dateTime);
     checkArgument(dateTime.getNano() >= 0 && dateTime.getNano() <= 999999999);
-  }
-
-  private static void checkValidDateTimeMicros(LocalTime time) {
-    checkValidTimeSeconds(time);
-    checkArgument(time.equals(time.truncatedTo(ChronoUnit.MICROS)));
   }
 
   private static void checkValidDateTimeMicros(LocalDateTime dateTime) {

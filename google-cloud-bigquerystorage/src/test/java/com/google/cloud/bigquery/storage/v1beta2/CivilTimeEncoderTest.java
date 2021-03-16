@@ -30,8 +30,9 @@ import org.threeten.bp.LocalTime;
 public class CivilTimeEncoderTest {
   private static final Logger LOG = Logger.getLogger(CivilTimeEncoderTest.class.getName());
 
+  // Time
   @Test
-  public void Packed64TimeMicrosTest() {
+  public void encodePacked64TimeMicros_validTime() {
     // 00:00:00.000000
     // 0b000000000000000000000000000|00000|000000|000000|00000000000000000000
     // 0x0
@@ -59,6 +60,23 @@ public class CivilTimeEncoderTest {
         0x17EFBF3E58L,
         CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(23, 59, 59, 999_000_000)));
 
+  }
+
+  @Test
+  public void encodePacked64TimeMicros_giveErrorWhenDataIsLos() {
+
+    try {// 00:00:00.000000999
+      // 0b000000000000000000000000000|00000|000000|000000|00000000000000000000
+      // 0x0
+      assertEquals(0x0L, CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(0, 0, 0, 999)));
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+
+    }
+  }
+
+  @Test
+  public void decodePacked64TimeMicros_validBitFieldTimeMicros() {
     // 00:00:00.000000
     // 0b000000000000000000000000000|00000|000000|000000|00000000000000000000
     // 0x0
@@ -84,7 +102,10 @@ public class CivilTimeEncoderTest {
     assertEquals(
         LocalTime.of(23, 59, 59, 999_999_000),
         CivilTimeEncoder.decodePacked64TimeMicros(0x17EFBF423FL));
+  }
 
+  @Test
+  public void decodePacked64TimeMicros_invalidBitField_throwsIllegalArgumentException() {
     try {
       // 00:00:00.000000
       // 0b000000000000000000000000001|00000|000000|000000|00000000000000000000
@@ -94,190 +115,62 @@ public class CivilTimeEncoderTest {
     } catch (IllegalArgumentException e) {
       assertEquals(null, e.getMessage());
     }
+  }
+
+  @Test
+  public void decodePacked64TimeMicros_invalidMicroOfSecond_throwsIllegalArgumentException() {
     try {
       // 00:00:00.1000000
       // 0b000000000000000000000000000|00000|000000|000000|11110100001001000000
       // 0xF4240
       CivilTimeEncoder.decodePacked64TimeMicros(0xF4240L);
+      Assert.fail();
     } catch (IllegalArgumentException e) {
       assertEquals(null, e.getMessage());
     }
+  }
+
+  @Test
+  public void decodePacked64TimeMicros_invalidSecondOfMinute_throwsIllegalArgumentException() {
     try {
       // 00:00:60.000000
       // 0b000000000000000000000000000|00000|000000|111100|00000000000000000000
       // 0x3C00000
       CivilTimeEncoder.decodePacked64TimeMicros(0x3C00000L);
+      Assert.fail();
     } catch (IllegalArgumentException e) {
       assertEquals("Invalid value for SecondOfMinute (valid values 0 - 59): 60", e.getMessage());
     }
-    try {
-      // 24:00:00.000000
-      // 0b000000000000000000000000000|11000|000000|000000|00000000000000000000
-      // 0x1800000000
-      CivilTimeEncoder.decodePacked64TimeMicros(0x1800000000L);
-    } catch (IllegalArgumentException e) {
-      assertEquals("Invalid value for HourOfDay (valid values 0 - 23): 24", e.getMessage());
-    }
+  }
+
+  @Test
+  public void decodePacked64TimeMicros_invalidMinuteOfHour_throwsIllegalArgumentException() {
     try {
       // 00:60:00.000000
       // 0b000000000000000000000000000|00000|111100|000000|00000000000000000000
       // 0xF0000000
       CivilTimeEncoder.decodePacked64TimeMicros(0xF0000000L);
-    } catch (IllegalArgumentException e) {
-      assertEquals("Invalid value for MinuteOfHour (valid values 0 - 59): 60", e.getMessage());
-    }
-
-    LocalTime time = LocalTime.of(1, 1, 1, 1_000_000);
-    long conversion = CivilTimeEncoder.encodePacked64TimeMicros(time);
-    assertEquals(time, CivilTimeEncoder.decodePacked64TimeMicros(conversion));
-  }
-
-  @Test
-  public void Packed64DateTimeSecondsTest() {
-    // 0001/01/01 00:00:00
-    // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
-    // 0x4420000
-    assertEquals(
-        0x4420000L,
-        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 0, 0, 0)));
-    // 0001/02/03 00:01:02
-    // 0b0000000000000000000000|00000000000001|0010|00011|00000|000001|000010
-    // 0x4860042
-    assertEquals(
-        0x4860042L,
-        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 2, 3, 0, 1, 2)));
-    // 0001/01/01 12:00:00
-    // 0b0000000000000000000000|00000000000001|0001|00001|01100|000000|000000
-    // 0x442C000
-    assertEquals(
-        0x442C000L,
-        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 12, 0, 0)));
-    // 0001/01/01 13:14:15
-    // 0b0000000000000000000000|00000000000001|0001|00001|01101|001110|001111
-    // 0x442D38F
-    assertEquals(
-        0x442D38FL,
-        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(1, 1, 1, 13, 14, 15)));
-    // 9999/12/31 23:59:59
-    // 0b0000000000000000000000|10011100001111|1100|11111|10111|111011|111011
-    // 0x9C3F3F7EFB
-    assertEquals(
-        0x9C3F3F7EFBL,
-        CivilTimeEncoder.encodePacked64DatetimeSeconds(LocalDateTime.of(9999, 12, 31, 23, 59, 59)));
-
-    // 0001/01/01 00:00:00
-    // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
-    // 0x4420000
-    assertEquals(
-        LocalDateTime.of(1, 1, 1, 0, 0, 0),
-        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4420000L));
-    // 0001/02/03 00:01:02
-    // 0b0000000000000000000000|00000000000001|0010|00011|00000|000001|000010
-    // 0x4860042
-    assertEquals(
-        LocalDateTime.of(1, 2, 3, 0, 1, 2),
-        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4860042L));
-    // 0001/01/01 12:00:00
-    // 0b0000000000000000000000|00000000000001|0001|00001|01100|000000|000000
-    // 0x442C000
-    assertEquals(
-        LocalDateTime.of(1, 1, 1, 12, 0, 0),
-        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442C000L));
-    // 0001/01/01 13:14:15
-    // 0b0000000000000000000000|00000000000001|0001|00001|01101|001110|001111
-    // 0x442D38F
-    assertEquals(
-        LocalDateTime.of(1, 1, 1, 13, 14, 15),
-        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442D38FL));
-    // 9999/12/31 23:59:59
-    // 0b0000000000000000000000|10011100001111|1100|11111|10111|111011|111011
-    // 0x9C3F3F7EFB
-    assertEquals(
-        LocalDateTime.of(9999, 12, 31, 23, 59, 59),
-        CivilTimeEncoder.decodePacked64DatetimeSeconds(0x9C3F3F7EFBL));
-
-    // encode and decode failures
-    // 10000/01/01 00:00:00
-    // 0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
-    // 0x9C40420000
-    LocalDateTime dateTime = LocalDateTime.of(10000, 1, 1, 0, 0, 0);
-    try {
-      CivilTimeEncoder.encodePacked64DatetimeSeconds(dateTime);
       Assert.fail();
     } catch (IllegalArgumentException expected) {
     }
-    try {
-      // 0001/01/01 00:00:00
-      // 0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
-      // 0x10004420000
-      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x10004420000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/01 00:00:00
-      // 0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
-      // 0x10004420000
-      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x10004420000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/01 00:00:60
-      // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|111100
-      // 0x442003C
-      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x442003CL);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/01 00:60:00
-      // 0b0000000000000000000000|00000000000001|0001|00001|00000|111100|000000
-      // 0x4420F00
-      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4420F00L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/01 24:00:00
-      // 0b0000000000000000000000|00000000000001|0001|00001|11000|000000|000000
-      // 0x4438000
-      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4438000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/00 00:00:00
-      // 0b0000000000000000000000|00000000000001|0001|00000|00000|000000|000000
-      // 0x4400000
-      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x4400000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/13/01 00:00:00
-      // 0b0000000000000000000000|00000000000001|1101|00001|00000|000000|000000
-      // 0x7420000
-      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x7420000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 10000/01/01 00:00:00
-      // 0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
-      // 0x9C40420000
-      CivilTimeEncoder.decodePacked64DatetimeSeconds(0x9C40420000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    // Round Trip Test
-    dateTime = LocalDateTime.of(1, 1, 1, 1, 1, 1);
-    long conversion = CivilTimeEncoder.encodePacked64DatetimeSeconds(dateTime);
-    assertEquals(dateTime, CivilTimeEncoder.decodePacked64DatetimeSeconds(conversion));
   }
 
   @Test
-  public void Packed64DateTimeMicrosTest() {
+  public void decodePacked64TimeMicros_invalidHourOfDay_throwsIllegalArgumentException() {
+    try {
+      // 24:00:00.000000
+      // 0b000000000000000000000000000|11000|000000|000000|00000000000000000000
+      // 0x1800000000
+      CivilTimeEncoder.decodePacked64TimeMicros(0x1800000000L);
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+      assertEquals("Invalid value for HourOfDay (valid values 0 - 23): 24", e.getMessage());
+    }
+  }
+
+  //Date Time
+  @Test
+  public void encodePacked64DatetimeMicros_validDateTime() {
     // 0001/01/01 00:00:00
     // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
     // 0x4420000
@@ -311,7 +204,35 @@ public class CivilTimeEncoderTest {
         0x9C3F3F7EFBF3E58L,
         CivilTimeEncoder.encodePacked64DatetimeMicros(
             LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000)));
+  }
 
+  @Test
+  public void encodePacked64DateTimeMicros_giveErrorWhenDataIsLost() {
+    // 0001/01/01 00:00:00.000000999
+    // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
+    // 0x4420000
+    try{
+      CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(1, 1, 1, 0, 0, 0, 999));
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+    }
+  }
+
+  @Test
+  public void encodePacked64DatetimeMicros_invalidYear_throwsIllegalArgumentException() {
+    // 10000/01/01 00:00:00.000000
+    // 0b00|10011100010000|0001|00001|00000|000000|000000|00000000000000000000
+    // 0x9C4042000000000
+    LocalDateTime dateTime = LocalDateTime.of(10000, 1, 1, 0, 0, 0, 0);
+    try {
+      CivilTimeEncoder.encodePacked64DatetimeMicros(dateTime);
+      Assert.fail();
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  @Test
+  public void decodePacked64DatetimeMicros_validBitFieldDatetimeMicros() {
     // 0001/01/01 00:00:00
     // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|000000
     // 0x4420000
@@ -343,83 +264,101 @@ public class CivilTimeEncoderTest {
         LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000),
         CivilTimeEncoder.decodePacked64DatetimeMicros(0x9C3F3F7EFBF3E58L));
 
-    // 10000/01/01 00:00:00
-    // 0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
-    // 0x9C40420000
-    LocalDateTime dateTime = LocalDateTime.of(10000, 1, 1, 0, 0, 0);
+  }
+
+  @Test
+  public void decodePacked64DatetimeMicros_invalidBitField() {
     try {
-      CivilTimeEncoder.encodePacked64DatetimeMicros(dateTime);
+      // 0001/01/01 00:00:00
+      // 0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
+      // 0x10004420000
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x10004420000L);
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+    }
+  }
+
+  @Test
+  public void decodePacked64DatetimeMicros_invalidMicroOfSecond_throwsIllegalArgumentException() {
+    try {
+      // 0001/01/01 00:00:00.1000000
+      // 0b00|00000000000001|0001|00001|00000|000000|000000|11110100001001000000
+      // 0x4420000F4240
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x4420000F4240L);
       Assert.fail();
     } catch (IllegalArgumentException expected) {
     }
-    try {
-      // 0001/01/01 00:00:00
-      // 0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
-      // 0x10004420000
-      CivilTimeEncoder.decodePacked64DatetimeMicros(0x10004420000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/01 00:00:00
-      // 0b0000000000000000000001|00000000000001|0001|00001|00000|000000|000000
-      // 0x10004420000
-      CivilTimeEncoder.decodePacked64DatetimeMicros(0x10004420000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/01 00:00:60
-      // 0b0000000000000000000000|00000000000001|0001|00001|00000|000000|111100
-      // 0x442003C
-      CivilTimeEncoder.decodePacked64DatetimeMicros(0x442003CL);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/01 00:60:00
-      // 0b0000000000000000000000|00000000000001|0001|00001|00000|111100|000000
-      // 0x4420F00
-      CivilTimeEncoder.decodePacked64DatetimeMicros(0x4420F00L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/01 24:00:00
-      // 0b0000000000000000000000|00000000000001|0001|00001|11000|000000|000000
-      // 0x4438000
-      CivilTimeEncoder.decodePacked64DatetimeMicros(0x4438000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/01/00 00:00:00
-      // 0b0000000000000000000000|00000000000001|0001|00000|00000|000000|000000
-      // 0x4400000
-      CivilTimeEncoder.decodePacked64DatetimeMicros(0x4400000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 0001/13/01 00:00:00
-      // 0b0000000000000000000000|00000000000001|1101|00001|00000|000000|000000
-      // 0x7420000
-      CivilTimeEncoder.decodePacked64DatetimeMicros(0x7420000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
-    try {
-      // 10000/01/01 00:00:00
-      // 0b0000000000000000000000|10011100010000|0001|00001|00000|000000|000000
-      // 0x9C40420000
-      CivilTimeEncoder.decodePacked64DatetimeMicros(0x9C40420000L);
-      Assert.fail();
-    } catch (IllegalArgumentException e) {
-    }
+  }
 
-    // Round Trip Test
-    dateTime = LocalDateTime.of(1, 1, 1, 1, 1, 1, 1_000_000);
-    long conversion = CivilTimeEncoder.encodePacked64DatetimeMicros(dateTime);
-    assertEquals(dateTime, CivilTimeEncoder.decodePacked64DatetimeMicros(conversion));
+  @Test
+  public void decodePacked64DatetimeMicros_invalidSecondOfMinute_throwsIllegalArgumentException() {
+    try {
+      // 0001/01/01 00:00:60.000000
+      // 0b00|00000000000001|0001|00001|00000|000000|111100|00000000000000000000
+      // 0x442003C00000
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x442003C00000L);
+      Assert.fail();
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  @Test
+  public void decodePacked64DatetimeMicros_invalidMinuteOfHour_throwsIllegalArgumentException() {
+    try {
+      // 0001/01/01 00:60:00.000000
+      // 0b00|00000000000001|0001|00001|00000|111100|000000|00000000000000000000
+      // 0x4420F0000000
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x4420F0000000L);
+      Assert.fail();
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  @Test
+  public void decodePacked64DatetimeMicros_invalidHourOfDay_throwsIllegalArgumentException() {
+    try {
+      // 0001/01/01 24:00:00.000000
+      // 0b00|00000000000001|0001|00001|11000|000000|000000|00000000000000000000
+      // 0x443800000000
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x443800000000L);
+      Assert.fail();
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  @Test
+  public void decodePacked64DatetimeMicros_invalidDayOfMonth_throwsIllegalArgumentException() {
+    try {
+      // 0001/01/00 00:00:00.000000
+      // 0b00|00000000000001|0001|00000|00000|000000|000000|00000000000000000000
+      // 0x440000000000
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x440000000000L);
+      Assert.fail();
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  @Test
+  public void decodePacked64DatetimeMicros_invalidMonthOfYear_throwsIllegalArgumentException() {
+    try {
+      // 0001/13/01 00:00:00.000000
+      // 0b00|00000000000001|1101|00001|00000|000000|000000|00000000000000000000
+      // 0x742000000000
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x742000000000L);
+      Assert.fail();
+    } catch (IllegalArgumentException expected) {
+    }
+  }
+
+  @Test
+  public void decodePacked64DatetimeMicros_invalidYear_throwsIllegalArgumentException() {
+    try {
+      // 10000/01/01 00:00:00.000000
+      // 0b00|10011100010000|0001|00001|00000|000000|000000|00000000000000000000
+      // 0x9C4042000000000
+      CivilTimeEncoder.decodePacked64DatetimeMicros(0x9C4042000000000L);
+      Assert.fail();
+    } catch (IllegalArgumentException expected) {
+    }
   }
 }
