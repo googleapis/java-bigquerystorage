@@ -199,7 +199,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .build();
     final TableFieldSchema TEST_TIME =
         TableFieldSchema.newBuilder()
-            .setType(TableFieldSchema.Type.TIME)  // TODO(jstocklass): why is this breaking
+            .setType(TableFieldSchema.Type.TIME)
             .setMode(TableFieldSchema.Mode.NULLABLE)
             .setName("test_time")
             .build();
@@ -216,7 +216,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(8, TEST_NUMERIC)
             .addFields(9, TEST_GEO)
             .addFields(10, TEST_TIMESTAMP)
-            .addFields(11, TEST_TIME)  // TODO(jstocklass): it's insisting this field should be a string no matter what I put at line 202
+            .addFields(11, TEST_TIME)
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
