@@ -30,14 +30,14 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-bigquerystorage</artifactId>
-      <version>1.8.5</version>
+      <version>1.15.1</version>
     </dependency>
     <!-- [END bigquerystorage_install_without_bom] -->
 
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>
-      <version>1.10.1</version>
+      <version>1.10.2</version>
     </dependency>
 
     <dependency>

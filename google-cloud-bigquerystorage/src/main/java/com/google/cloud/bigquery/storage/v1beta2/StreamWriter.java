@@ -35,6 +35,7 @@ import com.google.api.gax.rpc.ClientStream;
 import com.google.api.gax.rpc.ResponseObserver;
 import com.google.api.gax.rpc.StreamController;
 import com.google.api.gax.rpc.TransportChannelProvider;
+import com.google.api.gax.rpc.UnimplementedException;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Int64Value;
@@ -49,12 +50,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.concurrent.GuardedBy;
 import org.threeten.bp.Duration;
 
 /**
@@ -65,8 +68,8 @@ import org.threeten.bp.Duration;
  * without offset, please use a simpler writer {@code DirectWriter}.
  *
  * <p>A {@link StreamWrier} provides built-in capabilities to: handle batching of messages;
- * controlling memory utilization (through flow control); automatic connection re-establishment and
- * request cleanup (only keeps write schema on first request in the stream).
+ * controlling memory utilization (through flow control) and request cleanup (only keeps write
+ * schema on first request in the stream).
  *
  * <p>With customizable options that control:
  *
@@ -99,25 +102,34 @@ public class StreamWriter implements AutoCloseable {
 
   private final Lock messagesBatchLock;
   private final Lock appendAndRefreshAppendLock;
+
+  @GuardedBy("appendAndRefreshAppendLock")
   private final MessagesBatch messagesBatch;
 
   // Indicates if a stream has some non recoverable exception happened.
-  private final Lock exceptionLock;
-  private Throwable streamException;
+  private AtomicReference<Throwable> streamException;
 
   private BackgroundResource backgroundResources;
   private List<BackgroundResource> backgroundResourceList;
 
   private BigQueryWriteClient stub;
   BidiStreamingCallable<AppendRowsRequest, AppendRowsResponse> bidiStreamingCallable;
+
+  @GuardedBy("appendAndRefreshAppendLock")
   ClientStream<AppendRowsRequest> clientStream;
+
   private final AppendResponseObserver responseObserver;
 
   private final ScheduledExecutorService executor;
 
-  private final AtomicBoolean shutdown;
+  @GuardedBy("appendAndRefreshAppendLock")
+  private boolean shutdown;
+
   private final Waiter messagesWaiter;
-  private final AtomicBoolean activeAlarm;
+
+  @GuardedBy("appendAndRefreshAppendLock")
+  private boolean activeAlarm;
+
   private ScheduledFuture<?> currentAlarmFuture;
 
   private Integer currentRetries = 0;
@@ -159,9 +171,8 @@ public class StreamWriter implements AutoCloseable {
     this.messagesBatch = new MessagesBatch(batchingSettings, this.streamName, this);
     messagesBatchLock = new ReentrantLock();
     appendAndRefreshAppendLock = new ReentrantLock();
-    activeAlarm = new AtomicBoolean(false);
-    this.exceptionLock = new ReentrantLock();
-    this.streamException = null;
+    activeAlarm = false;
+    this.streamException = new AtomicReference<Throwable>(null);
 
     executor = builder.executorProvider.getExecutor();
     backgroundResourceList = new ArrayList<>();
@@ -184,7 +195,7 @@ public class StreamWriter implements AutoCloseable {
       stub = builder.client;
     }
     backgroundResources = new BackgroundResourceAggregation(backgroundResourceList);
-    shutdown = new AtomicBoolean(false);
+    shutdown = false;
     if (builder.onSchemaUpdateRunnable != null) {
       this.onSchemaUpdateRunnable = builder.onSchemaUpdateRunnable;
       this.onSchemaUpdateRunnable.setStreamWriter(this);
@@ -213,14 +224,6 @@ public class StreamWriter implements AutoCloseable {
   /** OnSchemaUpdateRunnable for this streamWriter. */
   OnSchemaUpdateRunnable getOnSchemaUpdateRunnable() {
     return this.onSchemaUpdateRunnable;
-  }
-
-  private void setException(Throwable t) {
-    exceptionLock.lock();
-    if (this.streamException == null) {
-      this.streamException = t;
-    }
-    exceptionLock.unlock();
   }
 
   /**
@@ -252,54 +255,28 @@ public class StreamWriter implements AutoCloseable {
    */
   public ApiFuture<AppendRowsResponse> append(AppendRowsRequest message) {
     appendAndRefreshAppendLock.lock();
-    Preconditions.checkState(!shutdown.get(), "Cannot append on a shut-down writer.");
-    Preconditions.checkNotNull(message, "Message is null.");
-    final AppendRequestAndFutureResponse outstandingAppend =
-        new AppendRequestAndFutureResponse(message);
-    List<InflightBatch> batchesToSend;
-    messagesBatchLock.lock();
+
     try {
+      Preconditions.checkState(!shutdown, "Cannot append on a shut-down writer.");
+      Preconditions.checkNotNull(message, "Message is null.");
+      Preconditions.checkState(streamException.get() == null, "Stream already failed.");
+      final AppendRequestAndFutureResponse outstandingAppend =
+          new AppendRequestAndFutureResponse(message);
+      List<InflightBatch> batchesToSend;
       batchesToSend = messagesBatch.add(outstandingAppend);
       // Setup the next duration based delivery alarm if there are messages batched.
-      setupAlarm();
+      if (batchingSettings.getDelayThreshold() != null) {
+        setupAlarm();
+      }
       if (!batchesToSend.isEmpty()) {
         for (final InflightBatch batch : batchesToSend) {
-          LOG.fine("Scheduling a batch for immediate sending.");
+          LOG.fine("Scheduling a batch for immediate sending");
           writeBatch(batch);
         }
       }
-    } finally {
-      messagesBatchLock.unlock();
-      appendAndRefreshAppendLock.unlock();
-    }
-
-    return outstandingAppend.appendResult;
-  }
-
-  /**
-   * This is the general flush method for asynchronise append operation. When you have outstanding
-   * append requests, calling flush will make sure all outstanding append requests completed and
-   * successful. Otherwise there will be an exception thrown.
-   *
-   * @throws Exception
-   */
-  public void flushAll(long timeoutMillis) throws Exception {
-    appendAndRefreshAppendLock.lock();
-    try {
-      writeAllOutstanding();
-      synchronized (messagesWaiter) {
-        messagesWaiter.waitComplete(timeoutMillis);
-      }
+      return outstandingAppend.appendResult;
     } finally {
       appendAndRefreshAppendLock.unlock();
-    }
-    exceptionLock.lock();
-    try {
-      if (streamException != null) {
-        throw new Exception(streamException);
-      }
-    } finally {
-      exceptionLock.unlock();
     }
   }
 
@@ -309,32 +286,13 @@ public class StreamWriter implements AutoCloseable {
    * @throws InterruptedException
    */
   public void refreshAppend() throws InterruptedException {
-    appendAndRefreshAppendLock.lock();
-    if (shutdown.get()) {
-      LOG.warning("Cannot refresh on a already shutdown writer.");
-      appendAndRefreshAppendLock.unlock();
-      return;
-    }
-    // There could be a moment, stub is not yet initialized.
-    if (clientStream != null) {
-      LOG.info("Closing the stream " + streamName);
-      clientStream.closeSend();
-    }
-    messagesBatch.resetAttachSchema();
-    bidiStreamingCallable = stub.appendRowsCallable();
-    clientStream = bidiStreamingCallable.splitCall(responseObserver);
-    while (!clientStream.isSendReady()) {
-      Thread.sleep(10);
-    }
-    Thread.sleep(this.retrySettings.getInitialRetryDelay().toMillis());
-    // Can only unlock here since need to sleep the full 7 seconds before stream can allow appends.
-    appendAndRefreshAppendLock.unlock();
-    LOG.info("Write Stream " + streamName + " connection established");
+    throw new UnimplementedException(null, GrpcStatusCode.of(Status.Code.UNIMPLEMENTED), false);
   }
 
+  @GuardedBy("appendAndRefreshAppendLock")
   private void setupAlarm() {
     if (!messagesBatch.isEmpty()) {
-      if (!activeAlarm.getAndSet(true)) {
+      if (!activeAlarm) {
         long delayThresholdMs = getBatchingSettings().getDelayThreshold().toMillis();
         LOG.log(Level.FINE, "Setting up alarm for the next {0} ms.", delayThresholdMs);
         currentAlarmFuture =
@@ -343,12 +301,12 @@ public class StreamWriter implements AutoCloseable {
                   @Override
                   public void run() {
                     LOG.fine("Sending messages based on schedule");
-                    activeAlarm.getAndSet(false);
-                    messagesBatchLock.lock();
+                    appendAndRefreshAppendLock.lock();
+                    activeAlarm = false;
                     try {
                       writeBatch(messagesBatch.popBatch());
                     } finally {
-                      messagesBatchLock.unlock();
+                      appendAndRefreshAppendLock.unlock();
                     }
                   }
                 },
@@ -357,9 +315,8 @@ public class StreamWriter implements AutoCloseable {
       }
     } else if (currentAlarmFuture != null) {
       LOG.log(Level.FINER, "Cancelling alarm, no more messages");
-      if (activeAlarm.getAndSet(false)) {
-        currentAlarmFuture.cancel(false);
-      }
+      currentAlarmFuture.cancel(false);
+      activeAlarm = false;
     }
   }
 
@@ -368,27 +325,41 @@ public class StreamWriter implements AutoCloseable {
    * wait for the send operations to complete. To wait for messages to send, call {@code get} on the
    * futures returned from {@code append}.
    */
+  @GuardedBy("appendAndRefreshAppendLock")
   public void writeAllOutstanding() {
     InflightBatch unorderedOutstandingBatch = null;
-    messagesBatchLock.lock();
-    try {
-      if (!messagesBatch.isEmpty()) {
-        writeBatch(messagesBatch.popBatch());
-      }
-      messagesBatch.reset();
-    } finally {
-      messagesBatchLock.unlock();
+    if (!messagesBatch.isEmpty()) {
+      writeBatch(messagesBatch.popBatch());
     }
+    messagesBatch.reset();
   }
 
+  @GuardedBy("appendAndRefreshAppendLock")
   private void writeBatch(final InflightBatch inflightBatch) {
     if (inflightBatch != null) {
       AppendRowsRequest request = inflightBatch.getMergedRequest();
       try {
+        appendAndRefreshAppendLock.unlock();
         messagesWaiter.acquire(inflightBatch.getByteSize());
+        appendAndRefreshAppendLock.lock();
+        if (shutdown || streamException.get() != null) {
+          appendAndRefreshAppendLock.unlock();
+          messagesWaiter.release(inflightBatch.getByteSize());
+          appendAndRefreshAppendLock.lock();
+          inflightBatch.onFailure(
+              new AbortedException(
+                  shutdown
+                      ? "Stream closed, abort append."
+                      : "Stream has previous errors, abort append.",
+                  null,
+                  GrpcStatusCode.of(Status.Code.ABORTED),
+                  true));
+          return;
+        }
         responseObserver.addInflightBatch(inflightBatch);
         clientStream.send(request);
       } catch (FlowController.FlowControlException ex) {
+        appendAndRefreshAppendLock.lock();
         inflightBatch.onFailure(ex);
       }
     }
@@ -494,9 +465,6 @@ public class StreamWriter implements AutoCloseable {
         // Error has been set already.
         LOG.warning("Ignore " + t.toString() + " since error has already been set");
         return;
-      } else {
-        LOG.info("Setting " + t.toString() + " on response");
-        this.streamWriter.setException(t);
       }
 
       for (AppendRequestAndFutureResponse request : inflightRequests) {
@@ -558,26 +526,68 @@ public class StreamWriter implements AutoCloseable {
    * pending messages are lost.
    */
   protected void shutdown() {
-    if (shutdown.getAndSet(true)) {
-      LOG.fine("Already shutdown.");
-      return;
-    }
-    LOG.fine("Shutdown called on writer");
-    if (currentAlarmFuture != null && activeAlarm.getAndSet(false)) {
-      currentAlarmFuture.cancel(false);
-    }
-    writeAllOutstanding();
+    appendAndRefreshAppendLock.lock();
     try {
-      synchronized (messagesWaiter) {
-        messagesWaiter.waitComplete(0);
+      if (shutdown) {
+        LOG.fine("Already shutdown.");
+        return;
       }
-    } catch (InterruptedException e) {
-      LOG.warning("Failed to wait for messages to return " + e.toString());
+      shutdown = true;
+      LOG.info("Shutdown called on writer: " + streamName);
+      if (currentAlarmFuture != null && activeAlarm) {
+        currentAlarmFuture.cancel(false);
+        activeAlarm = false;
+      }
+      // Wait for current inflight to drain.
+      try {
+        appendAndRefreshAppendLock.unlock();
+        messagesWaiter.waitComplete(0);
+      } catch (InterruptedException e) {
+        LOG.warning("Failed to wait for messages to return " + e.toString());
+      }
+      appendAndRefreshAppendLock.lock();
+      // Try to send out what's left in batch.
+      if (!messagesBatch.isEmpty()) {
+        InflightBatch inflightBatch = messagesBatch.popBatch();
+        AppendRowsRequest request = inflightBatch.getMergedRequest();
+        if (streamException.get() != null) {
+          inflightBatch.onFailure(
+              new AbortedException(
+                  shutdown
+                      ? "Stream closed, abort append."
+                      : "Stream has previous errors, abort append.",
+                  null,
+                  GrpcStatusCode.of(Status.Code.ABORTED),
+                  true));
+        } else {
+          try {
+            appendAndRefreshAppendLock.unlock();
+            messagesWaiter.acquire(inflightBatch.getByteSize());
+            appendAndRefreshAppendLock.lock();
+            responseObserver.addInflightBatch(inflightBatch);
+            clientStream.send(request);
+          } catch (FlowController.FlowControlException ex) {
+            appendAndRefreshAppendLock.lock();
+            LOG.warning(
+                "Unexpected flow control exception when sending batch leftover: " + ex.toString());
+          }
+        }
+      }
+      // Close the stream.
+      try {
+        appendAndRefreshAppendLock.unlock();
+        messagesWaiter.waitComplete(0);
+      } catch (InterruptedException e) {
+        LOG.warning("Failed to wait for messages to return " + e.toString());
+      }
+      appendAndRefreshAppendLock.lock();
+      if (clientStream.isSendReady()) {
+        clientStream.closeSend();
+      }
+      backgroundResources.shutdown();
+    } finally {
+      appendAndRefreshAppendLock.unlock();
     }
-    if (clientStream.isSendReady()) {
-      clientStream.closeSend();
-    }
-    backgroundResources.shutdown();
   }
 
   /**
@@ -730,58 +740,31 @@ public class StreamWriter implements AutoCloseable {
       if (batchingSettings.getRequestByteThreshold() > getApiMaxRequestBytes()) {
         builder.setRequestByteThreshold(getApiMaxRequestBytes());
       }
-      Preconditions.checkNotNull(batchingSettings.getDelayThreshold());
-      Preconditions.checkArgument(batchingSettings.getDelayThreshold().toMillis() > 0);
+      LOG.info("here" + batchingSettings.getFlowControlSettings());
       if (batchingSettings.getFlowControlSettings() == null) {
         builder.setFlowControlSettings(DEFAULT_FLOW_CONTROL_SETTINGS);
       } else {
-
-        if (batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() == null) {
-          builder.setFlowControlSettings(
-              batchingSettings
-                  .getFlowControlSettings()
-                  .toBuilder()
-                  .setMaxOutstandingElementCount(
-                      DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingElementCount())
-                  .build());
-        } else {
-          Preconditions.checkArgument(
-              batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount() > 0);
-          if (batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount()
-              > getApiMaxInflightRequests()) {
-            builder.setFlowControlSettings(
-                batchingSettings
-                    .getFlowControlSettings()
-                    .toBuilder()
-                    .setMaxOutstandingElementCount(getApiMaxInflightRequests())
-                    .build());
-          }
+        Long elementCount =
+            batchingSettings.getFlowControlSettings().getMaxOutstandingElementCount();
+        if (elementCount == null || elementCount > getApiMaxInflightRequests()) {
+          elementCount = DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingElementCount();
         }
-        if (batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() == null) {
-          builder.setFlowControlSettings(
-              batchingSettings
-                  .getFlowControlSettings()
-                  .toBuilder()
-                  .setMaxOutstandingRequestBytes(
-                      DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingRequestBytes())
-                  .build());
-        } else {
-          Preconditions.checkArgument(
-              batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes() > 0);
+        Long elementSize =
+            batchingSettings.getFlowControlSettings().getMaxOutstandingRequestBytes();
+        if (elementSize == null || elementSize < 0) {
+          elementSize = DEFAULT_FLOW_CONTROL_SETTINGS.getMaxOutstandingRequestBytes();
         }
-        if (batchingSettings.getFlowControlSettings().getLimitExceededBehavior() == null) {
-          builder.setFlowControlSettings(
-              batchingSettings
-                  .getFlowControlSettings()
-                  .toBuilder()
-                  .setLimitExceededBehavior(
-                      DEFAULT_FLOW_CONTROL_SETTINGS.getLimitExceededBehavior())
-                  .build());
-        } else {
-          Preconditions.checkArgument(
-              batchingSettings.getFlowControlSettings().getLimitExceededBehavior()
-                  != FlowController.LimitExceededBehavior.Ignore);
+        FlowController.LimitExceededBehavior behavior =
+            batchingSettings.getFlowControlSettings().getLimitExceededBehavior();
+        if (behavior == null || behavior == FlowController.LimitExceededBehavior.Ignore) {
+          behavior = DEFAULT_FLOW_CONTROL_SETTINGS.getLimitExceededBehavior();
         }
+        builder.setFlowControlSettings(
+            FlowControlSettings.newBuilder()
+                .setMaxOutstandingElementCount(elementCount)
+                .setMaxOutstandingRequestBytes(elementSize)
+                .setLimitExceededBehavior(behavior)
+                .build());
       }
       this.batchingSettings = builder.build();
       return this;
@@ -862,15 +845,22 @@ public class StreamWriter implements AutoCloseable {
     }
 
     private void abortInflightRequests(Throwable t) {
+      LOG.fine("Aborting all inflight requests");
       synchronized (this.inflightBatches) {
+        boolean first_error = true;
         while (!this.inflightBatches.isEmpty()) {
           InflightBatch inflightBatch = this.inflightBatches.poll();
-          inflightBatch.onFailure(
-              new AbortedException(
-                  "Request aborted due to previous failures",
-                  t,
-                  GrpcStatusCode.of(Status.Code.ABORTED),
-                  true));
+          if (first_error || t.getCause().getClass() == AbortedException.class) {
+            inflightBatch.onFailure(t);
+            first_error = false;
+          } else {
+            inflightBatch.onFailure(
+                new AbortedException(
+                    "Request aborted due to previous failures",
+                    t,
+                    GrpcStatusCode.of(Status.Code.ABORTED),
+                    true));
+          }
           streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
         }
       }
@@ -909,11 +899,16 @@ public class StreamWriter implements AutoCloseable {
             IllegalStateException exception =
                 new IllegalStateException(
                     String.format(
-                        "The append result offset %s does not match " + "the expected offset %s.",
+                        "The append result offset %s does not match the expected offset %s.",
                         response.getAppendResult().getOffset().getValue(),
                         inflightBatch.getExpectedOffset()));
             inflightBatch.onFailure(exception);
-            abortInflightRequests(exception);
+            abortInflightRequests(
+                new AbortedException(
+                    "Request aborted due to previous failures",
+                    exception,
+                    GrpcStatusCode.of(Status.Code.ABORTED),
+                    true));
           } else {
             inflightBatch.onSuccess(response);
           }
@@ -930,57 +925,9 @@ public class StreamWriter implements AutoCloseable {
 
     @Override
     public void onError(Throwable t) {
-      LOG.fine("OnError called");
-      if (streamWriter.shutdown.get()) {
-        abortInflightRequests(t);
-        return;
-      }
-      InflightBatch inflightBatch = null;
-      synchronized (this.inflightBatches) {
-        if (inflightBatches.isEmpty()) {
-          // The batches could have been aborted.
-          return;
-        }
-        inflightBatch = this.inflightBatches.poll();
-      }
-      streamWriter.messagesWaiter.release(inflightBatch.getByteSize());
-      if (isRecoverableError(t)) {
-        try {
-          if (streamWriter.currentRetries < streamWriter.getRetrySettings().getMaxAttempts()
-              && !streamWriter.shutdown.get()) {
-            synchronized (streamWriter.currentRetries) {
-              streamWriter.currentRetries++;
-            }
-            LOG.info(
-                "Try to reestablish connection due to transient error: "
-                    + t.toString()
-                    + " retry times: "
-                    + streamWriter.currentRetries);
-            streamWriter.refreshAppend();
-            LOG.info("Resending requests on after connection established");
-            streamWriter.writeBatch(inflightBatch);
-          } else {
-            inflightBatch.onFailure(t);
-            abortInflightRequests(t);
-            synchronized (streamWriter.currentRetries) {
-              streamWriter.currentRetries = 0;
-            }
-          }
-        } catch (InterruptedException e) {
-          LOG.info("Got exception while retrying: " + e.toString());
-          inflightBatch.onFailure(new StatusRuntimeException(Status.ABORTED));
-          abortInflightRequests(new StatusRuntimeException(Status.ABORTED));
-          synchronized (streamWriter.currentRetries) {
-            streamWriter.currentRetries = 0;
-          }
-        }
-      } else {
-        inflightBatch.onFailure(t);
-        abortInflightRequests(t);
-        synchronized (streamWriter.currentRetries) {
-          streamWriter.currentRetries = 0;
-        }
-      }
+      LOG.info("OnError called: " + t.toString());
+      streamWriter.streamException.set(t);
+      abortInflightRequests(t);
     }
   };
 
@@ -1002,6 +949,7 @@ public class StreamWriter implements AutoCloseable {
     }
 
     // Get all the messages out in a batch.
+    @GuardedBy("appendAndRefreshAppendLock")
     private InflightBatch popBatch() {
       InflightBatch batch =
           new InflightBatch(
@@ -1043,6 +991,7 @@ public class StreamWriter implements AutoCloseable {
     // The message batch returned could contain the previous batch of messages plus the current
     // message.
     // if the message is too large.
+    @GuardedBy("appendAndRefreshAppendLock")
     private List<InflightBatch> add(AppendRequestAndFutureResponse outstandingAppend) {
       List<InflightBatch> batchesToSend = new ArrayList<>();
       // Check if the next message makes the current batch exceed the max batch byte size.
@@ -1063,7 +1012,6 @@ public class StreamWriter implements AutoCloseable {
           || getMessagesCount() == batchingSettings.getElementCountThreshold()) {
         batchesToSend.add(popBatch());
       }
-
       return batchesToSend;
     }
   }

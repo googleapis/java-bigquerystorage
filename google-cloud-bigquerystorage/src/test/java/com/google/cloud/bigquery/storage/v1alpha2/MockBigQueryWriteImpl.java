@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
   public void createWriteStream(
       Storage.CreateWriteStreamRequest request,
       StreamObserver<Stream.WriteStream> responseObserver) {
-    Object response = responses.remove();
+    Object response = responses.poll();
     if (response instanceof Stream.WriteStream) {
       requests.add(request);
       responseObserver.onNext(((Stream.WriteStream) response));
@@ -70,7 +70,13 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method CreateWriteStream, expected %s or %s",
+                  response == null ? "null" : response.getClass().getName(),
+                  Stream.WriteStream.class.getName(),
+                  Exception.class.getName())));
     }
   }
 
@@ -88,7 +94,13 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
             } else if (response instanceof Exception) {
               responseObserver.onError(((Exception) response));
             } else {
-              responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+              responseObserver.onError(
+                  new IllegalArgumentException(
+                      String.format(
+                          "Unrecognized response type %s for method AppendRows, expected %s or %s",
+                          response == null ? "null" : response.getClass().getName(),
+                          Storage.AppendRowsResponse.class.getName(),
+                          Exception.class.getName())));
             }
           }
 
@@ -108,7 +120,7 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
   @Override
   public void getWriteStream(
       Storage.GetWriteStreamRequest request, StreamObserver<Stream.WriteStream> responseObserver) {
-    Object response = responses.remove();
+    Object response = responses.poll();
     if (response instanceof Stream.WriteStream) {
       requests.add(request);
       responseObserver.onNext(((Stream.WriteStream) response));
@@ -116,7 +128,13 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method GetWriteStream, expected %s or %s",
+                  response == null ? "null" : response.getClass().getName(),
+                  Stream.WriteStream.class.getName(),
+                  Exception.class.getName())));
     }
   }
 
@@ -124,7 +142,7 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
   public void finalizeWriteStream(
       Storage.FinalizeWriteStreamRequest request,
       StreamObserver<Storage.FinalizeWriteStreamResponse> responseObserver) {
-    Object response = responses.remove();
+    Object response = responses.poll();
     if (response instanceof Storage.FinalizeWriteStreamResponse) {
       requests.add(request);
       responseObserver.onNext(((Storage.FinalizeWriteStreamResponse) response));
@@ -132,7 +150,13 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method FinalizeWriteStream, expected %s or %s",
+                  response == null ? "null" : response.getClass().getName(),
+                  Storage.FinalizeWriteStreamResponse.class.getName(),
+                  Exception.class.getName())));
     }
   }
 
@@ -140,7 +164,7 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
   public void batchCommitWriteStreams(
       Storage.BatchCommitWriteStreamsRequest request,
       StreamObserver<Storage.BatchCommitWriteStreamsResponse> responseObserver) {
-    Object response = responses.remove();
+    Object response = responses.poll();
     if (response instanceof Storage.BatchCommitWriteStreamsResponse) {
       requests.add(request);
       responseObserver.onNext(((Storage.BatchCommitWriteStreamsResponse) response));
@@ -148,7 +172,13 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method BatchCommitWriteStreams, expected %s or %s",
+                  response == null ? "null" : response.getClass().getName(),
+                  Storage.BatchCommitWriteStreamsResponse.class.getName(),
+                  Exception.class.getName())));
     }
   }
 
@@ -156,7 +186,7 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
   public void flushRows(
       Storage.FlushRowsRequest request,
       StreamObserver<Storage.FlushRowsResponse> responseObserver) {
-    Object response = responses.remove();
+    Object response = responses.poll();
     if (response instanceof Storage.FlushRowsResponse) {
       requests.add(request);
       responseObserver.onNext(((Storage.FlushRowsResponse) response));
@@ -164,7 +194,13 @@ public class MockBigQueryWriteImpl extends BigQueryWriteImplBase {
     } else if (response instanceof Exception) {
       responseObserver.onError(((Exception) response));
     } else {
-      responseObserver.onError(new IllegalArgumentException("Unrecognized response type"));
+      responseObserver.onError(
+          new IllegalArgumentException(
+              String.format(
+                  "Unrecognized response type %s for method FlushRows, expected %s or %s",
+                  response == null ? "null" : response.getClass().getName(),
+                  Storage.FlushRowsResponse.class.getName(),
+                  Exception.class.getName())));
     }
   }
 }

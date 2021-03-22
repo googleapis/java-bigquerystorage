@@ -39,6 +39,10 @@ public class FakeBigQueryWrite implements MockGrpcService {
     return new LinkedList<AbstractMessage>(serviceImpl.getCapturedRequests());
   }
 
+  public void waitForResponseScheduled() throws InterruptedException {
+    serviceImpl.waitForResponseScheduled();
+  }
+
   public List<AppendRowsRequest> getAppendRequests() {
     return serviceImpl.getCapturedRequests();
   }
@@ -77,6 +81,10 @@ public class FakeBigQueryWrite implements MockGrpcService {
 
   public void setResponseDelay(Duration delay) {
     serviceImpl.setResponseDelay(delay);
+  }
+
+  public void setResponseSleep(Duration sleep) {
+    serviceImpl.setResponseSleep(sleep);
   }
 
   public void setExecutor(ScheduledExecutorService executor) {
