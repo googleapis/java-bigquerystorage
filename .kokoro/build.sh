@@ -78,10 +78,11 @@ samples)
 
     if [[ -f ${SAMPLES_DIR}/pom.xml ]]
     then
-      if [ -f "${KOKORO_GFILE_DIR}/secret_manager/java-bigquerystorage-samples-secrets" ]
-        then
-            source "${KOKORO_GFILE_DIR}/secret_manager/java-bigquerystorage-samples-secrets"
-      fi
+      # TODO: load this better
+        for FILE in ${KOKORO_GFILE_DIR}/secret_manager/*-samples-secrets; do
+          [[ -f "$FILE" ]] || continue
+          source "$FILE"
+        done
 
         pushd ${SAMPLES_DIR}
         mvn -B \
