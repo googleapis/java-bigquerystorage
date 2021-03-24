@@ -16,6 +16,4 @@ public class BigDecimalToStringConverterTest {
   public void BDToStringTest() {
 
   }
-
-
 }
