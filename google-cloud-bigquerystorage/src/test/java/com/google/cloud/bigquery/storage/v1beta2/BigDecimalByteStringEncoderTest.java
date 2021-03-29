@@ -16,7 +16,6 @@
 
 package com.google.cloud.bigquery.storage.v1beta2;
 
-
 import com.google.protobuf.ByteString;
 import java.math.BigDecimal;
 import org.junit.Assert;
