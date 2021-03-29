@@ -29,37 +29,37 @@ public class BigDecimalByteStringEncoderTest {
   public void testEncodeBigDecimalandEncodeByteString() {
     BigDecimal testBD = BigDecimal.valueOf(0); // expected result bd
     ByteString testBS =
-        BigDecimalByteStringEncoder.encodeToByteString(testBD); // convert expected to bs
+        BigDecimalByteStringEncoder.encodeToNumericByteString(testBD); // convert expected to bs
     BigDecimal resultBD =
-        BigDecimalByteStringEncoder.encodeToBigDecimal(testBS); // convert bs to bd
+        BigDecimalByteStringEncoder.decodeToBigDecimal(testBS); // convert bs to bd
     Assert.assertEquals(
         0, resultBD.compareTo(testBD)); // ensure converted bd is equal to expected bd
 
     testBD = BigDecimal.valueOf(1.2);
-    testBS = BigDecimalByteStringEncoder.encodeToByteString(testBD);
-    resultBD = BigDecimalByteStringEncoder.encodeToBigDecimal(testBS);
+    testBS = BigDecimalByteStringEncoder.encodeToNumericByteString(testBD);
+    resultBD = BigDecimalByteStringEncoder.decodeToBigDecimal(testBS);
     Assert.assertEquals(
         0, resultBD.compareTo(testBD)); // ensure converted bd is equal to expected bd
 
     testBD = BigDecimal.valueOf(-1.2);
-    testBS = BigDecimalByteStringEncoder.encodeToByteString(testBD);
-    resultBD = BigDecimalByteStringEncoder.encodeToBigDecimal(testBS);
+    testBS = BigDecimalByteStringEncoder.encodeToNumericByteString(testBD);
+    resultBD = BigDecimalByteStringEncoder.decodeToBigDecimal(testBS);
     Assert.assertEquals(
         0, resultBD.compareTo(testBD)); // ensure converted bd is equal to expected bd
 
     testBD =
         BigDecimal.valueOf(
             578960446186580977117854925043439539266.34992332820282019728792003956564819967);
-    testBS = BigDecimalByteStringEncoder.encodeToByteString(testBD);
-    resultBD = BigDecimalByteStringEncoder.encodeToBigDecimal(testBS);
+    testBS = BigDecimalByteStringEncoder.encodeToNumericByteString(testBD);
+    resultBD = BigDecimalByteStringEncoder.decodeToBigDecimal(testBS);
     Assert.assertEquals(
         0, resultBD.compareTo(testBD)); // ensure converted bd is equal to expected bd
 
     testBD =
         BigDecimal.valueOf(
             -578960446186580977117854925043439539266.34992332820282019728792003956564819967);
-    testBS = BigDecimalByteStringEncoder.encodeToByteString(testBD);
-    resultBD = BigDecimalByteStringEncoder.encodeToBigDecimal(testBS);
+    testBS = BigDecimalByteStringEncoder.encodeToNumericByteString(testBD);
+    resultBD = BigDecimalByteStringEncoder.decodeToBigDecimal(testBS);
     Assert.assertEquals(
         0, resultBD.compareTo(testBD)); // ensure converted bd is equal to expected bd
   }

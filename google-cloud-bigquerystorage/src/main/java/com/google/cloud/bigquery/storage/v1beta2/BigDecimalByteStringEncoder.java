@@ -27,7 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class BigDecimalByteStringEncoder {
-  private static int scale = 38;
+  private static int BigDecimalScale = 38;
   private static final BigDecimal MAX_BIGNUMERIC_VALUE =
       new BigDecimal(
           "578960446186580977117854925043439539266.34992332820282019728792003956564819967");
@@ -35,18 +35,18 @@ public class BigDecimalByteStringEncoder {
       new BigDecimal(
           "-578960446186580977117854925043439539266.34992332820282019728792003956564819968");
 
-  public static BigDecimal encodeToBigDecimal(ByteString byteString) {
-    BigDecimal bigDecimal =
-        deserializeBigDecimal(
-            byteString, scale, MAX_BIGNUMERIC_VALUE, MIN_BIGNUMERIC_VALUE, "BigDecimal");
-    return bigDecimal;
-  }
-
-  public static ByteString encodeToByteString(BigDecimal bigDecimal) {
+  public static ByteString encodeToNumericByteString(BigDecimal bigDecimal) {
     ByteString byteString =
         serializeBigDecimal(
-            bigDecimal, scale, MAX_BIGNUMERIC_VALUE, MIN_BIGNUMERIC_VALUE, "ByteString");
+            bigDecimal, BigDecimalScale, MAX_BIGNUMERIC_VALUE, MIN_BIGNUMERIC_VALUE, "ByteString");
     return byteString;
+  }
+
+  public static BigDecimal decodeToBigDecimal(ByteString byteString) {
+    BigDecimal bigDecimal =
+        deserializeBigDecimal(
+            byteString, BigDecimalScale, MAX_BIGNUMERIC_VALUE, MIN_BIGNUMERIC_VALUE, "BigDecimal");
+    return bigDecimal;
   }
   // Make these private and make public wrapper that internalizes these min/max/scale/type
   private static BigDecimal deserializeBigDecimal(
