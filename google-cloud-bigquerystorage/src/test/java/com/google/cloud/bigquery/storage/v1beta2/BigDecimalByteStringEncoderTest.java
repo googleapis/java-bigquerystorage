@@ -22,6 +22,7 @@ import com.google.protobuf.ByteString;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,24 +35,15 @@ public class BigDecimalByteStringEncoderTest {
       "-578960446186580977117854925043439539266.34992332820282019728792003956564819968";
   @Test
   public void testEncodeToBigDecimal(){
-    List<ByteString> valueByteStrings = Arrays.asList(
-        ByteString.copyFrom(new byte[] {(byte) 0x0}),
-        ByteString.copyFrom(new byte[] {(byte) 0x12}),
-        ByteString.copyFrom(new byte[] {(byte) 0x22}),
-        ByteString.copyFrom(new byte[] {(byte) 0x99999999}),
-        ByteString.copyFrom(new byte[] {(byte) 0x99999999}));
     List<BigDecimal> bigDecimals = Arrays.asList(
         BigDecimal.valueOf(0),
         BigDecimal.valueOf(1.2),
         BigDecimal.valueOf(-1.2),
         BigDecimal.valueOf(578960446186580977117854925043439539266.34992332820282019728792003956564819967),
         BigDecimal.valueOf(-578960446186580977117854925043439539266.34992332820282019728792003956564819967));
-    int iter = 0;
-    for (ByteString check : valueByteStrings) {
-      ByteString value = BigDecimalByteStringEncoder.encodeToByteString(bigDecimals.get(iter));
-      assertThat(check.equals(value));
-      iter++;
-    }
+    ByteString zeroBS = BigDecimalByteStringEncoder.encodeToByteString(BigDecimal.valueOf(0));
+    BigDecimal zeroBD = BigDecimal.valueOf(0);
+    Assert.assertEquals(zeroBD, (BigDecimalByteStringEncoder.encodeToBigDecimal(zeroBS)));
     // TODO(jstocklass): How do i make this fail.... I don't trust this test at all
 
   }
