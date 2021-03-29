@@ -27,7 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class BigDecimalByteStringEncoder {
-  private static final int scale = 38;
+  private static int scale = 38;
   private static final BigDecimal MAX_BIGNUMERIC_VALUE =
       new BigDecimal(
           "578960446186580977117854925043439539266.34992332820282019728792003956564819967");
