@@ -35,19 +35,26 @@ public class BigDecimalByteStringEncoder {
       new BigDecimal(
           "-578960446186580977117854925043439539266.34992332820282019728792003956564819968");
 
-
-  public static BigDecimal encodeToBigDecimal(ByteString byteString){
-    BigDecimal bigDecimal = deserializeBigDecimal(byteString, scale, MAX_BIGNUMERIC_VALUE, MIN_BIGNUMERIC_VALUE, "BigDecimal");
+  public static BigDecimal encodeToBigDecimal(ByteString byteString) {
+    BigDecimal bigDecimal =
+        deserializeBigDecimal(
+            byteString, scale, MAX_BIGNUMERIC_VALUE, MIN_BIGNUMERIC_VALUE, "BigDecimal");
     return bigDecimal;
   }
 
-  public static ByteString encodeToByteString(BigDecimal bigDecimal){
-    ByteString byteString = serializeBigDecimal(bigDecimal, scale, MAX_BIGNUMERIC_VALUE, MIN_BIGNUMERIC_VALUE, "ByteString");
+  public static ByteString encodeToByteString(BigDecimal bigDecimal) {
+    ByteString byteString =
+        serializeBigDecimal(
+            bigDecimal, scale, MAX_BIGNUMERIC_VALUE, MIN_BIGNUMERIC_VALUE, "ByteString");
     return byteString;
   }
   // Make these private and make public wrapper that internalizes these min/max/scale/type
-  private static BigDecimal deserializeBigDecimal(ByteString serializedValue, int scale,
-      BigDecimal maxValue, BigDecimal minValue, String typeName) {
+  private static BigDecimal deserializeBigDecimal(
+      ByteString serializedValue,
+      int scale,
+      BigDecimal maxValue,
+      BigDecimal minValue,
+      String typeName) {
     byte[] bytes = serializedValue.toByteArray();
     // NUMERIC/BIGNUMERIC values are serialized as scaled integers in two's complement form in
     // little endian order. BigInteger requires the same encoding but in big endian order,
@@ -61,8 +68,8 @@ public class BigDecimalByteStringEncoder {
     return decimalValue;
   }
   /** Returns a numeric Value that equals to {@code v}. */
-  private static ByteString serializeBigDecimal(BigDecimal v, int scale, BigDecimal maxValue,
-      BigDecimal minValue, String typeName) {
+  private static ByteString serializeBigDecimal(
+      BigDecimal v, int scale, BigDecimal maxValue, BigDecimal minValue, String typeName) {
     if (v.scale() > scale) {
       throw new IllegalArgumentException(
           typeName + " scale cannot exceed " + scale + ": " + v.toPlainString());
