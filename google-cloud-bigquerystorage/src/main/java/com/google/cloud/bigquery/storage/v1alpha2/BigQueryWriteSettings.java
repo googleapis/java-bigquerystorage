@@ -64,9 +64,7 @@ import javax.annotation.Generated;
  *             .build());
  * BigQueryWriteSettings bigQueryWriteSettings = bigQueryWriteSettingsBuilder.build();
  * }</pre>
- * @deprecated
  */
-@GcpLaunchStage.Deprecated
 @BetaApi
 @Generated("by gapic-generator-java")
 public class BigQueryWriteSettings extends ClientSettings<BigQueryWriteSettings> {

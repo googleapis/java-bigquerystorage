@@ -89,9 +89,7 @@ import javax.annotation.Generated;
  * }</pre>
  *
  * <p>Please refer to the GitHub repository's samples for more quickstart code snippets.
- * @deprecated
  */
-@GcpLaunchStage.Deprecated
 @BetaApi
 @Generated("by gapic-generator-java")
 public class BigQueryWriteClient implements BackgroundResource {
