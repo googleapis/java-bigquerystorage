@@ -21,6 +21,7 @@ import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
+import com.google.cloud.GcpLaunchStage;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoRows;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
@@ -44,7 +45,9 @@ import org.json.JSONObject;
  * functions, but also provides an additional feature: schema update support, where if the BigQuery
  * table schema is updated, users will be able to ingest data on the new schema after some time (in
  * order of minutes).
+ * @deprecated
  */
+@GcpLaunchStage.Deprecated
 public class JsonStreamWriter implements AutoCloseable {
   private static String streamPatternString =
       "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+";

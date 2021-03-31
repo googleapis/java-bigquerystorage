@@ -17,6 +17,7 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.InvalidArgumentException;
+import com.google.cloud.GcpLaunchStage;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoSchema;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
@@ -30,6 +31,8 @@ import java.util.Set;
 // A Converter class that turns a native protobuf::DescriptorProto to a self contained
 // protobuf::DescriptorProto
 // that can be reconstructed by the backend.
+// @deprecated
+@GcpLaunchStage.Deprecated
 public class ProtoSchemaConverter {
   private static String getNameFromFullName(String fullName) {
     return fullName.replace('.', '_');

@@ -15,6 +15,7 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
+import com.google.cloud.GcpLaunchStage;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -32,7 +33,9 @@ import java.util.List;
  * Converts a BQ table schema to protobuf descriptor. All field names will be converted to lowercase
  * when constructing the protobuf descriptor. The mapping between field types and field modes are
  * shown in the ImmutableMaps below.
+ * @deprecated
  */
+@GcpLaunchStage.Deprecated
 public class BQTableSchemaToProtoDescriptor {
   private static ImmutableMap<Table.TableFieldSchema.Mode, FieldDescriptorProto.Label>
       BQTableSchemaModeMap =

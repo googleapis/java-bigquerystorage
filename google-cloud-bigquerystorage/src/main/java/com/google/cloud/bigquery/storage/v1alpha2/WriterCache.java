@@ -15,6 +15,7 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
+import com.google.cloud.GcpLaunchStage;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
@@ -32,7 +33,9 @@ import java.util.regex.Pattern;
  * A cache of StreamWriters that can be looked up by Table Name. The entries will expire after 5
  * minutes if not used. Code sample: WriterCache cache = WriterCache.getInstance(); StreamWriter
  * writer = cache.getWriter(); // Use... cache.returnWriter(writer);
+ * @deprecated
  */
+@GcpLaunchStage.Deprecated
 public class WriterCache {
   private static final Logger LOG = Logger.getLogger(WriterCache.class.getName());
 

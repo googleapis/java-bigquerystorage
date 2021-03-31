@@ -20,6 +20,7 @@ import com.google.api.core.BetaApi;
 import com.google.api.gax.core.BackgroundResource;
 import com.google.api.gax.rpc.BidiStreamingCallable;
 import com.google.api.gax.rpc.UnaryCallable;
+import com.google.cloud.GcpLaunchStage;
 import com.google.cloud.bigquery.storage.v1alpha2.stub.BigQueryWriteStub;
 import com.google.cloud.bigquery.storage.v1alpha2.stub.BigQueryWriteStubSettings;
 import java.io.IOException;
@@ -88,7 +89,9 @@ import javax.annotation.Generated;
  * }</pre>
  *
  * <p>Please refer to the GitHub repository's samples for more quickstart code snippets.
+ * @deprecated
  */
+@GcpLaunchStage.Deprecated
 @BetaApi
 @Generated("by gapic-generator-java")
 public class BigQueryWriteClient implements BackgroundResource {

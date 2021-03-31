@@ -36,6 +36,7 @@ import com.google.api.gax.rpc.ResponseObserver;
 import com.google.api.gax.rpc.StreamController;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.GcpLaunchStage;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsResponse;
 import com.google.common.base.Preconditions;
@@ -78,7 +79,9 @@ import org.threeten.bp.Duration;
  *
  * <p>{@link StreamWriter} will use the credentials set on the channel, which uses application
  * default credentials through {@link GoogleCredentials#getApplicationDefault} by default.
+ * @deprecated
  */
+@GcpLaunchStage.Deprecated
 public class StreamWriter implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(StreamWriter.class.getName());
 

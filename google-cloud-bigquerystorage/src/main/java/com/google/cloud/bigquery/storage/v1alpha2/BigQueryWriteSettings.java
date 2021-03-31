@@ -27,6 +27,7 @@ import com.google.api.gax.rpc.ClientSettings;
 import com.google.api.gax.rpc.StreamingCallSettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.api.gax.rpc.UnaryCallSettings;
+import com.google.cloud.GcpLaunchStage;
 import com.google.cloud.bigquery.storage.v1alpha2.stub.BigQueryWriteStubSettings;
 import java.io.IOException;
 import java.util.List;
@@ -63,7 +64,9 @@ import javax.annotation.Generated;
  *             .build());
  * BigQueryWriteSettings bigQueryWriteSettings = bigQueryWriteSettingsBuilder.build();
  * }</pre>
+ * @deprecated
  */
+@GcpLaunchStage.Deprecated
 @BetaApi
 @Generated("by gapic-generator-java")
 public class BigQueryWriteSettings extends ClientSettings<BigQueryWriteSettings> {

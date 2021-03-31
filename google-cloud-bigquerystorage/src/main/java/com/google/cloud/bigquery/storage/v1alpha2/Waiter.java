@@ -19,6 +19,8 @@ package com.google.cloud.bigquery.storage.v1alpha2;
 import com.google.api.core.InternalApi;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.batching.FlowController;
+import com.google.cloud.GcpLaunchStage;
+
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Lock;
@@ -28,7 +30,9 @@ import java.util.logging.Logger;
 /**
  * A barrier kind of object that helps keep track of pending actions and synchronously wait until
  * all have completed.
+ * @deprecated
  */
+@GcpLaunchStage.Deprecated
 class Waiter {
   private static final Logger LOG = Logger.getLogger(Waiter.class.getName());
 
