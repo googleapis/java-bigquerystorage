@@ -240,8 +240,6 @@ public class JsonToProtoMessage {
           if (val instanceof String) {
             protoMsg.addRepeatedField(fieldDescriptor, ((String) val).getBytes());
           } else if (val instanceof JSONArray) {
-            // TODO: what if this JSONArray is full of some other weird stuff...
-            // Like a jsonarray of strings or something this might get wrecked
             try {
               byte[] bytes = new byte[((JSONArray) val).length()];
               for (int j = 0; j < ((JSONArray) val).length(); j++) {
