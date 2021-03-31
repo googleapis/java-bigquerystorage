@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
  * A cache of JsonStreamWriters that can be looked up by Table Name. The entries will expire after 5
  * minutes if not used. Code sample: JsonWriterCache cache = JsonWriterCache.getInstance();
  * JsonStreamWriter writer = cache.getWriter(); // Use... cache.returnWriter(writer);
+ *
  * @deprecated
  */
 @GcpLaunchStage.Deprecated

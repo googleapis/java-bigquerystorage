@@ -21,6 +21,7 @@ import com.google.cloud.GcpLaunchStage;
  * A abstract class that implements the Runnable interface and provides access to the current
  * StreamWriter and updatedSchema. This runnable will only be called when a updated schema has been
  * passed back through the AppendRowsResponse. Users should only implement the run() function.
+ *
  * @deprecated
  */
 @GcpLaunchStage.Deprecated

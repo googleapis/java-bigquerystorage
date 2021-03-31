@@ -20,7 +20,6 @@ import com.google.api.core.BetaApi;
 import com.google.api.gax.core.BackgroundResource;
 import com.google.api.gax.rpc.BidiStreamingCallable;
 import com.google.api.gax.rpc.UnaryCallable;
-import com.google.cloud.GcpLaunchStage;
 import com.google.cloud.bigquery.storage.v1alpha2.stub.BigQueryWriteStub;
 import com.google.cloud.bigquery.storage.v1alpha2.stub.BigQueryWriteStubSettings;
 import java.io.IOException;

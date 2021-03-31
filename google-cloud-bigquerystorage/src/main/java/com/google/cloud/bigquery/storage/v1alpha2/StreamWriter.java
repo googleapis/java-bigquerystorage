@@ -79,6 +79,7 @@ import org.threeten.bp.Duration;
  *
  * <p>{@link StreamWriter} will use the credentials set on the channel, which uses application
  * default credentials through {@link GoogleCredentials#getApplicationDefault} by default.
+ *
  * @deprecated
  */
 @GcpLaunchStage.Deprecated

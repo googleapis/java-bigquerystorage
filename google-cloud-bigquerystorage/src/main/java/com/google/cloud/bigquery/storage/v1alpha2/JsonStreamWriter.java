@@ -45,6 +45,7 @@ import org.json.JSONObject;
  * functions, but also provides an additional feature: schema update support, where if the BigQuery
  * table schema is updated, users will be able to ingest data on the new schema after some time (in
  * order of minutes).
+ *
  * @deprecated
  */
 @GcpLaunchStage.Deprecated

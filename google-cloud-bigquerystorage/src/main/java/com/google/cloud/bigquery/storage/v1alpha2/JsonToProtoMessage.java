@@ -30,6 +30,7 @@ import org.json.JSONObject;
 /**
  * Converts Json data to protocol buffer messages given the protocol buffer descriptor. The protobuf
  * descriptor must have all fields lowercased.
+ *
  * @deprecated
  */
 @GcpLaunchStage.Deprecated

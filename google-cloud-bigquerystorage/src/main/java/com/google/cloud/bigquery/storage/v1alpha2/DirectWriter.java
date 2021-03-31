@@ -49,6 +49,7 @@ import org.json.JSONArray;
  *
  * <p>{@link DirectWriter} will use the credentials set on the channel, which uses application
  * default credentials through {@link GoogleCredentials#getApplicationDefault} by default.
+ *
  * @deprecated
  */
 @GcpLaunchStage.Deprecated
