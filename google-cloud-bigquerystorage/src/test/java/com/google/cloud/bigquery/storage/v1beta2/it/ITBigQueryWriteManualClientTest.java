@@ -241,9 +241,15 @@ public class ITBigQueryWriteManualClientTest {
       LOG.info("Sending one message");
       JSONObject row1 = new JSONObject();
       row1.put("test_str", "aaa");
-      row1.put("test_numerics", new JSONArray(new byte[][] {
-          BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4")).toByteArray(),
-          BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000")).toByteArray()}));
+      row1.put(
+          "test_numerics",
+          new JSONArray(
+              new byte[][] {
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
+                    .toByteArray(),
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
+                    .toByteArray()
+              }));
       row1.put(
           "test_datetime",
           CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(2020, 10, 1, 12, 0)));
@@ -318,9 +324,15 @@ public class ITBigQueryWriteManualClientTest {
       LOG.info("Sending one message");
       JSONObject row1 = new JSONObject();
       row1.put("test_str", "aaa");
-      row1.put("test_numerics", new JSONArray(new byte[][] {
-          BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4")).toByteArray(),
-          BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000")).toByteArray()}));
+      row1.put(
+          "test_numerics",
+          new JSONArray(
+              new byte[][] {
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
+                    .toByteArray(),
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
+                    .toByteArray()
+              }));
       row1.put(
           "test_datetime",
           CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(2020, 10, 1, 12, 0)));
