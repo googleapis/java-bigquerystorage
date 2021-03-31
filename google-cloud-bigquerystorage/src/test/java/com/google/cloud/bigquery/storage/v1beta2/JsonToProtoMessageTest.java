@@ -243,7 +243,7 @@ public class JsonToProtoMessageTest {
         .put("test_repeated", new JSONArray(new Float[] {Float.MAX_VALUE, Float.MIN_VALUE})),
     new JSONObject().put("test_repeated", new JSONArray(new Boolean[] {true, false})),
     new JSONObject().put("test_repeated", new JSONArray(new String[] {"hello", "test"})),
-      new JSONObject().put("test_repeated",new JSONArray(new String[][]{{"hello"},{"test"}})),
+    new JSONObject().put("test_repeated", new JSONArray(new String[][] {{"hello"}, {"test"}})),
     new JSONObject()
         .put(
             "test_repeated",
