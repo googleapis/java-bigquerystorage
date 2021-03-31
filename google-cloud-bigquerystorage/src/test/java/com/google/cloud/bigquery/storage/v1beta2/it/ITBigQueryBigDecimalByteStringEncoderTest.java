@@ -75,9 +75,6 @@ public class ITBigQueryBigDecimalByteStringEncoderTest {
                 StandardTableDefinition.of(
                     Schema.of(
                         com.google.cloud.bigquery.Field.newBuilder(
-                                "test_str", StandardSQLTypeName.STRING)
-                            .build(),
-                        com.google.cloud.bigquery.Field.newBuilder(
                                 "test_numeric_zero", StandardSQLTypeName.NUMERIC)
                             .build(),
                         com.google.cloud.bigquery.Field.newBuilder(
@@ -111,7 +108,6 @@ public class ITBigQueryBigDecimalByteStringEncoderTest {
             .createDefaultStream()
             .build()) {
       JSONObject row = new JSONObject();
-      row.put("test_str", "Start of the day");
       row.put(
           "test_numeric_zero",
           BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0")));
@@ -146,17 +142,17 @@ public class ITBigQueryBigDecimalByteStringEncoderTest {
       Iterator<FieldValueList> iter = result.getValues().iterator();
       FieldValueList currentRow;
       currentRow = iter.next();
-      assertEquals("0", currentRow.get(1).getStringValue());
-      assertEquals("1.2", currentRow.get(2).getStringValue());
-      assertEquals("0", currentRow.get(3).getRepeatedValue().get(0).getStringValue());
-      assertEquals("1.2", currentRow.get(3).getRepeatedValue().get(1).getStringValue());
-      assertEquals("-1.2", currentRow.get(3).getRepeatedValue().get(2).getStringValue());
+      assertEquals("0", currentRow.get(0).getStringValue());
+      assertEquals("1.2", currentRow.get(1).getStringValue());
+      assertEquals("0", currentRow.get(2).getRepeatedValue().get(0).getStringValue());
+      assertEquals("1.2", currentRow.get(2).getRepeatedValue().get(1).getStringValue());
+      assertEquals("-1.2", currentRow.get(2).getRepeatedValue().get(2).getStringValue());
       assertEquals(
           "99999999999999999999999999999.999999999",
-          currentRow.get(3).getRepeatedValue().get(3).getStringValue());
+          currentRow.get(2).getRepeatedValue().get(3).getStringValue());
       assertEquals(
           "-99999999999999999999999999999.999999999",
-          currentRow.get(3).getRepeatedValue().get(4).getStringValue());
+          currentRow.get(2).getRepeatedValue().get(4).getStringValue());
     }
   }
 }
