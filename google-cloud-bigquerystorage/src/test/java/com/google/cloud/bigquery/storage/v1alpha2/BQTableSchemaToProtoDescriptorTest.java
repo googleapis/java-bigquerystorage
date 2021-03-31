@@ -216,9 +216,9 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(6, ComplexLvl1)
             .addFields(7, ComplexLvl2)
             .addFields(8, TEST_NUMERIC)
-            .addFields(9, TEST_GEO)
-            .addFields(10, TEST_TIMESTAMP)
-            .addFields(11, TEST_TIME)
+            .addFields(8, TEST_GEO)
+            .addFields(9, TEST_TIMESTAMP)
+            .addFields(10, TEST_TIME)
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);

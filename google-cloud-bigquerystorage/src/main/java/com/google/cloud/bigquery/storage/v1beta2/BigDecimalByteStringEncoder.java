@@ -25,8 +25,10 @@ import com.google.common.primitives.Bytes;
 import com.google.protobuf.ByteString;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.logging.Logger;
 
 public class BigDecimalByteStringEncoder {
+  private static final Logger LOG = Logger.getLogger(BigDecimalByteStringEncoder.class.getName());
   private static int NumericScale = 9;
   private static final BigDecimal MAX_NUMERIC_VALUE =
       new BigDecimal("99999999999999999999999999999.999999999");
