@@ -17,6 +17,7 @@ package com.google.cloud.bigquery.storage.v1beta2;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
@@ -138,7 +139,10 @@ public class JsonToProtoMessage {
         }
         break;
       case BYTES:
-        if (val instanceof String) {
+        if (val instanceof ByteString) {
+          protoMsg.setField(fieldDescriptor, ((ByteString) val).toByteArray());
+          return;
+        } else if (val instanceof String) {
           protoMsg.setField(fieldDescriptor, ((String) val).getBytes());
           return;
         }
@@ -235,7 +239,14 @@ public class JsonToProtoMessage {
         case BYTES:
           if (val instanceof String) {
             protoMsg.addRepeatedField(fieldDescriptor, ((String) val).getBytes());
+          } else if (val instanceof JSONArray) {
+            byte[] bytes = new byte[((JSONArray) val).length()];
+            for (int j = 0; j < ((JSONArray) val).length(); j++) {
+              bytes[j] = (byte) ((byte) (((JSONArray) val).get(j)) & 0xFF);
+            }
+            protoMsg.addRepeatedField(fieldDescriptor, bytes);
           } else {
+
             fail = true;
           }
           break;

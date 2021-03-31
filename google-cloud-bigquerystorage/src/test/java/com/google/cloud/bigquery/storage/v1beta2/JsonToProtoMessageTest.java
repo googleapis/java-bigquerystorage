@@ -25,7 +25,6 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -333,7 +332,6 @@ public class JsonToProtoMessageTest {
           assertEquals(protoMsg, AllTypesToCorrectProto.get(entry.getKey())[success]);
           success += 1;
         } catch (IllegalArgumentException e) {
-
           assertEquals(
               "JSONObject does not have a " + entry.getValue() + " field at root.test_field_type.",
               e.getMessage());
@@ -358,15 +356,9 @@ public class JsonToProtoMessageTest {
           assertEquals(protoMsg, AllRepeatedTypesToCorrectProto.get(entry.getKey())[success]);
           success += 1;
         } catch (IllegalArgumentException e) {
-          Assert.assertTrue(
-              "Bad error message.",
-              Arrays.asList(
-                      "JSONObject does not have a "
-                          + entry.getValue()
-                          + " field at root.test_repeated[0].",
-                      "Error: You are passing in an unencoded byte array at root.test_repeated[0]. Please use org.apache.commons.codec.binary.Base64.encodeBase64String to encode your value.")
-                  .contains(e.getMessage()));
-          e.getMessage();
+          assertEquals(
+              "JSONObject does not have a " + entry.getValue() + " field at root.test_repeated[0].",
+              e.getMessage());
         }
       }
       if (entry.getKey() == RepeatedInt64.getDescriptor()

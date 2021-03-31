@@ -20,6 +20,7 @@ import static org.mockito.Mockito.*;
 
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
+import com.google.cloud.bigquery.storage.v1alpha2.Table.TableFieldSchema;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -183,7 +184,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .build();
     final Table.TableFieldSchema TEST_NUMERIC =
         Table.TableFieldSchema.newBuilder()
-            .setType(Table.TableFieldSchema.Type.NUMERIC)
+            .setType(TableFieldSchema.Type.BYTES)
             .setMode(Table.TableFieldSchema.Mode.NULLABLE)
             .setName("test_numeric")
             .build();
@@ -216,9 +217,9 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(6, ComplexLvl1)
             .addFields(7, ComplexLvl2)
             .addFields(8, TEST_NUMERIC)
-            .addFields(8, TEST_GEO)
-            .addFields(9, TEST_TIMESTAMP)
-            .addFields(10, TEST_TIME)
+            .addFields(9, TEST_GEO)
+            .addFields(10, TEST_TIMESTAMP)
+            .addFields(11, TEST_TIME)
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
