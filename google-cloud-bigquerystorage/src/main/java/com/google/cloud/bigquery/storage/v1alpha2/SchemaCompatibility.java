@@ -15,7 +15,6 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import com.google.cloud.GcpLaunchStage;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.LegacySQLTypeName;
@@ -43,9 +42,9 @@ import java.util.regex.Pattern;
  * <p>The implementation as of now is not complete, which measn, if this check passed, there is
  * still a possbility of writing will fail.
  *
- * @deprecated
+ * @deprecated Use {@link com.google.cloud.bigquery.storage.v1beta2.SchemaCompatibility}
  */
-@GcpLaunchStage.Deprecated
+@Deprecated
 public class SchemaCompatibility {
   private BigQuery bigquery;
   private static SchemaCompatibility compat;

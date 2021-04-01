@@ -15,7 +15,6 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import com.google.cloud.GcpLaunchStage;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -31,9 +30,9 @@ import org.json.JSONObject;
  * Converts Json data to protocol buffer messages given the protocol buffer descriptor. The protobuf
  * descriptor must have all fields lowercased.
  *
- * @deprecated
+ * @deprecated Use {@link com.google.cloud.bigquery.storage.v1beta2.JsonToProtoMessage}
  */
-@GcpLaunchStage.Deprecated
+@Deprecated
 public class JsonToProtoMessage {
   private static ImmutableMap<FieldDescriptor.Type, String> FieldTypeToDebugMessage =
       new ImmutableMap.Builder<FieldDescriptor.Type, String>()

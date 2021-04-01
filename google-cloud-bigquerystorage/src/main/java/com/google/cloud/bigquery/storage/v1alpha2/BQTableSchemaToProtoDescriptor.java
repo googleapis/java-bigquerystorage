@@ -15,7 +15,6 @@
  */
 package com.google.cloud.bigquery.storage.v1alpha2;
 
-import com.google.cloud.GcpLaunchStage;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -34,9 +33,9 @@ import java.util.List;
  * when constructing the protobuf descriptor. The mapping between field types and field modes are
  * shown in the ImmutableMaps below.
  *
- * @deprecated
+ * @deprecated Use {@link com.google.cloud.bigquery.storage.v1beta2.BQTableSchemaToProtoDescriptor}
  */
-@GcpLaunchStage.Deprecated
+@Deprecated
 public class BQTableSchemaToProtoDescriptor {
   private static ImmutableMap<Table.TableFieldSchema.Mode, FieldDescriptorProto.Label>
       BQTableSchemaModeMap =

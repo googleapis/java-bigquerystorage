@@ -20,7 +20,6 @@ import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutures;
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.api.gax.rpc.InvalidArgumentException;
-import com.google.cloud.GcpLaunchStage;
 import com.google.cloud.bigquery.storage.v1alpha2.ProtoBufProto.ProtoRows;
 import com.google.cloud.bigquery.storage.v1alpha2.Storage.AppendRowsRequest;
 import com.google.common.annotations.VisibleForTesting;
@@ -50,9 +49,9 @@ import org.json.JSONArray;
  * <p>{@link DirectWriter} will use the credentials set on the channel, which uses application
  * default credentials through {@link GoogleCredentials#getApplicationDefault} by default.
  *
- * @deprecated
+ * @deprecated no longer supported
  */
-@GcpLaunchStage.Deprecated
+@Deprecated
 public class DirectWriter {
   private static final Logger LOG = Logger.getLogger(DirectWriter.class.getName());
   private static WriterCache cache = null;
