@@ -17,13 +17,11 @@ package com.google.cloud.bigquery.storage.v1beta2;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
-import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import java.math.BigDecimal;
@@ -113,14 +111,18 @@ public class JsonToProtoMessageTest {
 
   private static ImmutableMap<Descriptor, Message[]> BytesRepeatedCorrectProto =
       new ImmutableMap.Builder<Descriptor, Message[]>()
-        .put(
-          RepeatedBytes.getDescriptor(),
+          .put(
+              RepeatedBytes.getDescriptor(),
               new Message[] {
                 RepeatedBytes.newBuilder()
-                  .addTestRepeated(BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0")))
-                  .addTestRepeated(BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.2")))
-              .build()
-          }).build();
+                    .addTestRepeated(
+                        BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0")))
+                    .addTestRepeated(
+                        BigDecimalByteStringEncoder.encodeToNumericByteString(
+                            new BigDecimal("1.2")))
+                    .build()
+              })
+          .build();
 
   private static ImmutableMap<Descriptor, Message[]> AllRepeatedTypesToCorrectProto =
       new ImmutableMap.Builder<Descriptor, Message[]>()
@@ -215,11 +217,16 @@ public class JsonToProtoMessageTest {
   };
 
   private static JSONObject[] simpleJSONAArrayBytes = {
-      new JSONObject().put("test_repeated", new JSONArray(new byte[][] {
-          BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0"))
-              .toByteArray(),
-          BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.2"))
-              .toByteArray()})) // Add in something to hit that new code
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new byte[][] {
+                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0"))
+                      .toByteArray(),
+                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.2"))
+                      .toByteArray()
+                })) // Add in something to hit that new code
   };
 
   private static JSONObject[] simpleJSONArrays = {
