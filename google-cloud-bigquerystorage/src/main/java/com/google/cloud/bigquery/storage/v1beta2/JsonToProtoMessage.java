@@ -238,12 +238,15 @@ public class JsonToProtoMessage {
           break;
         case BYTES:
           if (val instanceof String) {
+            // TODO(jstocklass): If string, decode it and pass in the byte array. Will need to update
+            // tests to ensure that strings passed in are properly encoded as well.
             protoMsg.addRepeatedField(fieldDescriptor, ((String) val).getBytes());
           } else if (val instanceof JSONArray) {
             try {
               byte[] bytes = new byte[((JSONArray) val).length()];
-              for (int j = 0; j < ((JSONArray) val).length(); j++) {
-                bytes[j] = (byte) ((byte) (((JSONArray) val).get(j)) & 0xFF);
+                for (int j = 0; j < ((JSONArray) val).length(); j++) {
+                  bytes[j] = (byte) ((byte) (((JSONArray) val).get(j)) & 0xFF);
+                // TODO(jstocklass): Add a unit test for this
               }
               protoMsg.addRepeatedField(fieldDescriptor, bytes);
             } catch (ClassCastException e) {
