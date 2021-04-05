@@ -252,7 +252,11 @@ public class JsonToProtoMessage {
             } catch (ClassCastException e) {
               throw new IllegalArgumentException(
                   String.format(
-                      "Error: " + currentScope + "["+ index + "] could not be converted to byte[]."));
+                      "Error: "
+                          + currentScope
+                          + "["
+                          + index
+                          + "] could not be converted to byte[]."));
             }
           } else {
             fail = true;

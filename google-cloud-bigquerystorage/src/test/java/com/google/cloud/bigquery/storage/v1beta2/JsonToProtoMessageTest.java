@@ -16,11 +16,9 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
-import com.google.cloud.bigquery.storage.v1beta2.it.ITBigQueryBigDecimalByteStringEncoderTest;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -28,10 +26,8 @@ import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-import org.apache.avro.generic.GenericData.Array;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -41,8 +37,7 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class JsonToProtoMessageTest {
-  private static final Logger LOG =
-      Logger.getLogger(JsonToProtoMessageTest.class.getName());
+  private static final Logger LOG = Logger.getLogger(JsonToProtoMessageTest.class.getName());
   private static ImmutableMap<Descriptor, String> AllTypesToDebugMessageTest =
       new ImmutableMap.Builder<Descriptor, String>()
           .put(BoolType.getDescriptor(), "boolean")
@@ -240,14 +235,13 @@ public class JsonToProtoMessageTest {
                       .toByteArray()
                 })),
     new JSONObject()
-      .put(
-          "test_repeated",
-          new JSONArray(
-              new char[][] {
-                  {'a','b'},
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new char[][] {
+                  {'a', 'b'},
                   {'c'},
-              }
-          ))
+                }))
   };
 
   private static JSONObject[] simpleJSONArrays = {
@@ -408,8 +402,7 @@ public class JsonToProtoMessageTest {
           success += 1;
         } catch (IllegalArgumentException e) {
           assertEquals(
-              "Error: root.test_repeated[0] could not be converted to byte[].",
-              e.getMessage());
+              "Error: root.test_repeated[0] could not be converted to byte[].", e.getMessage());
         }
       }
       if (entry.getKey() == RepeatedBytes.getDescriptor()) {
