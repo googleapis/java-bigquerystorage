@@ -16,6 +16,7 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
@@ -425,9 +426,14 @@ public class JsonToProtoMessageTest {
           assertEquals(protoMsg, AllRepeatedTypesToCorrectProto.get(entry.getKey())[success]);
           success += 1;
         } catch (IllegalArgumentException e) {
-          assertEquals(
-              "JSONObject does not have a " + entry.getValue() + " field at root.test_repeated[0].",
-              e.getMessage());
+          assertTrue(
+              e.getMessage()
+                      .equals(
+                          "JSONObject does not have a "
+                              + entry.getValue()
+                              + " field at root.test_repeated[0].")
+                  || e.getMessage()
+                      .equals("Error: root.test_repeated[0] could not be converted to byte[]."));
         }
       }
       if (entry.getKey() == RepeatedInt64.getDescriptor()

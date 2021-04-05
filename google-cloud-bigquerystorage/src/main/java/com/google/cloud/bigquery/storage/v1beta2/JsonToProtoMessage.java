@@ -239,8 +239,7 @@ public class JsonToProtoMessage {
         case BYTES:
           if (val instanceof String) {
             // TODO(jstocklass): If string, decode it and pass in the byte array. Will need to
-            // update
-            // tests to ensure that strings passed in are properly encoded as well.
+            // update tests to ensure that strings passed in are properly encoded as well.
             protoMsg.addRepeatedField(fieldDescriptor, ((String) val).getBytes());
           } else if (val instanceof JSONArray) {
             try {
