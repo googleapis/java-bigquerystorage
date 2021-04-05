@@ -247,11 +247,12 @@ public class JsonToProtoMessage {
               byte[] bytes = new byte[((JSONArray) val).length()];
               for (int j = 0; j < ((JSONArray) val).length(); j++) {
                 bytes[j] = (byte) ((byte) (((JSONArray) val).get(j)) & 0xFF);
-                // TODO(jstocklass): Add a unit test for this
               }
               protoMsg.addRepeatedField(fieldDescriptor, bytes);
             } catch (ClassCastException e) {
-              fail = true;
+              throw new IllegalArgumentException(
+                  String.format(
+                      "Error: " + currentScope + "["+ index + "] could not be converted to byte[]."));
             }
           } else {
             fail = true;

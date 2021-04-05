@@ -16,9 +16,11 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
+import com.google.cloud.bigquery.storage.v1beta2.it.ITBigQueryBigDecimalByteStringEncoderTest;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -26,7 +28,10 @@ import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
+import org.apache.avro.generic.GenericData.Array;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -36,6 +41,8 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class JsonToProtoMessageTest {
+  private static final Logger LOG =
+      Logger.getLogger(JsonToProtoMessageTest.class.getName());
   private static ImmutableMap<Descriptor, String> AllTypesToDebugMessageTest =
       new ImmutableMap.Builder<Descriptor, String>()
           .put(BoolType.getDescriptor(), "boolean")
@@ -96,6 +103,11 @@ public class JsonToProtoMessageTest {
                     .setTestFieldType(ComplexLvl2.newBuilder().setTestInt(1).build())
                     .build()
               })
+          .build();
+
+  private static ImmutableMap<Descriptor, String> ByteRepeatedTypesToDebugMessageTest =
+      new ImmutableMap.Builder<Descriptor, String>()
+          .put(RepeatedBytes.getDescriptor(), "bytes")
           .build();
 
   private static ImmutableMap<Descriptor, String> AllRepeatedTypesToDebugMessageTest =
@@ -226,7 +238,16 @@ public class JsonToProtoMessageTest {
                       .toByteArray(),
                   BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.2"))
                       .toByteArray()
-                })) // Add in something to hit that new code
+                })),
+    new JSONObject()
+      .put(
+          "test_repeated",
+          new JSONArray(
+              new char[][] {
+                  {'a','b'},
+                  {'c'},
+              }
+          ))
   };
 
   private static JSONObject[] simpleJSONArrays = {
@@ -377,7 +398,7 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testRepeatedTypeBytesWithLimits() throws Exception {
-    for (Map.Entry<Descriptor, String> entry : AllRepeatedTypesToDebugMessageTest.entrySet()) {
+    for (Map.Entry<Descriptor, String> entry : ByteRepeatedTypesToDebugMessageTest.entrySet()) {
       int success = 0;
       for (JSONObject json : simpleJSONAArrayBytes) {
         try {
@@ -387,7 +408,7 @@ public class JsonToProtoMessageTest {
           success += 1;
         } catch (IllegalArgumentException e) {
           assertEquals(
-              "JSONObject does not have a " + entry.getValue() + " field at root.test_repeated[0].",
+              "Error: root.test_repeated[0] could not be converted to byte[].",
               e.getMessage());
         }
       }
