@@ -211,17 +211,6 @@ public class JsonToProtoMessageTest {
     new JSONObject().put("test_field_type", new JSONObject().put("test_int", 1))
   };
 
-  private static JSONObject[] simpleJSONAArrayBytes = {
-    new JSONObject()
-        .put(
-            "test_repeated",
-            new JSONArray(
-                new char[][] {
-                  {'a', 'b'},
-                  {'c'},
-                }))
-  };
-
   private static JSONObject[] simpleJSONArrays = {
     new JSONObject()
         .put(
@@ -275,7 +264,7 @@ public class JsonToProtoMessageTest {
                   BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.2"))
                       .toByteArray()
                 })),
-    // new JSONObject().put("test_repeated", new JSONArray(new char[][] {{'a', 'b'}, {'c'}})),
+    new JSONObject().put("test_repeated", new JSONArray(new char[][] {{'a', 'b'}, {'c'}})),
     new JSONObject().put("test_repeated", new JSONArray(new String[][] {{"hello"}, {"test"}})),
     new JSONObject()
         .put(
