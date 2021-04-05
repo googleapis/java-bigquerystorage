@@ -101,35 +101,15 @@ public class JsonToProtoMessageTest {
               })
           .build();
 
-  private static ImmutableMap<Descriptor, String> ByteRepeatedTypesToDebugMessageTest =
-      new ImmutableMap.Builder<Descriptor, String>()
-          .put(RepeatedBytes.getDescriptor(), "bytes")
-          .build();
-
-  private static ImmutableMap<Descriptor, String> AllRepeatedTypesToDebugMessageTest =
-      new ImmutableMap.Builder<Descriptor, String>()
-          .put(RepeatedBool.getDescriptor(), "boolean")
-          .put(RepeatedBytes.getDescriptor(), "string")
-          .put(RepeatedInt64.getDescriptor(), "int64")
-          .put(RepeatedInt32.getDescriptor(), "int32")
-          .put(RepeatedDouble.getDescriptor(), "double")
-          .put(RepeatedString.getDescriptor(), "string")
-          .put(RepeatedObject.getDescriptor(), "object")
-          .build();
-
-  private static ImmutableMap<Descriptor, Message[]> BytesRepeatedCorrectProto =
-      new ImmutableMap.Builder<Descriptor, Message[]>()
-          .put(
-              RepeatedBytes.getDescriptor(),
-              new Message[] {
-                RepeatedBytes.newBuilder()
-                    .addTestRepeated(
-                        BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0")))
-                    .addTestRepeated(
-                        BigDecimalByteStringEncoder.encodeToNumericByteString(
-                            new BigDecimal("1.2")))
-                    .build()
-              })
+  private static ImmutableMap<Descriptor, String[]> AllRepeatedTypesToDebugMessageTest =
+      new ImmutableMap.Builder<Descriptor, String[]>()
+          .put(RepeatedBool.getDescriptor(), new String[] {"boolean"})
+          .put(RepeatedBytes.getDescriptor(), new String[] {"string", "bytes"})
+          .put(RepeatedInt64.getDescriptor(), new String[] {"int64"})
+          .put(RepeatedInt32.getDescriptor(), new String[] {"int32"})
+          .put(RepeatedDouble.getDescriptor(), new String[] {"double"})
+          .put(RepeatedString.getDescriptor(), new String[] {"string"})
+          .put(RepeatedObject.getDescriptor(), new String[] {"object"})
           .build();
 
   private static ImmutableMap<Descriptor, Message[]> AllRepeatedTypesToCorrectProto =
@@ -145,6 +125,13 @@ public class JsonToProtoMessageTest {
                 RepeatedBytes.newBuilder()
                     .addTestRepeated(ByteString.copyFrom("hello".getBytes()))
                     .addTestRepeated(ByteString.copyFrom("test".getBytes()))
+                    .build(),
+                RepeatedBytes.newBuilder()
+                    .addTestRepeated(
+                        BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0")))
+                    .addTestRepeated(
+                        BigDecimalByteStringEncoder.encodeToNumericByteString(
+                            new BigDecimal("1.2")))
                     .build()
               })
           .put(
@@ -229,16 +216,6 @@ public class JsonToProtoMessageTest {
         .put(
             "test_repeated",
             new JSONArray(
-                new byte[][] {
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0"))
-                      .toByteArray(),
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.2"))
-                      .toByteArray()
-                })),
-    new JSONObject()
-        .put(
-            "test_repeated",
-            new JSONArray(
                 new char[][] {
                   {'a', 'b'},
                   {'c'},
@@ -288,6 +265,17 @@ public class JsonToProtoMessageTest {
         .put("test_repeated", new JSONArray(new Float[] {Float.MAX_VALUE, Float.MIN_VALUE})),
     new JSONObject().put("test_repeated", new JSONArray(new Boolean[] {true, false})),
     new JSONObject().put("test_repeated", new JSONArray(new String[] {"hello", "test"})),
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new byte[][] {
+                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0"))
+                      .toByteArray(),
+                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.2"))
+                      .toByteArray()
+                })),
+    // new JSONObject().put("test_repeated", new JSONArray(new char[][] {{'a', 'b'}, {'c'}})),
     new JSONObject().put("test_repeated", new JSONArray(new String[][] {{"hello"}, {"test"}})),
     new JSONObject()
         .put(
@@ -392,32 +380,8 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
-  public void testRepeatedTypeBytesWithLimits() throws Exception {
-    for (Map.Entry<Descriptor, String> entry : ByteRepeatedTypesToDebugMessageTest.entrySet()) {
-      int success = 0;
-      for (JSONObject json : simpleJSONAArrayBytes) {
-        try {
-          DynamicMessage protoMsg =
-              JsonToProtoMessage.convertJsonToProtoMessage(entry.getKey(), json);
-          assertEquals(protoMsg, BytesRepeatedCorrectProto.get(entry.getKey())[success]);
-          success += 1;
-        } catch (IllegalArgumentException e) {
-          assertEquals(
-              "Error: root.test_repeated[0] could not be converted to byte[].", e.getMessage());
-        }
-      }
-      if (entry.getKey() == RepeatedBytes.getDescriptor()) {
-        assertEquals(1, success);
-      } else {
-        assertEquals(0, success);
-      }
-    }
-  }
-
-  @Test
   public void testAllRepeatedTypesWithLimits() throws Exception {
-    // Mark1
-    for (Map.Entry<Descriptor, String> entry : AllRepeatedTypesToDebugMessageTest.entrySet()) {
+    for (Map.Entry<Descriptor, String[]> entry : AllRepeatedTypesToDebugMessageTest.entrySet()) {
       int success = 0;
       for (JSONObject json : simpleJSONArrays) {
         try {
@@ -430,14 +394,15 @@ public class JsonToProtoMessageTest {
               e.getMessage()
                       .equals(
                           "JSONObject does not have a "
-                              + entry.getValue()
+                              + entry.getValue()[0]
                               + " field at root.test_repeated[0].")
                   || e.getMessage()
                       .equals("Error: root.test_repeated[0] could not be converted to byte[]."));
         }
       }
       if (entry.getKey() == RepeatedInt64.getDescriptor()
-          || entry.getKey() == RepeatedDouble.getDescriptor()) {
+          || entry.getKey() == RepeatedDouble.getDescriptor()
+          || entry.getKey() == RepeatedBytes.getDescriptor()) {
         assertEquals(2, success);
       } else {
         assertEquals(1, success);
