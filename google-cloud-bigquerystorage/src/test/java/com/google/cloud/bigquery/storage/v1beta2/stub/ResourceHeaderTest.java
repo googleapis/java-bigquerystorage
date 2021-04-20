@@ -20,12 +20,10 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.InProcessServer;
 import com.google.api.gax.grpc.testing.LocalChannelProvider;
-import com.google.api.gax.rpc.BidiStream;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.api.gax.rpc.UnimplementedException;
 import com.google.cloud.bigquery.storage.v1beta2.*;
 import com.google.cloud.bigquery.storage.v1beta2.BigQueryReadGrpc.BigQueryReadImplBase;
-import java.io.IOException;
 import java.util.regex.Pattern;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -177,37 +175,38 @@ public class ResourceHeaderTest {
     assertWithMessage("Generated header was sent").that(headerSent).isTrue();
   }
 
-  @Test
-  public void appendRowsTest() {
-    try {
-      AppendRowsRequest req =
-          AppendRowsRequest.newBuilder().setWriteStream(WRITE_STREAM_NAME).build();
-      BidiStream<AppendRowsRequest, AppendRowsResponse> bidiStream =
-          writeClient.appendRowsCallable().call();
-      bidiStream.send(req);
-    } catch (UnimplementedException e) {
-      // Ignore the error: none of the methods are actually implemented.
-    }
-    boolean headerSent = channelProvider2.isHeaderSent(HEADER_NAME, WRITE_STREAM_PATTERN);
-    assertWithMessage("Generated header was sent").that(headerSent).isTrue();
-  }
-
-  @Test
-  public void appendRowsManualTest() {
-    try {
-      StreamWriterV2 streamWriter =
-          StreamWriterV2.newBuilder(WRITE_STREAM_NAME, writeClient)
-              .setWriterSchema(ProtoSchema.newBuilder().build())
-              .build();
-      streamWriter.append(ProtoRows.newBuilder().build(), 1);
-    } catch (UnimplementedException e) {
-      // Ignore the error: none of the methods are actually implemented.
-    } catch (IOException e) {
-      // Ignore the error: none of the methods are actually implemented.
-    }
-    boolean headerSent = channelProvider2.isHeaderSent(HEADER_NAME, WRITE_STREAM_PATTERN);
-    assertWithMessage("Generated header was sent").that(headerSent).isTrue();
-  }
+  // Following tests will work after b/185842996 is fixed.
+  //  @Test
+  //  public void appendRowsTest() {
+  //    try {
+  //      AppendRowsRequest req =
+  //          AppendRowsRequest.newBuilder().setWriteStream(WRITE_STREAM_NAME).build();
+  //      BidiStream<AppendRowsRequest, AppendRowsResponse> bidiStream =
+  //          writeClient.appendRowsCallable().call();
+  //      bidiStream.send(req);
+  //    } catch (UnimplementedException e) {
+  //      // Ignore the error: none of the methods are actually implemented.
+  //    }
+  //    boolean headerSent = channelProvider2.isHeaderSent(HEADER_NAME, WRITE_STREAM_PATTERN);
+  //    assertWithMessage("Generated header was sent").that(headerSent).isTrue();
+  //  }
+  //
+  //  @Test
+  //  public void appendRowsManualTest() {
+  //    try {
+  //      StreamWriterV2 streamWriter =
+  //          StreamWriterV2.newBuilder(WRITE_STREAM_NAME, writeClient)
+  //              .setWriterSchema(ProtoSchema.newBuilder().build())
+  //              .build();
+  //      streamWriter.append(ProtoRows.newBuilder().build(), 1);
+  //    } catch (UnimplementedException e) {
+  //      // Ignore the error: none of the methods are actually implemented.
+  //    } catch (IOException e) {
+  //      // Ignore the error: none of the methods are actually implemented.
+  //    }
+  //    boolean headerSent = channelProvider2.isHeaderSent(HEADER_NAME, WRITE_STREAM_PATTERN);
+  //    assertWithMessage("Generated header was sent").that(headerSent).isTrue();
+  //  }
 
   private void verifyHeaderSent(Pattern... patterns) {
     for (Pattern pattern : patterns) {
