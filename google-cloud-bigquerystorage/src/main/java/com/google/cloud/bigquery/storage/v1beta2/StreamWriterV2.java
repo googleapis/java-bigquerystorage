@@ -161,7 +161,7 @@ public class StreamWriterV2 implements AutoCloseable {
               .setCredentialsProvider(builder.credentialsProvider)
               .setTransportChannelProvider(builder.channelProvider)
               .setEndpoint(builder.endpoint)
-              // (b/185842996): Temporily fix this explicitly providing the header.
+              // (b/185842996): Temporily fix this by explicitly providing the header.
               .setHeaderProvider(
                   FixedHeaderProvider.create(
                       "x-goog-request-params", "write_stream=" + this.streamName))
