@@ -25,7 +25,6 @@ import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.api.gax.rpc.UnimplementedException;
 import com.google.cloud.bigquery.storage.v1beta2.*;
 import com.google.cloud.bigquery.storage.v1beta2.BigQueryReadGrpc.BigQueryReadImplBase;
-
 import java.io.IOException;
 import java.util.regex.Pattern;
 import org.junit.After;
@@ -56,8 +55,7 @@ public class ResourceHeaderTest {
           ".*" + "read_session\\.table=projects/project/datasets/dataset/tables/table" + ".*");
 
   private static final Pattern PARENT_PATTERN =
-      Pattern.compile(
-          ".*" + "parent=projects/project/datasets/dataset/tables/table" + ".*");
+      Pattern.compile(".*" + "parent=projects/project/datasets/dataset/tables/table" + ".*");
 
   private static final Pattern NAME_PATTERN =
       Pattern.compile(
@@ -65,7 +63,9 @@ public class ResourceHeaderTest {
 
   private static final Pattern WRITE_STREAM_PATTERN =
       Pattern.compile(
-          ".*" + "write_stream=projects/project/datasets/dataset/tables/table/streams/stream" + ".*");
+          ".*"
+              + "write_stream=projects/project/datasets/dataset/tables/table/streams/stream"
+              + ".*");
 
   private static final Pattern READ_STREAM_PATTERN =
       Pattern.compile(".*" + "read_stream=streamName" + ".*");
@@ -100,9 +100,9 @@ public class ResourceHeaderTest {
     client = BigQueryReadClient.create(settingsBuilder.build());
     channelProvider2 = LocalChannelProvider.create(NAME);
     BigQueryWriteSettings.Builder writeSettingsBuilder =
-         BigQueryWriteSettings.newBuilder()
-             .setCredentialsProvider(NoCredentialsProvider.create())
-             .setTransportChannelProvider(channelProvider2);
+        BigQueryWriteSettings.newBuilder()
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .setTransportChannelProvider(channelProvider2);
     writeClient = BigQueryWriteClient.create(writeSettingsBuilder.build());
   }
 
@@ -155,14 +155,15 @@ public class ResourceHeaderTest {
   @Test
   public void createWriteStreamTest() {
     try {
-      writeClient.createWriteStream("projects/project/datasets/dataset/tables/table",
+      writeClient.createWriteStream(
+          "projects/project/datasets/dataset/tables/table",
           WriteStream.newBuilder().setType(WriteStream.Type.BUFFERED).build());
     } catch (UnimplementedException e) {
       // Ignore the error: none of the methods are actually implemented.
     }
     boolean headerSent = channelProvider2.isHeaderSent(HEADER_NAME, PARENT_PATTERN);
     assertWithMessage("Generated header was sent").that(headerSent).isTrue();
- }
+  }
 
   @Test
   public void getWriteStreamTest() {
@@ -178,7 +179,8 @@ public class ResourceHeaderTest {
   @Test
   public void appendRowsTest() {
     try {
-      AppendRowsRequest req = AppendRowsRequest.newBuilder().setWriteStream(WRITE_STREAM_NAME).build();
+      AppendRowsRequest req =
+          AppendRowsRequest.newBuilder().setWriteStream(WRITE_STREAM_NAME).build();
       BidiStream<AppendRowsRequest, AppendRowsResponse> bidiStream =
           writeClient.appendRowsCallable().call();
       bidiStream.send(req);
@@ -192,7 +194,10 @@ public class ResourceHeaderTest {
   @Test
   public void appendRowsManualTest() {
     try {
-      StreamWriterV2 streamWriter = StreamWriterV2.newBuilder(WRITE_STREAM_NAME, writeClient).setWriterSchema(ProtoSchema.newBuilder().build()).build();
+      StreamWriterV2 streamWriter =
+          StreamWriterV2.newBuilder(WRITE_STREAM_NAME, writeClient)
+              .setWriterSchema(ProtoSchema.newBuilder().build())
+              .build();
       streamWriter.append(ProtoRows.newBuilder().build(), 1);
     } catch (UnimplementedException e) {
       // Ignore the error: none of the methods are actually implemented.
