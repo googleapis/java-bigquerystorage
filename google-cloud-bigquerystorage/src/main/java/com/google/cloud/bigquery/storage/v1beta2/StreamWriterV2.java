@@ -22,6 +22,7 @@ import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1beta2.StreamConnection.DoneCallback;
 import com.google.cloud.bigquery.storage.v1beta2.StreamConnection.RequestCallback;
+import com.google.cloud.bigquery.storage.v1beta2.stub.BigQueryWriteStubSettings;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.Int64Value;
@@ -160,6 +161,7 @@ public class StreamWriterV2 implements AutoCloseable {
               .setCredentialsProvider(builder.credentialsProvider)
               .setTransportChannelProvider(builder.channelProvider)
               .setEndpoint(builder.endpoint)
+              .setHeaderProvider(BigQueryWriteStubSettings.defaultApiClientHeaderProviderBuilder().build())
               .build();
       this.client = BigQueryWriteClient.create(stubSettings);
       this.ownsBigQueryWriteClient = true;
