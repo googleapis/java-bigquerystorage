@@ -163,7 +163,7 @@ public class StreamWriterV2 implements AutoCloseable {
               .setCredentialsProvider(builder.credentialsProvider)
               .setTransportChannelProvider(builder.channelProvider)
               .setEndpoint(builder.endpoint)
-              .setHeaderProvider(FixedHeaderProvider.create("write_stream", this.streamName))
+              // .setHeaderProvider(FixedHeaderProvider.create("write_stream", this.streamName))
               .build();
       this.client = BigQueryWriteClient.create(stubSettings);
       this.ownsBigQueryWriteClient = true;
@@ -225,7 +225,6 @@ public class StreamWriterV2 implements AutoCloseable {
    * @return the append response wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
-    log.info(client.getSettings().getHeaderProvider().toString());
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(ProtoData.newBuilder().setRows(rows).build());
     if (offset >= 0) {
