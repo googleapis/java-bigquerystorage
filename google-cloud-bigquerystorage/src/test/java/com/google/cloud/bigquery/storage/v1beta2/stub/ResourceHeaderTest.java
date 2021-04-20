@@ -102,6 +102,7 @@ public class ResourceHeaderTest {
     BigQueryWriteSettings.Builder writeSettingsBuilder =
         BigQueryWriteSettings.newBuilder()
             .setCredentialsProvider(NoCredentialsProvider.create())
+            .setHeaderProvider(FixedHeaderProvider.create("write_stream", WRITE_STREAM_NAME))
             .setTransportChannelProvider(channelProvider2);
     writeClient = BigQueryWriteClient.create(writeSettingsBuilder.build());
   }
