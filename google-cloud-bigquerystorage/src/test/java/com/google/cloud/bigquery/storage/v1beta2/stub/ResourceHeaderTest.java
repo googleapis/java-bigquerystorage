@@ -22,12 +22,9 @@ import com.google.api.gax.grpc.testing.InProcessServer;
 import com.google.api.gax.grpc.testing.LocalChannelProvider;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.api.gax.rpc.UnimplementedException;
-import com.google.cloud.bigquery.storage.v1beta2.BigQueryReadClient;
+import com.google.cloud.bigquery.storage.v1beta2.*;
 import com.google.cloud.bigquery.storage.v1beta2.BigQueryReadGrpc.BigQueryReadImplBase;
-import com.google.cloud.bigquery.storage.v1beta2.BigQueryReadSettings;
-import com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest;
-import com.google.cloud.bigquery.storage.v1beta2.ReadSession;
-import com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest;
+
 import java.util.regex.Pattern;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -52,6 +49,11 @@ public class ResourceHeaderTest {
   private static final Pattern READ_SESSION_NAME_PATTERN =
       Pattern.compile(
           ".*" + "read_session\\.table=projects/project/datasets/dataset/tables/table" + ".*");
+
+  private static final Pattern PARENT_PATTERN =
+      Pattern.compile(
+          ".*" + "parent=projects/project/datasets/dataset/tables/table" + ".*");
+
   private static final Pattern READ_STREAM_PATTERN =
       Pattern.compile(".*" + "read_stream=streamName" + ".*");
   private static final Pattern STREAM_NAME_PATTERN =
@@ -65,6 +67,7 @@ public class ResourceHeaderTest {
 
   private LocalChannelProvider channelProvider;
   private BigQueryReadClient client;
+  private BigQueryWriteClient writeClient;
 
   @BeforeClass
   public static void setUpClass() throws Exception {
@@ -81,6 +84,11 @@ public class ResourceHeaderTest {
             .setHeaderProvider(FixedHeaderProvider.create(TEST_HEADER_NAME, TEST_HEADER_VALUE))
             .setTransportChannelProvider(channelProvider);
     client = BigQueryReadClient.create(settingsBuilder.build());
+    BigQueryWriteSettings.Builder writeSettingsBuilder =
+        BigQueryWriteSettings.newBuilder()
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .setTransportChannelProvider(channelProvider);
+    writeClient = BigQueryWriteClient.create(writeSettingsBuilder.build());
   }
 
   @After
@@ -127,6 +135,18 @@ public class ResourceHeaderTest {
     }
 
     verifyHeaderSent(STREAM_NAME_PATTERN);
+  }
+
+  @Test
+  public void createWriteStreamTest() {
+    try {
+      writeClient.createWriteStream("projects/project/datasets/dataset/tables/table",
+          WriteStream.newBuilder().setType(WriteStream.Type.BUFFERED).build());
+    } catch (UnimplementedException e) {
+      // Ignore the error: none of the methods are actually implemented.
+    }
+    boolean headerSent = channelProvider.isHeaderSent(HEADER_NAME, PARENT_PATTERN);
+    assertWithMessage("Generated header was sent").that(headerSent).isTrue();
   }
 
   private void verifyHeaderSent(Pattern... patterns) {

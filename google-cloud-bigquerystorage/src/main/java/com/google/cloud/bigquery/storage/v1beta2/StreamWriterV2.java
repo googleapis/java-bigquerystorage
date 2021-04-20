@@ -18,6 +18,7 @@ package com.google.cloud.bigquery.storage.v1beta2;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.core.CredentialsProvider;
+import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1beta2.StreamConnection.DoneCallback;
@@ -156,12 +157,13 @@ public class StreamWriterV2 implements AutoCloseable {
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     if (builder.client == null) {
+      log.info("here!!!!");
       BigQueryWriteSettings stubSettings =
           BigQueryWriteSettings.newBuilder()
               .setCredentialsProvider(builder.credentialsProvider)
               .setTransportChannelProvider(builder.channelProvider)
               .setEndpoint(builder.endpoint)
-              .setHeaderProvider(BigQueryWriteStubSettings.defaultApiClientHeaderProviderBuilder().build())
+              .setHeaderProvider(FixedHeaderProvider.create("write_stream", this.streamName))
               .build();
       this.client = BigQueryWriteClient.create(stubSettings);
       this.ownsBigQueryWriteClient = true;
@@ -223,6 +225,7 @@ public class StreamWriterV2 implements AutoCloseable {
    * @return the append response wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
+    log.info(client.getSettings().getHeaderProvider().toString());
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(ProtoData.newBuilder().setRows(rows).build());
     if (offset >= 0) {
