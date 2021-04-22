@@ -505,19 +505,25 @@ public class StreamWriterV2Test {
     writer.close();
   }
 
+  private class TestRunnable extends OnSchemaUpdateRunnable {
+    private boolean runned = false;
+    boolean getRunned() {
+      log.info("Runned: " + runned);
+      return runned;
+    }
+    @Override
+    public void run() {
+      runned = true;
+    }
+  }
+
   @Test
   public void testSchemaUpdateCalled() throws Exception {
     TableSchema TABLE_SCHEMA =
         TableSchema.newBuilder()
             .addFields(TableFieldSchema.newBuilder().setName("A").build())
             .build();
-    OnSchemaUpdateRunnable runnable =
-        new OnSchemaUpdateRunnable() {
-          @Override
-          public void run() {
-            log.info("Runned");
-          }
-        };
+    TestRunnable runnable = new TestRunnable();
     StreamWriterV2 writer =
         StreamWriterV2.newBuilder(TEST_STREAM, client)
             .setWriterSchema(createProtoSchema())
@@ -534,8 +540,9 @@ public class StreamWriterV2Test {
           sendTestMessage(writer, new String[] {String.valueOf(i)});
       appendFuture.get();
     }
+    TimeUnit.SECONDS.sleep(2);
     assertEquals(runnable.getUpdatedSchema(), TABLE_SCHEMA);
-
+    assertTrue(runnable.getRunned());
     writer.close();
   }
 }
