@@ -210,9 +210,11 @@ public class StreamWriterV2 implements AutoCloseable {
               }
             });
     this.appendThread.start();
-    executor = InstantiatingExecutorProvider.newBuilder()
-                   .setExecutorThreadCount(Runtime.getRuntime().availableProcessors())
-                   .build().getExecutor();
+    executor =
+        InstantiatingExecutorProvider.newBuilder()
+            .setExecutorThreadCount(Runtime.getRuntime().availableProcessors())
+            .build()
+            .getExecutor();
   }
 
   /**
@@ -474,8 +476,7 @@ public class StreamWriterV2 implements AutoCloseable {
     if (response.hasUpdatedSchema()) {
       if (this.getOnSchemaUpdateRunnable() != null) {
         this.getOnSchemaUpdateRunnable().setUpdatedSchema(response.getUpdatedSchema());
-        this.executor.schedule(
-            this.getOnSchemaUpdateRunnable(), 0L, TimeUnit.MILLISECONDS);
+        this.executor.schedule(this.getOnSchemaUpdateRunnable(), 0L, TimeUnit.MILLISECONDS);
       }
     }
     if (response.hasError()) {
@@ -584,7 +585,8 @@ public class StreamWriterV2 implements AutoCloseable {
     }
 
     /** Gives the ability to set action on schema update. */
-    public StreamWriterV2.Builder setOnSchemaUpdateRunnable(OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
+    public StreamWriterV2.Builder setOnSchemaUpdateRunnable(
+        OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
       this.onSchemaUpdateRunnable =
           Preconditions.checkNotNull(onSchemaUpdateRunnable, "onSchemaUpdateRunnable is null.");
       return this;

@@ -507,25 +507,31 @@ public class StreamWriterV2Test {
 
   @Test
   public void testSchemaUpdateCalled() throws Exception {
-    TableSchema TABLE_SCHEMA = TableSchema.newBuilder().addFields(TableFieldSchema.newBuilder().setName("A").build()).build();
-    OnSchemaUpdateRunnable runnable = new OnSchemaUpdateRunnable() {
-      @Override
-      public void run() {
-        log.info("Runned");
-      }
-    };
-    StreamWriterV2 writer = StreamWriterV2.newBuilder(TEST_STREAM, client)
-                                .setWriterSchema(createProtoSchema())
-                                .setTraceId(TEST_TRACE_ID)
-                                .setOnSchemaUpdateRunnable(runnable)
-                                .build();
+    TableSchema TABLE_SCHEMA =
+        TableSchema.newBuilder()
+            .addFields(TableFieldSchema.newBuilder().setName("A").build())
+            .build();
+    OnSchemaUpdateRunnable runnable =
+        new OnSchemaUpdateRunnable() {
+          @Override
+          public void run() {
+            log.info("Runned");
+          }
+        };
+    StreamWriterV2 writer =
+        StreamWriterV2.newBuilder(TEST_STREAM, client)
+            .setWriterSchema(createProtoSchema())
+            .setTraceId(TEST_TRACE_ID)
+            .setOnSchemaUpdateRunnable(runnable)
+            .build();
     for (int i = 0; i < 10; i++) {
       testBigQueryWrite.addResponse(createAppendResponse(i));
     }
     AppendRowsResponse response = createAppendResponse(11);
     testBigQueryWrite.addResponse(response.toBuilder().setUpdatedSchema(TABLE_SCHEMA).build());
     for (int i = 0; i < 11; i++) {
-      ApiFuture<AppendRowsResponse> appendFuture = sendTestMessage(writer, new String[]{String.valueOf(i)});
+      ApiFuture<AppendRowsResponse> appendFuture =
+          sendTestMessage(writer, new String[] {String.valueOf(i)});
       appendFuture.get();
     }
     assertEquals(runnable.getUpdatedSchema(), TABLE_SCHEMA);
