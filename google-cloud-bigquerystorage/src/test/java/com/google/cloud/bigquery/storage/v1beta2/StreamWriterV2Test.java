@@ -507,10 +507,12 @@ public class StreamWriterV2Test {
 
   private class TestRunnable extends OnSchemaUpdateRunnable {
     private boolean runned = false;
+
     boolean getRunned() {
       log.info("Runned: " + runned);
       return runned;
     }
+
     @Override
     public void run() {
       runned = true;
