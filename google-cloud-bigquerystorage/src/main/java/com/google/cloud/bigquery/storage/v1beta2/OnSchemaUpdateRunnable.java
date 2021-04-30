@@ -20,7 +20,7 @@ package com.google.cloud.bigquery.storage.v1beta2;
  * StreamWriter and updatedSchema. This runnable will only be called when a updated schema has been
  * passed back through the AppendRowsResponse. Users should only implement the run() function.
  *
- * @deprecated use {@link #StreamWriterV2()} instead.
+ * @deprecated
  */
 public abstract class OnSchemaUpdateRunnable implements Runnable {
   private StreamWriter streamWriter;
