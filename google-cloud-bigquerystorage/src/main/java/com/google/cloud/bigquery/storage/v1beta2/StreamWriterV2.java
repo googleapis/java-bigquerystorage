@@ -279,7 +279,7 @@ public class StreamWriterV2 implements AutoCloseable {
   @GuardedBy("lock")
   private void maybeWaitForInflightQuota() {
     while (this.inflightRequests >= this.maxInflightRequests
-               || this.inflightBytes >= this.maxInflightBytes) {
+        || this.inflightBytes >= this.maxInflightBytes) {
       try {
         inflightReduced.await(100, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
@@ -384,7 +384,7 @@ public class StreamWriterV2 implements AutoCloseable {
     this.lock.lock();
     try {
       return (this.userClosed || this.connectionFinalStatus != null)
-                 && this.waitingRequestQueue.isEmpty();
+          && this.waitingRequestQueue.isEmpty();
     } finally {
       this.lock.unlock();
     }

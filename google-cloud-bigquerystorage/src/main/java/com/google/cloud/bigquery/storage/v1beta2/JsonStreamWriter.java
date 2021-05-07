@@ -24,7 +24,6 @@ import com.google.cloud.bigquery.Schema;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
-import com.google.protobuf.Int64Value;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import java.util.logging.Logger;
