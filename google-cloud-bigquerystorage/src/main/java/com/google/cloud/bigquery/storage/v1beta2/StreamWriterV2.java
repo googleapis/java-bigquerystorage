@@ -18,6 +18,7 @@ package com.google.cloud.bigquery.storage.v1beta2;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.core.CredentialsProvider;
+import com.google.api.gax.core.InstantiatingExecutorProvider;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest.ProtoData;
@@ -32,6 +33,7 @@ import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -52,6 +54,8 @@ public class StreamWriterV2 implements AutoCloseable {
   private Lock lock;
   private Condition hasMessageInWaitingQueue;
   private Condition inflightReduced;
+  // Used for schema updates
+  private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
 
   /*
    * The identifier of stream to write to.
@@ -134,9 +138,16 @@ public class StreamWriterV2 implements AutoCloseable {
    */
   private Thread appendThread;
 
+  private ScheduledExecutorService executor;
+
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
     return 8L * 1000L * 1000L; // 8 megabytes (https://en.wikipedia.org/wiki/Megabyte)
+  }
+
+  /** OnSchemaUpdateRunnable for this streamWriter. */
+  OnSchemaUpdateRunnable getOnSchemaUpdateRunnable() {
+    return this.onSchemaUpdateRunnable;
   }
 
   private StreamWriterV2(Builder builder) throws IOException {
@@ -172,6 +183,9 @@ public class StreamWriterV2 implements AutoCloseable {
       this.client = builder.client;
       this.ownsBigQueryWriteClient = false;
     }
+    if (builder.onSchemaUpdateRunnable != null) {
+      this.onSchemaUpdateRunnable = builder.onSchemaUpdateRunnable;
+    }
     this.streamConnection =
         new StreamConnection(
             this.client,
@@ -196,6 +210,11 @@ public class StreamWriterV2 implements AutoCloseable {
               }
             });
     this.appendThread.start();
+    executor =
+        InstantiatingExecutorProvider.newBuilder()
+            .setExecutorThreadCount(Runtime.getRuntime().availableProcessors())
+            .build()
+            .getExecutor();
   }
 
   /**
@@ -454,6 +473,12 @@ public class StreamWriterV2 implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
+    if (response.hasUpdatedSchema()) {
+      if (this.getOnSchemaUpdateRunnable() != null) {
+        this.getOnSchemaUpdateRunnable().setUpdatedSchema(response.getUpdatedSchema());
+        this.executor.schedule(this.getOnSchemaUpdateRunnable(), 0L, TimeUnit.MILLISECONDS);
+      }
+    }
     if (response.hasError()) {
       StatusRuntimeException exception =
           new StatusRuntimeException(
@@ -523,6 +548,8 @@ public class StreamWriterV2 implements AutoCloseable {
     private CredentialsProvider credentialsProvider =
         BigQueryWriteSettings.defaultCredentialsProviderBuilder().build();
 
+    private OnSchemaUpdateRunnable onSchemaUpdateRunnable;
+
     private String traceId = null;
 
     private Builder(String streamName) {
@@ -554,6 +581,14 @@ public class StreamWriterV2 implements AutoCloseable {
     /** Gives the ability to override the gRPC endpoint. */
     public Builder setEndpoint(String endpoint) {
       this.endpoint = Preconditions.checkNotNull(endpoint, "Endpoint is null.");
+      return this;
+    }
+
+    /** Gives the ability to set action on schema update. */
+    public StreamWriterV2.Builder setOnSchemaUpdateRunnable(
+        OnSchemaUpdateRunnable onSchemaUpdateRunnable) {
+      this.onSchemaUpdateRunnable =
+          Preconditions.checkNotNull(onSchemaUpdateRunnable, "onSchemaUpdateRunnable is null.");
       return this;
     }
 
