@@ -69,6 +69,7 @@ public class JsonStreamWriter implements AutoCloseable {
     } else {
       streamWriterBuilder = StreamWriterV2.newBuilder(builder.streamName, builder.client);
     }
+    streamWriterBuilder.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
     setStreamWriterSettings(
         builder.channelProvider,
         builder.credentialsProvider,
@@ -157,8 +158,7 @@ public class JsonStreamWriter implements AutoCloseable {
       @Nullable TransportChannelProvider channelProvider,
       @Nullable CredentialsProvider credentialsProvider,
       @Nullable String endpoint,
-      @Nullable FlowControlSettings flowControlSettings,
-      Boolean createDefaultStream) {
+      @Nullable FlowControlSettings flowControlSettings) {
     if (channelProvider != null) {
       streamWriterBuilder.setChannelProvider(channelProvider);
     }
@@ -171,9 +171,6 @@ public class JsonStreamWriter implements AutoCloseable {
             .setRequestByteThreshold(4 * 1024 * 1024L);
     if (endpoint != null) {
       streamWriterBuilder.setEndpoint(endpoint);
-    }
-    if (createDefaultStream) {
-      createDefaultStream = true;
     }
   }
 
@@ -264,16 +261,16 @@ public class JsonStreamWriter implements AutoCloseable {
      * @param client
      */
     private Builder(String streamOrTableName, TableSchema tableSchema, BigQueryWriteClient client) {
-      Matcher matcher = streamPattern.matcher(streamOrTableName);
-      if (!matcher.matches()) {
-        Matcher matcher2 = tablePattern.matcher(streamOrTableName);
-        if (!matcher.matches()) {
+      Matcher streamMatcher = streamPattern.matcher(streamOrTableName);
+      if (!streamMatcher.matches()) {
+        Matcher tableMatcher = tablePattern.matcher(streamOrTableName);
+        if (!tableMatcher.matches()) {
           throw new IllegalArgumentException("Invalid  name: " + streamOrTableName);
         } else {
-          streamName = streamOrTableName + "/_default";
+          this.streamName = streamOrTableName + "/_default";
         }
       } else {
-        streamName = streamOrTableName;
+        this.streamName = streamOrTableName;
       }
       this.tableSchema = tableSchema;
       this.client = client;
