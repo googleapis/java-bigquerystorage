@@ -4,7 +4,7 @@
     <!-- Allow below protobuf changes as non-breaking-->
     <difference>
         <differenceType>7002</differenceType>
-        <className>com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter/Builder</className>
+        <className>com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter$Builder</className>
         <method>public com.google.cloud.bigquery.storage.v1beta2.JsonStreamWriter$Builder createDefaultStream()</method>
     </difference>
 </differences>
