@@ -28,6 +28,7 @@ import com.google.protobuf.Int64Value;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.json.JSONArray;
@@ -236,7 +237,6 @@ public class JsonStreamWriter implements AutoCloseable {
   }
 
   public static final class Builder {
-    private String streamOrTableName;
     private String streamName;
     private BigQueryWriteClient client;
     private TableSchema tableSchema;
@@ -246,6 +246,13 @@ public class JsonStreamWriter implements AutoCloseable {
     private FlowControlSettings flowControlSettings;
     private String endpoint;
     private boolean createDefaultStream = false;
+
+    private static String streamPatternString =
+        "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
+    private static String tablePatternString = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)";
+
+    private static Pattern streamPattern = Pattern.compile(streamPatternString);
+    private static Pattern tablePattern = Pattern.compile(tablePatternString);
 
     /**
      * Constructor for JsonStreamWriter's Builder
@@ -257,7 +264,17 @@ public class JsonStreamWriter implements AutoCloseable {
      * @param client
      */
     private Builder(String streamOrTableName, TableSchema tableSchema, BigQueryWriteClient client) {
-      this.streamOrTableName = streamOrTableName;
+      Matcher matcher = streamPattern.matcher(streamOrTableName);
+      if (!matcher.matches()) {
+        Matcher matcher2 = tablePattern.matcher(streamOrTableName);
+        if (!matcher.matches()) {
+          throw new IllegalArgumentException("Invalid  name: " + streamOrTableName);
+        } else {
+          streamName = streamOrTableName + "/_default";
+        }
+      } else {
+        streamName = streamOrTableName;
+      }
       this.tableSchema = tableSchema;
       this.client = client;
     }
