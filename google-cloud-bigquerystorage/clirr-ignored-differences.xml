@@ -5,6 +5,6 @@
     <difference>
         <differenceType>7002</differenceType>
         <className>com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter$Builder</className>
-        <method>public com.google.cloud.bigquery.storage.v1beta2.JsonStreamWriter$Builder createDefaultStream()</method>
+        <method>com.google.cloud.bigquery.storage.v1beta2.JsonStreamWriter$Builder createDefaultStream()</method>
     </difference>
 </differences>
