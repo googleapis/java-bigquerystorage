@@ -16,7 +16,6 @@
 package com.google.cloud.bigquery.storage.v1beta2;
 
 import com.google.api.core.ApiFuture;
-import com.google.api.gax.batching.BatchingSettings;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
@@ -169,10 +168,12 @@ public class JsonStreamWriter implements AutoCloseable {
     }
     if (flowControlSettings != null) {
       if (flowControlSettings.getMaxOutstandingRequestBytes() != null) {
-        streamWriterBuilder.setMaxInflightBytes(flowControlSettings.getMaxOutstandingRequestBytes());
+        streamWriterBuilder.setMaxInflightBytes(
+            flowControlSettings.getMaxOutstandingRequestBytes());
       }
       if (flowControlSettings.getMaxOutstandingElementCount() != null) {
-        streamWriterBuilder.setMaxInflightRequests(flowControlSettings.getMaxOutstandingElementCount());
+        streamWriterBuilder.setMaxInflightRequests(
+            flowControlSettings.getMaxOutstandingElementCount());
       }
     }
   }
