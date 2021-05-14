@@ -37,7 +37,7 @@ import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
 import com.google.cloud.bigquery.storage.v1.ReadSession;
 import com.google.cloud.bigquery.storage.v1.SplitReadStreamRequest;
 import com.google.cloud.bigquery.storage.v1.SplitReadStreamResponse;
-import com.google.cloud.bigquery.storage.v1.stub.readrows.ApiResultRetryAlgorithm;
+import com.google.cloud.bigquery.storage.v1.stub.readrows.ReadRowsResultRetryAlgorithm;
 import com.google.cloud.bigquery.storage.v1.stub.readrows.ReadRowsRetryingCallable;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -123,7 +123,7 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
 
     StreamingRetryAlgorithm<Void> retryAlgorithm =
         new StreamingRetryAlgorithm<>(
-            new ApiResultRetryAlgorithm<Void>(),
+            new ReadRowsResultRetryAlgorithm<Void>(),
             new ExponentialRetryAlgorithm(callSettings.getRetrySettings(), context.getClock()));
 
     ScheduledRetryingExecutor<Void> retryingExecutor =
