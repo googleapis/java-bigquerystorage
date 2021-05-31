@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0](https://www.github.com/googleapis/java-bigquerystorage/compare/v1.21.1...v2.0.0) (2021-05-31)
+## [1.22.0](https://www.github.com/googleapis/java-bigquerystorage/compare/v1.21.1...v1.22.0) (2021-05-31)
 
 
 ### ⚠ BREAKING CHANGES
