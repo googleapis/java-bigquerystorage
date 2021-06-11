@@ -35,7 +35,6 @@ public class Errors {
             || description.contains(" Rst ")
             || description.contains("RST_STREAM")
             || description.contains("Connection closed with unknown cause")
-            || description.contains("HTTP/2 error code: INTERNAL_ERROR")
-            || description.contains("Received unexpected EOS");
+            || description.contains("HTTP/2 error code: INTERNAL_ERROR"));
   }
 }
