@@ -183,8 +183,8 @@ public class JsonStreamWriter implements AutoCloseable {
    * StreamWriter by default.
    *
    * @param streamOrTableName name of the stream that must follow
-   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+" or
-   *     table name "projects/[^/]+/datasets/[^/]+/tables/[^/]+"
+   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+" or table name
+   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+"
    * @param tableSchema The schema of the table when the stream was created, which is passed back
    *     through {@code WriteStream}
    * @return Builder
