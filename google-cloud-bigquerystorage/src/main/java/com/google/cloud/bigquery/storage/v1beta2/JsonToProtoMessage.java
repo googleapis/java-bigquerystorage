@@ -155,7 +155,7 @@ public class JsonToProtoMessage {
                           "Error: "
                               + currentScope
                               + "["
-                              + i
+                              + j
                               + "] could not be converted to byte[]."));
                 }
               }
@@ -165,9 +165,7 @@ public class JsonToProtoMessage {
                   String.format(
                       "Error: "
                           + currentScope
-                          + "["
-                          + i
-                          + "] could not be converted to byte[]."));
+                          + "could not be converted to byte[]."));
             }
           }
         break;
