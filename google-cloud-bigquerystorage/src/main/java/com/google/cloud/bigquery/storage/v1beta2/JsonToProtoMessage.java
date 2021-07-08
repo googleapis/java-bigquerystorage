@@ -155,7 +155,7 @@ public class JsonToProtoMessage {
                           "Error: "
                               + currentScope
                               + "["
-                              + index
+                              + i
                               + "] could not be converted to byte[]."));
                 }
               }
@@ -166,7 +166,7 @@ public class JsonToProtoMessage {
                       "Error: "
                           + currentScope
                           + "["
-                          + index
+                          + i
                           + "] could not be converted to byte[]."));
             }
           }
