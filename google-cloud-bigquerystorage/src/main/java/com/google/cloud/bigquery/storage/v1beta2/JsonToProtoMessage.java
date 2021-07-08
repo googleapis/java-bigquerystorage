@@ -145,29 +145,26 @@ public class JsonToProtoMessage {
           protoMsg.setField(fieldDescriptor, ((ByteString) val).toByteArray());
           return;
         } else if (val instanceof JSONArray) {
-            try {
-              byte[] bytes = new byte[((JSONArray) val).length()];
-              for (int j = 0; j < ((JSONArray) val).length(); j++) {
-                bytes[j] = (byte) ((JSONArray) val).getInt(j);
-                if (bytes[j] != ((JSONArray) val).getInt(j)) {
-                  throw new IllegalArgumentException(
-                      String.format(
-                          "Error: "
-                              + currentScope
-                              + "["
-                              + j
-                              + "] could not be converted to byte[]."));
-                }
+          try {
+            byte[] bytes = new byte[((JSONArray) val).length()];
+            for (int j = 0; j < ((JSONArray) val).length(); j++) {
+              bytes[j] = (byte) ((JSONArray) val).getInt(j);
+              if (bytes[j] != ((JSONArray) val).getInt(j)) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Error: "
+                            + currentScope
+                            + "["
+                            + j
+                            + "] could not be converted to byte[]."));
               }
-              protoMsg.setField(fieldDescriptor, bytes);
-            } catch (JSONException e) {
-              throw new IllegalArgumentException(
-                  String.format(
-                      "Error: "
-                          + currentScope
-                          + "could not be converted to byte[]."));
             }
+            protoMsg.setField(fieldDescriptor, bytes);
+          } catch (JSONException e) {
+            throw new IllegalArgumentException(
+                String.format("Error: " + currentScope + "could not be converted to byte[]."));
           }
+        }
         break;
       case INT64:
         if (val instanceof Integer) {
@@ -284,7 +281,7 @@ public class JsonToProtoMessage {
                           + index
                           + "] could not be converted to byte[]."));
             }
-          } else if (val instanceof ByteString){
+          } else if (val instanceof ByteString) {
             protoMsg.addRepeatedField(fieldDescriptor, ((ByteString) val).toByteArray());
             return;
           } else {
