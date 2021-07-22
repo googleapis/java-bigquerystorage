@@ -450,6 +450,7 @@ public class StreamWriterV2 implements AutoCloseable {
     }
   }
 
+  // TODO(jstocklass): if the error is a stream-finalized, handle it with a custom error that exposes details to the user.
   private void requestCallback(AppendRowsResponse response) {
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
