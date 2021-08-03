@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.0](https://www.github.com/googleapis/java-bigquerystorage/compare/v1.23.2...v1.24.0) (2021-08-03)
+
+
+### Features
+
+* configure initial sp version ([#1210](https://www.github.com/googleapis/java-bigquerystorage/issues/1210)) ([b4ce9fd](https://www.github.com/googleapis/java-bigquerystorage/commit/b4ce9fd44fdccaa0619bdfb76ea07f14f048b65a))
+
 ### [1.23.2](https://www.github.com/googleapis/java-bigquerystorage/compare/v1.23.1...v1.23.2) (2021-07-29)
 
 
