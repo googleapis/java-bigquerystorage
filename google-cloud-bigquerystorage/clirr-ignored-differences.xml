@@ -30,5 +30,20 @@
         <differenceType>7002</differenceType>
         <className>com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter$Builder</className>
         <method>com.google.cloud.bigquery.storage.v1beta2.JsonStreamWriter$Builder createDefaultStream()</method>
+    <!-- Remove below after release -->
+    </difference>
+    <difference>
+        <differenceType>8001</differenceType>
+        <className>com/google/cloud/bigquery/storage/v1beta1/ReadSessionName</className>
+    </difference>
+    <difference>
+    <differenceType>8001</differenceType>
+        <className>com/google/cloud/bigquery/storage/v1beta1/ReadSessionName$Builder</className>
+    </difference>
+    <differenceType>8001</differenceType>
+        <className>com/google/cloud/bigquery/storage/v1beta1/StreamName</className>
+    </difference>
+    <differenceType>8001</differenceType>
+        <className>com/google/cloud/bigquery/storage/v1beta1/StreamName$Builder</className>
     </difference>
 </differences>
