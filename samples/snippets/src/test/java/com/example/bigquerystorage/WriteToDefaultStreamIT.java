@@ -21,18 +21,9 @@ import static junit.framework.TestCase.assertNotNull;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQuery.DatasetDeleteOption;
-import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.DatasetId;
-import com.google.cloud.bigquery.DatasetInfo;
-import com.google.cloud.bigquery.Field;
-import com.google.cloud.bigquery.Schema;
-import com.google.cloud.bigquery.StandardSQLTypeName;
-import com.google.cloud.bigquery.StandardTableDefinition;
-import com.google.cloud.bigquery.TableId;
-import com.google.cloud.bigquery.TableInfo;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -67,18 +58,6 @@ public class WriteToDefaultStreamIT {
     bout = new ByteArrayOutputStream();
     out = new PrintStream(bout);
     System.setOut(out);
-
-    bigquery = BigQueryOptions.getDefaultInstance().getService();
-
-    // Create a new dataset and table for each test.
-    datasetName = "WRITE_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
-    tableName = "DEFAULT_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
-    Schema schema = Schema.of(Field.of("col1", StandardSQLTypeName.STRING));
-    bigquery.create(DatasetInfo.newBuilder(datasetName).build());
-    TableInfo tableInfo =
-        TableInfo.newBuilder(TableId.of(datasetName, tableName), StandardTableDefinition.of(schema))
-            .build();
-    bigquery.create(tableInfo);
   }
 
   @After
@@ -90,6 +69,8 @@ public class WriteToDefaultStreamIT {
 
   @Test
   public void testWriteToDefaultStream() throws Exception {
+    String datasetName = "WRITE_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
+    String tableName = "DEFAULT_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
     WriteToDefaultStream.writeToDefaultStream(GOOGLE_CLOUD_PROJECT, datasetName, tableName);
     assertThat(bout.toString()).contains("Appended records successfully.");
   }
