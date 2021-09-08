@@ -37,13 +37,6 @@ public class WriteToDefaultStream {
     String projectId = "MY_PROJECT_ID";
     String datasetName = "MY_DATASET_NAME";
     String tableName = "MY_TABLE_NAME";
-
-    writeToDefaultStream(projectId, datasetName, tableName);
-  }
-
-  public static void writeToDefaultStream(String projectId, String datasetName, String tableName)
-      throws DescriptorValidationException, InterruptedException, IOException {
-    TableName parentTable = TableName.of(projectId, datasetName, tableName);
     TableFieldSchema strField =
         TableFieldSchema.newBuilder()
             .setType(TableFieldSchema.Type.STRING)
@@ -51,6 +44,13 @@ public class WriteToDefaultStream {
             .setName("test_string")
             .build();
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, strField).build();
+    writeToDefaultStream(projectId, datasetName, tableName, tableSchema);
+  }
+
+  public static void writeToDefaultStream(
+      String projectId, String datasetName, String tableName, TableSchema tableSchema)
+      throws DescriptorValidationException, InterruptedException, IOException {
+    TableName parentTable = TableName.of(projectId, datasetName, tableName);
 
     // Use the JSON stream writer to send records in JSON format.
     // For more information about JsonStreamWriter, see:
@@ -61,7 +61,7 @@ public class WriteToDefaultStream {
       for (int i = 0; i < 10; i++) {
         // Create a JSON object that is compatible with the table schema.
         JSONObject record = new JSONObject();
-        record.put("col1", String.format("record %03d", i));
+        record.put("test_string", String.format("record %03d", i));
         JSONArray jsonArr = new JSONArray();
         jsonArr.put(record);
 
