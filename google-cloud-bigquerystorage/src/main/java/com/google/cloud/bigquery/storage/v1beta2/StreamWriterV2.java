@@ -155,23 +155,19 @@ public class StreamWriterV2 implements AutoCloseable {
     this.traceId = builder.traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
-    if (builder.client == null) {
-      BigQueryWriteSettings stubSettings =
-          BigQueryWriteSettings.newBuilder()
-              .setCredentialsProvider(builder.credentialsProvider)
-              .setTransportChannelProvider(builder.channelProvider)
-              .setEndpoint(builder.endpoint)
-              // (b/185842996): Temporily fix this by explicitly providing the header.
-              .setHeaderProvider(
-                  FixedHeaderProvider.create(
-                      "x-goog-request-params", "write_stream=" + this.streamName))
-              .build();
-      this.client = BigQueryWriteClient.create(stubSettings);
-      this.ownsBigQueryWriteClient = true;
-    } else {
-      this.client = builder.client;
-      this.ownsBigQueryWriteClient = false;
-    }
+    BigQueryWriteSettings stubSettings =
+        BigQueryWriteSettings.newBuilder()
+            .setCredentialsProvider(builder.credentialsProvider)
+            .setTransportChannelProvider(builder.channelProvider)
+            .setEndpoint(builder.endpoint)
+            // (b/185842996): Temporily fix this by explicitly providing the header.
+            .setHeaderProvider(
+                FixedHeaderProvider.create(
+                    "x-goog-request-params", "write_stream=" + this.streamName))
+            .build();
+    this.client = BigQueryWriteClient.create(stubSettings);
+    this.ownsBigQueryWriteClient = true;
+
     this.streamConnection =
         new StreamConnection(
             this.client,
