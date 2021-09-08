@@ -176,6 +176,7 @@
     <module>proto-google-cloud-bigquerystorage-v1beta2</module>
     <module>proto-google-cloud-bigquerystorage-v1</module>
     <module>google-cloud-bigquerystorage-bom</module>
+    <module>samples</module>
   </modules>
 
   <reporting>

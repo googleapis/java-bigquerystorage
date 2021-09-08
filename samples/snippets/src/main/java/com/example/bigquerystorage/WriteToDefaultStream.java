@@ -20,7 +20,9 @@ package com.example.bigquerystorage;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1beta2.JsonStreamWriter;
+import com.google.cloud.bigquery.storage.v1beta2.TableFieldSchema;
 import com.google.cloud.bigquery.storage.v1beta2.TableName;
+import com.google.cloud.bigquery.storage.v1beta2.TableSchema;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -42,13 +44,13 @@ public class WriteToDefaultStream {
   public static void writeToDefaultStream(String projectId, String datasetName, String tableName)
       throws DescriptorValidationException, InterruptedException, IOException {
     TableName parentTable = TableName.of(projectId, datasetName, tableName);
-    TableFieldSchema TEST_STRING =
+    TableFieldSchema strField =
         TableFieldSchema.newBuilder()
             .setType(TableFieldSchema.Type.STRING)
-            .setMode(TableFieldSchema.Mode.NULLUBLE)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
             .setName("test_string")
             .build();
-    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_STRING).build();
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, strField).build();
 
     // Use the JSON stream writer to send records in JSON format.
     // For more information about JsonStreamWriter, see:
