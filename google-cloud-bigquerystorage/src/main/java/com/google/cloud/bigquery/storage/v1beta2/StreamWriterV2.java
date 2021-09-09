@@ -493,10 +493,11 @@ public class StreamWriterV2 implements AutoCloseable {
     return requestWrapper;
   }
 
-  /** Constructs a new {@link StreamWriterV2.Builder} using the given stream and client.
-   * AppendRows needs special headers to be added to client, so a passed in client will not work. This should be used by
-   * test only.
-   **/
+  /**
+   * Constructs a new {@link StreamWriterV2.Builder} using the given stream and client. AppendRows
+   * needs special headers to be added to client, so a passed in client will not work. This should
+   * be used by test only.
+   */
   public static StreamWriterV2.Builder newBuilder(String streamName, BigQueryWriteClient client) {
     return new StreamWriterV2.Builder(streamName, client);
   }
