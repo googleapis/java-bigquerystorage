@@ -24,9 +24,6 @@ import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.LocalChannelProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
-import com.google.cloud.bigquery.Field;
-import com.google.cloud.bigquery.Schema;
-import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.storage.test.JsonTest.ComplexRoot;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.protobuf.ByteString;
@@ -253,7 +250,9 @@ public class JsonStreamWriterTest {
     jsonArr.put(foo);
 
     try (JsonStreamWriter writer =
-        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
+            .setTraceId("test:empty")
+            .build()) {
 
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()
@@ -280,6 +279,8 @@ public class JsonStreamWriterTest {
               .getRows()
               .getSerializedRows(0),
           expectedProto.toByteString());
+      assertEquals(
+          testBigQueryWrite.getAppendRequests().get(0).getTraceId(), "JsonWriterBeta_test:empty");
     }
   }
 
@@ -320,6 +321,8 @@ public class JsonStreamWriterTest {
               .getProtoRows()
               .getRows()
               .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite.getAppendRequests().get(0).getTraceId(), "JsonWriterBeta:null");
       for (int i = 0; i < 4; i++) {
         assertEquals(
             testBigQueryWrite
@@ -522,13 +525,10 @@ public class JsonStreamWriterTest {
 
   @Test
   public void testCreateDefaultStream() throws Exception {
-    Schema v2Schema =
-        Schema.of(
-            Field.newBuilder("foo", StandardSQLTypeName.STRING)
-                .setMode(Field.Mode.NULLABLE)
-                .build());
+    TableSchema tableSchema =
+        TableSchema.newBuilder().addFields(0, TEST_INT).addFields(1, TEST_STRING).build();
     try (JsonStreamWriter writer =
-        JsonStreamWriter.newBuilder(TEST_TABLE, v2Schema)
+        JsonStreamWriter.newBuilder(TEST_TABLE, tableSchema)
             .setChannelProvider(channelProvider)
             .setCredentialsProvider(NoCredentialsProvider.create())
             .build()) {

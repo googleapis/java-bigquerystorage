@@ -19,7 +19,6 @@ import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
-import com.google.cloud.bigquery.Schema;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -72,7 +71,8 @@ public class JsonStreamWriter implements AutoCloseable {
         builder.channelProvider,
         builder.credentialsProvider,
         builder.endpoint,
-        builder.flowControlSettings);
+        builder.flowControlSettings,
+        builder.traceId);
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
   }
@@ -156,7 +156,8 @@ public class JsonStreamWriter implements AutoCloseable {
       @Nullable TransportChannelProvider channelProvider,
       @Nullable CredentialsProvider credentialsProvider,
       @Nullable String endpoint,
-      @Nullable FlowControlSettings flowControlSettings) {
+      @Nullable FlowControlSettings flowControlSettings,
+      @Nullable String traceId) {
     if (channelProvider != null) {
       streamWriterBuilder.setChannelProvider(channelProvider);
     }
@@ -165,6 +166,11 @@ public class JsonStreamWriter implements AutoCloseable {
     }
     if (endpoint != null) {
       streamWriterBuilder.setEndpoint(endpoint);
+    }
+    if (traceId != null) {
+      streamWriterBuilder.setTraceId("JsonWriterBeta_" + traceId);
+    } else {
+      streamWriterBuilder.setTraceId("JsonWriterBeta:null");
     }
     if (flowControlSettings != null) {
       if (flowControlSettings.getMaxOutstandingRequestBytes() != null) {
@@ -193,23 +199,6 @@ public class JsonStreamWriter implements AutoCloseable {
     Preconditions.checkNotNull(streamOrTableName, "StreamOrTableName is null.");
     Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
     return new Builder(streamOrTableName, tableSchema, null);
-  }
-
-  /**
-   * newBuilder that constructs a JsonStreamWriter builder with BigQuery client being initialized by
-   * StreamWriter by default.
-   *
-   * @param streamOrTableName name of the stream that must follow
-   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+"
-   * @param tableSchema The schema of the table when the stream was created, which is passed back
-   *     through {@code WriteStream}
-   * @return Builder
-   */
-  public static Builder newBuilder(String streamOrTableName, Schema tableSchema) {
-    Preconditions.checkNotNull(streamOrTableName, "StreamOrTableName is null.");
-    Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
-    return new Builder(
-        streamOrTableName, BQV2ToBQStorageConverter.ConvertTableSchema(tableSchema), null);
   }
 
   /**
@@ -246,6 +235,7 @@ public class JsonStreamWriter implements AutoCloseable {
     private FlowControlSettings flowControlSettings;
     private String endpoint;
     private boolean createDefaultStream = false;
+    private String traceId;
 
     private static String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
@@ -333,6 +323,17 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setEndpoint(String endpoint) {
       this.endpoint = Preconditions.checkNotNull(endpoint, "Endpoint is null.");
+      return this;
+    }
+
+    /**
+     * Setter for a traceId to help identify traffic origin.
+     *
+     * @param traceId
+     * @return Builder
+     */
+    public Builder setTraceId(String traceId) {
+      this.traceId = Preconditions.checkNotNull(traceId, "TraceId is null.");
       return this;
     }
 
