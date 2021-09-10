@@ -56,7 +56,7 @@ public class BqToBqStorageSchemaConverter {
   public static TableSchema convertTableSchema(Schema schema) {
     TableSchema.Builder result = TableSchema.newBuilder();
     for (int i = 0; i < schema.getFields().size(); i++) {
-      result.addFields(i, ConvertFieldSchema(schema.getFields().get(i)));
+      result.addFields(i, convertFieldSchema(schema.getFields().get(i)));
     }
     return result.build();
   }
@@ -80,7 +80,7 @@ public class BqToBqStorageSchemaConverter {
     }
     if (field.getSubFields() != null) {
       for (int i = 0; i < field.getSubFields().size(); i++) {
-        result.addFields(i, ConvertFieldSchema(field.getSubFields().get(i)));
+        result.addFields(i, convertFieldSchema(field.getSubFields().get(i)));
       }
     }
     return result.build();
