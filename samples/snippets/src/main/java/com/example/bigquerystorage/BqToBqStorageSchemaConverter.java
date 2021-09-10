@@ -24,7 +24,7 @@ import com.google.cloud.bigquery.storage.v1beta2.TableSchema;
 import com.google.common.collect.ImmutableMap;
 
 /** Converts structure from BigQuery client to BigQueryStorage client */
-public class BQToBQStorageSchemaConverter {
+public class BqToBqStorageSchemaConverter {
   private static ImmutableMap<Field.Mode, TableFieldSchema.Mode> BQTableSchemaModeMap =
       ImmutableMap.of(
           Field.Mode.NULLABLE, TableFieldSchema.Mode.NULLABLE,
@@ -53,7 +53,7 @@ public class BQToBQStorageSchemaConverter {
    * @param schema the BigQuery client Table Schema
    * @return the bigquery storage API Table Schema
    */
-  public static TableSchema ConvertTableSchema(Schema schema) {
+  public static TableSchema convertTableSchema(Schema schema) {
     TableSchema.Builder result = TableSchema.newBuilder();
     for (int i = 0; i < schema.getFields().size(); i++) {
       result.addFields(i, ConvertFieldSchema(schema.getFields().get(i)));
@@ -67,7 +67,7 @@ public class BQToBQStorageSchemaConverter {
    * @param field the BigQuery client Field Schema
    * @return the bigquery storage API Field Schema
    */
-  public static TableFieldSchema ConvertFieldSchema(Field field) {
+  public static TableFieldSchema convertFieldSchema(Field field) {
     TableFieldSchema.Builder result = TableFieldSchema.newBuilder();
     if (field.getMode() == null) {
       field = field.toBuilder().setMode(Field.Mode.NULLABLE).build();
