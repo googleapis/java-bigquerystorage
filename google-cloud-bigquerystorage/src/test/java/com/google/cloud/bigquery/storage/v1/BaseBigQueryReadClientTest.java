@@ -88,10 +88,11 @@ public class BaseBigQueryReadClientTest {
             .setName("name3373707")
             .setExpireTime(Timestamp.newBuilder().build())
             .setDataFormat(DataFormat.forNumber(0))
-            .setTable("table110115790")
+            .setTable(TableName.of("[PROJECT]", "[DATASET]", "[TABLE]").toString())
             .setTableModifiers(ReadSession.TableModifiers.newBuilder().build())
             .setReadOptions(ReadSession.TableReadOptions.newBuilder().build())
             .addAllStreams(new ArrayList<ReadStream>())
+            .setEstimatedTotalBytesScanned(452788190)
             .build();
     mockBigQueryRead.addResponse(expectedResponse);
 
@@ -138,10 +139,11 @@ public class BaseBigQueryReadClientTest {
             .setName("name3373707")
             .setExpireTime(Timestamp.newBuilder().build())
             .setDataFormat(DataFormat.forNumber(0))
-            .setTable("table110115790")
+            .setTable(TableName.of("[PROJECT]", "[DATASET]", "[TABLE]").toString())
             .setTableModifiers(ReadSession.TableModifiers.newBuilder().build())
             .setReadOptions(ReadSession.TableReadOptions.newBuilder().build())
             .addAllStreams(new ArrayList<ReadStream>())
+            .setEstimatedTotalBytesScanned(452788190)
             .build();
     mockBigQueryRead.addResponse(expectedResponse);
 
