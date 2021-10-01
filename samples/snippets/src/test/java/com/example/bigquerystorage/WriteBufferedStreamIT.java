@@ -25,11 +25,13 @@ import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.DatasetId;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.Field;
+import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.StandardTableDefinition;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
+import com.google.cloud.bigquery.TableResult;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.UUID;
@@ -92,5 +94,12 @@ public class WriteBufferedStreamIT {
   public void testWriteBufferedStream() throws Exception {
     WriteBufferedStream.writeBufferedStream(GOOGLE_CLOUD_PROJECT, datasetName, tableName);
     assertThat(bout.toString()).contains("Appended and committed records successfully.");
+
+    // Verify that the records are visible in the table.
+    String query = "SELECT * FROM " + tableName;
+    QueryJobConfiguration queryConfig =
+        QueryJobConfiguration.newBuilder(query).setDefaultDataset(datasetName).build();
+    TableResult result = bigquery.query(queryConfig);
+    assertThat(result.getTotalRows()).isEqualTo(20);
   }
 }
