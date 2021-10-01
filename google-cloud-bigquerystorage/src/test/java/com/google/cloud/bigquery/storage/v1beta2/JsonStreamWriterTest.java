@@ -80,6 +80,19 @@ public class JsonStreamWriterTest {
   private final TableSchema UPDATED_TABLE_SCHEMA_2 =
       TableSchema.newBuilder().addFields(0, FOO).addFields(1, BAR).addFields(2, BAZ).build();
 
+  private final TableFieldSchema TEST_INT =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.INT64)
+          .setMode(TableFieldSchema.Mode.NULLABLE)
+          .setName("test_int")
+          .build();
+  private final TableFieldSchema TEST_STRING =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.STRING)
+          .setMode(TableFieldSchema.Mode.REPEATED)
+          .setName("test_string")
+          .build();
+
   @Before
   public void setUp() throws Exception {
     testBigQueryWrite = new FakeBigQueryWrite();
