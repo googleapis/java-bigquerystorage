@@ -24,14 +24,11 @@ import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.LocalChannelProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
-import com.google.cloud.bigquery.storage.test.JsonTest.ComplexRoot;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Int64Value;
 import com.google.protobuf.Timestamp;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -45,7 +42,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.threeten.bp.Instant;
-import org.threeten.bp.LocalTime;
 
 @RunWith(JUnit4.class)
 public class JsonStreamWriterTest {
