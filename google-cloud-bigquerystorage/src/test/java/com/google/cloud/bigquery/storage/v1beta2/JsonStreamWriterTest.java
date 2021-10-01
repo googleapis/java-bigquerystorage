@@ -120,6 +120,18 @@ public class JsonStreamWriterTest {
           .setMode(TableFieldSchema.Mode.REQUIRED)
           .setName("test_date")
           .build();
+  private final TableFieldSchema TEST_DATETIME =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.DATETIME)
+          .setMode(TableFieldSchema.Mode.NULLABLE)
+          .setName("test_datetime")
+          .build();
+  private final TableFieldSchema TEST_DATETIME_STR =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.DATETIME)
+          .setMode(TableFieldSchema.Mode.REPEATED)
+          .setName("test_datetime_str")
+          .build();
   private final TableFieldSchema COMPLEXLVL2 =
       TableFieldSchema.newBuilder()
           .setType(TableFieldSchema.Type.STRUCT)
@@ -165,6 +177,30 @@ public class JsonStreamWriterTest {
           .setMode(TableFieldSchema.Mode.NULLABLE)
           .setName("test_time")
           .build();
+  private final TableFieldSchema TEST_TIME_STR =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.TIME)
+          .setMode(TableFieldSchema.Mode.NULLABLE)
+          .setName("test_time_str")
+          .build();
+  private final TableFieldSchema TEST_NUMERIC_STR =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.NUMERIC)
+          .setMode(TableFieldSchema.Mode.NULLABLE)
+          .setName("test_numeric_str")
+          .build();
+  private final TableFieldSchema TEST_BIGNUMERIC =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.NUMERIC)
+          .setMode(TableFieldSchema.Mode.NULLABLE)
+          .setName("test_bignumeric")
+          .build();
+  private final TableFieldSchema TEST_BIGNUMERIC_STR =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.NUMERIC)
+          .setMode(TableFieldSchema.Mode.REPEATED)
+          .setName("test_bignumeric_str")
+          .build();
   private final TableSchema COMPLEX_TABLE_SCHEMA =
       TableSchema.newBuilder()
           .addFields(0, TEST_INT)
@@ -173,13 +209,19 @@ public class JsonStreamWriterTest {
           .addFields(3, TEST_BOOL)
           .addFields(4, TEST_DOUBLE)
           .addFields(5, TEST_DATE)
-          .addFields(6, COMPLEXLVL1)
-          .addFields(7, COMPLEXLVL2)
-          .addFields(8, TEST_NUMERIC)
-          .addFields(9, TEST_GEO)
-          .addFields(10, TEST_TIMESTAMP)
-          .addFields(11, TEST_TIME)
-          .addFields(12, TEST_NUMERIC_REPEATED)
+          .addFields(6, TEST_DATETIME)
+          .addFields(7, TEST_DATETIME_STR)
+          .addFields(8, COMPLEXLVL1)
+          .addFields(9, COMPLEXLVL2)
+          .addFields(10, TEST_NUMERIC)
+          .addFields(11, TEST_GEO)
+          .addFields(12, TEST_TIMESTAMP)
+          .addFields(13, TEST_TIME)
+          .addFields(14, TEST_TIME_STR)
+          .addFields(15, TEST_NUMERIC_REPEATED)
+          .addFields(16, TEST_NUMERIC_STR)
+          .addFields(17, TEST_BIGNUMERIC)
+          .addFields(18, TEST_BIGNUMERIC_STR)
           .build();
 
   @Before
