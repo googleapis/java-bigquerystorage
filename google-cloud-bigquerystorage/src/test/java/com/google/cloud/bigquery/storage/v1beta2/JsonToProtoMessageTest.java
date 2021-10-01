@@ -484,14 +484,14 @@ public class JsonToProtoMessageTest {
             .build();
     TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
     JSONObject json = new JSONObject();
-    json.put("datetime", (byte) 1);
+    json.put("datetime", 1.0);
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(
               TestDatetime.getDescriptor(), tableSchema, json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int32 field at root.int.", e.getMessage());
+      assertEquals("JSONObject does not have a int64 field at root.datetime.", e.getMessage());
     }
   }
 
@@ -505,13 +505,13 @@ public class JsonToProtoMessageTest {
             .build();
     TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
     JSONObject json = new JSONObject();
-    json.put("time", (byte) 1);
+    json.put("time", new JSONArray(new Double[] { 1.0 } ));
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(TestTime.getDescriptor(), tableSchema, json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int32 field at root.int.", e.getMessage());
+      assertEquals("JSONObject does not have a int64 field at root.time[0].", e.getMessage());
     }
   }
 
@@ -525,14 +525,14 @@ public class JsonToProtoMessageTest {
             .build();
     TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
     JSONObject json = new JSONObject();
-    json.put("numeric", (byte) 1);
+    json.put("numeric", 1.0);
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(
               TestNumeric.getDescriptor(), tableSchema, json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int32 field at root.int.", e.getMessage());
+      assertEquals("JSONObject does not have a bytes field at root.numeric.", e.getMessage());
     }
   }
 
@@ -546,14 +546,14 @@ public class JsonToProtoMessageTest {
             .build();
     TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
     JSONObject json = new JSONObject();
-    json.put("bignumeric", (byte) 1);
+    json.put("bignumeric", new JSONArray(new Double[] { 1.0 } ));
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(
               TestBignumeric.getDescriptor(), tableSchema, json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int32 field at root.int.", e.getMessage());
+      assertEquals("JSONObject does not have a bytes field at root.bignumeric[0].", e.getMessage());
     }
   }
 
@@ -738,10 +738,10 @@ public class JsonToProtoMessageTest {
             .addTestNumericRepeated(
                 BigDecimalByteStringEncoder.encodeToNumericByteString(
                     new BigDecimal("-99999999999999999999999999999.999999999")))
-            .setTestNumericStr("12.4")
+            .setTestNumericStr(BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("12.4")))
             .setTestBignumeric(
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("2.3")))
-            .addTestBignumericStr("1.23")
+            .addTestBignumericStr(BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.23")))
             .build();
     JSONObject complex_lvl2 = new JSONObject();
     complex_lvl2.put("test_int", 3);

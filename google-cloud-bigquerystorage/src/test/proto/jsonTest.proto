@@ -20,9 +20,9 @@ message ComplexRoot {
   optional int64 test_time = 14;
   optional int64 test_time_str = 15;
   repeated bytes test_numeric_repeated = 16;
-  optional string test_numeric_str = 17;
+  optional bytes test_numeric_str = 17;
   optional bytes test_bignumeric = 18;
-  repeated string test_bignumeric_str = 19;
+  repeated bytes test_bignumeric_str = 19;
 }
 
 message CasingComplex {
