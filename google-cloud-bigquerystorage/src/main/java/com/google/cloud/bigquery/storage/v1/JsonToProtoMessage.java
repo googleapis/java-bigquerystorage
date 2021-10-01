@@ -463,7 +463,7 @@ public class JsonToProtoMessage {
                 fieldDescriptor,
                 convertJsonToProtoMessageImpl(
                     fieldDescriptor.getMessageType(),
-                    fieldSchema == null? null: fieldSchema.getFieldsList(),
+                    fieldSchema == null ? null : fieldSchema.getFieldsList(),
                     jsonArray.getJSONObject(i),
                     currentScope,
                     /*topLevel =*/ false));
