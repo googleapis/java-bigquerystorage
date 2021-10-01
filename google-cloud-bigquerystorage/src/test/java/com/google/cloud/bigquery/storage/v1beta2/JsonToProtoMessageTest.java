@@ -505,7 +505,7 @@ public class JsonToProtoMessageTest {
             .build();
     TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
     JSONObject json = new JSONObject();
-    json.put("time", new JSONArray(new Double[] { 1.0 } ));
+    json.put("time", new JSONArray(new Double[] {1.0}));
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(TestTime.getDescriptor(), tableSchema, json);
@@ -546,7 +546,7 @@ public class JsonToProtoMessageTest {
             .build();
     TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
     JSONObject json = new JSONObject();
-    json.put("bignumeric", new JSONArray(new Double[] { 1.0 } ));
+    json.put("bignumeric", new JSONArray(new Double[] {1.0}));
     try {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(
@@ -738,10 +738,12 @@ public class JsonToProtoMessageTest {
             .addTestNumericRepeated(
                 BigDecimalByteStringEncoder.encodeToNumericByteString(
                     new BigDecimal("-99999999999999999999999999999.999999999")))
-            .setTestNumericStr(BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("12.4")))
+            .setTestNumericStr(
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("12.4")))
             .setTestBignumeric(
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("2.3")))
-            .addTestBignumericStr(BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.23")))
+            .addTestBignumericStr(
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.23")))
             .build();
     JSONObject complex_lvl2 = new JSONObject();
     complex_lvl2.put("test_int", 3);
