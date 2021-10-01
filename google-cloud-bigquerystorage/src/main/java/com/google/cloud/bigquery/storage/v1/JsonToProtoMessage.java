@@ -63,7 +63,7 @@ public class JsonToProtoMessage {
     Preconditions.checkNotNull(protoSchema, "Protobuf descriptor is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertJsonToProtoMessageImpl(protoSchema, json, "root", /*topLevel=*/ true);
+    return convertJsonToProtoMessageImpl(protoSchema, null, json, "root", /*topLevel=*/ true);
   }
 
   /**
@@ -463,6 +463,7 @@ public class JsonToProtoMessage {
                 fieldDescriptor,
                 convertJsonToProtoMessageImpl(
                     fieldDescriptor.getMessageType(),
+                    fieldSchema == null? null: fieldSchema.getFieldsList(),
                     jsonArray.getJSONObject(i),
                     currentScope,
                     /*topLevel =*/ false));
