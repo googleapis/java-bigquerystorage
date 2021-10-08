@@ -16,43 +16,42 @@
 
 package com.example.bigquerystorage;
 
-// [START bigquerystorage_jsonstreamwriter_pending]
+// [START bigquerystorage_jsonstreamwriter_buffered]
 import com.google.api.core.ApiFuture;
 import com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse;
-import com.google.cloud.bigquery.storage.v1beta2.BatchCommitWriteStreamsRequest;
-import com.google.cloud.bigquery.storage.v1beta2.BatchCommitWriteStreamsResponse;
 import com.google.cloud.bigquery.storage.v1beta2.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1beta2.CreateWriteStreamRequest;
-import com.google.cloud.bigquery.storage.v1beta2.FinalizeWriteStreamResponse;
+import com.google.cloud.bigquery.storage.v1beta2.FlushRowsRequest;
+import com.google.cloud.bigquery.storage.v1beta2.FlushRowsResponse;
 import com.google.cloud.bigquery.storage.v1beta2.JsonStreamWriter;
-import com.google.cloud.bigquery.storage.v1beta2.StorageError;
 import com.google.cloud.bigquery.storage.v1beta2.TableName;
 import com.google.cloud.bigquery.storage.v1beta2.WriteStream;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
+import com.google.protobuf.Int64Value;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class WritePendingStream {
+public class WriteBufferedStream {
 
-  public static void runWritePendingStream()
+  public static void runWriteBufferedStream()
       throws DescriptorValidationException, InterruptedException, IOException {
     // TODO(developer): Replace these variables before running the sample.
     String projectId = "MY_PROJECT_ID";
     String datasetName = "MY_DATASET_NAME";
     String tableName = "MY_TABLE_NAME";
 
-    writePendingStream(projectId, datasetName, tableName);
+    writeBufferedStream(projectId, datasetName, tableName);
   }
 
-  public static void writePendingStream(String projectId, String datasetName, String tableName)
+  public static void writeBufferedStream(String projectId, String datasetName, String tableName)
       throws DescriptorValidationException, InterruptedException, IOException {
     try (BigQueryWriteClient client = BigQueryWriteClient.create()) {
       // Initialize a write stream for the specified table.
       // For more information on WriteStream.Type, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1beta2/WriteStream.Type.html
-      WriteStream stream = WriteStream.newBuilder().setType(WriteStream.Type.PENDING).build();
+      WriteStream stream = WriteStream.newBuilder().setType(WriteStream.Type.BUFFERED).build();
       TableName parentTable = TableName.of(projectId, datasetName, tableName);
       CreateWriteStreamRequest createWriteStreamRequest =
           CreateWriteStreamRequest.newBuilder()
@@ -69,35 +68,25 @@ public class WritePendingStream {
               .build()) {
         // Write two batches to the stream, each with 10 JSON records.
         for (int i = 0; i < 2; i++) {
-          // Create a JSON object that is compatible with the table schema.
           JSONArray jsonArr = new JSONArray();
           for (int j = 0; j < 10; j++) {
+            // Create a JSON object that is compatible with the table schema.
             JSONObject record = new JSONObject();
-            record.put("col1", String.format("batch-record %03d-%03d", i, j));
+            record.put("col1", String.format("buffered-record %03d", i));
             jsonArr.put(record);
           }
           ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
           AppendRowsResponse response = future.get();
         }
-        FinalizeWriteStreamResponse finalizeResponse =
-            client.finalizeWriteStream(writeStream.getName());
-        System.out.println("Rows written: " + finalizeResponse.getRowCount());
-      }
 
-      // Commit the streams.
-      BatchCommitWriteStreamsRequest commitRequest =
-          BatchCommitWriteStreamsRequest.newBuilder()
-              .setParent(parentTable.toString())
-              .addWriteStreams(writeStream.getName())
-              .build();
-      BatchCommitWriteStreamsResponse commitResponse =
-          client.batchCommitWriteStreams(commitRequest);
-      // If the response does not have a commit time, it means the commit operation failed.
-      if (commitResponse.hasCommitTime() == false) {
-        for (StorageError err : commitResponse.getStreamErrorsList()) {
-          System.out.println(err.getErrorMessage());
-        }
-        throw new RuntimeException("Error committing the streams");
+        // Flush the buffer.
+        FlushRowsRequest flushRowsRequest =
+            FlushRowsRequest.newBuilder()
+                .setWriteStream(writeStream.getName())
+                .setOffset(Int64Value.of(10 * 2 - 1)) // Advance the cursor to the latest record.
+                .build();
+        FlushRowsResponse flushRowsResponse = client.flushRows(flushRowsRequest);
+        // You can continue to write to the stream after flushing the buffer.
       }
       System.out.println("Appended and committed records successfully.");
     } catch (ExecutionException e) {
@@ -108,4 +97,4 @@ public class WritePendingStream {
     }
   }
 }
-// [END bigquerystorage_jsonstreamwriter_pending]
+// [END bigquerystorage_jsonstreamwriter_buffered]
