@@ -36,29 +36,29 @@ import java.util.List;
 public class BQTableSchemaToProtoDescriptor {
   private static ImmutableMap<TableFieldSchema.Mode, FieldDescriptorProto.Label>
       BQTableSchemaModeMap =
-      ImmutableMap.of(
-          TableFieldSchema.Mode.NULLABLE, FieldDescriptorProto.Label.LABEL_OPTIONAL,
-          TableFieldSchema.Mode.REPEATED, FieldDescriptorProto.Label.LABEL_REPEATED,
-          TableFieldSchema.Mode.REQUIRED, FieldDescriptorProto.Label.LABEL_REQUIRED);
+          ImmutableMap.of(
+              TableFieldSchema.Mode.NULLABLE, FieldDescriptorProto.Label.LABEL_OPTIONAL,
+              TableFieldSchema.Mode.REPEATED, FieldDescriptorProto.Label.LABEL_REPEATED,
+              TableFieldSchema.Mode.REQUIRED, FieldDescriptorProto.Label.LABEL_REQUIRED);
 
   private static ImmutableMap<TableFieldSchema.Type, FieldDescriptorProto.Type>
       BQTableSchemaTypeMap =
-      new ImmutableMap.Builder<TableFieldSchema.Type, FieldDescriptorProto.Type>()
-          .put(TableFieldSchema.Type.BOOL, FieldDescriptorProto.Type.TYPE_BOOL)
-          .put(TableFieldSchema.Type.BYTES, FieldDescriptorProto.Type.TYPE_BYTES)
-          .put(TableFieldSchema.Type.DATE, FieldDescriptorProto.Type.TYPE_INT32)
-          .put(TableFieldSchema.Type.DATETIME, FieldDescriptorProto.Type.TYPE_INT64)
-          .put(TableFieldSchema.Type.DOUBLE, FieldDescriptorProto.Type.TYPE_DOUBLE)
-          .put(TableFieldSchema.Type.GEOGRAPHY, FieldDescriptorProto.Type.TYPE_STRING)
-          .put(TableFieldSchema.Type.INT64, FieldDescriptorProto.Type.TYPE_INT64)
-          .put(TableFieldSchema.Type.NUMERIC, FieldDescriptorProto.Type.TYPE_BYTES)
-          .put(TableFieldSchema.Type.STRING, FieldDescriptorProto.Type.TYPE_STRING)
-          .put(TableFieldSchema.Type.STRUCT, FieldDescriptorProto.Type.TYPE_MESSAGE)
-          .put(TableFieldSchema.Type.TIME, FieldDescriptorProto.Type.TYPE_INT64)
-          .put(TableFieldSchema.Type.TIMESTAMP, FieldDescriptorProto.Type.TYPE_INT64)
-          .put(TableFieldSchema.Type.JSON, FieldDescriptorProto.Type.TYPE_STRING)
-          .put(TableFieldSchema.Type.INTERVAL, FieldDescriptorProto.Type.TYPE_STRING)
-          .build();
+          new ImmutableMap.Builder<TableFieldSchema.Type, FieldDescriptorProto.Type>()
+              .put(TableFieldSchema.Type.BOOL, FieldDescriptorProto.Type.TYPE_BOOL)
+              .put(TableFieldSchema.Type.BYTES, FieldDescriptorProto.Type.TYPE_BYTES)
+              .put(TableFieldSchema.Type.DATE, FieldDescriptorProto.Type.TYPE_INT32)
+              .put(TableFieldSchema.Type.DATETIME, FieldDescriptorProto.Type.TYPE_INT64)
+              .put(TableFieldSchema.Type.DOUBLE, FieldDescriptorProto.Type.TYPE_DOUBLE)
+              .put(TableFieldSchema.Type.GEOGRAPHY, FieldDescriptorProto.Type.TYPE_STRING)
+              .put(TableFieldSchema.Type.INT64, FieldDescriptorProto.Type.TYPE_INT64)
+              .put(TableFieldSchema.Type.NUMERIC, FieldDescriptorProto.Type.TYPE_BYTES)
+              .put(TableFieldSchema.Type.STRING, FieldDescriptorProto.Type.TYPE_STRING)
+              .put(TableFieldSchema.Type.STRUCT, FieldDescriptorProto.Type.TYPE_MESSAGE)
+              .put(TableFieldSchema.Type.TIME, FieldDescriptorProto.Type.TYPE_INT64)
+              .put(TableFieldSchema.Type.TIMESTAMP, FieldDescriptorProto.Type.TYPE_INT64)
+              .put(TableFieldSchema.Type.JSON, FieldDescriptorProto.Type.TYPE_STRING)
+              .put(TableFieldSchema.Type.INTERVAL, FieldDescriptorProto.Type.TYPE_STRING)
+              .build();
 
   /**
    * Converts TableFieldSchema to a Descriptors.Descriptor object.

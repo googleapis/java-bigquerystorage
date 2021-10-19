@@ -34,19 +34,19 @@ public class BQTableSchemaToProtoDescriptorTest {
   // produce. The produced descriptor will be used to check against the entry values here.
   private static ImmutableMap<TableFieldSchema.Type, Descriptor>
       BQTableTypeToCorrectProtoDescriptorTest =
-      new ImmutableMap.Builder<TableFieldSchema.Type, Descriptor>()
-          .put(TableFieldSchema.Type.BOOL, BoolType.getDescriptor())
-          .put(TableFieldSchema.Type.BYTES, BytesType.getDescriptor())
-          .put(TableFieldSchema.Type.DATE, Int32Type.getDescriptor())
-          .put(TableFieldSchema.Type.DATETIME, Int64Type.getDescriptor())
-          .put(TableFieldSchema.Type.DOUBLE, DoubleType.getDescriptor())
-          .put(TableFieldSchema.Type.GEOGRAPHY, StringType.getDescriptor())
-          .put(TableFieldSchema.Type.INT64, Int64Type.getDescriptor())
-          .put(TableFieldSchema.Type.NUMERIC, BytesType.getDescriptor())
-          .put(TableFieldSchema.Type.STRING, StringType.getDescriptor())
-          .put(TableFieldSchema.Type.TIME, Int64Type.getDescriptor())
-          .put(TableFieldSchema.Type.TIMESTAMP, Int64Type.getDescriptor())
-          .build();
+          new ImmutableMap.Builder<TableFieldSchema.Type, Descriptor>()
+              .put(TableFieldSchema.Type.BOOL, BoolType.getDescriptor())
+              .put(TableFieldSchema.Type.BYTES, BytesType.getDescriptor())
+              .put(TableFieldSchema.Type.DATE, Int32Type.getDescriptor())
+              .put(TableFieldSchema.Type.DATETIME, Int64Type.getDescriptor())
+              .put(TableFieldSchema.Type.DOUBLE, DoubleType.getDescriptor())
+              .put(TableFieldSchema.Type.GEOGRAPHY, StringType.getDescriptor())
+              .put(TableFieldSchema.Type.INT64, Int64Type.getDescriptor())
+              .put(TableFieldSchema.Type.NUMERIC, BytesType.getDescriptor())
+              .put(TableFieldSchema.Type.STRING, StringType.getDescriptor())
+              .put(TableFieldSchema.Type.TIME, Int64Type.getDescriptor())
+              .put(TableFieldSchema.Type.TIMESTAMP, Int64Type.getDescriptor())
+              .build();
 
   // Creates mapping from descriptor to how many times it was reused.
   private void mapDescriptorToCount(Descriptor descriptor, HashMap<String, Integer> map) {

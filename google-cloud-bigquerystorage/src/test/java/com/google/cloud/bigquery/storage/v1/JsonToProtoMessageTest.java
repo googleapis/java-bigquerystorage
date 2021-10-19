@@ -60,16 +60,16 @@ public class JsonToProtoMessageTest {
           .put(
               BytesType.getDescriptor(),
               new Message[] {
-                  BytesType.newBuilder().setTestFieldType(ByteString.copyFromUtf8("test")).build(),
-                  BytesType.newBuilder()
-                      .setTestFieldType(ByteString.copyFrom(new byte[] {1, 2, 3}))
-                      .build()
+                BytesType.newBuilder().setTestFieldType(ByteString.copyFromUtf8("test")).build(),
+                BytesType.newBuilder()
+                    .setTestFieldType(ByteString.copyFrom(new byte[] {1, 2, 3}))
+                    .build()
               })
           .put(
               Int64Type.getDescriptor(),
               new Message[] {
-                  Int64Type.newBuilder().setTestFieldType(Long.MAX_VALUE).build(),
-                  Int64Type.newBuilder().setTestFieldType(new Long(Integer.MAX_VALUE)).build()
+                Int64Type.newBuilder().setTestFieldType(Long.MAX_VALUE).build(),
+                Int64Type.newBuilder().setTestFieldType(new Long(Integer.MAX_VALUE)).build()
               })
           .put(
               Int32Type.getDescriptor(),
@@ -83,23 +83,23 @@ public class JsonToProtoMessageTest {
           .put(
               RepeatedType.getDescriptor(),
               new Message[] {
-                  RepeatedType.newBuilder()
-                      .addAllTestFieldType(
-                          new ArrayList<Long>() {
-                            {
-                              add(1L);
-                              add(2L);
-                              add(3L);
-                            }
-                          })
-                      .build()
+                RepeatedType.newBuilder()
+                    .addAllTestFieldType(
+                        new ArrayList<Long>() {
+                          {
+                            add(1L);
+                            add(2L);
+                            add(3L);
+                          }
+                        })
+                    .build()
               })
           .put(
               ObjectType.getDescriptor(),
               new Message[] {
-                  ObjectType.newBuilder()
-                      .setTestFieldType(ComplexLvl2.newBuilder().setTestInt(1).build())
-                      .build()
+                ObjectType.newBuilder()
+                    .setTestFieldType(ComplexLvl2.newBuilder().setTestInt(1).build())
+                    .build()
               })
           .build();
 
@@ -119,107 +119,107 @@ public class JsonToProtoMessageTest {
           .put(
               RepeatedBool.getDescriptor(),
               new Message[] {
-                  RepeatedBool.newBuilder().addTestRepeated(true).addTestRepeated(false).build()
+                RepeatedBool.newBuilder().addTestRepeated(true).addTestRepeated(false).build()
               })
           .put(
               RepeatedBytes.getDescriptor(),
               new Message[] {
-                  RepeatedBytes.newBuilder()
-                      .addTestRepeated(ByteString.copyFrom(new byte[] {0}))
-                      .addTestRepeated(ByteString.copyFrom(new byte[] {0, -116, -122, 71}))
-                      .build(),
-                  RepeatedBytes.newBuilder()
-                      .addTestRepeated(
-                          BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0")))
-                      .addTestRepeated(
-                          BigDecimalByteStringEncoder.encodeToNumericByteString(
-                              new BigDecimal("1.2")))
-                      .build()
+                RepeatedBytes.newBuilder()
+                    .addTestRepeated(ByteString.copyFrom(new byte[] {0}))
+                    .addTestRepeated(ByteString.copyFrom(new byte[] {0, -116, -122, 71}))
+                    .build(),
+                RepeatedBytes.newBuilder()
+                    .addTestRepeated(
+                        BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0")))
+                    .addTestRepeated(
+                        BigDecimalByteStringEncoder.encodeToNumericByteString(
+                            new BigDecimal("1.2")))
+                    .build()
               })
           .put(
               RepeatedString.getDescriptor(),
               new Message[] {
-                  RepeatedString.newBuilder().addTestRepeated("hello").addTestRepeated("test").build()
+                RepeatedString.newBuilder().addTestRepeated("hello").addTestRepeated("test").build()
               })
           .put(
               RepeatedInt64.getDescriptor(),
               new Message[] {
-                  RepeatedInt64.newBuilder()
-                      .addTestRepeated(Long.MAX_VALUE)
-                      .addTestRepeated(Long.MIN_VALUE)
-                      .addTestRepeated(Integer.MAX_VALUE)
-                      .addTestRepeated(Integer.MIN_VALUE)
-                      .addTestRepeated(Short.MAX_VALUE)
-                      .addTestRepeated(Short.MIN_VALUE)
-                      .addTestRepeated(Byte.MAX_VALUE)
-                      .addTestRepeated(Byte.MIN_VALUE)
-                      .addTestRepeated(0)
-                      .build(),
-                  RepeatedInt64.newBuilder()
-                      .addTestRepeated(Integer.MAX_VALUE)
-                      .addTestRepeated(Integer.MIN_VALUE)
-                      .addTestRepeated(Short.MAX_VALUE)
-                      .addTestRepeated(Short.MIN_VALUE)
-                      .addTestRepeated(Byte.MAX_VALUE)
-                      .addTestRepeated(Byte.MIN_VALUE)
-                      .addTestRepeated(0)
-                      .build()
+                RepeatedInt64.newBuilder()
+                    .addTestRepeated(Long.MAX_VALUE)
+                    .addTestRepeated(Long.MIN_VALUE)
+                    .addTestRepeated(Integer.MAX_VALUE)
+                    .addTestRepeated(Integer.MIN_VALUE)
+                    .addTestRepeated(Short.MAX_VALUE)
+                    .addTestRepeated(Short.MIN_VALUE)
+                    .addTestRepeated(Byte.MAX_VALUE)
+                    .addTestRepeated(Byte.MIN_VALUE)
+                    .addTestRepeated(0)
+                    .build(),
+                RepeatedInt64.newBuilder()
+                    .addTestRepeated(Integer.MAX_VALUE)
+                    .addTestRepeated(Integer.MIN_VALUE)
+                    .addTestRepeated(Short.MAX_VALUE)
+                    .addTestRepeated(Short.MIN_VALUE)
+                    .addTestRepeated(Byte.MAX_VALUE)
+                    .addTestRepeated(Byte.MIN_VALUE)
+                    .addTestRepeated(0)
+                    .build()
               })
           .put(
               RepeatedInt32.getDescriptor(),
               new Message[] {
-                  RepeatedInt32.newBuilder()
-                      .addTestRepeated(Integer.MAX_VALUE)
-                      .addTestRepeated(Integer.MIN_VALUE)
-                      .addTestRepeated(Short.MAX_VALUE)
-                      .addTestRepeated(Short.MIN_VALUE)
-                      .addTestRepeated(Byte.MAX_VALUE)
-                      .addTestRepeated(Byte.MIN_VALUE)
-                      .addTestRepeated(0)
-                      .build()
+                RepeatedInt32.newBuilder()
+                    .addTestRepeated(Integer.MAX_VALUE)
+                    .addTestRepeated(Integer.MIN_VALUE)
+                    .addTestRepeated(Short.MAX_VALUE)
+                    .addTestRepeated(Short.MIN_VALUE)
+                    .addTestRepeated(Byte.MAX_VALUE)
+                    .addTestRepeated(Byte.MIN_VALUE)
+                    .addTestRepeated(0)
+                    .build()
               })
           .put(
               RepeatedDouble.getDescriptor(),
               new Message[] {
-                  RepeatedDouble.newBuilder()
-                      .addTestRepeated(Double.MAX_VALUE)
-                      .addTestRepeated(Double.MIN_VALUE)
-                      .addTestRepeated(Float.MAX_VALUE)
-                      .addTestRepeated(Float.MIN_VALUE)
-                      .build(),
-                  RepeatedDouble.newBuilder()
-                      .addTestRepeated(Float.MAX_VALUE)
-                      .addTestRepeated(Float.MIN_VALUE)
-                      .build()
+                RepeatedDouble.newBuilder()
+                    .addTestRepeated(Double.MAX_VALUE)
+                    .addTestRepeated(Double.MIN_VALUE)
+                    .addTestRepeated(Float.MAX_VALUE)
+                    .addTestRepeated(Float.MIN_VALUE)
+                    .build(),
+                RepeatedDouble.newBuilder()
+                    .addTestRepeated(Float.MAX_VALUE)
+                    .addTestRepeated(Float.MIN_VALUE)
+                    .build()
               })
           .put(
               RepeatedObject.getDescriptor(),
               new Message[] {
-                  RepeatedObject.newBuilder()
-                      .addTestRepeated(ComplexLvl2.newBuilder().setTestInt(1).build())
-                      .addTestRepeated(ComplexLvl2.newBuilder().setTestInt(2).build())
-                      .addTestRepeated(ComplexLvl2.newBuilder().setTestInt(3).build())
-                      .build()
+                RepeatedObject.newBuilder()
+                    .addTestRepeated(ComplexLvl2.newBuilder().setTestInt(1).build())
+                    .addTestRepeated(ComplexLvl2.newBuilder().setTestInt(2).build())
+                    .addTestRepeated(ComplexLvl2.newBuilder().setTestInt(3).build())
+                    .build()
               })
           .build();
 
   private static JSONObject[] simpleJSONObjects = {
-      new JSONObject().put("test_field_type", Long.MAX_VALUE),
-      new JSONObject().put("test_field_type", Integer.MAX_VALUE),
-      new JSONObject().put("test_field_type", 1.23),
-      new JSONObject().put("test_field_type", true),
-      new JSONObject().put("test_field_type", ByteString.copyFromUtf8("test")),
-      new JSONObject().put("test_field_type", new JSONArray("[1, 2, 3]")),
-      new JSONObject().put("test_field_type", new JSONObject().put("test_int", 1)),
-      new JSONObject().put("test_field_type", "test")
+    new JSONObject().put("test_field_type", Long.MAX_VALUE),
+    new JSONObject().put("test_field_type", Integer.MAX_VALUE),
+    new JSONObject().put("test_field_type", 1.23),
+    new JSONObject().put("test_field_type", true),
+    new JSONObject().put("test_field_type", ByteString.copyFromUtf8("test")),
+    new JSONObject().put("test_field_type", new JSONArray("[1, 2, 3]")),
+    new JSONObject().put("test_field_type", new JSONObject().put("test_int", 1)),
+    new JSONObject().put("test_field_type", "test")
   };
 
   private static JSONObject[] simpleJSONArrays = {
-      new JSONObject()
-          .put(
-          "test_repeated",
-          new JSONArray(
-              new Long[] {
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new Long[] {
                   Long.MAX_VALUE,
                   Long.MIN_VALUE,
                   (long) Integer.MAX_VALUE,
@@ -229,12 +229,12 @@ public class JsonToProtoMessageTest {
                   (long) Byte.MAX_VALUE,
                   (long) Byte.MIN_VALUE,
                   0L
-              })),
-      new JSONObject()
-          .put(
-          "test_repeated",
-          new JSONArray(
-              new Integer[] {
+                })),
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new Integer[] {
                   Integer.MAX_VALUE,
                   Integer.MIN_VALUE,
                   (int) Short.MAX_VALUE,
@@ -242,43 +242,43 @@ public class JsonToProtoMessageTest {
                   (int) Byte.MAX_VALUE,
                   (int) Byte.MIN_VALUE,
                   0
-              })),
-      new JSONObject()
-          .put(
-          "test_repeated",
-          new JSONArray(
-              new Double[] {
+                })),
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new Double[] {
                   Double.MAX_VALUE,
                   Double.MIN_VALUE,
                   (double) Float.MAX_VALUE,
                   (double) Float.MIN_VALUE
-              })),
-      new JSONObject()
-          .put("test_repeated", new JSONArray(new Float[] {Float.MAX_VALUE, Float.MIN_VALUE})),
-      new JSONObject().put("test_repeated", new JSONArray(new Boolean[] {true, false})),
-      new JSONObject().put("test_repeated", new JSONArray(new String[] {"hello", "test"})),
-      new JSONObject()
-          .put(
-          "test_repeated",
-          new JSONArray(
-              new byte[][] {
+                })),
+    new JSONObject()
+        .put("test_repeated", new JSONArray(new Float[] {Float.MAX_VALUE, Float.MIN_VALUE})),
+    new JSONObject().put("test_repeated", new JSONArray(new Boolean[] {true, false})),
+    new JSONObject().put("test_repeated", new JSONArray(new String[] {"hello", "test"})),
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new byte[][] {
                   BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0"))
                       .toByteArray(),
                   BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.2"))
                       .toByteArray()
-              })),
-      new JSONObject().put("test_repeated", new JSONArray(new int[][] {{11111, 22222}})),
-      new JSONObject().put("test_repeated", new JSONArray(new char[][] {{'a', 'b'}, {'c'}})),
-      new JSONObject().put("test_repeated", new JSONArray(new String[][] {{"hello"}, {"test"}})),
-      new JSONObject()
-          .put(
-          "test_repeated",
-          new JSONArray(
-              new JSONObject[] {
+                })),
+    new JSONObject().put("test_repeated", new JSONArray(new int[][] {{11111, 22222}})),
+    new JSONObject().put("test_repeated", new JSONArray(new char[][] {{'a', 'b'}, {'c'}})),
+    new JSONObject().put("test_repeated", new JSONArray(new String[][] {{"hello"}, {"test"}})),
+    new JSONObject()
+        .put(
+            "test_repeated",
+            new JSONArray(
+                new JSONObject[] {
                   new JSONObject().put("test_int", 1),
                   new JSONObject().put("test_int", 2),
                   new JSONObject().put("test_int", 3)
-              }))
+                }))
   };
   private final TableFieldSchema TEST_INT =
       TableFieldSchema.newBuilder()
@@ -630,12 +630,12 @@ public class JsonToProtoMessageTest {
           LOG.info(e.getMessage());
           assertTrue(
               e.getMessage()
-                  .equals(
-                      "JSONObject does not have a "
-                          + entry.getValue()
-                          + " field at root.test_repeated[0].")
+                      .equals(
+                          "JSONObject does not have a "
+                              + entry.getValue()
+                              + " field at root.test_repeated[0].")
                   || e.getMessage()
-                  .equals("Error: root.test_repeated[0] could not be converted to byte[]."));
+                      .equals("Error: root.test_repeated[0] could not be converted to byte[]."));
         }
       }
       if (entry.getKey() == RepeatedInt64.getDescriptor()
@@ -791,14 +791,14 @@ public class JsonToProtoMessageTest {
         "test_numeric_repeated",
         new JSONArray(
             new byte[][] {
-                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0"))
-                    .toByteArray(),
-                BigDecimalByteStringEncoder.encodeToNumericByteString(
-                    new BigDecimal("99999999999999999999999999999.999999999"))
-                    .toByteArray(),
-                BigDecimalByteStringEncoder.encodeToNumericByteString(
-                    new BigDecimal("-99999999999999999999999999999.999999999"))
-                    .toByteArray(),
+              BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0"))
+                  .toByteArray(),
+              BigDecimalByteStringEncoder.encodeToNumericByteString(
+                      new BigDecimal("99999999999999999999999999999.999999999"))
+                  .toByteArray(),
+              BigDecimalByteStringEncoder.encodeToNumericByteString(
+                      new BigDecimal("-99999999999999999999999999999.999999999"))
+                  .toByteArray(),
             }));
     json.put("test_geo", "POINT(1,1)");
     json.put("test_timestamp", 12345678);

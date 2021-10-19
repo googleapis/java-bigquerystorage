@@ -69,11 +69,11 @@ public class ProtoSchemaConverter {
           visitedTypes.add(msgFullName);
           rootProtoSchema.addNestedType(
               convertInternal(
-                  inputField.getMessageType(),
-                  visitedTypes,
-                  enumTypes,
-                  structTypes,
-                  rootProtoSchema)
+                      inputField.getMessageType(),
+                      visitedTypes,
+                      enumTypes,
+                      structTypes,
+                      rootProtoSchema)
                   .getProtoDescriptor());
           visitedTypes.remove(msgFullName);
           resultField.setTypeName(
