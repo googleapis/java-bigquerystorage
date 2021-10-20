@@ -27,6 +27,7 @@ java.common_templates(
         ".kokoro/build.sh",
         ".kokoro/nightly/samples.cfg",
         ".kokoro/presubmit/samples.cfg",
-        ".kokoro/dependencies.sh"
+        ".kokoro/dependencies.sh",
+        ".github/workflows/ci.yaml"
     ]
 )
