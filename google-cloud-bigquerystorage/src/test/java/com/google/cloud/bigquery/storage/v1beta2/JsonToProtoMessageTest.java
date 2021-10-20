@@ -574,22 +574,23 @@ public class JsonToProtoMessageTest {
     }
   }
 
-  @Test public void testMixedCasedFieldNames() throws Exception {
-    com.google.cloud.bigquery.storage.v1.TableFieldSchema field = com.google.cloud.bigquery.storage.v1.TableFieldSchema
-            .newBuilder()
+  @Test
+  public void testMixedCasedFieldNames() throws Exception {
+    com.google.cloud.bigquery.storage.v1.TableFieldSchema field =
+        com.google.cloud.bigquery.storage.v1.TableFieldSchema.newBuilder()
             .setName("fooBar")
             .setType(com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type.STRING)
             .setMode(com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode.NULLABLE)
             .build();
-    com.google.cloud.bigquery.storage.v1.TableSchema tableSchema = com.google.cloud.bigquery.storage.v1.TableSchema.newBuilder().addFields(field).build();
+    com.google.cloud.bigquery.storage.v1.TableSchema tableSchema =
+        com.google.cloud.bigquery.storage.v1.TableSchema.newBuilder().addFields(field).build();
 
     JSONObject json = new JSONObject();
     json.put("fooBar", "hello");
 
-    DynamicMessage protoMsg = com.google.cloud.bigquery.storage.v1.JsonToProtoMessage.convertJsonToProtoMessage(
-            TestMixedCaseFieldNames.getDescriptor(), tableSchema, json
-    );
-
+    DynamicMessage protoMsg =
+        com.google.cloud.bigquery.storage.v1.JsonToProtoMessage.convertJsonToProtoMessage(
+            TestMixedCaseFieldNames.getDescriptor(), tableSchema, json);
   }
 
   @Test
