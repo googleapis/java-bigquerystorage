@@ -552,6 +552,24 @@ public class JsonToProtoMessageTest {
     }
   }
 
+  @Test public void testMixedCasedFieldNames() throws Exception {
+    TableFieldSchema field = TableFieldSchema
+      .newBuilder()
+      .setName("fooBar")
+      .setType(TableFieldSchema.Type.STRING)
+      .setMode(TableFieldSchema.Mode.NULLABLE)
+      .build();
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
+
+    JSONObject json = new JSONObject();
+    json.put("fooBar", "hello");
+
+    DynamicMessage protoMsg = JsonToProtoMessage.convertJsonToProtoMessage(
+      TestMixedCaseFieldNames.getDescriptor(), tableSchema, json
+    );
+
+  }
+
   @Test
   public void testBigNumericMismatch() throws Exception {
     TableFieldSchema field =
