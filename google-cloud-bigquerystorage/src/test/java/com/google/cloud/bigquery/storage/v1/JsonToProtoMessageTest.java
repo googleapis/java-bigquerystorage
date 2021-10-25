@@ -553,7 +553,7 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
-  public void testMixedCasedFieldNames() throws Exception {
+  public void testMixedCaseFieldNames() throws Exception {
     TableFieldSchema field =
         TableFieldSchema.newBuilder()
             .setName("fooBar")
