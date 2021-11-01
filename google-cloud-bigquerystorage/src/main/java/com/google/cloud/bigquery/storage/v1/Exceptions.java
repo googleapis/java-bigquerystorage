@@ -121,5 +121,25 @@ public final class Exceptions {
     }
   }
 
+  /* Converts a Throwable into a StorageException, if possible.
+   * Examines the embedded error message, and potentially returns a StreamFinalizedException or
+   * SchemaMismatchedException (both derive from StorageException).
+   * If there is no StorageError, or the StorageError is a different error it will return NULL.
+   */
+  @Nullable
+  public static StorageException toStorageException(Throwable exception) {
+    String errorMsg = exception.getMessage();
+    if (errorMsg == null) {
+      return null;
+    }
+    if (errorMsg.toLowerCase().contains("finazlied")) {
+      return new StreamFinalizedException(null, errorMsg, exception);
+    }
+    if (errorMsg.toLowerCase().contains("mismatch")) {
+      return new SchemaMismatchedException(null, errorMsg, exception);
+    }
+    return null;
+  }
+
   private Exceptions() {}
 }
