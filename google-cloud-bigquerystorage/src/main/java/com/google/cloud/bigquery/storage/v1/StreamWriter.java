@@ -21,7 +21,6 @@ import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
-import com.google.cloud.bigquery.storage.v1.Exceptions.StorageException;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.RequestCallback;
 import com.google.common.base.Preconditions;
@@ -491,7 +490,7 @@ public class StreamWriter implements AutoCloseable {
     }
     Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
     if (storageException != null) {
-      throw new StorageException(finalStatus);
+      this.connectionFinalStatus = storageException;
     }
   }
 
