@@ -15,6 +15,7 @@
  */
 package com.google.cloud.bigquery.storage.v1;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Any;
@@ -26,48 +27,37 @@ public final class Exceptions {
   /** Main Storage Exception. Might contain map of streams to errors for that stream. */
   public static class StorageException extends RuntimeException {
 
-    protected StorageException() {}
+    private final ImmutableMap<String, GrpcStatusCode> errors;
+    private final String streamName;
 
-    protected StorageException(String message) {
-      super(message);
+    private StorageException() {
+      this(null, null, null, ImmutableMap.of());
     }
 
-    protected StorageException(String message, Throwable cause) {
+    private StorageException(
+        @Nullable String message,
+        @Nullable Throwable cause,
+        @Nullable String streamName,
+        ImmutableMap<String, GrpcStatusCode> errors) {
       super(message, cause);
+      checkArgument(errors != null, "errors must be non null");
+      this.streamName = streamName;
+      this.errors = errors;
     }
-
-    protected StorageException(Throwable cause) {
-      super(cause);
-    }
-
-    private ImmutableMap<String, GrpcStatusCode> errors;
 
     public ImmutableMap<String, GrpcStatusCode> getErrors() {
       return errors;
     }
 
-    public void setErrors(ImmutableMap<String, GrpcStatusCode> value) {
-      this.errors = value;
-    }
-
-    private String streamName;
-
     public String getStreamName() {
       return streamName;
-    }
-
-    protected void setStreamName(String value) {
-      this.streamName = value;
     }
   }
 
   /** Stream has already been finalized. */
-  public static class StreamFinalizedException extends StorageException {
-    protected StreamFinalizedException() {}
-
+  public static final class StreamFinalizedException extends StorageException {
     protected StreamFinalizedException(String name, String message, Throwable cause) {
-      super(message, cause);
-      setStreamName(name);
+      super(message, cause, name, null);
     }
   }
 
@@ -75,12 +65,9 @@ public final class Exceptions {
    * There was a schema mismatch due to bigquery table with fewer fields than the input message.
    * This can be resolved by updating the table's schema with the message schema.
    */
-  public static class SchemaMismatchedException extends StorageException {
-    protected SchemaMismatchedException() {}
-
+  public static final class SchemaMismatchedException extends StorageException {
     protected SchemaMismatchedException(String name, String message, Throwable cause) {
-      super(message, cause);
-      setStreamName(name);
+      super(message, cause, name, null);
     }
   }
 
@@ -97,10 +84,11 @@ public final class Exceptions {
     return null;
   }
 
-  /* Converts a c.g.rpc.Status into a StorageException, if possible.
-   * Examines the embedded StorageError, and potentially returns a StreamFinalizedException or
-   * SchemaMismatchedException (both derive from StorageException).
-   * If there is no StorageError, or the StorageError is a different error it will return NULL.
+  /**
+   * Converts a c.g.rpc.Status into a StorageException, if possible. Examines the embedded
+   * StorageError, and potentially returns a {@link StreamFinalizedException} or {@link
+   * SchemaMismatchedException} (both derive from StorageException). If there is no StorageError, or
+   * the StorageError is a different error it will return NULL.
    */
   @Nullable
   public static StorageException toStorageException(
@@ -121,10 +109,11 @@ public final class Exceptions {
     }
   }
 
-  /* Converts a Throwable into a StorageException, if possible.
-   * Examines the embedded error message, and potentially returns a StreamFinalizedException or
-   * SchemaMismatchedException (both derive from StorageException).
-   * If there is no StorageError, or the StorageError is a different error it will return NULL.
+  /**
+   * Converts a Throwable into a StorageException, if possible. Examines the embedded error message,
+   * and potentially returns a {@link StreamFinalizedException} or {@link SchemaMismatchedException}
+   * (both derive from StorageException). If there is no StorageError, or the StorageError is a
+   * different error it will return NULL.
    */
   @Nullable
   public static StorageException toStorageException(Throwable exception) {
