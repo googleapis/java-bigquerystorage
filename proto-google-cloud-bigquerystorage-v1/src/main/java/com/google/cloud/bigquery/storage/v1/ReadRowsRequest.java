@@ -175,9 +175,7 @@ public final class ReadRowsRequest extends com.google.protobuf.GeneratedMessageV
    *
    *
    * <pre>
-   * The offset requested must be less than the last row read from Read.
-   * Requesting a larger offset is undefined. If not specified, start reading
-   * from offset zero.
+   * Position in the stream.
    * </pre>
    *
    * <code>int64 offset = 2;</code>
@@ -203,7 +201,7 @@ public final class ReadRowsRequest extends com.google.protobuf.GeneratedMessageV
 
   @java.lang.Override
   public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-    if (!getReadStreamBytes().isEmpty()) {
+    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(readStream_)) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 1, readStream_);
     }
     if (offset_ != 0L) {
@@ -218,7 +216,7 @@ public final class ReadRowsRequest extends com.google.protobuf.GeneratedMessageV
     if (size != -1) return size;
 
     size = 0;
-    if (!getReadStreamBytes().isEmpty()) {
+    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(readStream_)) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, readStream_);
     }
     if (offset_ != 0L) {
@@ -643,9 +641,7 @@ public final class ReadRowsRequest extends com.google.protobuf.GeneratedMessageV
      *
      *
      * <pre>
-     * The offset requested must be less than the last row read from Read.
-     * Requesting a larger offset is undefined. If not specified, start reading
-     * from offset zero.
+     * Position in the stream.
      * </pre>
      *
      * <code>int64 offset = 2;</code>
@@ -660,7 +656,7 @@ public final class ReadRowsRequest extends com.google.protobuf.GeneratedMessageV
      *
      *
      * <pre>
-     * The offset requested must be less than the last row read from Read.
+     * The offset requested must be less than the maximum row previously read in the stream.
      * Requesting a larger offset is undefined. If not specified, start reading
      * from offset zero.
      * </pre>
@@ -680,9 +676,7 @@ public final class ReadRowsRequest extends com.google.protobuf.GeneratedMessageV
      *
      *
      * <pre>
-     * The offset requested must be less than the last row read from Read.
-     * Requesting a larger offset is undefined. If not specified, start reading
-     * from offset zero.
+     * Reset offset to zero.
      * </pre>
      *
      * <code>int64 offset = 2;</code>
