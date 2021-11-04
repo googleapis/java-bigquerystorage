@@ -339,6 +339,28 @@ public class StreamWriterTest {
   }
 
   @Test
+  public void testAppendFailedOnDone() throws Exception {
+    StreamWriter writer = getTestStreamWriter();
+
+    StatusRuntimeException exception =
+        new StatusRuntimeException(
+            io.grpc.Status.INVALID_ARGUMENT.withDescription("schema mismatch"));
+
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addException(exception);
+
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
+
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    Exceptions.SchemaMismatchedException actualError =
+        assertFutureException(Exceptions.SchemaMismatchedException.class, appendFuture2);
+    assertTrue(actualError.getMessage().contains("schema mismatch"));
+
+    writer.close();
+  }
+
+  @Test
   public void longIdleBetweenAppends() throws Exception {
     StreamWriter writer = getTestStreamWriter();
     testBigQueryWrite.addResponse(createAppendResponse(0));
