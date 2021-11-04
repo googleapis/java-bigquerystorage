@@ -16,6 +16,7 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Any;
