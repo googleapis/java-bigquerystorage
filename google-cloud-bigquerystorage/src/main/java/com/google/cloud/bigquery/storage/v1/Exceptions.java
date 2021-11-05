@@ -58,7 +58,7 @@ public final class Exceptions {
   /** Stream has already been finalized. */
   public static final class StreamFinalizedException extends StorageException {
     protected StreamFinalizedException(String name, String message, Throwable cause) {
-      super(message, cause, name, null);
+      super(message, cause, name, ImmutableMap.of());
     }
   }
 
@@ -68,7 +68,7 @@ public final class Exceptions {
    */
   public static final class SchemaMismatchedException extends StorageException {
     protected SchemaMismatchedException(String name, String message, Throwable cause) {
-      super(message, cause, name, null);
+      super(message, cause, name, ImmutableMap.of());
     }
   }
 
