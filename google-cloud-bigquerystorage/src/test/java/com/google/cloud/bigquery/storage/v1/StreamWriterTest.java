@@ -344,7 +344,7 @@ public class StreamWriterTest {
 
     StatusRuntimeException exception =
         new StatusRuntimeException(
-            io.grpc.Status.INVALID_ARGUMENT.withDescription("schema mismatch"));
+            io.grpc.Status.INVALID_ARGUMENT.withDescription("schema mismatched"));
 
     testBigQueryWrite.addResponse(createAppendResponse(0));
     testBigQueryWrite.addException(exception);
@@ -355,7 +355,7 @@ public class StreamWriterTest {
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     Exceptions.SchemaMismatchedException actualError =
         assertFutureException(Exceptions.SchemaMismatchedException.class, appendFuture2);
-    assertTrue(actualError.getMessage().contains("schema mismatch"));
+    assertTrue(actualError.getMessage().contains("schema mismatched"));
 
     writer.close();
   }

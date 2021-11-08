@@ -15,8 +15,6 @@
  */
 package com.google.cloud.bigquery.storage.v1;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Any;
@@ -41,7 +39,6 @@ public final class Exceptions {
         @Nullable String streamName,
         ImmutableMap<String, GrpcStatusCode> errors) {
       super(message, cause);
-      checkArgument(errors != null, "errors must be non null");
       this.streamName = streamName;
       this.errors = errors;
     }
@@ -125,7 +122,7 @@ public final class Exceptions {
     if (errorMsg.toLowerCase().contains("finazlied")) {
       return new StreamFinalizedException(null, errorMsg, exception);
     }
-    if (errorMsg.toLowerCase().contains("mismatch")) {
+    if (errorMsg.toLowerCase().contains("mismatched")) {
       return new SchemaMismatchedException(null, errorMsg, exception);
     }
     return null;
