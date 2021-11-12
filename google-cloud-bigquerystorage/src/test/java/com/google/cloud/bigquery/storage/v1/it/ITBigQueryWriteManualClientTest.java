@@ -49,16 +49,13 @@ public class ITBigQueryWriteManualClientTest {
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String DATASET_EU = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
-  private static final String TABLEINT = "testtableintcol";
   private static final String TABLE2 = "complicatedtable";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
 
   private static BigQueryWriteClient client;
-  private static TableInfo intTableInfo;
   private static TableInfo tableInfo;
   private static TableInfo tableInfo2;
   private static TableInfo tableInfoEU;
-  private static String intTableId;
   private static String tableId;
   private static String tableId2;
   private static String tableIdEU;
@@ -74,15 +71,6 @@ public class ITBigQueryWriteManualClientTest {
         DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
     bigquery.create(datasetInfo);
     LOG.info("Created test dataset: " + DATASET);
-    intTableInfo =
-        TableInfo.newBuilder(
-                TableId.of(DATASET, TABLEINT),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.INTEGER)
-                            .setMode(Field.Mode.NULLABLE)
-                            .build())))
-            .build();
     tableInfo =
         TableInfo.newBuilder(
                 TableId.of(DATASET, TABLE),
@@ -113,13 +101,8 @@ public class ITBigQueryWriteManualClientTest {
                             .build(),
                         innerTypeFieldBuilder.setMode(Field.Mode.NULLABLE).build())))
             .build();
-    bigquery.create(intTableInfo);
     bigquery.create(tableInfo);
     bigquery.create(tableInfo2);
-    intTableId =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLEINT);
     tableId =
         String.format(
             "projects/%s/datasets/%s/tables/%s",
@@ -165,6 +148,15 @@ public class ITBigQueryWriteManualClientTest {
     ProtoRows.Builder rows = ProtoRows.newBuilder();
     for (String message : messages) {
       FooType foo = FooType.newBuilder().setFoo(message).build();
+      rows.addSerializedRows(foo.toByteString());
+    }
+    return rows.build();
+  }
+
+  ProtoRows CreateProtoRowsMultipleColumns(String[] messages) {
+    ProtoRows.Builder rows = ProtoRows.newBuilder();
+    for (String message : messages) {
+      UpdatedFooType foo = UpdatedFooType.newBuilder().setFoo(message).setBar(message).build();
       rows.addSerializedRows(foo.toByteString());
     }
     return rows.build();
@@ -521,29 +513,59 @@ public class ITBigQueryWriteManualClientTest {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
-                .setParent(intTableId)
+                .setParent(tableId)
                 .setWriteStream(
                     WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
                 .build());
 
     try (StreamWriter streamWriter =
         StreamWriter.newBuilder(writeStream.getName())
-            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+            .setWriterSchema(ProtoSchemaConverter.convert(UpdatedFooType.getDescriptor()))
             .build()) {
-      // Create a proto row that is not compatible with the table schema.
+      // Create a proto row that has extra fields than the table schema defined which should trigger
+      // the SCHEMA_MISMATCH_EXTRA_FIELDS error
       ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(CreateProtoRows(new String[] {"a"}), /*offset=*/ -1L);
+          streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
       try {
         response.get();
         Assert.fail("Should fail");
       } catch (ExecutionException e) {
+        // TODO(stephwang): update test case when toStroageException is updated
         assertThat(e.getCause().getMessage())
             .contains(
-                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: The proto field mismatched with BigQuery field at com_google_cloud_bigquery_storage_test_FooType.foo, the proto field type string, BigQuery field type INTEGER Entity");
-        assertThat(
-            e.getMessage()
-                .contains(
-                    "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: The proto field mismatched with BigQuery field at com_google_cloud_bigquery_storage_test_FooType.foo, the proto field type string, BigQuery field type INTEGER Entity"));
+                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Input schema has more fields than BigQuery schema");
+      }
+    }
+  }
+
+  @Test
+  public void testStreamFinalizedError()
+      throws IOException, InterruptedException, ExecutionException {
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(tableId)
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+    try (StreamWriter streamWriter =
+        StreamWriter.newBuilder(writeStream.getName())
+            .setWriterSchema(ProtoSchemaConverter.convert(UpdatedFooType.getDescriptor()))
+            .build()) {
+      // Finalize the stream in order to trigger STREAM_FINALIZED error
+      client.finalizeWriteStream(
+          FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build());
+      // Try to append to a finalized stream
+      ApiFuture<AppendRowsResponse> response =
+          streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
+      try {
+        response.get();
+        Assert.fail("Should fail");
+      } catch (ExecutionException e) {
+        //   //TODO(stephwang): update test case when toStroageException is updated
+        assertThat(e.getCause().getMessage())
+            .contains(
+                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Stream has been finalized and cannot be appended");
       }
     }
   }
