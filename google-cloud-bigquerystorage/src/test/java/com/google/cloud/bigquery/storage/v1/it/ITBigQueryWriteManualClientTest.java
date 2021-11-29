@@ -466,10 +466,12 @@ public class ITBigQueryWriteManualClientTest {
     Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
     assertTrue(queryIter.hasNext());
     assertEquals(
-        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa}, FieldValue{attribute=PRIMITIVE, value=aaa}]}]",
+        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa},"
+            + " FieldValue{attribute=PRIMITIVE, value=aaa}]}]",
         queryIter.next().get(1).getRepeatedValue().toString());
     assertEquals(
-        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb}, FieldValue{attribute=PRIMITIVE, value=bbb}]}]",
+        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb},"
+            + " FieldValue{attribute=PRIMITIVE, value=bbb}]}]",
         queryIter.next().get(1).getRepeatedValue().toString());
     assertFalse(queryIter.hasNext());
   }
@@ -533,7 +535,8 @@ public class ITBigQueryWriteManualClientTest {
         // TODO(stephwang): update test case when toStroageException is updated
         assertThat(e.getCause().getMessage())
             .contains(
-                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Input schema has more fields than BigQuery schema");
+                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Input schema has more fields"
+                    + " than BigQuery schema");
       }
     }
   }
@@ -565,7 +568,8 @@ public class ITBigQueryWriteManualClientTest {
         //   //TODO(stephwang): update test case when toStroageException is updated
         assertThat(e.getCause().getMessage())
             .contains(
-                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Stream has been finalized and cannot be appended");
+                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Stream has been finalized and"
+                    + " cannot be appended");
       }
     }
   }

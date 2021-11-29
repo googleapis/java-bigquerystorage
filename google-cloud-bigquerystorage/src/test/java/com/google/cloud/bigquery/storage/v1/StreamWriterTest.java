@@ -345,7 +345,8 @@ public class StreamWriterTest {
     StatusRuntimeException exception =
         new StatusRuntimeException(
             io.grpc.Status.INVALID_ARGUMENT.withDescription(
-                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Input schema has more fields than BigQuery schema"));
+                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Input schema has more fields"
+                    + " than BigQuery schema"));
 
     testBigQueryWrite.addResponse(createAppendResponse(0));
     testBigQueryWrite.addException(exception);
@@ -360,7 +361,8 @@ public class StreamWriterTest {
         actualError
             .getMessage()
             .contains(
-                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Input schema has more fields than BigQuery schema"));
+                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Input schema has more fields"
+                    + " than BigQuery schema"));
 
     writer.close();
   }

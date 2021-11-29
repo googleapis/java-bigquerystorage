@@ -137,7 +137,8 @@ public class ITBigQueryStorageTest {
             /* requestedStreams = */ 1);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table reference '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table reference '%s' CreateReadSession"
+                + " response:%n%s",
             TextFormat.shortDebugString(tableReference), session.toString()),
         1,
         session.getStreamsCount());
@@ -173,7 +174,8 @@ public class ITBigQueryStorageTest {
             /* requestedStreams = */ 1);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table reference '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table reference '%s' CreateReadSession"
+                + " response:%n%s",
             TextFormat.shortDebugString(tableReference), session.toString()),
         1,
         session.getStreamsCount());
@@ -224,7 +226,8 @@ public class ITBigQueryStorageTest {
     ReadSession session = client.createReadSession(request);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table reference '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table reference '%s' CreateReadSession"
+                + " response:%n%s",
             TextFormat.shortDebugString(tableReference), session.toString()),
         1,
         session.getStreamsCount());
@@ -287,7 +290,8 @@ public class ITBigQueryStorageTest {
     ReadSession session = client.createReadSession(request);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table reference '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table reference '%s' CreateReadSession"
+                + " response:%n%s",
             TextFormat.shortDebugString(tableReference), session.toString()),
         1,
         session.getStreamsCount());
@@ -757,16 +761,10 @@ public class ITBigQueryStorageTest {
     String table_name = "test_struct_and_array_sql_types";
     String createTableStatement =
         String.format(
-            " CREATE TABLE %s.%s "
-                + " (array_field ARRAY<INT64>,"
-                + "  struct_field STRUCT<int_field INT64 NOT NULL, str_field STRING NOT NULL> NOT NULL)"
-                + " OPTIONS( "
-                + "   description=\"a table with array and time column types\" "
-                + " ) "
-                + "AS "
-                + "   SELECT "
-                + "     [1, 2, 3],"
-                + "     (10, 'abc')",
+            " CREATE TABLE %s.%s  (array_field ARRAY<INT64>,  struct_field STRUCT<int_field INT64"
+                + " NOT NULL, str_field STRING NOT NULL> NOT NULL) OPTIONS(    description=\"a"
+                + " table with array and time column types\"  ) AS    SELECT      [1, 2, 3],    "
+                + " (10, 'abc')",
             DATASET, table_name);
 
     RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
@@ -896,7 +894,8 @@ public class ITBigQueryStorageTest {
     ReadSession session = client.createReadSession(createSessionRequestBuilder.build());
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table reference '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table reference '%s' CreateReadSession"
+                + " response:%n%s",
             TextFormat.shortDebugString(tableReference), session.toString()),
         1,
         session.getStreamsCount());

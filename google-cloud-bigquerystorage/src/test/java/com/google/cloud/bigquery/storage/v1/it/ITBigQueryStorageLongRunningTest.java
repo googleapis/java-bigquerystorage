@@ -102,7 +102,8 @@ public class ITBigQueryStorageLongRunningTest {
 
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         5,
         session.getStreamsCount());
