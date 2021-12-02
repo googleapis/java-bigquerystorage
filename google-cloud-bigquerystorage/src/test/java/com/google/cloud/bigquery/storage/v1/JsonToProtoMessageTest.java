@@ -60,7 +60,10 @@ public class JsonToProtoMessageTest {
           .put(
               BytesType.getDescriptor(),
               new Message[] {
-                BytesType.newBuilder().setTestFieldType(ByteString.copyFromUtf8("test")).build()
+                BytesType.newBuilder().setTestFieldType(ByteString.copyFromUtf8("test")).build(),
+                BytesType.newBuilder()
+                    .setTestFieldType(ByteString.copyFrom(new byte[] {1, 2, 3}))
+                    .build()
               })
           .put(
               Int64Type.getDescriptor(),
@@ -73,7 +76,11 @@ public class JsonToProtoMessageTest {
               new Message[] {Int32Type.newBuilder().setTestFieldType(Integer.MAX_VALUE).build()})
           .put(
               DoubleType.getDescriptor(),
-              new Message[] {DoubleType.newBuilder().setTestFieldType(1.23).build()})
+              new Message[] {
+                DoubleType.newBuilder().setTestFieldType(Long.MAX_VALUE).build(),
+                DoubleType.newBuilder().setTestFieldType(Integer.MAX_VALUE).build(),
+                DoubleType.newBuilder().setTestFieldType(1.23).build()
+              })
           .put(
               StringType.getDescriptor(),
               new Message[] {StringType.newBuilder().setTestFieldType("test").build()})
@@ -178,6 +185,26 @@ public class JsonToProtoMessageTest {
           .put(
               RepeatedDouble.getDescriptor(),
               new Message[] {
+                RepeatedDouble.newBuilder()
+                    .addTestRepeated(Long.MAX_VALUE)
+                    .addTestRepeated(Long.MIN_VALUE)
+                    .addTestRepeated(Integer.MAX_VALUE)
+                    .addTestRepeated(Integer.MIN_VALUE)
+                    .addTestRepeated(Short.MAX_VALUE)
+                    .addTestRepeated(Short.MIN_VALUE)
+                    .addTestRepeated(Byte.MAX_VALUE)
+                    .addTestRepeated(Byte.MIN_VALUE)
+                    .addTestRepeated(0)
+                    .build(),
+                RepeatedDouble.newBuilder()
+                    .addTestRepeated(Integer.MAX_VALUE)
+                    .addTestRepeated(Integer.MIN_VALUE)
+                    .addTestRepeated(Short.MAX_VALUE)
+                    .addTestRepeated(Short.MIN_VALUE)
+                    .addTestRepeated(Byte.MAX_VALUE)
+                    .addTestRepeated(Byte.MIN_VALUE)
+                    .addTestRepeated(0)
+                    .build(),
                 RepeatedDouble.newBuilder()
                     .addTestRepeated(Double.MAX_VALUE)
                     .addTestRepeated(Double.MIN_VALUE)
@@ -394,6 +421,18 @@ public class JsonToProtoMessageTest {
           .setMode(TableFieldSchema.Mode.REPEATED)
           .setName("test_bignumeric_str")
           .build();
+  final TableFieldSchema TEST_INTERVAL =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.INTERVAL)
+          .setMode(TableFieldSchema.Mode.NULLABLE)
+          .setName("test_interval")
+          .build();
+  final TableFieldSchema TEST_JSON =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.JSON)
+          .setMode(TableFieldSchema.Mode.REPEATED)
+          .setName("test_json")
+          .build();
   private final TableSchema COMPLEX_TABLE_SCHEMA =
       TableSchema.newBuilder()
           .addFields(0, TEST_INT)
@@ -415,6 +454,8 @@ public class JsonToProtoMessageTest {
           .addFields(16, TEST_NUMERIC_STR)
           .addFields(17, TEST_BIGNUMERIC)
           .addFields(18, TEST_BIGNUMERIC_STR)
+          .addFields(19, TEST_INTERVAL)
+          .addFields(20, TEST_JSON)
           .build();
 
   @Test
@@ -536,6 +577,24 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
+  public void testMixedCaseFieldNames() throws Exception {
+    TableFieldSchema field =
+        TableFieldSchema.newBuilder()
+            .setName("fooBar")
+            .setType(TableFieldSchema.Type.STRING)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .build();
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
+
+    JSONObject json = new JSONObject();
+    json.put("fooBar", "hello");
+
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(
+            TestMixedCaseFieldNames.getDescriptor(), tableSchema, json);
+  }
+
+  @Test
   public void testBigNumericMismatch() throws Exception {
     TableFieldSchema field =
         TableFieldSchema.newBuilder()
@@ -558,12 +617,40 @@ public class JsonToProtoMessageTest {
 
   @Test
   public void testDouble() throws Exception {
-    TestDouble expectedProto = TestDouble.newBuilder().setDouble(1.2).setFloat(3.4f).build();
+    TestDouble expectedProto =
+        TestDouble.newBuilder()
+            .setDouble(1.2)
+            .setFloat(3.4f)
+            .setByte(5)
+            .setShort(6)
+            .setInt(7)
+            .setLong(8)
+            .build();
     JSONObject json = new JSONObject();
     json.put("double", 1.2);
     json.put("float", 3.4f);
+    json.put("byte", new Byte((byte) 5));
+    json.put("short", new Short((short) 6));
+    json.put("int", 7);
+    json.put("long", 8L);
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(TestDouble.getDescriptor(), json);
+    assertEquals(expectedProto, protoMsg);
+  }
+
+  @Test
+  public void testDate() throws Exception {
+    TableSchema tableSchema =
+        TableSchema.newBuilder()
+            .addFields(TableFieldSchema.newBuilder(TEST_DATE).setName("test_string").build())
+            .addFields(TableFieldSchema.newBuilder(TEST_DATE).setName("test_long").build())
+            .build();
+    TestDate expectedProto = TestDate.newBuilder().setTestString(18935).setTestLong(18935).build();
+    JSONObject json = new JSONObject();
+    json.put("test_string", "2021-11-04");
+    json.put("test_long", 18935L);
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(TestDate.getDescriptor(), tableSchema, json);
     assertEquals(expectedProto, protoMsg);
   }
 
@@ -585,7 +672,10 @@ public class JsonToProtoMessageTest {
               e.getMessage());
         }
       }
-      if (entry.getKey() == Int64Type.getDescriptor()) {
+      if (entry.getKey() == DoubleType.getDescriptor()) {
+        assertEquals(entry.getKey().getFullName(), 3, success);
+      } else if (entry.getKey() == Int64Type.getDescriptor()
+          || entry.getKey() == BytesType.getDescriptor()) {
         assertEquals(entry.getKey().getFullName(), 2, success);
       } else {
         assertEquals(entry.getKey().getFullName(), 1, success);
@@ -620,8 +710,9 @@ public class JsonToProtoMessageTest {
                       .equals("Error: root.test_repeated[0] could not be converted to byte[]."));
         }
       }
-      if (entry.getKey() == RepeatedInt64.getDescriptor()
-          || entry.getKey() == RepeatedDouble.getDescriptor()) {
+      if (entry.getKey() == RepeatedDouble.getDescriptor()) {
+        assertEquals(entry.getKey().getFullName(), 4, success);
+      } else if (entry.getKey() == RepeatedInt64.getDescriptor()) {
         assertEquals(entry.getKey().getFullName(), 2, success);
       } else {
         assertEquals(entry.getKey().getFullName(), 1, success);
@@ -743,6 +834,8 @@ public class JsonToProtoMessageTest {
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("2.3")))
             .addTestBignumericStr(
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.23")))
+            .setTestInterval("0-0 0 0:0:0.000005")
+            .addTestJson("{'a':'b'}")
             .build();
     JSONObject complex_lvl2 = new JSONObject();
     complex_lvl2.put("test_int", 3);
@@ -789,6 +882,8 @@ public class JsonToProtoMessageTest {
         "test_bignumeric",
         BigDecimalByteStringEncoder.encodeToNumericByteString(BigDecimal.valueOf(2.3)));
     json.put("test_bignumeric_str", new JSONArray(new String[] {"1.23"}));
+    json.put("test_interval", "0-0 0 0:0:0.000005");
+    json.put("test_json", new JSONArray(new String[] {"{'a':'b'}"}));
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(
             ComplexRoot.getDescriptor(), COMPLEX_TABLE_SCHEMA, json);

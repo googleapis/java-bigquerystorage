@@ -60,7 +60,10 @@ public class JsonToProtoMessageTest {
           .put(
               BytesType.getDescriptor(),
               new Message[] {
-                BytesType.newBuilder().setTestFieldType(ByteString.copyFromUtf8("test")).build()
+                BytesType.newBuilder().setTestFieldType(ByteString.copyFromUtf8("test")).build(),
+                BytesType.newBuilder()
+                    .setTestFieldType(ByteString.copyFrom(new byte[] {1, 2, 3}))
+                    .build()
               })
           .put(
               Int64Type.getDescriptor(),
@@ -395,6 +398,18 @@ public class JsonToProtoMessageTest {
           .setMode(TableFieldSchema.Mode.REPEATED)
           .setName("test_bignumeric_str")
           .build();
+  private final TableFieldSchema TEST_INTERVAL =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.INTERVAL)
+          .setMode(TableFieldSchema.Mode.NULLABLE)
+          .setName("test_interval")
+          .build();
+  private final TableFieldSchema TEST_JSON =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.JSON)
+          .setMode(TableFieldSchema.Mode.REPEATED)
+          .setName("test_json")
+          .build();
   private final TableSchema COMPLEX_TABLE_SCHEMA =
       TableSchema.newBuilder()
           .addFields(0, TEST_INT)
@@ -416,6 +431,8 @@ public class JsonToProtoMessageTest {
           .addFields(16, TEST_NUMERIC_STR)
           .addFields(17, TEST_BIGNUMERIC)
           .addFields(18, TEST_BIGNUMERIC_STR)
+          .addFields(19, TEST_INTERVAL)
+          .addFields(20, TEST_JSON)
           .build();
 
   @Test
@@ -558,6 +575,25 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
+  public void testMixedCasedFieldNames() throws Exception {
+    com.google.cloud.bigquery.storage.v1.TableFieldSchema field =
+        com.google.cloud.bigquery.storage.v1.TableFieldSchema.newBuilder()
+            .setName("fooBar")
+            .setType(com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type.STRING)
+            .setMode(com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode.NULLABLE)
+            .build();
+    com.google.cloud.bigquery.storage.v1.TableSchema tableSchema =
+        com.google.cloud.bigquery.storage.v1.TableSchema.newBuilder().addFields(field).build();
+
+    JSONObject json = new JSONObject();
+    json.put("fooBar", "hello");
+
+    DynamicMessage protoMsg =
+        com.google.cloud.bigquery.storage.v1.JsonToProtoMessage.convertJsonToProtoMessage(
+            TestMixedCaseFieldNames.getDescriptor(), tableSchema, json);
+  }
+
+  @Test
   public void testDouble() throws Exception {
     TestDouble expectedProto = TestDouble.newBuilder().setDouble(1.2).setFloat(3.4f).build();
     JSONObject json = new JSONObject();
@@ -586,7 +622,8 @@ public class JsonToProtoMessageTest {
               e.getMessage());
         }
       }
-      if (entry.getKey() == Int64Type.getDescriptor()) {
+      if (entry.getKey() == Int64Type.getDescriptor()
+          || entry.getKey() == BytesType.getDescriptor()) {
         assertEquals(entry.getKey().getFullName(), 2, success);
       } else {
         assertEquals(entry.getKey().getFullName(), 1, success);
@@ -744,6 +781,8 @@ public class JsonToProtoMessageTest {
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("2.3")))
             .addTestBignumericStr(
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.23")))
+            .setTestInterval("0-0 0 0:0:0.000005")
+            .addTestJson("{'a':'b'}")
             .build();
     JSONObject complex_lvl2 = new JSONObject();
     complex_lvl2.put("test_int", 3);
@@ -790,6 +829,8 @@ public class JsonToProtoMessageTest {
         "test_bignumeric",
         BigDecimalByteStringEncoder.encodeToNumericByteString(BigDecimal.valueOf(2.3)));
     json.put("test_bignumeric_str", new JSONArray(new String[] {"1.23"}));
+    json.put("test_interval", "0-0 0 0:0:0.000005");
+    json.put("test_json", new JSONArray(new String[] {"{'a':'b'}"}));
     DynamicMessage protoMsg =
         JsonToProtoMessage.convertJsonToProtoMessage(
             ComplexRoot.getDescriptor(), COMPLEX_TABLE_SCHEMA, json);

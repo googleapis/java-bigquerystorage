@@ -38,15 +38,13 @@ function determineMavenOpts() {
       | sed -E 's/^(1\.[0-9]\.0).*$/\1/g'
   )
 
-  case $javaVersion in
-    "17")
+  if [[ $javaVersion == 17* ]]
+    then
       # MaxPermSize is no longer supported as of jdk 17
       echo -n "-Xmx1024m"
-      ;;
-    *)
+    else
       echo -n "-Xmx1024m -XX:MaxPermSize=128m"
-      ;;
-  esac
+    fi
 }
 
 export MAVEN_OPTS=$(determineMavenOpts)
@@ -68,11 +66,11 @@ function completenessCheck() {
   # This is stripped from the output as it is not present in the flattened pom.
   # Only dependencies with 'compile' or 'runtime' scope are included from original dependency list.
   msg "Generating dependency list using original pom..."
-  mvn dependency:list -f pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-contrib-http-util,httpclient,httpcore -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' | sed -e 's/ --.*//' >.org-list.txt
+  mvn dependency:list -f pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' | sed -e 's/ --.*//' >.org-list.txt
 
   # Output dep list generated using the flattened pom (only 'compile' and 'runtime' scopes)
   msg "Generating dependency list using flattened pom..."
-  mvn dependency:list -f .flattened-pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-contrib-http-util,httpclient,httpcore -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.new-list.txt
+  mvn dependency:list -f .flattened-pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.new-list.txt
 
   # Compare two dependency lists
   msg "Comparing dependency lists..."

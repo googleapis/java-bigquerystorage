@@ -123,7 +123,7 @@ public class JsonToProtoMessage {
       if (tableSchema != null) {
         // protoSchema is generated from tableSchema so their field ordering should match.
         fieldSchema = tableSchema.get(field.getIndex());
-        if (!fieldSchema.getName().equals(field.getName())) {
+        if (!fieldSchema.getName().toLowerCase().equals(field.getName())) {
           throw new ValidationException(
               "Field at index "
                   + field.getIndex()
@@ -227,6 +227,7 @@ public class JsonToProtoMessage {
               }
             }
             protoMsg.setField(fieldDescriptor, bytes);
+            return;
           } catch (JSONException e) {
             throw new IllegalArgumentException(
                 String.format("Error: " + currentScope + "could not be converted to byte[]."));
