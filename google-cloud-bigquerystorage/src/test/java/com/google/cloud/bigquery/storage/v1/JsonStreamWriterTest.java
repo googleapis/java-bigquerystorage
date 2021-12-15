@@ -284,8 +284,7 @@ public class JsonStreamWriterTest {
               .getProtoRows()
               .getRows()
               .getSerializedRowsCount());
-      assertEquals(
-          testBigQueryWrite.getAppendRequests().get(0).getTraceId(), "JsonWriter:null");
+      assertEquals(testBigQueryWrite.getAppendRequests().get(0).getTraceId(), "JsonWriter:null");
       for (int i = 0; i < 4; i++) {
         assertEquals(
             testBigQueryWrite
