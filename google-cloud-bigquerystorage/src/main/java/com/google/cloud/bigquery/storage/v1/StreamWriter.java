@@ -43,8 +43,6 @@ import javax.annotation.concurrent.GuardedBy;
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
  *
  * <p>TODO: Support batching.
- *
- * <p>TODO: Support schema change.
  */
 public class StreamWriter implements AutoCloseable {
   private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
@@ -113,6 +111,12 @@ public class StreamWriter implements AutoCloseable {
    */
   @GuardedBy("lock")
   private final Deque<AppendRequestAndResponse> inflightRequestQueue;
+
+  /*
+   * Contains the updated TableSchema.
+   */
+  @GuardedBy("lock")
+  private TableSchema updatedSchema;
 
   /*
    * A client used to interact with BigQuery.
@@ -454,6 +458,9 @@ public class StreamWriter implements AutoCloseable {
   private void requestCallback(AppendRowsResponse response) {
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
+    if (response.hasUpdatedSchema()) {
+      this.updatedSchema = response.getUpdatedSchema();
+    }
     try {
       requestWrapper = pollInflightRequestQueue();
     } finally {
@@ -517,7 +524,15 @@ public class StreamWriter implements AutoCloseable {
     return new StreamWriter.Builder(streamName);
   }
 
-  /** A builder of {@link StreamWriterV2}s. */
+  public TableSchema getUpdatedSchema() {
+    return this.updatedSchema;
+  }
+
+  public void clearUpdateSchema() {
+    this.updatedSchema = null;
+  }
+
+  /** A builder of {@link StreamWriter}s. */
   public static final class Builder {
 
     private static final long DEFAULT_MAX_INFLIGHT_REQUESTS = 1000L;
@@ -543,6 +558,8 @@ public class StreamWriter implements AutoCloseable {
         BigQueryWriteSettings.defaultCredentialsProviderBuilder().build();
 
     private String traceId = null;
+
+    private TableSchema updatedTableSchema = null;
 
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
@@ -607,6 +624,16 @@ public class StreamWriter implements AutoCloseable {
             "TraceId must follow the format of A:B. Actual:" + traceId);
       }
       this.traceId = traceId;
+      return this;
+    }
+
+    /**
+     * Setter for table schema. Used for schema updates.
+     *
+     * @param tableSchema
+     */
+    public Builder setUpdatedTableSchema(TableSchema tableSchema) {
+      this.updatedTableSchema = tableSchema;
       return this;
     }
 

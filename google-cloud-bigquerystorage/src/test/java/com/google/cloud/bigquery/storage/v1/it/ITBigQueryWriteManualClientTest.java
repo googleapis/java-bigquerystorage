@@ -28,7 +28,9 @@ import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.cloud.bigquery.storage.v1.*;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Descriptors;
+import com.google.protobuf.Descriptors.DescriptorValidationException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
@@ -404,6 +406,92 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals("ddd", iter.next().get(0).getStringValue());
       assertEquals(false, iter.hasNext());
     }
+  }
+
+  @Test
+  public void testJsonStreamWriterSchemaUpdate()
+      throws DescriptorValidationException, IOException, InterruptedException, ExecutionException {
+    String tableName = "SchemaUpdateTestTable";
+    TableId tableId = TableId.of(DATASET, tableName);
+    TableId SchemaUpdateTestTableId = tableId;
+    Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
+    Schema originalSchema = Schema.of(col1);
+    TableInfo tableInfo =
+        TableInfo.newBuilder(tableId, StandardTableDefinition.of(originalSchema)).build();
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(parent.toString())
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+    try (JsonStreamWriter jsonStreamWriter =
+        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
+      // write the 1st row
+      JSONObject foo = new JSONObject();
+      foo.put("col1", "aaa");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+      ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, 0);
+      assertEquals(0, response.get().getAppendResult().getOffset().getValue());
+
+      // update schema with a new column
+      Field col2 = Field.newBuilder("col2", StandardSQLTypeName.STRING).build();
+      Schema updatedSchema = Schema.of(ImmutableList.of(col1, col2));
+      TableInfo updatedTableInfo =
+          TableInfo.newBuilder(tableId, StandardTableDefinition.of(updatedSchema)).build();
+      Table updatedTable = bigquery.update(updatedTableInfo);
+      assertEquals(updatedSchema, updatedTable.getDefinition().getSchema());
+
+      // continue writing rows until backend acknowledges schema update
+      JSONObject foo2 = new JSONObject();
+      foo2.put("col1", "bbb");
+      JSONArray jsonArr2 = new JSONArray();
+      jsonArr2.put(foo2);
+
+      int next = 0;
+      for (int i = 1; i < 100; i++) {
+        ApiFuture<AppendRowsResponse> response2 = jsonStreamWriter.append(jsonArr2, i);
+        assertEquals(i, response2.get().getAppendResult().getOffset().getValue());
+        if (response2.get().hasUpdatedSchema()) {
+          next = i;
+          break;
+        } else {
+          Thread.sleep(1000);
+        }
+      }
+
+      // write rows with updated schema.
+      JSONObject updatedFoo = new JSONObject();
+      updatedFoo.put("col1", "ccc");
+      updatedFoo.put("col2", "ddd");
+      JSONArray updatedJsonArr = new JSONArray();
+      updatedJsonArr.put(updatedFoo);
+      for (int i = 0; i < 10; i++) {
+        ApiFuture<AppendRowsResponse> response3 =
+            jsonStreamWriter.append(updatedJsonArr, next + 1 + i);
+        assertEquals(next + 1 + i, response3.get().getAppendResult().getOffset().getValue());
+      }
+
+      // verify table data correctness
+      Iterator<FieldValueList> rowsIter = bigquery.listTableData(tableId).getValues().iterator();
+      // 1 row of aaa
+      assertEquals("aaa", rowsIter.next().get(0).getStringValue());
+      // a few rows of bbb
+      for (int j = 1; j <= next; j++) {
+        assertEquals("bbb", rowsIter.next().get(0).getStringValue());
+      }
+      // 10 rows of ccc, ddd
+      for (int j = next + 1; j < next + 1 + 10; j++) {
+        FieldValueList temp = rowsIter.next();
+        assertEquals("ccc", temp.get(0).getStringValue());
+        assertEquals("ddd", temp.get(1).getStringValue());
+      }
+      assertEquals(false, rowsIter.hasNext());
+    }
+    bigquery.delete(SchemaUpdateTestTableId);
   }
 
   @Test
