@@ -193,7 +193,7 @@ public class JsonStreamWriterTest {
               .getSerializedRows(0),
           expectedProto.toByteString());
       assertEquals(
-          testBigQueryWrite.getAppendRequests().get(0).getTraceId(), "JsonWriterBeta_test:empty");
+          testBigQueryWrite.getAppendRequests().get(0).getTraceId(), "JsonWriter_test:empty");
     }
   }
 
@@ -285,7 +285,7 @@ public class JsonStreamWriterTest {
               .getRows()
               .getSerializedRowsCount());
       assertEquals(
-          testBigQueryWrite.getAppendRequests().get(0).getTraceId(), "JsonWriterBeta:null");
+          testBigQueryWrite.getAppendRequests().get(0).getTraceId(), "JsonWriter:null");
       for (int i = 0; i < 4; i++) {
         assertEquals(
             testBigQueryWrite
