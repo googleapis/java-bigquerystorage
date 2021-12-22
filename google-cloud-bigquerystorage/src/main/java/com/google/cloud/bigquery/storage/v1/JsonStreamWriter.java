@@ -110,23 +110,22 @@ public class JsonStreamWriter implements AutoCloseable {
    */
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, long offset)
       throws IOException, DescriptorValidationException {
-    // Handle schema updates
-    if (this.streamWriter.getUpdatedSchema() != null) {
-      TableSchema updatedSchema = this.streamWriter.getUpdatedSchema();
-      // Close the StreamWriter
-      this.streamWriter.close();
-      // Update JsonStreamWriter's TableSchema and Descriptor
-      this.tableSchema = updatedSchema;
-      this.descriptor =
-          BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
-      // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
-      this.streamWriter =
-          streamWriterBuilder
-              .setUpdatedTableSchema(this.tableSchema)
-              .setWriterSchema(ProtoSchemaConverter.convert(this.descriptor))
-              .build();
-      // Clear the updateSchema field on the new underlying StreamWriter
-      this.streamWriter.clearUpdateSchema();
+    // Handle schema updates in a Thread-safe way by locking down the operation
+    synchronized (this) {
+      if (this.streamWriter.getUpdatedSchema() != null) {
+        TableSchema updatedSchema = this.streamWriter.getUpdatedSchema();
+        // Close the StreamWriter
+        this.streamWriter.close();
+        // Update JsonStreamWriter's TableSchema and Descriptor
+        this.tableSchema = updatedSchema;
+        this.descriptor =
+            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
+        // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
+        this.streamWriter =
+            streamWriterBuilder
+                .setWriterSchema(ProtoSchemaConverter.convert(this.descriptor))
+                .build();
+      }
     }
 
     ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();

@@ -524,12 +524,9 @@ public class StreamWriter implements AutoCloseable {
     return new StreamWriter.Builder(streamName);
   }
 
-  public TableSchema getUpdatedSchema() {
+  /** Thread-safe getter of updated TableSchema */
+  public synchronized TableSchema getUpdatedSchema() {
     return this.updatedSchema;
-  }
-
-  public void clearUpdateSchema() {
-    this.updatedSchema = null;
   }
 
   /** A builder of {@link StreamWriter}s. */
@@ -624,16 +621,6 @@ public class StreamWriter implements AutoCloseable {
             "TraceId must follow the format of A:B. Actual:" + traceId);
       }
       this.traceId = traceId;
-      return this;
-    }
-
-    /**
-     * Setter for table schema. Used for schema updates.
-     *
-     * @param tableSchema
-     */
-    public Builder setUpdatedTableSchema(TableSchema tableSchema) {
-      this.updatedTableSchema = tableSchema;
       return this;
     }
 

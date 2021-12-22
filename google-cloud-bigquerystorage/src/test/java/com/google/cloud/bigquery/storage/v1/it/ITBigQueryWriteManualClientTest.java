@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -413,7 +414,6 @@ public class ITBigQueryWriteManualClientTest {
       throws DescriptorValidationException, IOException, InterruptedException, ExecutionException {
     String tableName = "SchemaUpdateTestTable";
     TableId tableId = TableId.of(DATASET, tableName);
-    TableId SchemaUpdateTestTableId = tableId;
     Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
     Schema originalSchema = Schema.of(col1);
     TableInfo tableInfo =
@@ -489,9 +489,126 @@ public class ITBigQueryWriteManualClientTest {
         assertEquals("ccc", temp.get(0).getStringValue());
         assertEquals("ddd", temp.get(1).getStringValue());
       }
-      assertEquals(false, rowsIter.hasNext());
+      assertFalse(rowsIter.hasNext());
     }
-    bigquery.delete(SchemaUpdateTestTableId);
+  }
+
+  @Test
+  public void testJsonStreamWriterSchemaUpdateConcurrent()
+      throws DescriptorValidationException, IOException, InterruptedException {
+    // Create test table and test stream
+    String tableName = "ConcurrentSchemaUpdateTestTable";
+    TableId tableId = TableId.of(DATASET, tableName);
+    Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
+    Schema originalSchema = Schema.of(col1);
+    TableInfo tableInfo =
+        TableInfo.newBuilder(tableId, StandardTableDefinition.of(originalSchema)).build();
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(parent.toString())
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+
+    // Create test JSON objects
+    JSONObject foo = new JSONObject();
+    foo.put("col1", "aaa");
+    JSONArray jsonArr = new JSONArray();
+    jsonArr.put(foo);
+
+    JSONObject foo2 = new JSONObject();
+    foo2.put("col1", "bbb");
+    JSONArray jsonArr2 = new JSONArray();
+    jsonArr2.put(foo2);
+
+    JSONObject updatedFoo = new JSONObject();
+    updatedFoo.put("col1", "ccc");
+    updatedFoo.put("col2", "ddd");
+    JSONArray updatedJsonArr = new JSONArray();
+    updatedJsonArr.put(updatedFoo);
+
+    // Prepare updated schema
+    Field col2 = Field.newBuilder("col2", StandardSQLTypeName.STRING).build();
+    Schema updatedSchema = Schema.of(ImmutableList.of(col1, col2));
+    TableInfo updatedTableInfo =
+        TableInfo.newBuilder(tableId, StandardTableDefinition.of(updatedSchema)).build();
+
+    // Start writing using the JsonWriter
+    try (JsonStreamWriter jsonStreamWriter =
+        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
+      int numberOfThreads = 2;
+      ExecutorService streamTaskExecutor = Executors.newFixedThreadPool(5);
+      CountDownLatch latch = new CountDownLatch(numberOfThreads);
+      // Used to verify data correctness
+      AtomicInteger next = new AtomicInteger();
+      for (int i = 0; i < numberOfThreads; i++) {
+        streamTaskExecutor.submit(
+            () -> {
+              // write 2 rows of aaa on each Thread
+              for (int j = 0; j < 2; j++) {
+                try {
+                  jsonStreamWriter.append(jsonArr);
+                  next.getAndIncrement();
+                } catch (IOException | DescriptorValidationException e) {
+                  e.printStackTrace();
+                }
+              }
+
+              // update TableSchema
+              Table updatedTable = bigquery.update(updatedTableInfo);
+              assertEquals(updatedSchema, updatedTable.getDefinition().getSchema());
+
+              // write filler rows bbb until backend acknowledges schema update due to possible
+              // delay
+              for (int w = 0; w < 20; w++) {
+                ApiFuture<AppendRowsResponse> response2 = null;
+                try {
+                  response2 = jsonStreamWriter.append(jsonArr2);
+                  next.getAndIncrement();
+                } catch (IOException | DescriptorValidationException e) {
+                  LOG.severe("Issue with append " + e.getMessage());
+                }
+                try {
+                  if (response2.get().hasUpdatedSchema()) {
+                    break;
+                  } else {
+                    Thread.sleep(1000);
+                  }
+                } catch (InterruptedException | ExecutionException e) {
+                  LOG.severe("Issue with append " + e.getMessage());
+                }
+              }
+
+              // write 5 rows of ccc,ddd on each Thread
+              for (int m = 0; m < 5; m++) {
+                try {
+                  jsonStreamWriter.append(updatedJsonArr);
+                  next.getAndIncrement();
+                } catch (IOException | DescriptorValidationException e) {
+                  LOG.severe("Issue with append " + e.getMessage());
+                }
+              }
+              latch.countDown();
+            });
+      }
+      latch.await();
+
+      // verify that the last 5 rows streamed are ccc,ddd
+      Iterator<FieldValueList> rowsIter = bigquery.listTableData(tableId).getValues().iterator();
+
+      int position = 0;
+      while (rowsIter.hasNext()) {
+        FieldValueList row = rowsIter.next();
+        position++;
+        if (position > next.get() - 5) {
+          assertEquals("ccc", row.get(0).getStringValue());
+          assertEquals("ddd", row.get(1).getStringValue());
+        }
+      }
+    }
   }
 
   @Test
