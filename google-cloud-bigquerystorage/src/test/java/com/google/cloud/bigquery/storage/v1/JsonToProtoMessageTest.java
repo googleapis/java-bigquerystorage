@@ -1121,4 +1121,15 @@ public class JsonToProtoMessageTest {
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
     assertEquals(expectedProto, protoMsg);
   }
+
+  @Test
+  public void testJsonAllFieldsNullValue() throws Exception {
+    TestInt64 expectedProto = TestInt64.newBuilder().build();
+    JSONObject json = new JSONObject();
+    json.put("long", JSONObject.NULL);
+    json.put("int", JSONObject.NULL);
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
+    assertEquals(expectedProto, protoMsg);
+  }
 }
