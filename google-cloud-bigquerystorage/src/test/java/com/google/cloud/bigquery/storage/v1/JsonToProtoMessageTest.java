@@ -1033,13 +1033,9 @@ public class JsonToProtoMessageTest {
     JSONObject json = new JSONObject();
     json.put("test_repeated", new JSONArray(new int[0]));
 
-    try {
-      DynamicMessage protoMsg =
-          JsonToProtoMessage.convertJsonToProtoMessage(RepeatedInt64.getDescriptor(), json);
-      Assert.fail("Should fail");
-    } catch (IllegalArgumentException e) {
-      assertEquals("The created protobuf message is empty.", e.getMessage());
-    }
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.convertJsonToProtoMessage(RepeatedInt64.getDescriptor(), json);
+    assertEquals(protoMsg.getAllFields().size(), 0);
   }
 
   @Test
