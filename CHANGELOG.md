@@ -1,5 +1,37 @@
 # Changelog
 
+## [2.7.0](https://www.github.com/googleapis/java-bigquerystorage/compare/v2.6.5...v2.7.0) (2021-12-07)
+
+
+### Features
+
+* add write_mode support for BigQuery Storage Write API v1 ([#1441](https://www.github.com/googleapis/java-bigquerystorage/issues/1441)) ([ffe0670](https://www.github.com/googleapis/java-bigquerystorage/commit/ffe067011a79eb96e36f12cb738c34e2763e7c59))
+
+
+### Bug Fixes
+
+* **java:** add -ntp flag to native image testing command ([#1299](https://www.github.com/googleapis/java-bigquerystorage/issues/1299)) ([#1439](https://www.github.com/googleapis/java-bigquerystorage/issues/1439)) ([b6a880c](https://www.github.com/googleapis/java-bigquerystorage/commit/b6a880c90acd195d5f4294de343d81cffe8c359a))
+
+### [2.6.5](https://www.github.com/googleapis/java-bigquerystorage/compare/v2.6.4...v2.6.5) (2021-12-05)
+
+
+### Dependencies
+
+* update dependency com.google.cloud:google-cloud-bigquery to v2.5.1 ([#1435](https://www.github.com/googleapis/java-bigquerystorage/issues/1435)) ([9116ecf](https://www.github.com/googleapis/java-bigquerystorage/commit/9116ecfc7257265ed575888c4cdc27d8fa4e7692))
+
+### [2.6.4](https://www.github.com/googleapis/java-bigquerystorage/compare/v2.6.3...v2.6.4) (2021-12-03)
+
+
+### Reverts
+
+* "chore(deps): update dependency com.google.cloud.samples:shared-configuration to v1.0.24" ([#1431](https://www.github.com/googleapis/java-bigquerystorage/issues/1431)) ([b4fab5f](https://www.github.com/googleapis/java-bigquerystorage/commit/b4fab5f00b8d6a58b9768d32f16fb3a013265690))
+
+
+### Dependencies
+
+* update dependency com.google.cloud:google-cloud-bigquery to v2.5.0 ([#1427](https://www.github.com/googleapis/java-bigquerystorage/issues/1427)) ([bc69fee](https://www.github.com/googleapis/java-bigquerystorage/commit/bc69fee6cfa1ef152ed1a6da61fb4728f1639aa8))
+* update dependency com.google.cloud:google-cloud-shared-dependencies to v2.5.1 ([#1429](https://www.github.com/googleapis/java-bigquerystorage/issues/1429)) ([543c63e](https://www.github.com/googleapis/java-bigquerystorage/commit/543c63e6c00da9a177994b4292ae5cda2ceeab65))
+
 ### [2.6.3](https://www.github.com/googleapis/java-bigquerystorage/compare/v2.6.2...v2.6.3) (2021-11-19)
 
 
