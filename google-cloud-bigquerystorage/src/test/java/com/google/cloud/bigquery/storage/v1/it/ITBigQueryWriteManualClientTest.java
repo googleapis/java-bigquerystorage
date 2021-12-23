@@ -539,11 +539,21 @@ public class ITBigQueryWriteManualClientTest {
     // Start writing using the JsonWriter
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
-      int numberOfThreads = 2;
+      int numberOfThreads = 5;
       ExecutorService streamTaskExecutor = Executors.newFixedThreadPool(5);
       CountDownLatch latch = new CountDownLatch(numberOfThreads);
       // Used to verify data correctness
       AtomicInteger next = new AtomicInteger();
+
+      // update TableSchema async
+      Runnable updateTableSchemaTask =
+          () -> {
+            Table updatedTable = bigquery.update(updatedTableInfo);
+            assertEquals(updatedSchema, updatedTable.getDefinition().getSchema());
+          };
+      streamTaskExecutor.execute(updateTableSchemaTask);
+
+      // stream data async
       for (int i = 0; i < numberOfThreads; i++) {
         streamTaskExecutor.submit(
             () -> {
@@ -557,13 +567,9 @@ public class ITBigQueryWriteManualClientTest {
                 }
               }
 
-              // update TableSchema
-              Table updatedTable = bigquery.update(updatedTableInfo);
-              assertEquals(updatedSchema, updatedTable.getDefinition().getSchema());
-
               // write filler rows bbb until backend acknowledges schema update due to possible
               // delay
-              for (int w = 0; w < 20; w++) {
+              for (int w = 0; w < 15; w++) {
                 ApiFuture<AppendRowsResponse> response2 = null;
                 try {
                   response2 = jsonStreamWriter.append(jsonArr2);
@@ -572,6 +578,7 @@ public class ITBigQueryWriteManualClientTest {
                   LOG.severe("Issue with append " + e.getMessage());
                 }
                 try {
+                  assert response2 != null;
                   if (response2.get().hasUpdatedSchema()) {
                     break;
                   } else {
