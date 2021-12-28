@@ -64,7 +64,8 @@ public class JsonToProtoMessage {
     Preconditions.checkNotNull(protoSchema, "Protobuf descriptor is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertJsonToProtoMessageImpl(protoSchema, null, json, "root", /*topLevel=*/ true, false);
+    return convertJsonToProtoMessageImpl(
+        protoSchema, null, json, "root", /*topLevel=*/ true, false);
   }
 
   /**
@@ -85,7 +86,11 @@ public class JsonToProtoMessage {
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
     return convertJsonToProtoMessageImpl(
-        protoSchema, tableSchema.getFieldsList(), json, "root", /*topLevel=*/ true,
+        protoSchema,
+        tableSchema.getFieldsList(),
+        json,
+        "root",
+        /*topLevel=*/ true,
         /*ignoreUnknownFields*/ false);
   }
 
@@ -108,7 +113,11 @@ public class JsonToProtoMessage {
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
     return convertJsonToProtoMessageImpl(
-        protoSchema, tableSchema.getFieldsList(), json, "root", /*topLevel=*/ true,
+        protoSchema,
+        tableSchema.getFieldsList(),
+        json,
+        "root",
+        /*topLevel=*/ true,
         ignoreUnknownFields);
   }
 
@@ -166,7 +175,8 @@ public class JsonToProtoMessage {
       if (!field.isRepeated()) {
         fillField(protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
       } else {
-        fillRepeatedField(protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
+        fillRepeatedField(
+            protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
       }
     }
 
@@ -331,7 +341,8 @@ public class JsonToProtoMessage {
                   fieldSchema == null ? null : fieldSchema.getFieldsList(),
                   json.getJSONObject(exactJsonKeyName),
                   currentScope,
-                  /*topLevel =*/ false, ignoreUnknownFields));
+                  /*topLevel =*/ false,
+                  ignoreUnknownFields));
           return;
         }
         break;
@@ -507,7 +518,8 @@ public class JsonToProtoMessage {
                     fieldSchema == null ? null : fieldSchema.getFieldsList(),
                     jsonArray.getJSONObject(i),
                     currentScope,
-                    /*topLevel =*/ false, ignoreUnknownFields));
+                    /*topLevel =*/ false,
+                    ignoreUnknownFields));
           } else {
             fail = true;
           }
