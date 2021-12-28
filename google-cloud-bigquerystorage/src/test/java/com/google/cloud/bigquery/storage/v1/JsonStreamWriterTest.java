@@ -414,7 +414,6 @@ public class JsonStreamWriterTest {
           AppendRowsResponse.newBuilder()
               .setAppendResult(
                   AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(3)).build())
-              .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
               .build());
       // First append
       JSONObject foo = new JSONObject();
