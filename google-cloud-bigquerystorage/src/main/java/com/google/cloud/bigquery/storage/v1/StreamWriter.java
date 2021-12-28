@@ -523,7 +523,7 @@ public class StreamWriter implements AutoCloseable {
         "Cleaning "
             + localQueue.size()
             + " inflight requests with error: "
-            + finalStatus.toString());
+            + finalStatus);
     while (!localQueue.isEmpty()) {
       localQueue.pollFirst().appendResult.setException(finalStatus);
     }
