@@ -630,8 +630,7 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /** Thread-safe getter of updated TableSchema */
-  public TableSchema getUpdatedSchema() {
-    this.lock.lock();
+  public synchronized TableSchema getUpdatedSchema() {
     return this.updatedSchema;
   }
 
