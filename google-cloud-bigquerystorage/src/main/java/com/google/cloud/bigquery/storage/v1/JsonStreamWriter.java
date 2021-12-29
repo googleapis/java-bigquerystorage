@@ -355,12 +355,14 @@ public class JsonStreamWriter implements AutoCloseable {
     }
 
     /**
-     * Ignores fields unknown to BigQuery in Json input.
+     * Setter for a ignoreUnkownFields, if true, unknown Json fields to BigQuery will be ignored
+     * instead of error out.
      *
+     * @param ignoreUnknownFields
      * @return Builder
      */
-    public Builder ignoreUnknownFields() {
-      this.ignoreUnknownFields = true;
+    public Builder setIgnoreUnknownFields(boolean ignoreUnknownFields) {
+      this.ignoreUnknownFields = ignoreUnknownFields;
       return this;
     }
 

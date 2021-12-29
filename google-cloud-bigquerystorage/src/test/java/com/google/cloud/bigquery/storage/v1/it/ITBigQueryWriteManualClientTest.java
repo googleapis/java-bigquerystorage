@@ -352,7 +352,9 @@ public class ITBigQueryWriteManualClientTest {
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(parent.toString(), tableSchema).ignoreUnknownFields().build()) {
+        JsonStreamWriter.newBuilder(parent.toString(), tableSchema)
+            .setIgnoreUnknownFields(true)
+            .build()) {
       LOG.info("Sending one message");
       JSONObject row1 = new JSONObject();
       row1.put("test_str", "aaa");

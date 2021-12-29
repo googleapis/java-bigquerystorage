@@ -525,7 +525,7 @@ public class JsonStreamWriterTest {
     try (JsonStreamWriter writer =
         JsonStreamWriter.newBuilder(TEST_STREAM, tableSchema)
             .setChannelProvider(channelProvider)
-            .ignoreUnknownFields()
+            .setIgnoreUnknownFields(true)
             .setCredentialsProvider(NoCredentialsProvider.create())
             .build()) {
       testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
