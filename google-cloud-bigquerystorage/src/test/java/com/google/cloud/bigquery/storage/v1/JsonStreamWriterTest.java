@@ -495,7 +495,9 @@ public class JsonStreamWriterTest {
           testBigQueryWrite.getAppendRequests().get(2).getProtoRows().hasWriterSchema()
               || testBigQueryWrite.getAppendRequests().get(3).getProtoRows().hasWriterSchema());
     }
+  }
 
+  @Test
   public void testWithoutIgnoreUnknownFields() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     try (JsonStreamWriter writer =
