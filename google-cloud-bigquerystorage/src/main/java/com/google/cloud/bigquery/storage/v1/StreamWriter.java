@@ -599,12 +599,12 @@ public class StreamWriter implements AutoCloseable {
               "Stream finished with error " + finalStatus.toString() + " for stream " + streamName);
         }
       }
+      Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
+      if (storageException != null) {
+        this.connectionFinalStatus = storageException;
+      }
     } finally {
       this.lock.unlock();
-    }
-    Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
-    if (storageException != null) {
-      this.connectionFinalStatus = storageException;
     }
   }
 
