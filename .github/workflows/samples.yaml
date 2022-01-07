@@ -1,5 +1,7 @@
 on:
   pull_request:
+  pull_request_target:
+    types: [labeled]
 name: samples
 jobs:
   checkstyle:
@@ -12,3 +14,65 @@ jobs:
       - name: Run checkstyle
         run: mvn -P lint --quiet --batch-mode checkstyle:check
         working-directory: samples/snippets
+
+  test:
+    if: ${{ github.event.action != 'labeled' || github.event.label.name == 'actions:force-run' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'write'
+      pull-requests: 'write'
+      id-token: 'write'
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{github.event.pull_request.head.ref}}
+        repository: ${{github.event.pull_request.head.repo.full_name}}
+    - uses: 'google-github-actions/auth@v0.4.2'
+      with:
+        workload_identity_provider: 'projects/1016721519174/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider'
+        service_account: 'java-docs-samples-testing@java-docs-samples-testing.iam.gserviceaccount.com'
+        create_credentials_file: 'true'
+        access_token_lifetime: 300s
+        token_format: 'access_token'
+        cleanup_credentials: false
+    - id: 'secrets'
+      uses: 'google-github-actions/get-secretmanager-secrets@v0'
+      with:
+        secrets: |-
+          env_vars:cloud-devrel-kokoro-resources/java-bigquerystorage-samples-secrets
+    - uses: actions/setup-java@v2
+      with:
+        distribution: zulu
+        java-version: 8
+    - run: java -version
+    - run: echo "${SAMPLE_SECRETS}" > ${{ runner.temp }}/sample-secrets
+      env:
+        SAMPLE_SECRETS: '${{ steps.secrets.outputs.env_vars }}'
+    - run: .kokoro/build.sh
+      env:
+        JOB_TYPE: samples
+        GOOGLE_CLOUD_PROJECT: java-docs-samples-testing
+        SAMPLE_SECRETS: ${{ runner.temp }}/sample-secrets
+        KOKORO_GITHUB_PULL_REQUEST_NUMBER: 123
+    - if: ${{ github.event.action == 'labeled' && github.event.label.name == 'actions:force-run' }}
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          try {
+            await github.rest.issues.removeLabel({
+              name: 'actions:force-run',
+              owner: 'googleapis',
+              repo: 'java-trace',
+              issue_number: context.payload.pull_request.number
+            });
+          } catch (e) {
+            if (!e.message.includes('Label does not exist')) {
+              throw e;
+            }
+          }
+    - if: ${{ github.event_name == 'schedule'}}
+      run: |
+        curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot -o flakybot -s -L
+        chmod +x ./flakybot
+        ./flakybot --repo googleapis/java-trace --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}

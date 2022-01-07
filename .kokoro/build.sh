@@ -35,6 +35,7 @@ retry_with_backoff 3 10 \
     -Denforcer.skip=true \
     -Dmaven.javadoc.skip=true \
     -Dgcloud.download.skip=true \
+    -q \
     -T 1C
 
 # if GOOGLE_APPLICATION_CREDIENTIALS is specified as a relative path prepend Kokoro root directory onto it
@@ -78,6 +79,10 @@ samples)
 
     if [[ -f ${SAMPLES_DIR}/pom.xml ]]
     then
+      if [[ ! -z "${SAMPLE_SECRETS}" && -f "${SAMPLE_SECRETS}" ]]
+      then
+        source "${SAMPLE_SECRETS}"
+      fi
       if [ -f "${KOKORO_GFILE_DIR}/secret_manager/java-bigquerystorage-samples-secrets" ]
         then
             source "${KOKORO_GFILE_DIR}/secret_manager/java-bigquerystorage-samples-secrets"
