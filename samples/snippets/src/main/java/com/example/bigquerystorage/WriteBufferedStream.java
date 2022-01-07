@@ -18,14 +18,7 @@ package com.example.bigquerystorage;
 
 // [START bigquerystorage_jsonstreamwriter_buffered]
 import com.google.api.core.ApiFuture;
-import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
-import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
-import com.google.cloud.bigquery.storage.v1.CreateWriteStreamRequest;
-import com.google.cloud.bigquery.storage.v1.FlushRowsRequest;
-import com.google.cloud.bigquery.storage.v1.FlushRowsResponse;
-import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
-import com.google.cloud.bigquery.storage.v1.TableName;
-import com.google.cloud.bigquery.storage.v1.WriteStream;
+import com.google.cloud.bigquery.storage.v1.*;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Int64Value;
 import java.io.IOException;
@@ -77,16 +70,20 @@ public class WriteBufferedStream {
           }
           ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
           AppendRowsResponse response = future.get();
+          // Flush the buffer.
+          FlushRowsRequest flushRowsRequest =
+              FlushRowsRequest.newBuilder()
+                  .setWriteStream(writeStream.getName())
+                  .setOffset(Int64Value.of(10 * 2 - 1)) // Advance the cursor to the latest record.
+                  .build();
+          FlushRowsResponse flushRowsResponse = client.flushRows(flushRowsRequest);
+          // You can continue to write to the stream after flushing the buffer.
         }
 
-        // Flush the buffer.
-        FlushRowsRequest flushRowsRequest =
-            FlushRowsRequest.newBuilder()
-                .setWriteStream(writeStream.getName())
-                .setOffset(Int64Value.of(10 * 2 - 1)) // Advance the cursor to the latest record.
-                .build();
-        FlushRowsResponse flushRowsResponse = client.flushRows(flushRowsRequest);
-        // You can continue to write to the stream after flushing the buffer.
+        // Finalize the stream after use.
+        FinalizeWriteStreamRequest finalizeWriteStreamRequest =
+            FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build();
+        client.finalizeWriteStream(finalizeWriteStreamRequest);
       }
       System.out.println("Appended and committed records successfully.");
     } catch (ExecutionException e) {

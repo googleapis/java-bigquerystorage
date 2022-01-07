@@ -66,7 +66,7 @@ public class WriteCommittedStream {
           JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
               .build()) {
         // Write two batches to the stream, each with 10 JSON records. A writer should be
-        // used for as much writes as possible. Create a writer for just one write is an
+        // used for as much writes as possible. Creating a writer for just one write is an
         // antipattern.
         for (int i = 0; i < 2; i++) {
           // Create a JSON object that is compatible with the table schema.
