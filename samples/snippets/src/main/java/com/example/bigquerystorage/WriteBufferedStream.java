@@ -78,21 +78,20 @@ public class WriteBufferedStream {
           }
           ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
           AppendRowsResponse response = future.get();
-          // Flush the buffer.
-          FlushRowsRequest flushRowsRequest =
-              FlushRowsRequest.newBuilder()
-                  .setWriteStream(writeStream.getName())
-                  .setOffset(Int64Value.of(10 * 2 - 1)) // Advance the cursor to the latest record.
-                  .build();
-          FlushRowsResponse flushRowsResponse = client.flushRows(flushRowsRequest);
-          // You can continue to write to the stream after flushing the buffer.
         }
-
-        // Finalize the stream after use.
-        FinalizeWriteStreamRequest finalizeWriteStreamRequest =
-            FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build();
-        client.finalizeWriteStream(finalizeWriteStreamRequest);
+        // Flush the buffer.
+        FlushRowsRequest flushRowsRequest =
+            FlushRowsRequest.newBuilder()
+                .setWriteStream(writeStream.getName())
+                .setOffset(Int64Value.of(10 * 2 - 1)) // Advance the cursor to the latest record.
+                .build();
+        FlushRowsResponse flushRowsResponse = client.flushRows(flushRowsRequest);
+        // You can continue to write to the stream after flushing the buffer.
       }
+      // Finalize the stream after use.
+      FinalizeWriteStreamRequest finalizeWriteStreamRequest =
+          FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build();
+      client.finalizeWriteStream(finalizeWriteStreamRequest);
       System.out.println("Appended and committed records successfully.");
     } catch (ExecutionException e) {
       // If the wrapped exception is a StatusRuntimeException, check the state of the operation.
