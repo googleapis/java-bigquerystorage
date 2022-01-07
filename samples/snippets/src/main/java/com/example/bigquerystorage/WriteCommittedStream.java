@@ -21,6 +21,7 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1.CreateWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1.FinalizeWriteStreamRequest;
 import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableName;
 import com.google.cloud.bigquery.storage.v1.WriteStream;
@@ -64,8 +65,8 @@ public class WriteCommittedStream {
       try (JsonStreamWriter writer =
           JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
               .build()) {
-        // Write two batches to the stream, each with 10 JSON records. A writer should be used for as much writes as
-        // possible. Create a writer for just one write is an antipattern.
+        // Write two batches to the stream, each with 10 JSON records. A writer should be used for as
+        // much writes as possible. Create a writer for just one write is an antipattern.
         for (int i = 0; i < 2; i++) {
           // Create a JSON object that is compatible with the table schema.
           JSONArray jsonArr = new JSONArray();
@@ -81,7 +82,8 @@ public class WriteCommittedStream {
           AppendRowsResponse response = future.get();
         }
         // Finalize the stream after usage.
-        FinalizeWriteStreamRequest finalizeWriteStreamRequest = FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build();
+        FinalizeWriteStreamRequest finalizeWriteStreamRequest =
+            FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build();
         client.finalizeWriteStream(finalizeWriteStreamRequest);
       }
       System.out.println("Appended records successfully.");
