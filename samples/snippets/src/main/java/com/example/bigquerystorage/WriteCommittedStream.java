@@ -81,7 +81,7 @@ public class WriteCommittedStream {
           ApiFuture<AppendRowsResponse> future = writer.append(jsonArr, /*offset=*/ i * 10);
           AppendRowsResponse response = future.get();
         }
-        // Finalize the stream after usage.
+        // Finalize the stream after use.
         FinalizeWriteStreamRequest finalizeWriteStreamRequest =
             FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build();
         client.finalizeWriteStream(finalizeWriteStreamRequest);
