@@ -18,7 +18,12 @@ package com.example.bigquerystorage;
 
 // [START bigquerystorage_jsonstreamwriter_committed]
 import com.google.api.core.ApiFuture;
-import com.google.cloud.bigquery.storage.v1.*;
+import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
+import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
+import com.google.cloud.bigquery.storage.v1.CreateWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
+import com.google.cloud.bigquery.storage.v1.TableName;
+import com.google.cloud.bigquery.storage.v1.WriteStream;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
