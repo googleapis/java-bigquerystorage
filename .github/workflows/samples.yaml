@@ -2,6 +2,8 @@ on:
   pull_request:
   pull_request_target:
     types: [labeled]
+  schedule:
+    - cron: '0 2 * * *'
 name: samples
 jobs:
   checkstyle:
