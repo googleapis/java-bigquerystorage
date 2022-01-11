@@ -596,7 +596,10 @@ public class StreamWriter implements AutoCloseable {
         } else {
           this.connectionFinalStatus = finalStatus;
           log.info(
-              "Connection finished with error " + finalStatus.toString() + " for stream " + streamName);
+              "Connection finished with error "
+                  + finalStatus.toString()
+                  + " for stream "
+                  + streamName);
         }
       }
     } finally {
