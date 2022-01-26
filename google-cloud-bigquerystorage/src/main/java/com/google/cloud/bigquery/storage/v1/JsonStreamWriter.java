@@ -181,7 +181,7 @@ public class JsonStreamWriter implements AutoCloseable {
       streamWriterBuilder.setEndpoint(endpoint);
     }
     if (traceId != null) {
-      streamWriterBuilder.setTraceId("JsonWriter_" + traceId);
+      streamWriterBuilder.setTraceId("JsonWriter:" + traceId);
     } else {
       streamWriterBuilder.setTraceId("JsonWriter:null");
     }
