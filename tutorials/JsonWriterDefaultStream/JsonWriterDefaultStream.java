@@ -38,7 +38,7 @@ import java.util.concurrent.ExecutionException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class WriteToDefaultStreamTutorial {
+public class JsonWriterDefaultStream {
 
   public static void main(String[] args) throws Exception {
     if (args.length < 4) {
