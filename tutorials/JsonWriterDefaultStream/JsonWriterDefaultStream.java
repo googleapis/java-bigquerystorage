@@ -99,9 +99,7 @@ public class JsonWriterDefaultStream {
     try (JsonStreamWriter writer =
         JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema).build()) {
       // Read JSON data from the source file and send it to the Write API.
-      BufferedReader reader =
-          new BufferedReader(
-              new FileReader(dataFile));
+      BufferedReader reader = new BufferedReader(new FileReader(dataFile));
       String line = reader.readLine();
       while (line != null) {
         // As a best practice, send batches of records, instead of single records at a time.
