@@ -18,5 +18,5 @@ package com.example.bigquerystorage;
 
 @RunWith(JUnit4.class)
 public class JsonWriterDefaultStreamIT {
-  // TODO: ADD Integration Test
+  // TODO(mwasson): ADD Integration Test
 }
