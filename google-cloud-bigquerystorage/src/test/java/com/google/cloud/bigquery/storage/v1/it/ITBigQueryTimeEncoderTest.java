@@ -209,6 +209,13 @@ public class ITBigQueryTimeEncoderTest {
       assertEquals("2008-12-25", currentRow.get(3).getRepeatedValue().get(2).getStringValue());
 
       assertEquals("1970-10-28", currentRow.get(4).getStringValue());
+
+      assertEquals(
+          "2026-03-11T05:45:12.009000",
+          currentRow.get(2).getRepeatedValue().get(3).getStringValue());
+      assertEquals(
+          "2050-01-02T03:04:05.000006",
+          currentRow.get(2).getRepeatedValue().get(4).getStringValue());
     }
   }
 }
