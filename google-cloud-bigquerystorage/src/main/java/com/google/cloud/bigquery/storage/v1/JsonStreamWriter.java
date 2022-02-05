@@ -164,6 +164,17 @@ public class JsonStreamWriter implements AutoCloseable {
     return this.descriptor;
   }
 
+  /**
+   * Returns the wait of a request in Client side before sending to the Server. Request could wait
+   * in Client because it reached the client side inflightRequest limit (adjustable when
+   * constructing the StreamWriter). The value is the wait time for the last sent request. A
+   * constant high wait value indicates a need for more throughput, you can create a new
+   * StreamWriter for a new connection to increase the throughput.
+   */
+  public long getInflightWaitSeconds() {
+    return streamWriter.getInflightWaitSeconds();
+  }
+
   /** Sets all StreamWriter settings. */
   private void setStreamWriterSettings(
       @Nullable TransportChannelProvider channelProvider,
