@@ -162,7 +162,7 @@ public class JsonStreamWriter implements AutoCloseable {
         this.absTotal += currentRequestSize;
         // Allow first request to pass.
       }
-      LOG.info(
+      LOG.fine(
           "Sending a total of:"
               + this.totalMessageSize
               + " "
