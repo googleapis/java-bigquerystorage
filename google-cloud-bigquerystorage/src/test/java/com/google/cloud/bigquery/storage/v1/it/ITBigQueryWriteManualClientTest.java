@@ -459,7 +459,7 @@ public class ITBigQueryWriteManualClientTest {
         Assert.assertEquals(
             allResponses.get(i).get().getAppendResult().getOffset().getValue(), i * rowBatch);
       } catch (ExecutionException ex) {
-        if (ex.toString().contains("The offset is within stream,")) {
+        if (!ex.toString().contains("The offset is within stream,")) {
           Assert.fail("Unexpected error " + ex);
         }
       }
