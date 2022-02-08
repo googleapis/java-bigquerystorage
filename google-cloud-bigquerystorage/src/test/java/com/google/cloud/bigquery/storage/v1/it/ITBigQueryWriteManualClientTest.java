@@ -312,8 +312,7 @@ public class ITBigQueryWriteManualClientTest {
     TableId tableId = TableId.of(DATASET, tableName);
     Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
     Schema schema = Schema.of(col1);
-    TableInfo tableInfo =
-        TableInfo.newBuilder(tableId, StandardTableDefinition.of(schema)).build();
+    TableInfo tableInfo = TableInfo.newBuilder(tableId, StandardTableDefinition.of(schema)).build();
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
 
@@ -346,7 +345,9 @@ public class ITBigQueryWriteManualClientTest {
     }
     LOG.info("Waiting for all responses to come back");
     for (int i = 0; i < totalRequest; i++) {
-      LOG.info("waiting for: " + i);
+      if (allResponses.get(i).get().getError().getCode() == 6 /* ALREADY_EXISTS */) {
+        continue;
+      }
       Assert.assertEquals(
           allResponses.get(i).get().getAppendResult().getOffset().getValue(), i * rowBatch);
     }
