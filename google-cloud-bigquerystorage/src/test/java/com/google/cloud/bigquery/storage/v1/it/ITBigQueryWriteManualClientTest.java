@@ -412,7 +412,7 @@ public class ITBigQueryWriteManualClientTest {
     }
   }
 
-  // This test runs about 4-5 minutes, sometimes 10 minutes.
+  // This test runs about 1 min.
   @Test
   public void testJsonStreamWriterWithDefaultStreamLarge()
       throws IOException, InterruptedException, ExecutionException,
@@ -432,8 +432,8 @@ public class ITBigQueryWriteManualClientTest {
                 .setWriteStream(
                     WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
                 .build());
-    int totalRequest = 100;
-    int rowBatch = 20000;
+    int totalRequest = 10;
+    int rowBatch = 40000;
     ArrayList<ApiFuture<AppendRowsResponse>> allResponses =
         new ArrayList<ApiFuture<AppendRowsResponse>>(totalRequest);
     // Sends a total of 150MB over the wire.
@@ -445,7 +445,7 @@ public class ITBigQueryWriteManualClientTest {
         JSONObject row = new JSONObject();
         row.put("col1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         JSONArray jsonArr = new JSONArray();
-        // 1.5MB batch.
+        // 3MB batch.
         for (int j = 0; j < rowBatch; j++) {
           jsonArr.put(row);
         }
