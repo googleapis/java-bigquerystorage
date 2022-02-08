@@ -53,7 +53,7 @@ public class JsonStreamWriter implements AutoCloseable {
   private Descriptor descriptor;
   private TableSchema tableSchema;
   private boolean ignoreUnknownFields = false;
-  private boolean reconnectOnStuck = false;
+  private boolean reconnectAfter10M = false;
   private long totalMessageSize = 0;
   private long absTotal = 0;
   private ProtoSchema protoSchema;
@@ -88,7 +88,7 @@ public class JsonStreamWriter implements AutoCloseable {
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
     this.ignoreUnknownFields = builder.ignoreUnknownFields;
-    this.reconnectOnStuck = builder.reconnectOnStuck;
+    this.reconnectAfter10M = builder.reconnectAfter10M;
   }
 
   /**
@@ -154,7 +154,7 @@ public class JsonStreamWriter implements AutoCloseable {
       this.totalMessageSize += currentRequestSize;
       this.absTotal += currentRequestSize;
       // Reconnect on every 9.5MB.
-      if (this.totalMessageSize > 9500000 && this.reconnectOnStuck) {
+      if (this.totalMessageSize > 9500000 && this.reconnectAfter10M) {
         streamWriter.close();
         // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
         this.streamWriter = streamWriterBuilder.setWriterSchema(protoSchema).build();
@@ -290,7 +290,7 @@ public class JsonStreamWriter implements AutoCloseable {
     private boolean createDefaultStream = false;
     private String traceId;
     private boolean ignoreUnknownFields = false;
-    private boolean reconnectOnStuck = false;
+    private boolean reconnectAfter10M = false;
 
     private static String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
@@ -405,15 +405,15 @@ public class JsonStreamWriter implements AutoCloseable {
     }
 
     /**
-     * Setter for a reconnectOnStuck, temporaily workaround for omg/48020. Fix for the omg is
+     * Setter for a reconnectAfter10M, temporaily workaround for omg/48020. Fix for the omg is
      * supposed to roll out by 2/11/2022 Friday. If you set this to True, your write will be slower
      * (0.75MB/s per connection), but your writes will not be stuck as a sympton of omg/48020.
      *
-     * @param reconnectOnStuck
+     * @param reconnectAfter10M
      * @return Builder
      */
-    public Builder setReconnectOnStuck(boolean reconnectOnStuck) {
-      this.reconnectOnStuck = reconnectOnStuck;
+    public Builder setReconnectAfter10M(boolean reconnectAfter10M) {
+      this.reconnectAfter10M = reconnectAfter10M;
       return this;
     }
 
