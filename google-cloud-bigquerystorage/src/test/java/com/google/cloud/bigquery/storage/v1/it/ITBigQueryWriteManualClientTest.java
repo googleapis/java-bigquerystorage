@@ -436,7 +436,7 @@ public class ITBigQueryWriteManualClientTest {
     int rowBatch = 40000;
     ArrayList<ApiFuture<AppendRowsResponse>> allResponses =
         new ArrayList<ApiFuture<AppendRowsResponse>>(totalRequest);
-    // Sends a total of 150MB over the wire.
+    // Sends a total of 30MB over the wire.
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
             .setReconnectOnStuck(true)
