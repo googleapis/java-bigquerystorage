@@ -71,7 +71,6 @@ public class JsonStreamWriter implements AutoCloseable {
     } else {
       streamWriterBuilder = StreamWriter.newBuilder(builder.streamName, builder.client);
     }
-    LOG.info("reconnect on stuck? " + builder.reconnectOnStuck);
     streamWriterBuilder.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
     setStreamWriterSettings(
         builder.channelProvider,

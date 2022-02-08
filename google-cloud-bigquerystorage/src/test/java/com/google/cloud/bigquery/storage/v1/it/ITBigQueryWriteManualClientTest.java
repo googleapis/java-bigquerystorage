@@ -308,37 +308,34 @@ public class ITBigQueryWriteManualClientTest {
   public void testJsonStreamWriterWithDefaultStreamLarge()
       throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
-    String tableName = "JsonTableDefaultStreamLarge";
-    TableFieldSchema TEST_STRING =
-        TableFieldSchema.newBuilder()
-            .setType(TableFieldSchema.Type.STRING)
-            .setMode(TableFieldSchema.Mode.NULLABLE)
-            .setName("test_str")
-            .build();
-    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_STRING).build();
+    String tableName = "TableLarge";
+    TableId tableId = TableId.of(DATASET, tableName);
+    Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
+    Schema schema = Schema.of(col1);
     TableInfo tableInfo =
-        TableInfo.newBuilder(
-                TableId.of(DATASET, tableName),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder(
-                                "test_str", StandardSQLTypeName.STRING)
-                            .build())))
-            .build();
+        TableInfo.newBuilder(tableId, StandardTableDefinition.of(schema)).build();
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(parent.toString())
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
     int totalRequest = 100;
     int rowBatch = 20000;
     ArrayList<ApiFuture<AppendRowsResponse>> allResponses =
         new ArrayList<ApiFuture<AppendRowsResponse>>(totalRequest);
     // Sends a total of 150MB over the wire.
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(parent.toString(), tableSchema)
+        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
             .setReconnectOnStuck(true)
             .build()) {
       for (int k = 0; k < totalRequest; k++) {
         JSONObject row = new JSONObject();
-        row.put("test_str", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        row.put("col1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         JSONArray jsonArr = new JSONArray();
         // 1.5MB batch.
         for (int j = 0; j < rowBatch; j++) {
