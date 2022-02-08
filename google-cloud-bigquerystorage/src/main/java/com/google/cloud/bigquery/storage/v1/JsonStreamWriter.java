@@ -52,6 +52,7 @@ public class JsonStreamWriter implements AutoCloseable {
   private StreamWriter.Builder streamWriterBuilder;
   private Descriptor descriptor;
   private TableSchema tableSchema;
+  private boolean ignoreUnknownFields = false;
 
   /**
    * Constructs the JsonStreamWriter
@@ -82,6 +83,7 @@ public class JsonStreamWriter implements AutoCloseable {
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
+    this.ignoreUnknownFields = builder.ignoreUnknownFields;
   }
 
   /**
@@ -137,7 +139,8 @@ public class JsonStreamWriter implements AutoCloseable {
     for (int i = 0; i < jsonArr.length(); i++) {
       JSONObject json = jsonArr.getJSONObject(i);
       Message protoMessage =
-          JsonToProtoMessage.convertJsonToProtoMessage(this.descriptor, this.tableSchema, json);
+          JsonToProtoMessage.convertJsonToProtoMessage(
+              this.descriptor, this.tableSchema, json, ignoreUnknownFields);
       rowsBuilder.addSerializedRows(protoMessage.toByteString());
     }
     // Need to make sure refreshAppendAndSetDescriptor finish first before this can run
@@ -164,6 +167,17 @@ public class JsonStreamWriter implements AutoCloseable {
    */
   public Descriptor getDescriptor() {
     return this.descriptor;
+  }
+
+  /**
+   * Returns the wait of a request in Client side before sending to the Server. Request could wait
+   * in Client because it reached the client side inflight request limit (adjustable when
+   * constructing the Writer). The value is the wait time for the last sent request. A constant high
+   * wait value indicates a need for more throughput, you can create a new Stream for to increase
+   * the throughput in exclusive stream case, or create a new Writer in the default stream case.
+   */
+  public long getInflightWaitSeconds() {
+    return streamWriter.getInflightWaitSeconds();
   }
 
   /** Sets all StreamWriter settings. */
@@ -255,7 +269,8 @@ public class JsonStreamWriter implements AutoCloseable {
     private String endpoint;
     private boolean createDefaultStream = false;
     private String traceId;
-    private Boolean reconnectOnStuck = false;
+    private boolean reconnectOnStuck = false;
+    private boolean ignoreUnknownFields = false;
 
     private static String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
@@ -362,6 +377,18 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setTraceId(String traceId) {
       this.traceId = Preconditions.checkNotNull(traceId, "TraceId is null.");
+      return this;
+    }
+
+    /**
+     * Setter for a ignoreUnkownFields, if true, unknown Json fields to BigQuery will be ignored
+     * instead of error out.
+     *
+     * @param ignoreUnknownFields
+     * @return Builder
+     */
+    public Builder setIgnoreUnknownFields(boolean ignoreUnknownFields) {
+      this.ignoreUnknownFields = ignoreUnknownFields;
       return this;
     }
 

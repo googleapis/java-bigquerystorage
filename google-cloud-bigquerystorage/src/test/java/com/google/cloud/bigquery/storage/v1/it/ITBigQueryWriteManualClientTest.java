@@ -403,7 +403,9 @@ public class ITBigQueryWriteManualClientTest {
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(parent.toString(), tableSchema).build()) {
+        JsonStreamWriter.newBuilder(parent.toString(), tableSchema)
+            .setIgnoreUnknownFields(true)
+            .build()) {
       LOG.info("Sending one message");
       JSONObject row1 = new JSONObject();
       row1.put("test_str", "aaa");
@@ -416,6 +418,7 @@ public class ITBigQueryWriteManualClientTest {
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
                     .toByteArray()
               }));
+      row1.put("unknown_field", "a");
       row1.put(
           "test_datetime",
           CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(2020, 10, 1, 12, 0)));
@@ -793,10 +796,9 @@ public class ITBigQueryWriteManualClientTest {
         response.get();
         Assert.fail("Should fail");
       } catch (ExecutionException e) {
-        // TODO(stephwang): update test case when toStroageException is updated
+        assertEquals(Exceptions.SchemaMismatchedException.class, e.getCause().getClass());
         assertThat(e.getCause().getMessage())
-            .contains(
-                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Input schema has more fields than BigQuery schema");
+            .contains("Schema mismatch due to extra fields in user schema");
       }
     }
   }
@@ -825,10 +827,8 @@ public class ITBigQueryWriteManualClientTest {
         response.get();
         Assert.fail("Should fail");
       } catch (ExecutionException e) {
-        //   //TODO(stephwang): update test case when toStroageException is updated
-        assertThat(e.getCause().getMessage())
-            .contains(
-                "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Stream has been finalized and cannot be appended");
+        assertEquals(Exceptions.StreamFinalizedException.class, e.getCause().getClass());
+        assertThat(e.getCause().getMessage()).contains("Stream is finalized");
       }
     }
   }

@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -170,7 +171,11 @@ public class StreamWriter implements AutoCloseable {
   /*
    * Temporary workaround for omg/48020.
    */
-  private Boolean reconnectOnStuck = false;
+  private boolean reconnectOnStuck = false;
+  /*
+   * The inflight wait time for the previous sent request.
+   */
+  private final AtomicLong inflightWaitSec = new AtomicLong(0);
 
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
@@ -306,7 +311,7 @@ public class StreamWriter implements AutoCloseable {
         requestWrapper.appendResult.setException(
             new StatusRuntimeException(
                 Status.fromCode(Status.Code.FAILED_PRECONDITION)
-                    .withDescription("Stream is already closed")));
+                    .withDescription("Connection is already closed")));
         return requestWrapper.appendResult;
       }
       if (connectionFinalStatus != null) {
@@ -314,7 +319,7 @@ public class StreamWriter implements AutoCloseable {
             new StatusRuntimeException(
                 Status.fromCode(Status.Code.FAILED_PRECONDITION)
                     .withDescription(
-                        "Stream is closed due to " + connectionFinalStatus.toString())));
+                        "Connection is closed due to " + connectionFinalStatus.toString())));
         return requestWrapper.appendResult;
       }
 
@@ -344,6 +349,7 @@ public class StreamWriter implements AutoCloseable {
 
   @GuardedBy("lock")
   private void maybeWaitForInflightQuota() {
+    long start_time = System.currentTimeMillis();
     while (this.inflightRequests >= this.maxInflightRequests
         || this.inflightBytes >= this.maxInflightBytes) {
       try {
@@ -360,6 +366,19 @@ public class StreamWriter implements AutoCloseable {
                 .withDescription("Interrupted while waiting for quota."));
       }
     }
+    inflightWaitSec.set((System.currentTimeMillis() - start_time) / 1000);
+  }
+
+  /**
+   * Returns the wait of a request in Client side before sending to the Server. Request could wait
+   * in Client because it reached the client side inflight request limit (adjustable when
+   * constructing the StreamWriter). The value is the wait time for the last sent request. A
+   * constant high wait value indicates a need for more throughput, you can create a new Stream for
+   * to increase the throughput in exclusive stream case, or create a new Writer in the default
+   * stream case.
+   */
+  public long getInflightWaitSeconds() {
+    return inflightWaitSec.longValue();
   }
 
   /** Close the stream writer. Shut down all resources. */
@@ -555,11 +574,7 @@ public class StreamWriter implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
-    log.fine(
-        "Cleaning "
-            + localQueue.size()
-            + " inflight requests with error: "
-            + finalStatus.toString());
+    log.fine("Cleaning " + localQueue.size() + " inflight requests with error: " + finalStatus);
     while (!localQueue.isEmpty()) {
       localQueue.pollFirst().appendResult.setException(finalStatus);
     }
@@ -630,17 +645,17 @@ public class StreamWriter implements AutoCloseable {
                   + " for stream "
                   + streamName);
         } else {
-          this.connectionFinalStatus = finalStatus;
+          Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
+          this.connectionFinalStatus = storageException != null ? storageException : finalStatus;
           log.info(
-              "Stream finished with error " + finalStatus.toString() + " for stream " + streamName);
+              "Connection finished with error "
+                  + finalStatus.toString()
+                  + " for stream "
+                  + streamName);
         }
       }
     } finally {
       this.lock.unlock();
-    }
-    Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
-    if (storageException != null) {
-      this.connectionFinalStatus = storageException;
     }
   }
 
