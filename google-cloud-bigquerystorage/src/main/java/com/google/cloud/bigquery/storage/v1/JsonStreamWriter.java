@@ -18,6 +18,7 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
+import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
@@ -53,6 +54,9 @@ public class JsonStreamWriter implements AutoCloseable {
   private Descriptor descriptor;
   private TableSchema tableSchema;
   private boolean ignoreUnknownFields = false;
+  private boolean reconnectOnStuck = false;
+  private long totalMessageSize = 0;
+  private ProtoSchema protoSchema;
 
   /**
    * Constructs the JsonStreamWriter
@@ -71,7 +75,9 @@ public class JsonStreamWriter implements AutoCloseable {
     } else {
       streamWriterBuilder = StreamWriter.newBuilder(builder.streamName, builder.client);
     }
-    streamWriterBuilder.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
+    this.protoSchema = ProtoSchemaConverter.convert(this.descriptor);
+    this.totalMessageSize = protoSchema.getSerializedSize();
+    streamWriterBuilder.setWriterSchema(protoSchema);
     setStreamWriterSettings(
         builder.channelProvider,
         builder.credentialsProvider,
@@ -82,6 +88,7 @@ public class JsonStreamWriter implements AutoCloseable {
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
     this.ignoreUnknownFields = builder.ignoreUnknownFields;
+    this.reconnectOnStuck = builder.reconnectOnStuck;
   }
 
   /**
@@ -122,10 +129,12 @@ public class JsonStreamWriter implements AutoCloseable {
         this.tableSchema = updatedSchema;
         this.descriptor =
             BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
+        this.protoSchema = ProtoSchemaConverter.convert(this.descriptor);
+        this.totalMessageSize = protoSchema.getSerializedSize();
         // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
         this.streamWriter =
             streamWriterBuilder
-                .setWriterSchema(ProtoSchemaConverter.convert(this.descriptor))
+                .setWriterSchema(this.protoSchema)
                 .build();
       }
     }
@@ -134,15 +143,30 @@ public class JsonStreamWriter implements AutoCloseable {
     // Any error in convertJsonToProtoMessage will throw an
     // IllegalArgumentException/IllegalStateException/NullPointerException and will halt processing
     // of JSON data.
+    long currentRequestSize = 0;
     for (int i = 0; i < jsonArr.length(); i++) {
       JSONObject json = jsonArr.getJSONObject(i);
       Message protoMessage =
           JsonToProtoMessage.convertJsonToProtoMessage(
               this.descriptor, this.tableSchema, json, ignoreUnknownFields);
       rowsBuilder.addSerializedRows(protoMessage.toByteString());
+      currentRequestSize += protoMessage.getSerializedSize();
     }
     // Need to make sure refreshAppendAndSetDescriptor finish first before this can run
     synchronized (this) {
+      this.totalMessageSize += currentRequestSize;
+      // Reconnect on every 9.5MB.
+      if (this.totalMessageSize > 9500000 && this.reconnectOnStuck) {
+        LOG.info("reconnecting");
+        streamWriter.close();
+        // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
+        this.streamWriter =
+            streamWriterBuilder
+                .setWriterSchema(protoSchema)
+                .build();
+        this.totalMessageSize = this.protoSchema.getSerializedSize() + currentRequestSize;
+        // Allow first request to pass.
+      }
       final ApiFuture<AppendRowsResponse> appendResponseFuture =
           this.streamWriter.append(rowsBuilder.build(), offset);
       return appendResponseFuture;
@@ -264,6 +288,7 @@ public class JsonStreamWriter implements AutoCloseable {
     private boolean createDefaultStream = false;
     private String traceId;
     private boolean ignoreUnknownFields = false;
+    private boolean reconnectOnStuck = false;
 
     private static String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
@@ -374,6 +399,17 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setIgnoreUnknownFields(boolean ignoreUnknownFields) {
       this.ignoreUnknownFields = ignoreUnknownFields;
+      return this;
+    }
+
+    /**
+     * Setter for a reconnectOnStuck, temporaily workaround for omg/48020
+     *
+     * @param reconnectOnStuck
+     * @return Builder
+     */
+    public Builder setReconnectOnStuck(boolean reconnectOnStuck) {
+      this.reconnectOnStuck = reconnectOnStuck;
       return this;
     }
 
