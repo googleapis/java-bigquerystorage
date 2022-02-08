@@ -412,6 +412,7 @@ public class ITBigQueryWriteManualClientTest {
     }
   }
 
+  // This test runs about 4-5 minutes, sometimes 10 minutes.
   @Test
   public void testJsonStreamWriterWithDefaultStreamLarge()
       throws IOException, InterruptedException, ExecutionException,
