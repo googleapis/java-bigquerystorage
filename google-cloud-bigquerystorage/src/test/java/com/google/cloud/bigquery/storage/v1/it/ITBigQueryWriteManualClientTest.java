@@ -448,7 +448,7 @@ public class ITBigQueryWriteManualClientTest {
         for (int j = 0; j < rowBatch; j++) {
           jsonArr.put(row);
         }
-        LOG.info("Appending: " + k + "/" + rowBatch);
+        LOG.fine("Appending: " + k + "/" + totalRequest);
         allResponses.add(jsonStreamWriter.append(jsonArr, k * rowBatch));
       }
     }

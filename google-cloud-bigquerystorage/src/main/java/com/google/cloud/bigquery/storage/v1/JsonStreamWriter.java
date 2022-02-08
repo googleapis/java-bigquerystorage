@@ -55,6 +55,7 @@ public class JsonStreamWriter implements AutoCloseable {
   private boolean ignoreUnknownFields = false;
   private boolean reconnectOnStuck = false;
   private long totalMessageSize = 0;
+  private long absTotal = 0;
   private ProtoSchema protoSchema;
 
   /**
@@ -151,14 +152,23 @@ public class JsonStreamWriter implements AutoCloseable {
     // Need to make sure refreshAppendAndSetDescriptor finish first before this can run
     synchronized (this) {
       this.totalMessageSize += currentRequestSize;
+      this.absTotal += currentRequestSize;
       // Reconnect on every 9.5MB.
       if (this.totalMessageSize > 9500000 && this.reconnectOnStuck) {
         streamWriter.close();
         // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
         this.streamWriter = streamWriterBuilder.setWriterSchema(protoSchema).build();
         this.totalMessageSize = this.protoSchema.getSerializedSize() + currentRequestSize;
+        this.absTotal += currentRequestSize;
         // Allow first request to pass.
       }
+      LOG.info(
+          "Sending a total of:"
+              + this.totalMessageSize
+              + " "
+              + currentRequestSize
+              + " "
+              + this.absTotal);
       final ApiFuture<AppendRowsResponse> appendResponseFuture =
           this.streamWriter.append(rowsBuilder.build(), offset);
       return appendResponseFuture;
