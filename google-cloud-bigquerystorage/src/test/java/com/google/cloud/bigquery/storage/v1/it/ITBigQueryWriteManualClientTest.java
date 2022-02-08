@@ -414,7 +414,7 @@ public class ITBigQueryWriteManualClientTest {
 
   // This test runs about 1 min.
   @Test
-  public void testJsonStreamWriterWithDefaultStreamLarge()
+  public void testJsonStreamWriterWithMessagesOver10M()
       throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "TableLarge";
@@ -439,7 +439,7 @@ public class ITBigQueryWriteManualClientTest {
     // Sends a total of 30MB over the wire.
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
-            .setReconnectAfter10M(true)
+            .setReconnectAfter10M(false)
             .build()) {
       for (int k = 0; k < totalRequest; k++) {
         JSONObject row = new JSONObject();
