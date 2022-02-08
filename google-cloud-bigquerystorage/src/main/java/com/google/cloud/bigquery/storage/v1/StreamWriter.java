@@ -90,6 +90,13 @@ public class StreamWriter implements AutoCloseable {
   private long inflightBytes = 0;
 
   /*
+   * Total message size on the connection.
+   */
+  @GuardedBy("lock")
+  private long totalMessageSize = 0;
+  private long absTotal = 0;
+
+  /*
    * Tracks how often the stream was closed due to a retriable error. Streaming will stop when the
    * count hits a threshold. Streaming should only be halted, if it isn't possible to establish a
    * connection. Keep track of the number of reconnections in succession. This will be reset if
@@ -159,6 +166,11 @@ public class StreamWriter implements AutoCloseable {
    */
   private Thread appendThread;
 
+  /*
+   * Temporary workaround for omg/48020.
+   */
+  private Boolean reconnectOnStuck = false;
+
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
@@ -197,6 +209,8 @@ public class StreamWriter implements AutoCloseable {
       this.client = builder.client;
       this.ownsBigQueryWriteClient = false;
     }
+    log.info("reconnect on stuck!!!!" + builder.reconnectOnStuck);
+    this.reconnectOnStuck = builder.reconnectOnStuck;
 
     this.appendThread =
         new Thread(
@@ -305,6 +319,13 @@ public class StreamWriter implements AutoCloseable {
 
       ++this.inflightRequests;
       this.inflightBytes += requestWrapper.messageSize;
+      this.totalMessageSize += requestWrapper.messageSize;
+      this.absTotal += requestWrapper.messageSize;
+      log.info("Sending a total of:" + this.totalMessageSize + " " + requestWrapper.messageSize + " " + this.absTotal);
+      if (reconnectOnStuck && this.totalMessageSize > 10000000) {
+        log.info("Reconnecting due to messeage limit");
+        this.streamConnectionIsConnected = false;
+      }
       waitingRequestQueue.addLast(requestWrapper);
       hasMessageInWaitingQueue.signal();
       maybeWaitForInflightQuota();
@@ -381,6 +402,7 @@ public class StreamWriter implements AutoCloseable {
         // In addition, only reconnect if there is a retriable error.
         streamNeedsConnecting = !streamConnectionIsConnected && connectionFinalStatus == null;
         if (streamNeedsConnecting) {
+          log.info("Reconnecting!!!");
           // If the stream connection is broken, any requests on inflightRequestQueue will need
           // to be resent, as the new connection has no knowledge of the requests. Copy the requests
           // from inflightRequestQueue and prepent them onto the waitinRequestQueue. They need to be
@@ -417,7 +439,15 @@ public class StreamWriter implements AutoCloseable {
         } finally {
           lock.unlock();
         }
+        log.info("Actual reconnecting!!!!!!!");
         resetConnection();
+        log.info("Done Actual reconnecting!!!!!!!");
+        lock.lock();
+        try {
+          this.totalMessageSize = 0;
+        } finally {
+          lock.unlock();
+        }
         // Set firstRequestInConnection to indicate the next request to be sent should include
         // metedata.
         isFirstRequestInConnection = true;
@@ -665,6 +695,8 @@ public class StreamWriter implements AutoCloseable {
 
     private TableSchema updatedTableSchema = null;
 
+    private Boolean reconnectOnStuck = false;
+
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
       this.client = null;
@@ -728,6 +760,14 @@ public class StreamWriter implements AutoCloseable {
             "TraceId must follow the format of A:B. Actual:" + traceId);
       }
       this.traceId = traceId;
+      return this;
+    }
+
+    /**
+     * Temporialy workaround for omg/48020.
+     */
+    public Builder setReconnectOnStuck(boolean reconnectOnStuck) {
+      this.reconnectOnStuck = reconnectOnStuck;
       return this;
     }
 

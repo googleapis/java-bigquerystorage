@@ -70,13 +70,15 @@ public class JsonStreamWriter implements AutoCloseable {
     } else {
       streamWriterBuilder = StreamWriter.newBuilder(builder.streamName, builder.client);
     }
+    LOG.info("reconnect on stuck? "  + builder.reconnectOnStuck);
     streamWriterBuilder.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
     setStreamWriterSettings(
         builder.channelProvider,
         builder.credentialsProvider,
         builder.endpoint,
         builder.flowControlSettings,
-        builder.traceId);
+        builder.traceId,
+        builder.reconnectOnStuck);
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
@@ -170,7 +172,8 @@ public class JsonStreamWriter implements AutoCloseable {
       @Nullable CredentialsProvider credentialsProvider,
       @Nullable String endpoint,
       @Nullable FlowControlSettings flowControlSettings,
-      @Nullable String traceId) {
+      @Nullable String traceId,
+      boolean reconnectOnStuck) {
     if (channelProvider != null) {
       streamWriterBuilder.setChannelProvider(channelProvider);
     }
@@ -194,6 +197,9 @@ public class JsonStreamWriter implements AutoCloseable {
         streamWriterBuilder.setMaxInflightRequests(
             flowControlSettings.getMaxOutstandingElementCount());
       }
+    }
+    if (reconnectOnStuck) {
+      streamWriterBuilder.setReconnectOnStuck(reconnectOnStuck);
     }
   }
 
@@ -249,6 +255,7 @@ public class JsonStreamWriter implements AutoCloseable {
     private String endpoint;
     private boolean createDefaultStream = false;
     private String traceId;
+    private Boolean reconnectOnStuck = false;
 
     private static String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
@@ -317,6 +324,14 @@ public class JsonStreamWriter implements AutoCloseable {
       this.flowControlSettings =
           Preconditions.checkNotNull(flowControlSettings, "FlowControlSettings is null.");
       return this;
+    }
+
+    /*
+     * Temporily workaround for omg/48020.
+     */
+    public Builder setReconnectOnStuck(boolean reconnectOnStuck) {
+        this.reconnectOnStuck = reconnectOnStuck;
+        return this;
     }
 
     /**

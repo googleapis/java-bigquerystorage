@@ -305,6 +305,53 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
+  public void testJsonStreamWriterWithDefaultStreamLarge()
+      throws IOException, InterruptedException, ExecutionException,
+                 Descriptors.DescriptorValidationException {
+    String tableName = "JsonTableDefaultStreamLarge";
+    TableFieldSchema TEST_STRING =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.STRING)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test_str")
+            .build();
+    TableSchema tableSchema =
+        TableSchema.newBuilder()
+            .addFields(0, TEST_STRING)
+            .build();
+    TableInfo tableInfo =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, tableName),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "test_str", StandardSQLTypeName.STRING)
+                            .build())))
+            .build();
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    int total_request = 1000;
+    int rowBatch = 50000;
+    ArrayList<ApiFuture<AppendRowsResponse>> allResponses = new ArrayList<ApiFuture<AppendRowsResponse>>(
+        total_request);
+    try (JsonStreamWriter jsonStreamWriter =
+             JsonStreamWriter.newBuilder(parent.toString(), tableSchema).setReconnectOnStuck(true).build()) {
+      for (int k = 0; k < total_request; k++) {
+        JSONObject row = new JSONObject();
+        row.put("test_str", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        JSONArray jsonArr = new JSONArray();
+        for (int j = 0; j < rowBatch; j++) {
+          jsonArr.put(row);
+        }
+        allResponses.add(jsonStreamWriter.append(jsonArr, k * rowBatch));
+      }
+    }
+    for (int i = 0; i < total_request; i++) {
+      Assert.assertEquals(allResponses.get(i).get().getAppendResult().getOffset().getValue(), i * rowBatch);
+    }
+  }
+
+  @Test
   public void testJsonStreamWriterWithDefaultStream()
       throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
