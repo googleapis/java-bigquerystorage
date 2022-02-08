@@ -156,7 +156,7 @@ public class JsonStreamWriter implements AutoCloseable {
       // Reconnect on every 9.5MB.
       if (this.totalMessageSize > 9500000 && this.reconnectAfter10M) {
         streamWriter.close();
-        // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
+        // Create a new underlying StreamWriter aka establish a new connection.
         this.streamWriter = streamWriterBuilder.setWriterSchema(protoSchema).build();
         this.totalMessageSize = this.protoSchema.getSerializedSize() + currentRequestSize;
         this.absTotal += currentRequestSize;
