@@ -94,6 +94,7 @@ public class StreamWriter implements AutoCloseable {
    */
   @GuardedBy("lock")
   private long totalMessageSize = 0;
+
   private long absTotal = 0;
 
   /*
@@ -321,7 +322,13 @@ public class StreamWriter implements AutoCloseable {
       this.inflightBytes += requestWrapper.messageSize;
       this.totalMessageSize += requestWrapper.messageSize;
       this.absTotal += requestWrapper.messageSize;
-      log.info("Sending a total of:" + this.totalMessageSize + " " + requestWrapper.messageSize + " " + this.absTotal);
+      log.info(
+          "Sending a total of:"
+              + this.totalMessageSize
+              + " "
+              + requestWrapper.messageSize
+              + " "
+              + this.absTotal);
       if (reconnectOnStuck && this.totalMessageSize > 10000000) {
         log.info("Reconnecting due to messeage limit");
         this.streamConnectionIsConnected = false;
@@ -402,7 +409,6 @@ public class StreamWriter implements AutoCloseable {
         // In addition, only reconnect if there is a retriable error.
         streamNeedsConnecting = !streamConnectionIsConnected && connectionFinalStatus == null;
         if (streamNeedsConnecting) {
-          log.info("Reconnecting!!!");
           // If the stream connection is broken, any requests on inflightRequestQueue will need
           // to be resent, as the new connection has no knowledge of the requests. Copy the requests
           // from inflightRequestQueue and prepent them onto the waitinRequestQueue. They need to be
@@ -763,9 +769,7 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
-    /**
-     * Temporialy workaround for omg/48020.
-     */
+    /** Temporialy workaround for omg/48020. */
     public Builder setReconnectOnStuck(boolean reconnectOnStuck) {
       this.reconnectOnStuck = reconnectOnStuck;
       return this;

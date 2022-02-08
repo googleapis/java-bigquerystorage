@@ -307,7 +307,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testJsonStreamWriterWithDefaultStreamLarge()
       throws IOException, InterruptedException, ExecutionException,
-                 Descriptors.DescriptorValidationException {
+          Descriptors.DescriptorValidationException {
     String tableName = "JsonTableDefaultStreamLarge";
     TableFieldSchema TEST_STRING =
         TableFieldSchema.newBuilder()
@@ -315,10 +315,7 @@ public class ITBigQueryWriteManualClientTest {
             .setMode(TableFieldSchema.Mode.NULLABLE)
             .setName("test_str")
             .build();
-    TableSchema tableSchema =
-        TableSchema.newBuilder()
-            .addFields(0, TEST_STRING)
-            .build();
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_STRING).build();
     TableInfo tableInfo =
         TableInfo.newBuilder(
                 TableId.of(DATASET, tableName),
@@ -330,16 +327,20 @@ public class ITBigQueryWriteManualClientTest {
             .build();
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
-    int total_request = 1000;
-    int rowBatch = 50000;
-    ArrayList<ApiFuture<AppendRowsResponse>> allResponses = new ArrayList<ApiFuture<AppendRowsResponse>>(
-        total_request);
+    int total_request = 100;
+    int rowBatch = 20000;
+    ArrayList<ApiFuture<AppendRowsResponse>> allResponses =
+        new ArrayList<ApiFuture<AppendRowsResponse>>(total_request);
+    // Sends a total of 150MB over the wire.
     try (JsonStreamWriter jsonStreamWriter =
-             JsonStreamWriter.newBuilder(parent.toString(), tableSchema).setReconnectOnStuck(true).build()) {
+        JsonStreamWriter.newBuilder(parent.toString(), tableSchema)
+            .setReconnectOnStuck(true)
+            .build()) {
       for (int k = 0; k < total_request; k++) {
         JSONObject row = new JSONObject();
         row.put("test_str", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         JSONArray jsonArr = new JSONArray();
+        // 1.5MB batch.
         for (int j = 0; j < rowBatch; j++) {
           jsonArr.put(row);
         }
@@ -347,7 +348,8 @@ public class ITBigQueryWriteManualClientTest {
       }
     }
     for (int i = 0; i < total_request; i++) {
-      Assert.assertEquals(allResponses.get(i).get().getAppendResult().getOffset().getValue(), i * rowBatch);
+      Assert.assertEquals(
+          allResponses.get(i).get().getAppendResult().getOffset().getValue(), i * rowBatch);
     }
   }
 

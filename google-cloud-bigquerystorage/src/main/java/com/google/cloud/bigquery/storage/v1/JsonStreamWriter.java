@@ -70,7 +70,7 @@ public class JsonStreamWriter implements AutoCloseable {
     } else {
       streamWriterBuilder = StreamWriter.newBuilder(builder.streamName, builder.client);
     }
-    LOG.info("reconnect on stuck? "  + builder.reconnectOnStuck);
+    LOG.info("reconnect on stuck? " + builder.reconnectOnStuck);
     streamWriterBuilder.setWriterSchema(ProtoSchemaConverter.convert(this.descriptor));
     setStreamWriterSettings(
         builder.channelProvider,
@@ -330,8 +330,8 @@ public class JsonStreamWriter implements AutoCloseable {
      * Temporily workaround for omg/48020.
      */
     public Builder setReconnectOnStuck(boolean reconnectOnStuck) {
-        this.reconnectOnStuck = reconnectOnStuck;
-        return this;
+      this.reconnectOnStuck = reconnectOnStuck;
+      return this;
     }
 
     /**
