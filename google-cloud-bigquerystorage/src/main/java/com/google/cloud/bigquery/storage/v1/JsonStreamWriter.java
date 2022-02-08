@@ -18,7 +18,6 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
-import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
@@ -132,10 +131,7 @@ public class JsonStreamWriter implements AutoCloseable {
         this.protoSchema = ProtoSchemaConverter.convert(this.descriptor);
         this.totalMessageSize = protoSchema.getSerializedSize();
         // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
-        this.streamWriter =
-            streamWriterBuilder
-                .setWriterSchema(this.protoSchema)
-                .build();
+        this.streamWriter = streamWriterBuilder.setWriterSchema(this.protoSchema).build();
       }
     }
 
@@ -157,13 +153,9 @@ public class JsonStreamWriter implements AutoCloseable {
       this.totalMessageSize += currentRequestSize;
       // Reconnect on every 9.5MB.
       if (this.totalMessageSize > 9500000 && this.reconnectOnStuck) {
-        LOG.info("reconnecting");
         streamWriter.close();
         // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
-        this.streamWriter =
-            streamWriterBuilder
-                .setWriterSchema(protoSchema)
-                .build();
+        this.streamWriter = streamWriterBuilder.setWriterSchema(protoSchema).build();
         this.totalMessageSize = this.protoSchema.getSerializedSize() + currentRequestSize;
         // Allow first request to pass.
       }

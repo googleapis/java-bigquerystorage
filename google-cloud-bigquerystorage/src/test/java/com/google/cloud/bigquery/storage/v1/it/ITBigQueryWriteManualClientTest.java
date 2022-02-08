@@ -415,7 +415,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testJsonStreamWriterWithDefaultStreamLarge()
       throws IOException, InterruptedException, ExecutionException,
-                 Descriptors.DescriptorValidationException {
+          Descriptors.DescriptorValidationException {
     String tableName = "TableLarge";
     TableId tableId = TableId.of(DATASET, tableName);
     Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
@@ -437,9 +437,9 @@ public class ITBigQueryWriteManualClientTest {
         new ArrayList<ApiFuture<AppendRowsResponse>>(totalRequest);
     // Sends a total of 150MB over the wire.
     try (JsonStreamWriter jsonStreamWriter =
-             JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
-                 .setReconnectOnStuck(true)
-                 .build()) {
+        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
+            .setReconnectOnStuck(true)
+            .build()) {
       for (int k = 0; k < totalRequest; k++) {
         JSONObject row = new JSONObject();
         row.put("col1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
@@ -448,7 +448,7 @@ public class ITBigQueryWriteManualClientTest {
         for (int j = 0; j < rowBatch; j++) {
           jsonArr.put(row);
         }
-        LOG.info("Appending: " + k +"/" + rowBatch);
+        LOG.info("Appending: " + k + "/" + rowBatch);
         allResponses.add(jsonStreamWriter.append(jsonArr, k * rowBatch));
       }
     }
