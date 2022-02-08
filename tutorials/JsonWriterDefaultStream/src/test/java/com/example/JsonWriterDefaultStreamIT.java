@@ -24,9 +24,9 @@ import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.DatasetId;
 import com.google.cloud.bigquery.DatasetInfo;
 import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.io.PrintStream;
 import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
@@ -46,9 +46,7 @@ public class JsonWriterDefaultStreamIT {
   private String datasetName;
 
   @BeforeClass
-  public static void beforeClass()  {
-
-  }
+  public static void beforeClass() {}
 
   @Before
   public void setUp() {
@@ -79,5 +77,4 @@ public class JsonWriterDefaultStreamIT {
         DatasetId.of(GOOGLE_CLOUD_PROJECT, datasetName), DatasetDeleteOption.deleteContents());
     System.setOut(null);
   }
-
 }
