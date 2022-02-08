@@ -439,7 +439,7 @@ public class ITBigQueryWriteManualClientTest {
     // Sends a total of 30MB over the wire.
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
-            .setReconnectOnStuck(true)
+            .setReconnectAfter10M(true)
             .build()) {
       for (int k = 0; k < totalRequest; k++) {
         JSONObject row = new JSONObject();
