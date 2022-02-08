@@ -345,7 +345,7 @@ public class ITBigQueryWriteManualClientTest {
     }
     LOG.info("Waiting for all responses to come back");
     for (int i = 0; i < totalRequest; i++) {
-      if (allResponses.get(i).get().getError().getCode() == 6 /* ALREADY_EXISTS */) {
+      if (allResponses.get(i).get().getError().getMessage().contains("The offset is within stream,")) {
         continue;
       }
       Assert.assertEquals(
