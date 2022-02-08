@@ -327,16 +327,16 @@ public class ITBigQueryWriteManualClientTest {
             .build();
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
-    int total_request = 100;
+    int totalRequest = 100;
     int rowBatch = 20000;
     ArrayList<ApiFuture<AppendRowsResponse>> allResponses =
-        new ArrayList<ApiFuture<AppendRowsResponse>>(total_request);
+        new ArrayList<ApiFuture<AppendRowsResponse>>(totalRequest);
     // Sends a total of 150MB over the wire.
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableSchema)
             .setReconnectOnStuck(true)
             .build()) {
-      for (int k = 0; k < total_request; k++) {
+      for (int k = 0; k < totalRequest; k++) {
         JSONObject row = new JSONObject();
         row.put("test_str", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         JSONArray jsonArr = new JSONArray();
@@ -347,7 +347,9 @@ public class ITBigQueryWriteManualClientTest {
         allResponses.add(jsonStreamWriter.append(jsonArr, k * rowBatch));
       }
     }
-    for (int i = 0; i < total_request; i++) {
+    LOG.info("Waiting for all responses to come back");
+    for (int i = 0; i < totalRequest; i++) {
+      LOG.info("waiting for: " + i);
       Assert.assertEquals(
           allResponses.get(i).get().getAppendResult().getOffset().getValue(), i * rowBatch);
     }
