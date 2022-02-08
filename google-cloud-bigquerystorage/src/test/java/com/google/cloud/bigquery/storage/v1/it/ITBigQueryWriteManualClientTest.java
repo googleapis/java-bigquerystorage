@@ -17,9 +17,7 @@
 package com.google.cloud.bigquery.storage.v1.it;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.ServiceOptions;
@@ -37,6 +35,9 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
@@ -345,11 +346,14 @@ public class ITBigQueryWriteManualClientTest {
     }
     LOG.info("Waiting for all responses to come back");
     for (int i = 0; i < totalRequest; i++) {
-      if (allResponses.get(i).get().getError().getMessage().contains("The offset is within stream,")) {
-        continue;
+      try {
+        Assert.assertEquals(
+            allResponses.get(i).get().getAppendResult().getOffset().getValue(), i * rowBatch);
+      } catch (StatusRuntimeException ex) {
+        if (ex.getStatus().getCode() != Status.Code.ALREADY_EXISTS) {
+          Assert.fail("Unexpected error " + ex);
+        }
       }
-      Assert.assertEquals(
-          allResponses.get(i).get().getAppendResult().getOffset().getValue(), i * rowBatch);
     }
   }
 
