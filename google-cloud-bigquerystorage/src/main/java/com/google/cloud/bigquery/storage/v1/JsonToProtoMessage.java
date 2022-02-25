@@ -16,7 +16,6 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.pathtemplate.ValidationException;
-import com.google.cloud.ByteArray;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -444,8 +443,6 @@ public class JsonToProtoMessage {
                             + index
                             + "] could not be converted to byte[]."));
               }
-            } else if (val instanceof ByteArray) {
-              protoMsg.addRepeatedField(fieldDescriptor, val);
             } else {
               fail = true;
             }
