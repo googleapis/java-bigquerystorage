@@ -421,9 +421,9 @@ public class ITBigQueryWriteManualClientTest {
 
       LOG.info("Sending three more messages");
       ApiFuture<AppendRowsResponse> response2 = jsonStreamWriter.append(jsonArr2, -1);
-      LOG.info("Sending two more message");
+      LOG.info("Sending two more messages");
       ApiFuture<AppendRowsResponse> response3 = jsonStreamWriter.append(jsonArr3, -1);
-      LOG.info("Sending two more message");
+      LOG.info("Sending one more message");
       ApiFuture<AppendRowsResponse> response4 = jsonStreamWriter.append(jsonArr4, -1);
       Assert.assertFalse(response2.get().getAppendResult().hasOffset());
       Assert.assertFalse(response3.get().getAppendResult().hasOffset());
