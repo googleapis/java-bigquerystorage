@@ -419,8 +419,7 @@ public class JsonToProtoMessage {
           if (!added) {
             if (val instanceof byte[]) {
               protoMsg.addRepeatedField(fieldDescriptor, val);
-            }
-            else if (val instanceof JSONArray) {
+            } else if (val instanceof JSONArray) {
               try {
                 byte[] bytes = new byte[((JSONArray) val).length()];
                 for (int j = 0; j < ((JSONArray) val).length(); j++) {
@@ -446,9 +445,8 @@ public class JsonToProtoMessage {
                             + "] could not be converted to byte[]."));
               }
             } else if (val instanceof ByteArray) {
-                protoMsg.addRepeatedField(fieldDescriptor, val);
-            }
-            else {
+              protoMsg.addRepeatedField(fieldDescriptor, val);
+            } else {
               fail = true;
             }
           }
