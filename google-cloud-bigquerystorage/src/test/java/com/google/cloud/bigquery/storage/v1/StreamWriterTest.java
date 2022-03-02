@@ -337,8 +337,6 @@ public class StreamWriterTest {
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     Exceptions.SchemaMismatchedException actualError =
         assertFutureException(Exceptions.SchemaMismatchedException.class, appendFuture2);
-    // Get StatusRuntimeException Status from this custom exception
-    assertEquals(Status.INVALID_ARGUMENT, actualError.getStatus());
     assertEquals("foobar", actualError.getStreamName());
     assertEquals(1, appendFuture3.get().getAppendResult().getOffset().getValue());
 

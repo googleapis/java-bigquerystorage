@@ -105,17 +105,19 @@ public final class Exceptions {
   public static StorageException toStorageException(
       com.google.rpc.Status rpcStatus, Throwable exception) {
     StorageError error = toStorageError(rpcStatus);
+    Status grpcStatus =
+        Status.fromCodeValue(rpcStatus.getCode()).withDescription(rpcStatus.getMessage());
     if (error == null) {
       return null;
     }
     switch (error.getCode()) {
       case STREAM_FINALIZED:
         return new StreamFinalizedException(
-            Status.INVALID_ARGUMENT, null, error.getEntity(), error.getErrorMessage(), exception);
+            grpcStatus, null, error.getEntity(), error.getErrorMessage(), exception);
 
       case SCHEMA_MISMATCH_EXTRA_FIELDS:
         return new SchemaMismatchedException(
-            Status.INVALID_ARGUMENT, null, error.getEntity(), error.getErrorMessage(), exception);
+            grpcStatus, null, error.getEntity(), error.getErrorMessage(), exception);
 
       default:
         return null;
