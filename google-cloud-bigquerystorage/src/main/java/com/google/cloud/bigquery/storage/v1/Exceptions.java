@@ -111,19 +111,11 @@ public final class Exceptions {
     switch (error.getCode()) {
       case STREAM_FINALIZED:
         return new StreamFinalizedException(
-            Status.INVALID_ARGUMENT,
-            null,
-            error.getEntity(),
-            error.getErrorMessage(),
-            exception);
+            Status.INVALID_ARGUMENT, null, error.getEntity(), error.getErrorMessage(), exception);
 
       case SCHEMA_MISMATCH_EXTRA_FIELDS:
         return new SchemaMismatchedException(
-            Status.INVALID_ARGUMENT,
-            null,
-            error.getEntity(),
-            error.getErrorMessage(),
-            exception);
+            Status.INVALID_ARGUMENT, null, error.getEntity(), error.getErrorMessage(), exception);
 
       default:
         return null;
