@@ -19,6 +19,9 @@ import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
+import io.grpc.Metadata;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.protobuf.StatusProto;
 import javax.annotation.Nullable;
 
@@ -30,21 +33,23 @@ public final class Exceptions {
     }
   }
   /** Main Storage Exception. Might contain map of streams to errors for that stream. */
-  public static class StorageException extends RuntimeException {
+  public static class StorageException extends StatusRuntimeException {
 
     private final ImmutableMap<String, GrpcStatusCode> errors;
     private final String streamName;
 
     private StorageException() {
-      this(null, null, null, ImmutableMap.of());
+      this(null, null, null, null, null, ImmutableMap.of());
     }
 
     private StorageException(
+        @Nullable Status grpcStatus,
+        @Nullable Metadata metadata,
         @Nullable String message,
         @Nullable Throwable cause,
         @Nullable String streamName,
         ImmutableMap<String, GrpcStatusCode> errors) {
-      super(message, cause);
+      super(grpcStatus, metadata);
       this.streamName = streamName;
       this.errors = errors;
     }
@@ -60,8 +65,9 @@ public final class Exceptions {
 
   /** Stream has already been finalized. */
   public static final class StreamFinalizedException extends StorageException {
-    protected StreamFinalizedException(String name, String message, Throwable cause) {
-      super(message, cause, name, ImmutableMap.of());
+    protected StreamFinalizedException(
+        Status invalidArgument, Metadata metadata, String name, String message, Throwable cause) {
+      super(invalidArgument, metadata, message, cause, name, ImmutableMap.of());
     }
   }
 
@@ -70,8 +76,9 @@ public final class Exceptions {
    * This can be resolved by updating the table's schema with the message schema.
    */
   public static final class SchemaMismatchedException extends StorageException {
-    protected SchemaMismatchedException(String name, String message, Throwable cause) {
-      super(message, cause, name, ImmutableMap.of());
+    protected SchemaMismatchedException(
+        Status invalidArgument, Metadata metadata, String name, String message, Throwable cause) {
+      super(invalidArgument, metadata, message, cause, name, ImmutableMap.of());
     }
   }
 
@@ -98,15 +105,26 @@ public final class Exceptions {
   public static StorageException toStorageException(
       com.google.rpc.Status rpcStatus, Throwable exception) {
     StorageError error = toStorageError(rpcStatus);
+    Metadata metadata = Status.trailersFromThrowable(exception);
     if (error == null) {
       return null;
     }
     switch (error.getCode()) {
       case STREAM_FINALIZED:
-        return new StreamFinalizedException(error.getEntity(), error.getErrorMessage(), exception);
+        return new StreamFinalizedException(
+            Status.INVALID_ARGUMENT,
+            metadata,
+            error.getEntity(),
+            error.getErrorMessage(),
+            exception);
 
       case SCHEMA_MISMATCH_EXTRA_FIELDS:
-        return new SchemaMismatchedException(error.getEntity(), error.getErrorMessage(), exception);
+        return new SchemaMismatchedException(
+            Status.INVALID_ARGUMENT,
+            metadata,
+            error.getEntity(),
+            error.getErrorMessage(),
+            exception);
 
       default:
         return null;
