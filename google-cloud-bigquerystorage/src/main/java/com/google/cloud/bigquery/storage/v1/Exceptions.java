@@ -105,7 +105,6 @@ public final class Exceptions {
   public static StorageException toStorageException(
       com.google.rpc.Status rpcStatus, Throwable exception) {
     StorageError error = toStorageError(rpcStatus);
-    Metadata metadata = Status.trailersFromThrowable(exception);
     if (error == null) {
       return null;
     }
@@ -113,7 +112,7 @@ public final class Exceptions {
       case STREAM_FINALIZED:
         return new StreamFinalizedException(
             Status.INVALID_ARGUMENT,
-            metadata,
+            null,
             error.getEntity(),
             error.getErrorMessage(),
             exception);
@@ -121,7 +120,7 @@ public final class Exceptions {
       case SCHEMA_MISMATCH_EXTRA_FIELDS:
         return new SchemaMismatchedException(
             Status.INVALID_ARGUMENT,
-            metadata,
+            null,
             error.getEntity(),
             error.getErrorMessage(),
             exception);
