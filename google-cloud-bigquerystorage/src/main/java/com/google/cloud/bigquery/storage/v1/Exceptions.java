@@ -63,9 +63,8 @@ public final class Exceptions {
 
   /** Stream has already been finalized. */
   public static final class StreamFinalizedException extends StorageException {
-    protected StreamFinalizedException(
-        Status invalidArgument, Metadata metadata, String name, String message, Throwable cause) {
-      super(invalidArgument, metadata, name, ImmutableMap.of());
+    protected StreamFinalizedException(Status grpcStatus, Metadata metadata, String name) {
+      super(grpcStatus, metadata, name, ImmutableMap.of());
     }
   }
 
@@ -74,9 +73,8 @@ public final class Exceptions {
    * This can be resolved by updating the table's schema with the message schema.
    */
   public static final class SchemaMismatchedException extends StorageException {
-    protected SchemaMismatchedException(
-        Status invalidArgument, Metadata metadata, String name, String message, Throwable cause) {
-      super(invalidArgument, metadata, name, ImmutableMap.of());
+    protected SchemaMismatchedException(Status grpcStatus, Metadata metadata, String name) {
+      super(grpcStatus, metadata, name, ImmutableMap.of());
     }
   }
 
@@ -110,12 +108,10 @@ public final class Exceptions {
     }
     switch (error.getCode()) {
       case STREAM_FINALIZED:
-        return new StreamFinalizedException(
-            grpcStatus, null, error.getEntity(), error.getErrorMessage(), exception);
+        return new StreamFinalizedException(grpcStatus, null, error.getEntity());
 
       case SCHEMA_MISMATCH_EXTRA_FIELDS:
-        return new SchemaMismatchedException(
-            grpcStatus, null, error.getEntity(), error.getErrorMessage(), exception);
+        return new SchemaMismatchedException(grpcStatus, null, error.getEntity());
 
       default:
         return null;
