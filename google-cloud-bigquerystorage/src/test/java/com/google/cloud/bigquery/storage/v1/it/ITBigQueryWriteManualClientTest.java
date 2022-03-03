@@ -853,16 +853,46 @@ public class ITBigQueryWriteManualClientTest {
                 .build());
     try (StreamWriter streamWriter =
         StreamWriter.newBuilder(writeStream.getName())
-            .setWriterSchema(ProtoSchemaConverter.convert(UpdatedFooType.getDescriptor()))
+            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
             .build()) {
+      ApiFuture<AppendRowsResponse> response =
+          streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
+      response.get();
       // Finalize the stream in order to trigger STREAM_FINALIZED error
       client.finalizeWriteStream(
           FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build());
       // Try to append to a finalized stream
-      ApiFuture<AppendRowsResponse> response =
+      ApiFuture<AppendRowsResponse> response2 =
           streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
       try {
-        response.get();
+        response2.get();
+        Assert.fail("Should fail");
+      } catch (ExecutionException e) {
+        assertEquals(Exceptions.StreamFinalizedException.class, e.getCause().getClass());
+        assertThat(e.getCause().getMessage()).contains("Stream is finalized");
+      }
+    }
+  }
+
+  @Test
+  public void testStreamOffsetError()
+      throws IOException, InterruptedException, ExecutionException {
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(tableId)
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+    try (StreamWriter streamWriter =
+             StreamWriter.newBuilder(writeStream.getName())
+                 .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+                 .build()) {
+      streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
+      ApiFuture<AppendRowsResponse> response2 =
+          streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
+      try {
+        response2.get();
         Assert.fail("Should fail");
       } catch (ExecutionException e) {
         assertEquals(Exceptions.StreamFinalizedException.class, e.getCause().getClass());

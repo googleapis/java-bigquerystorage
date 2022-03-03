@@ -563,6 +563,7 @@ public class StreamWriter implements AutoCloseable {
       this.lock.unlock();
     }
     if (response.hasError()) {
+      log.info("!!!!!" + response.getError());
       Exceptions.StorageException storageException =
           Exceptions.toStorageException(response.getError(), null);
       if (storageException != null) {
@@ -610,6 +611,7 @@ public class StreamWriter implements AutoCloseable {
                   + " for stream "
                   + streamName);
         } else {
+          log.info("@@@@@" + finalStatus);
           Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
           this.connectionFinalStatus = storageException != null ? storageException : finalStatus;
           log.info(
