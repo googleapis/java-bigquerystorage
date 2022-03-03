@@ -860,16 +860,20 @@ public class ITBigQueryWriteManualClientTest {
                 .build());
     try (StreamWriter streamWriter =
         StreamWriter.newBuilder(writeStream.getName())
-            .setWriterSchema(ProtoSchemaConverter.convert(UpdatedFooType.getDescriptor()))
+            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
             .build()) {
+      // Append once before finalizing the stream
+      ApiFuture<AppendRowsResponse> response =
+          streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
+      response.get();
       // Finalize the stream in order to trigger STREAM_FINALIZED error
       client.finalizeWriteStream(
           FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build());
       // Try to append to a finalized stream
-      ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
+      ApiFuture<AppendRowsResponse> response2 =
+          streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 1);
       try {
-        response.get();
+        response2.get();
         Assert.fail("Should fail");
       } catch (ExecutionException e) {
         assertEquals(Exceptions.StreamFinalizedException.class, e.getCause().getClass());
@@ -877,6 +881,7 @@ public class ITBigQueryWriteManualClientTest {
         assertNotNull(actualError.getStreamName());
         // This verifies that the Beam connector can consume this custom exception's grpc StatusCode
         assertEquals(Code.INVALID_ARGUMENT, Status.fromThrowable(e.getCause()).getCode());
+        assertThat(e.getCause().getMessage()).contains("Stream has been finalized");
       }
     }
   }
