@@ -39,14 +39,12 @@ public final class Exceptions {
     private final String streamName;
 
     private StorageException() {
-      this(null, null, null, null, null, ImmutableMap.of());
+      this(null, null, null, ImmutableMap.of());
     }
 
     private StorageException(
         @Nullable Status grpcStatus,
         @Nullable Metadata metadata,
-        @Nullable String message,
-        @Nullable Throwable cause,
         @Nullable String streamName,
         ImmutableMap<String, GrpcStatusCode> errors) {
       super(grpcStatus, metadata);
@@ -67,7 +65,7 @@ public final class Exceptions {
   public static final class StreamFinalizedException extends StorageException {
     protected StreamFinalizedException(
         Status invalidArgument, Metadata metadata, String name, String message, Throwable cause) {
-      super(invalidArgument, metadata, message, cause, name, ImmutableMap.of());
+      super(invalidArgument, metadata, name, ImmutableMap.of());
     }
   }
 
@@ -78,7 +76,7 @@ public final class Exceptions {
   public static final class SchemaMismatchedException extends StorageException {
     protected SchemaMismatchedException(
         Status invalidArgument, Metadata metadata, String name, String message, Throwable cause) {
-      super(invalidArgument, metadata, message, cause, name, ImmutableMap.of());
+      super(invalidArgument, metadata, name, ImmutableMap.of());
     }
   }
 

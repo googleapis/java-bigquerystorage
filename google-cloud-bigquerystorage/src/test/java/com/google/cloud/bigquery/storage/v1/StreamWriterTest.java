@@ -347,7 +347,8 @@ public class StreamWriterTest {
   @Test
   public void testAppendFailRandomException() throws Exception {
     StreamWriter writer = getTestStreamWriter();
-    // Trigger a non-StatusRuntimeException for append operation
+    // Trigger a non-StatusRuntimeException for append operation (although grpc API should not
+    // return anything other than StatusRuntimeException)
     IllegalArgumentException illegalArgumentException =
         new IllegalArgumentException("Illegal argument");
     testBigQueryWrite.addException(illegalArgumentException);
