@@ -21,9 +21,11 @@ import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.protobuf.StatusProto;
 import javax.annotation.Nullable;
+import java.util.logging.Logger;
 
 /** Exceptions for Storage Client Libraries. */
 public final class Exceptions {
+  private static final Logger log = Logger.getLogger(Exceptions.class.getName());
   public static class WriterClosedException extends Exception {
     public WriterClosedException(String streamName) {
       super("Writer closed on: " + streamName);
@@ -77,6 +79,7 @@ public final class Exceptions {
 
   private static StorageError toStorageError(com.google.rpc.Status rpcStatus) {
     for (Any detail : rpcStatus.getDetailsList()) {
+      log.info("detail:" + detail);
       if (detail.is(StorageError.class)) {
         try {
           return detail.unpack(StorageError.class);

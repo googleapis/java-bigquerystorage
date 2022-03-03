@@ -863,7 +863,7 @@ public class ITBigQueryWriteManualClientTest {
           FinalizeWriteStreamRequest.newBuilder().setName(writeStream.getName()).build());
       // Try to append to a finalized stream
       ApiFuture<AppendRowsResponse> response2 =
-          streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
+          streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 1);
       try {
         response2.get();
         Assert.fail("Should fail");
