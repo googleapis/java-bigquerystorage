@@ -78,6 +78,27 @@ public final class Exceptions {
     }
   }
 
+  /** Offset already exists. */
+  public static final class OffsetAlreadyExists extends StorageException {
+    protected OffsetAlreadyExists(Status grpcStatus, Metadata metadata, String name) {
+      super(grpcStatus, metadata, name, ImmutableMap.of());
+    }
+  }
+
+  /** Offset out of range. */
+  public static final class OffsetOutOfRange extends StorageException {
+    protected OffsetOutOfRange(Status grpcStatus, Metadata metadata, String name) {
+      super(grpcStatus, metadata, name, ImmutableMap.of());
+    }
+  }
+
+  /** Stream is not found. */
+  public static final class StreamNotFound extends StorageException {
+    protected StreamNotFound(Status grpcStatus, Metadata metadata, String name) {
+      super(grpcStatus, metadata, name, ImmutableMap.of());
+    }
+  }
+
   private static StorageError toStorageError(com.google.rpc.Status rpcStatus) {
     for (Any detail : rpcStatus.getDetailsList()) {
       if (detail.is(StorageError.class)) {
@@ -112,6 +133,15 @@ public final class Exceptions {
 
       case SCHEMA_MISMATCH_EXTRA_FIELDS:
         return new SchemaMismatchedException(grpcStatus, null, error.getEntity());
+
+      case OFFSET_OUT_OF_RANGE:
+        return new OffsetOutOfRange(grpcStatus, null, error.getEntity());
+
+      case OFFSET_ALREADY_EXISTS:
+        return new OffsetAlreadyExists(grpcStatus, null, error.getEntity());
+
+      case STREAM_NOT_FOUND:
+        return new StreamNotFound(grpcStatus, null, error.getEntity());
 
       default:
         return null;
