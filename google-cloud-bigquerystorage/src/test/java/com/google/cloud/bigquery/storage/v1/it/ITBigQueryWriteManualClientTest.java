@@ -901,6 +901,7 @@ public class ITBigQueryWriteManualClientTest {
       response.get();
       Assert.fail("Should fail");
     } catch (ExecutionException | InterruptedException e) {
+      // TODO(stephwang): Resume this part when backend changes are rolled out
       // assertEquals(Exceptions.StreamNotFound.class, e.getCause().getClass());
       // Exceptions.StreamNotFound actualError = (StreamNotFound) e.getCause();
       // assertNotNull(actualError.getStreamName());
