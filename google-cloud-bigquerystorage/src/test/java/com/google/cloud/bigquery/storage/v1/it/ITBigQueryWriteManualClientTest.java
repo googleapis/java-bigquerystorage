@@ -39,6 +39,7 @@ import io.grpc.Status;
 import io.grpc.Status.Code;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -456,7 +457,7 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals(2, currentRow.get(3).getRepeatedValue().size());
       assertEquals("Yg==", currentRow.get(3).getRepeatedValue().get(1).getStringValue());
       assertEquals(
-          1644150287840L,
+          Timestamp.valueOf("2022-02-06 07:24:47.84").getTime(),
           currentRow.get(4).getTimestampValue()); // timestamp long of "2022-02-06 07:24:47.84"
       assertEquals("bbb", iter.next().get(0).getStringValue());
       assertEquals("ccc", iter.next().get(0).getStringValue());
