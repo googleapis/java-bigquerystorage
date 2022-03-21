@@ -297,7 +297,9 @@ public class JsonToProtoMessage {
             }
           } else if (fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
             if (val instanceof String) {
-              protoMsg.setField(fieldDescriptor, Timestamp.valueOf((String) val).getTime());
+              Timestamp parsedTime = Timestamp.valueOf((String) val);
+              protoMsg.setField(
+                  fieldDescriptor, (parsedTime.getTime() * 1000 + parsedTime.getNanos() / 1000));
               return;
             } else if (val instanceof Long) {
               protoMsg.setField(fieldDescriptor, (Long) val);
@@ -481,7 +483,9 @@ public class JsonToProtoMessage {
           } else if (fieldSchema != null
               && fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
             if (val instanceof String) {
-              protoMsg.addRepeatedField(fieldDescriptor, Timestamp.valueOf((String) val).getTime());
+              Timestamp parsedTime = Timestamp.valueOf((String) val);
+              protoMsg.addRepeatedField(
+                  fieldDescriptor, (parsedTime.getTime() * 1000 + parsedTime.getNanos() / 1000));
             } else if (val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
             } else {
