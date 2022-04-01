@@ -18,6 +18,9 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.api.pathtemplate.ValidationException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -33,6 +36,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.threeten.bp.LocalDateTime;
 import org.threeten.bp.LocalTime;
+import org.threeten.bp.ZoneOffset;
+import org.threeten.bp.format.DateTimeFormatter;
+import org.threeten.bp.format.DateTimeFormatterBuilder;
+import org.threeten.bp.temporal.ChronoField;
+import org.threeten.bp.temporal.TemporalAccessor;
 
 /**
  * Converts Json data to protocol buffer messages given the protocol buffer descriptor. The protobuf
@@ -50,6 +58,32 @@ public class JsonToProtoMessage {
           .put(FieldDescriptor.Type.STRING, "string")
           .put(FieldDescriptor.Type.MESSAGE, "object")
           .build();
+  private static final DateTimeFormatter timestampFormatter =
+      new DateTimeFormatterBuilder()
+          .parseLenient()
+          .append(DateTimeFormatter.ISO_LOCAL_DATE)
+          .optionalStart()
+          .appendLiteral('T')
+          .optionalEnd()
+          .optionalStart()
+          .appendLiteral(' ')
+          .optionalEnd()
+          .appendValue(ChronoField.HOUR_OF_DAY, 2)
+          .appendLiteral(':')
+          .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+          .optionalStart()
+          .appendLiteral(':')
+          .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+          .optionalStart()
+          .appendFraction(ChronoField.NANO_OF_SECOND, 6, 9, true)
+          .optionalStart()
+          .appendOffset("+HHMM", "+00:00")
+          .optionalEnd()
+          .optionalStart()
+          .appendLiteral('Z')
+          .optionalEnd()
+          .toFormatter()
+          .withZone(ZoneOffset.UTC);
 
   /**
    * Converts Json data to protocol buffer messages given the protocol buffer descriptor.
@@ -225,6 +259,12 @@ public class JsonToProtoMessage {
           protoMsg.setField(fieldDescriptor, (Boolean) val);
           return;
         }
+        if (val instanceof String
+            && ("true".equals(((String) val).toLowerCase())
+                || "false".equals(((String) val).toLowerCase()))) {
+          protoMsg.setField(fieldDescriptor, Boolean.parseBoolean((String) val));
+          return;
+        }
         break;
       case BYTES:
         if (fieldSchema != null) {
@@ -294,6 +334,18 @@ public class JsonToProtoMessage {
               protoMsg.setField(fieldDescriptor, (Long) val);
               return;
             }
+          } else if (fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
+            if (val instanceof String) {
+              TemporalAccessor parsedTime = timestampFormatter.parse((String) val);
+              protoMsg.setField(
+                  fieldDescriptor,
+                  parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
+                      + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
+              return;
+            } else if (val instanceof Long) {
+              protoMsg.setField(fieldDescriptor, (Long) val);
+              return;
+            }
           }
         }
         if (val instanceof Integer) {
@@ -302,6 +354,13 @@ public class JsonToProtoMessage {
         } else if (val instanceof Long) {
           protoMsg.setField(fieldDescriptor, (Long) val);
           return;
+        }
+        if (val instanceof String) {
+          Long parsed = Longs.tryParse((String) val);
+          if (parsed != null) {
+            protoMsg.setField(fieldDescriptor, parsed);
+            return;
+          }
         }
         break;
       case INT32:
@@ -318,6 +377,13 @@ public class JsonToProtoMessage {
           protoMsg.setField(fieldDescriptor, (Integer) val);
           return;
         }
+        if (val instanceof String) {
+          Integer parsed = Ints.tryParse((String) val);
+          if (parsed != null) {
+            protoMsg.setField(fieldDescriptor, parsed);
+            return;
+          }
+        }
         break;
       case STRING:
         if (val instanceof String) {
@@ -329,6 +395,13 @@ public class JsonToProtoMessage {
         if (val instanceof Number) {
           protoMsg.setField(fieldDescriptor, ((Number) val).doubleValue());
           return;
+        }
+        if (val instanceof String) {
+          Double parsed = Doubles.tryParse((String) val);
+          if (parsed != null) {
+            protoMsg.setField(fieldDescriptor, parsed);
+            return;
+          }
         }
         break;
       case MESSAGE:
@@ -391,6 +464,10 @@ public class JsonToProtoMessage {
         case BOOL:
           if (val instanceof Boolean) {
             protoMsg.addRepeatedField(fieldDescriptor, (Boolean) val);
+          } else if (val instanceof String
+              && ("true".equals(((String) val).toLowerCase())
+                  || "false".equals(((String) val).toLowerCase()))) {
+            protoMsg.addRepeatedField(fieldDescriptor, Boolean.parseBoolean((String) val));
           } else {
             fail = true;
           }
@@ -469,10 +546,30 @@ public class JsonToProtoMessage {
             } else {
               fail = true;
             }
+          } else if (fieldSchema != null
+              && fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
+            if (val instanceof String) {
+              TemporalAccessor parsedTime = timestampFormatter.parse((String) val);
+              protoMsg.addRepeatedField(
+                  fieldDescriptor,
+                  parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
+                      + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
+            } else if (val instanceof Long) {
+              protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+            } else {
+              fail = true;
+            }
           } else if (val instanceof Integer) {
             protoMsg.addRepeatedField(fieldDescriptor, new Long((Integer) val));
           } else if (val instanceof Long) {
             protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+          } else if (val instanceof String) {
+            Long parsed = Longs.tryParse((String) val);
+            if (parsed != null) {
+              protoMsg.addRepeatedField(fieldDescriptor, parsed);
+            } else {
+              fail = true;
+            }
           } else {
             fail = true;
           }
@@ -489,6 +586,13 @@ public class JsonToProtoMessage {
             }
           } else if (val instanceof Integer) {
             protoMsg.addRepeatedField(fieldDescriptor, (Integer) val);
+          } else if (val instanceof String) {
+            Integer parsed = Ints.tryParse((String) val);
+            if (parsed != null) {
+              protoMsg.addRepeatedField(fieldDescriptor, parsed);
+            } else {
+              fail = true;
+            }
           } else {
             fail = true;
           }
@@ -503,6 +607,13 @@ public class JsonToProtoMessage {
         case DOUBLE:
           if (val instanceof Number) {
             protoMsg.addRepeatedField(fieldDescriptor, ((Number) val).doubleValue());
+          } else if (val instanceof String) {
+            Double parsed = Doubles.tryParse((String) val);
+            if (parsed != null) {
+              protoMsg.addRepeatedField(fieldDescriptor, parsed);
+            } else {
+              fail = true;
+            }
           } else {
             fail = true;
           }
