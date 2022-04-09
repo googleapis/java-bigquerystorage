@@ -99,8 +99,7 @@ public class WritePendingStream {
             .setParent(parentTable.toString())
             .addWriteStreams(writer.getStreamName())
             .build();
-    BatchCommitWriteStreamsResponse commitResponse =
-        client.batchCommitWriteStreams(commitRequest);
+    BatchCommitWriteStreamsResponse commitResponse = client.batchCommitWriteStreams(commitRequest);
     // If the response does not have a commit time, it means the commit operation failed.
     if (commitResponse.hasCommitTime() == false) {
       for (StorageError err : commitResponse.getStreamErrorsList()) {
@@ -140,8 +139,8 @@ public class WritePendingStream {
       // Use the JSON stream writer to send records in JSON format.
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter.html
-      streamWriter = JsonStreamWriter.newBuilder(writeStream.getName(),
-          writeStream.getTableSchema()).build();
+      streamWriter =
+          JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build();
     }
 
     public void append(JSONArray data, long offset)
