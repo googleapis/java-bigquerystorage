@@ -25,7 +25,6 @@ import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1.CreateWriteStreamRequest;
 import com.google.cloud.bigquery.storage.v1.Exceptions;
 import com.google.cloud.bigquery.storage.v1.Exceptions.StorageException;
-import com.google.cloud.bigquery.storage.v1.FinalizeWriteStreamRequest;
 import com.google.cloud.bigquery.storage.v1.FinalizeWriteStreamResponse;
 import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableName;
@@ -90,7 +89,7 @@ public class WriteCommittedStream {
 
   // A simple wrapper object showing how the stateful stream writer should be used.
   private static class DataWriter {
-    
+
     private JsonStreamWriter streamWriter;
     // Track the number of in-flight requests to wait for all responses before shutting down.
     private final Phaser inflightRequestCount = new Phaser(1);
