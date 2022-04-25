@@ -156,6 +156,9 @@ public final class Exceptions {
       case STREAM_FINALIZED:
         return new StreamFinalizedException(grpcStatus, streamName);
 
+      case STREAM_NOT_FOUND:
+        return new StreamNotFound(grpcStatus, streamName);
+
       case SCHEMA_MISMATCH_EXTRA_FIELDS:
         return new SchemaMismatchedException(grpcStatus, streamName);
 
@@ -164,9 +167,6 @@ public final class Exceptions {
 
       case OFFSET_ALREADY_EXISTS:
         return new OffsetAlreadyExists(grpcStatus, streamName, expectedOffet, actualOffset);
-
-      case STREAM_NOT_FOUND:
-        return new StreamNotFound(grpcStatus, streamName);
 
       default:
         return null;
