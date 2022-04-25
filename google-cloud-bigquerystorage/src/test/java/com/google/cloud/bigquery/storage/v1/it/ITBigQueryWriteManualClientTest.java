@@ -904,31 +904,6 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testStreamNotFoundError() throws IOException {
-    String unFoundStreamName =
-        "projects/java-docs-samples-testing/datasets/gcloud_test_dataset_temp_2aaf848e_85d4_409c_864e_027621d915d0/tables/testtable/streams/ChFwYWRpbmtlcl93YXNfaGVyZQ";
-    StreamWriter streamWriter =
-        StreamWriter.newBuilder(unFoundStreamName)
-            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
-            .build();
-    // Try appending to a stream that is not found
-    ApiFuture<AppendRowsResponse> response =
-        streamWriter.append(CreateProtoRowsMultipleColumns(new String[] {"a"}), /*offset=*/ 0);
-    try {
-      response.get();
-      Assert.fail("Should fail");
-    } catch (ExecutionException | InterruptedException e) {
-      // TODO(stephwang): Resume this part when backend changes are rolled out
-      // assertEquals(Exceptions.StreamNotFound.class, e.getCause().getClass());
-      // Exceptions.StreamNotFound actualError = (StreamNotFound) e.getCause();
-      // assertNotNull(actualError.getStreamName());
-      // // This verifies that the Beam connector can consume this custom exception's grpc
-      // assertEquals(Code.INVALID_ARGUMENT, Status.fromThrowable(e.getCause()).getCode());
-      // assertThat(e.getCause().getMessage()).contains("Stream not found");
-    }
-  }
-
-  @Test
   public void testOffsetAlreadyExistsError()
       throws IOException, ExecutionException, InterruptedException {
     WriteStream writeStream =
