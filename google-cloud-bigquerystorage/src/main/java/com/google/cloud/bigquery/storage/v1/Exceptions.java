@@ -19,7 +19,6 @@ import com.google.api.gax.grpc.GrpcStatusCode;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
-import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.protobuf.StatusProto;
@@ -37,18 +36,23 @@ public final class Exceptions {
 
     private final ImmutableMap<String, GrpcStatusCode> errors;
     private final String streamName;
+    private final Long expectedOffset;
+    private final Long actualOffset;
 
     private StorageException() {
-      this(null, null, null, ImmutableMap.of());
+      this(null, null, null, null, ImmutableMap.of());
     }
 
     private StorageException(
         @Nullable Status grpcStatus,
-        @Nullable Metadata metadata,
         @Nullable String streamName,
+        @Nullable Long expectedOffset,
+        @Nullable Long actualOffset,
         ImmutableMap<String, GrpcStatusCode> errors) {
-      super(grpcStatus, metadata);
+      super(grpcStatus);
       this.streamName = streamName;
+      this.expectedOffset = expectedOffset;
+      this.actualOffset = actualOffset;
       this.errors = errors;
     }
 
@@ -59,12 +63,20 @@ public final class Exceptions {
     public String getStreamName() {
       return streamName;
     }
+
+    public long getExpectedOffset() {
+      return expectedOffset;
+    }
+
+    public long getActualOffset() {
+      return actualOffset;
+    }
   }
 
   /** Stream has already been finalized. */
   public static final class StreamFinalizedException extends StorageException {
-    protected StreamFinalizedException(Status grpcStatus, Metadata metadata, String name) {
-      super(grpcStatus, metadata, name, ImmutableMap.of());
+    protected StreamFinalizedException(Status grpcStatus, String name) {
+      super(grpcStatus, name, null, null, ImmutableMap.of());
     }
   }
 
@@ -73,29 +85,31 @@ public final class Exceptions {
    * This can be resolved by updating the table's schema with the message schema.
    */
   public static final class SchemaMismatchedException extends StorageException {
-    protected SchemaMismatchedException(Status grpcStatus, Metadata metadata, String name) {
-      super(grpcStatus, metadata, name, ImmutableMap.of());
+    protected SchemaMismatchedException(Status grpcStatus, String name) {
+      super(grpcStatus, name, null, null, ImmutableMap.of());
     }
   }
 
   /** Offset already exists. */
   public static final class OffsetAlreadyExists extends StorageException {
-    protected OffsetAlreadyExists(Status grpcStatus, Metadata metadata, String name) {
-      super(grpcStatus, metadata, name, ImmutableMap.of());
+    protected OffsetAlreadyExists(
+        Status grpcStatus, String name, Long expectedOffset, Long actualOffset) {
+      super(grpcStatus, name, expectedOffset, actualOffset, ImmutableMap.of());
     }
   }
 
   /** Offset out of range. */
   public static final class OffsetOutOfRange extends StorageException {
-    protected OffsetOutOfRange(Status grpcStatus, Metadata metadata, String name) {
-      super(grpcStatus, metadata, name, ImmutableMap.of());
+    protected OffsetOutOfRange(
+        Status grpcStatus, String name, Long expectedOffset, Long actualOffset) {
+      super(grpcStatus, name, expectedOffset, actualOffset, ImmutableMap.of());
     }
   }
 
   /** Stream is not found. */
   public static final class StreamNotFound extends StorageException {
-    protected StreamNotFound(Status grpcStatus, Metadata metadata, String name) {
-      super(grpcStatus, metadata, name, ImmutableMap.of());
+    protected StreamNotFound(Status grpcStatus, String name) {
+      super(grpcStatus, name, null, null, ImmutableMap.of());
     }
   }
 
@@ -127,21 +141,32 @@ public final class Exceptions {
     if (error == null) {
       return null;
     }
+    String streamName = error.getEntity();
+    String errorMessage =
+        error.getErrorMessage().indexOf("Entity") > 0
+            ? error.getErrorMessage().substring(0, error.getErrorMessage().indexOf("Entity")).trim()
+            : error.getErrorMessage().trim();
+    // Note: if errorMessage format changes, the parsing logic below might break
+    Long expectedOffet =
+        Long.parseLong(
+            errorMessage.substring(
+                errorMessage.lastIndexOf("offset") + 7, errorMessage.lastIndexOf(",")));
+    Long actualOffset = Long.parseLong(errorMessage.substring(errorMessage.lastIndexOf(" ") + 1));
     switch (error.getCode()) {
       case STREAM_FINALIZED:
-        return new StreamFinalizedException(grpcStatus, null, error.getEntity());
+        return new StreamFinalizedException(grpcStatus, streamName);
 
       case SCHEMA_MISMATCH_EXTRA_FIELDS:
-        return new SchemaMismatchedException(grpcStatus, null, error.getEntity());
+        return new SchemaMismatchedException(grpcStatus, streamName);
 
       case OFFSET_OUT_OF_RANGE:
-        return new OffsetOutOfRange(grpcStatus, null, error.getEntity());
+        return new OffsetOutOfRange(grpcStatus, streamName, expectedOffet, actualOffset);
 
       case OFFSET_ALREADY_EXISTS:
-        return new OffsetAlreadyExists(grpcStatus, null, error.getEntity());
+        return new OffsetAlreadyExists(grpcStatus, streamName, expectedOffet, actualOffset);
 
       case STREAM_NOT_FOUND:
-        return new StreamNotFound(grpcStatus, null, error.getEntity());
+        return new StreamNotFound(grpcStatus, streamName);
 
       default:
         return null;
