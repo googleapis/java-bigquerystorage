@@ -507,12 +507,17 @@ public class StreamWriter implements AutoCloseable {
       Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
     }
     this.lock.lock();
-    if (connectionFinalStatus == null) {
-      connectionFinalStatus =
-          new StatusRuntimeException(
-              Status.fromCode(Code.CANCELLED).withDescription("Timeout waiting for DoneCallback."));
+    try {
+      if (connectionFinalStatus == null) {
+        connectionFinalStatus =
+            new StatusRuntimeException(
+                Status.fromCode(Code.CANCELLED)
+                    .withDescription("Timeout waiting for DoneCallback."));
+      }
+    } finally {
+      this.lock.unlock();
     }
-    this.lock.unlock();
+
     return;
   }
 
