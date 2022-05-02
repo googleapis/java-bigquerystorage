@@ -95,13 +95,14 @@ public class WriteToDefaultStream {
   private static class DataWriter {
 
     private static final int MAX_RETRY_COUNT = 2;
-    private static final ImmutableList<Code> RETRIABLE_ERROR_CODES = ImmutableList.of(Code.INTERNAL,
-        Code.ABORTED, Code.CANCELLED);
+    private static final ImmutableList<Code> RETRIABLE_ERROR_CODES =
+        ImmutableList.of(Code.INTERNAL, Code.ABORTED, Code.CANCELLED);
 
     // Track the number of in-flight requests to wait for all responses before shutting down.
     private final Phaser inflightRequestCount = new Phaser(1);
     private final Object lock = new Object();
     private JsonStreamWriter streamWriter;
+
     @GuardedBy("lock")
     private RuntimeException error = null;
 
@@ -130,8 +131,8 @@ public class WriteToDefaultStream {
       }
       // Append asynchronously for increased throughput.
       ApiFuture<AppendRowsResponse> future = streamWriter.append(appendContext.data);
-      ApiFutures.addCallback(future, new AppendCompleteCallback(this, appendContext),
-          MoreExecutors.directExecutor());
+      ApiFutures.addCallback(
+          future, new AppendCompleteCallback(this, appendContext), MoreExecutors.directExecutor());
 
       // Increase the count of in-flight requests.
       inflightRequestCount.register();
@@ -172,8 +173,8 @@ public class WriteToDefaultStream {
         // If the state is INTERNAL, CANCELLED, or ABORTED, you can retry. For more information,
         // see: https://grpc.github.io/grpc-java/javadoc/io/grpc/StatusRuntimeException.html
         Status status = Status.fromThrowable(throwable);
-        if (appendContext.retryCount < MAX_RETRY_COUNT && RETRIABLE_ERROR_CODES.contains(
-            status.getCode())) {
+        if (appendContext.retryCount < MAX_RETRY_COUNT
+            && RETRIABLE_ERROR_CODES.contains(status.getCode())) {
           appendContext.retryCount++;
           try {
             // Since default stream appends are not ordered, we can simply retry the appends.
