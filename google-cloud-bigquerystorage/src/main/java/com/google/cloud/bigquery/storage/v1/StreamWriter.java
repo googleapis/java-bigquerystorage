@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.concurrent.GuardedBy;
 
@@ -587,6 +588,7 @@ public class StreamWriter implements AutoCloseable {
         return;
       } else {
         // This is something not expected, we shouldn't have an empty inflight queue otherwise.
+        log.log(Level.WARNING, "Unexpected: request callback called on an empty inflight queue.");
         connectionFinalStatus = new StatusRuntimeException(
             Status.fromCode(Code.FAILED_PRECONDITION)
                 .withDescription("Request callback called on an empty inflight queue.")));
