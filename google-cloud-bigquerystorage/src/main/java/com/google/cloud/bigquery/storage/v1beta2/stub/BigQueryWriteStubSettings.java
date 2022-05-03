@@ -27,17 +27,22 @@ import com.google.api.gax.grpc.InstantiatingGrpcChannelProvider;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.ApiClientHeaderProvider;
 import com.google.api.gax.rpc.ClientContext;
-import com.google.api.gax.rpc.ServerStreamingCallSettings;
 import com.google.api.gax.rpc.StatusCode;
+import com.google.api.gax.rpc.StreamingCallSettings;
 import com.google.api.gax.rpc.StubSettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.api.gax.rpc.UnaryCallSettings;
-import com.google.cloud.bigquery.storage.v1beta2.CreateReadSessionRequest;
-import com.google.cloud.bigquery.storage.v1beta2.ReadRowsRequest;
-import com.google.cloud.bigquery.storage.v1beta2.ReadRowsResponse;
-import com.google.cloud.bigquery.storage.v1beta2.ReadSession;
-import com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest;
-import com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamResponse;
+import com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest;
+import com.google.cloud.bigquery.storage.v1beta2.AppendRowsResponse;
+import com.google.cloud.bigquery.storage.v1beta2.BatchCommitWriteStreamsRequest;
+import com.google.cloud.bigquery.storage.v1beta2.BatchCommitWriteStreamsResponse;
+import com.google.cloud.bigquery.storage.v1beta2.CreateWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1beta2.FinalizeWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1beta2.FinalizeWriteStreamResponse;
+import com.google.cloud.bigquery.storage.v1beta2.FlushRowsRequest;
+import com.google.cloud.bigquery.storage.v1beta2.FlushRowsResponse;
+import com.google.cloud.bigquery.storage.v1beta2.GetWriteStreamRequest;
+import com.google.cloud.bigquery.storage.v1beta2.WriteStream;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -49,7 +54,7 @@ import org.threeten.bp.Duration;
 
 // AUTO-GENERATED DOCUMENTATION AND CLASS.
 /**
- * Settings class to configure an instance of {@link BigQueryReadStub}.
+ * Settings class to configure an instance of {@link BigQueryWriteStub}.
  *
  * <p>The default instance has everything set to sensible defaults:
  *
@@ -63,62 +68,83 @@ import org.threeten.bp.Duration;
  * <p>The builder of this class is recursive, so contained classes are themselves builders. When
  * build() is called, the tree of builders is called to create the complete settings object.
  *
- * <p>For example, to set the total timeout of createReadSession to 30 seconds:
+ * <p>For example, to set the total timeout of createWriteStream to 30 seconds:
  *
  * <pre>{@code
  * // This snippet has been automatically generated for illustrative purposes only.
  * // It may require modifications to work in your environment.
- * BigQueryReadStubSettings.Builder baseBigQueryReadSettingsBuilder =
- *     BigQueryReadStubSettings.newBuilder();
- * baseBigQueryReadSettingsBuilder
- *     .createReadSessionSettings()
+ * BigQueryWriteStubSettings.Builder bigQueryWriteSettingsBuilder =
+ *     BigQueryWriteStubSettings.newBuilder();
+ * bigQueryWriteSettingsBuilder
+ *     .createWriteStreamSettings()
  *     .setRetrySettings(
- *         baseBigQueryReadSettingsBuilder
- *             .createReadSessionSettings()
+ *         bigQueryWriteSettingsBuilder
+ *             .createWriteStreamSettings()
  *             .getRetrySettings()
  *             .toBuilder()
  *             .setTotalTimeout(Duration.ofSeconds(30))
  *             .build());
- * BigQueryReadStubSettings baseBigQueryReadSettings = baseBigQueryReadSettingsBuilder.build();
+ * BigQueryWriteStubSettings bigQueryWriteSettings = bigQueryWriteSettingsBuilder.build();
  * }</pre>
  */
 @BetaApi
 @Generated("by gapic-generator-java")
-public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSettings> {
+public class BigQueryWriteStubSettings extends StubSettings<BigQueryWriteStubSettings> {
   /** The default scopes of the service. */
   private static final ImmutableList<String> DEFAULT_SERVICE_SCOPES =
       ImmutableList.<String>builder()
           .add("https://www.googleapis.com/auth/bigquery")
+          .add("https://www.googleapis.com/auth/bigquery.insertdata")
           .add("https://www.googleapis.com/auth/cloud-platform")
           .build();
 
-  private final UnaryCallSettings<CreateReadSessionRequest, ReadSession> createReadSessionSettings;
-  private final ServerStreamingCallSettings<ReadRowsRequest, ReadRowsResponse> readRowsSettings;
-  private final UnaryCallSettings<SplitReadStreamRequest, SplitReadStreamResponse>
-      splitReadStreamSettings;
+  private final UnaryCallSettings<CreateWriteStreamRequest, WriteStream> createWriteStreamSettings;
+  private final StreamingCallSettings<AppendRowsRequest, AppendRowsResponse> appendRowsSettings;
+  private final UnaryCallSettings<GetWriteStreamRequest, WriteStream> getWriteStreamSettings;
+  private final UnaryCallSettings<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>
+      finalizeWriteStreamSettings;
+  private final UnaryCallSettings<BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>
+      batchCommitWriteStreamsSettings;
+  private final UnaryCallSettings<FlushRowsRequest, FlushRowsResponse> flushRowsSettings;
 
-  /** Returns the object with the settings used for calls to createReadSession. */
-  public UnaryCallSettings<CreateReadSessionRequest, ReadSession> createReadSessionSettings() {
-    return createReadSessionSettings;
+  /** Returns the object with the settings used for calls to createWriteStream. */
+  public UnaryCallSettings<CreateWriteStreamRequest, WriteStream> createWriteStreamSettings() {
+    return createWriteStreamSettings;
   }
 
-  /** Returns the object with the settings used for calls to readRows. */
-  public ServerStreamingCallSettings<ReadRowsRequest, ReadRowsResponse> readRowsSettings() {
-    return readRowsSettings;
+  /** Returns the object with the settings used for calls to appendRows. */
+  public StreamingCallSettings<AppendRowsRequest, AppendRowsResponse> appendRowsSettings() {
+    return appendRowsSettings;
   }
 
-  /** Returns the object with the settings used for calls to splitReadStream. */
-  public UnaryCallSettings<SplitReadStreamRequest, SplitReadStreamResponse>
-      splitReadStreamSettings() {
-    return splitReadStreamSettings;
+  /** Returns the object with the settings used for calls to getWriteStream. */
+  public UnaryCallSettings<GetWriteStreamRequest, WriteStream> getWriteStreamSettings() {
+    return getWriteStreamSettings;
+  }
+
+  /** Returns the object with the settings used for calls to finalizeWriteStream. */
+  public UnaryCallSettings<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>
+      finalizeWriteStreamSettings() {
+    return finalizeWriteStreamSettings;
+  }
+
+  /** Returns the object with the settings used for calls to batchCommitWriteStreams. */
+  public UnaryCallSettings<BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>
+      batchCommitWriteStreamsSettings() {
+    return batchCommitWriteStreamsSettings;
+  }
+
+  /** Returns the object with the settings used for calls to flushRows. */
+  public UnaryCallSettings<FlushRowsRequest, FlushRowsResponse> flushRowsSettings() {
+    return flushRowsSettings;
   }
 
   @BetaApi("A restructuring of stub classes is planned, so this may break in the future")
-  public BigQueryReadStub createStub() throws IOException {
+  public BigQueryWriteStub createStub() throws IOException {
     if (getTransportChannelProvider()
         .getTransportName()
         .equals(GrpcTransportChannel.getGrpcTransportName())) {
-      return GrpcBigQueryReadStub.create(this);
+      return GrpcBigQueryWriteStub.create(this);
     }
     throw new UnsupportedOperationException(
         String.format(
@@ -166,7 +192,7 @@ public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSetti
   public static ApiClientHeaderProvider.Builder defaultApiClientHeaderProviderBuilder() {
     return ApiClientHeaderProvider.newBuilder()
         .setGeneratedLibToken(
-            "gapic", GaxProperties.getLibraryVersion(BigQueryReadStubSettings.class))
+            "gapic", GaxProperties.getLibraryVersion(BigQueryWriteStubSettings.class))
         .setTransportToken(
             GaxGrpcProperties.getGrpcTokenName(), GaxGrpcProperties.getGrpcVersion());
   }
@@ -186,23 +212,32 @@ public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSetti
     return new Builder(this);
   }
 
-  protected BigQueryReadStubSettings(Builder settingsBuilder) throws IOException {
+  protected BigQueryWriteStubSettings(Builder settingsBuilder) throws IOException {
     super(settingsBuilder);
 
-    createReadSessionSettings = settingsBuilder.createReadSessionSettings().build();
-    readRowsSettings = settingsBuilder.readRowsSettings().build();
-    splitReadStreamSettings = settingsBuilder.splitReadStreamSettings().build();
+    createWriteStreamSettings = settingsBuilder.createWriteStreamSettings().build();
+    appendRowsSettings = settingsBuilder.appendRowsSettings().build();
+    getWriteStreamSettings = settingsBuilder.getWriteStreamSettings().build();
+    finalizeWriteStreamSettings = settingsBuilder.finalizeWriteStreamSettings().build();
+    batchCommitWriteStreamsSettings = settingsBuilder.batchCommitWriteStreamsSettings().build();
+    flushRowsSettings = settingsBuilder.flushRowsSettings().build();
   }
 
-  /** Builder for BigQueryReadStubSettings. */
-  public static class Builder extends StubSettings.Builder<BigQueryReadStubSettings, Builder> {
+  /** Builder for BigQueryWriteStubSettings. */
+  public static class Builder extends StubSettings.Builder<BigQueryWriteStubSettings, Builder> {
     private final ImmutableList<UnaryCallSettings.Builder<?, ?>> unaryMethodSettingsBuilders;
-    private final UnaryCallSettings.Builder<CreateReadSessionRequest, ReadSession>
-        createReadSessionSettings;
-    private final ServerStreamingCallSettings.Builder<ReadRowsRequest, ReadRowsResponse>
-        readRowsSettings;
-    private final UnaryCallSettings.Builder<SplitReadStreamRequest, SplitReadStreamResponse>
-        splitReadStreamSettings;
+    private final UnaryCallSettings.Builder<CreateWriteStreamRequest, WriteStream>
+        createWriteStreamSettings;
+    private final StreamingCallSettings.Builder<AppendRowsRequest, AppendRowsResponse>
+        appendRowsSettings;
+    private final UnaryCallSettings.Builder<GetWriteStreamRequest, WriteStream>
+        getWriteStreamSettings;
+    private final UnaryCallSettings.Builder<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>
+        finalizeWriteStreamSettings;
+    private final UnaryCallSettings.Builder<
+            BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>
+        batchCommitWriteStreamsSettings;
+    private final UnaryCallSettings.Builder<FlushRowsRequest, FlushRowsResponse> flushRowsSettings;
     private static final ImmutableMap<String, ImmutableSet<StatusCode.Code>>
         RETRYABLE_CODE_DEFINITIONS;
 
@@ -210,15 +245,19 @@ public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSetti
       ImmutableMap.Builder<String, ImmutableSet<StatusCode.Code>> definitions =
           ImmutableMap.builder();
       definitions.put(
-          "retry_policy_0_codes",
+          "retry_policy_3_codes",
           ImmutableSet.copyOf(
               Lists.<StatusCode.Code>newArrayList(
-                  StatusCode.Code.DEADLINE_EXCEEDED, StatusCode.Code.UNAVAILABLE)));
+                  StatusCode.Code.DEADLINE_EXCEEDED,
+                  StatusCode.Code.UNAVAILABLE,
+                  StatusCode.Code.RESOURCE_EXHAUSTED)));
       definitions.put(
-          "retry_policy_1_codes",
-          ImmutableSet.copyOf(Lists.<StatusCode.Code>newArrayList(StatusCode.Code.UNAVAILABLE)));
+          "retry_policy_4_codes",
+          ImmutableSet.copyOf(
+              Lists.<StatusCode.Code>newArrayList(
+                  StatusCode.Code.UNAVAILABLE, StatusCode.Code.RESOURCE_EXHAUSTED)));
       definitions.put(
-          "retry_policy_2_codes",
+          "retry_policy_5_codes",
           ImmutableSet.copyOf(
               Lists.<StatusCode.Code>newArrayList(
                   StatusCode.Code.DEADLINE_EXCEEDED, StatusCode.Code.UNAVAILABLE)));
@@ -240,7 +279,7 @@ public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSetti
               .setMaxRpcTimeout(Duration.ofMillis(600000L))
               .setTotalTimeout(Duration.ofMillis(600000L))
               .build();
-      definitions.put("retry_policy_0_params", settings);
+      definitions.put("retry_policy_3_params", settings);
       settings =
           RetrySettings.newBuilder()
               .setInitialRetryDelay(Duration.ofMillis(100L))
@@ -251,7 +290,7 @@ public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSetti
               .setMaxRpcTimeout(Duration.ofMillis(86400000L))
               .setTotalTimeout(Duration.ofMillis(86400000L))
               .build();
-      definitions.put("retry_policy_1_params", settings);
+      definitions.put("retry_policy_4_params", settings);
       settings =
           RetrySettings.newBuilder()
               .setInitialRetryDelay(Duration.ofMillis(100L))
@@ -262,7 +301,7 @@ public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSetti
               .setMaxRpcTimeout(Duration.ofMillis(600000L))
               .setTotalTimeout(Duration.ofMillis(600000L))
               .build();
-      definitions.put("retry_policy_2_params", settings);
+      definitions.put("retry_policy_5_params", settings);
       RETRY_PARAM_DEFINITIONS = definitions.build();
     }
 
@@ -273,26 +312,40 @@ public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSetti
     protected Builder(ClientContext clientContext) {
       super(clientContext);
 
-      createReadSessionSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
-      readRowsSettings = ServerStreamingCallSettings.newBuilder();
-      splitReadStreamSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
+      createWriteStreamSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
+      appendRowsSettings = StreamingCallSettings.newBuilder();
+      getWriteStreamSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
+      finalizeWriteStreamSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
+      batchCommitWriteStreamsSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
+      flushRowsSettings = UnaryCallSettings.newUnaryCallSettingsBuilder();
 
       unaryMethodSettingsBuilders =
           ImmutableList.<UnaryCallSettings.Builder<?, ?>>of(
-              createReadSessionSettings, splitReadStreamSettings);
+              createWriteStreamSettings,
+              getWriteStreamSettings,
+              finalizeWriteStreamSettings,
+              batchCommitWriteStreamsSettings,
+              flushRowsSettings);
       initDefaults(this);
     }
 
-    protected Builder(BigQueryReadStubSettings settings) {
+    protected Builder(BigQueryWriteStubSettings settings) {
       super(settings);
 
-      createReadSessionSettings = settings.createReadSessionSettings.toBuilder();
-      readRowsSettings = settings.readRowsSettings.toBuilder();
-      splitReadStreamSettings = settings.splitReadStreamSettings.toBuilder();
+      createWriteStreamSettings = settings.createWriteStreamSettings.toBuilder();
+      appendRowsSettings = settings.appendRowsSettings.toBuilder();
+      getWriteStreamSettings = settings.getWriteStreamSettings.toBuilder();
+      finalizeWriteStreamSettings = settings.finalizeWriteStreamSettings.toBuilder();
+      batchCommitWriteStreamsSettings = settings.batchCommitWriteStreamsSettings.toBuilder();
+      flushRowsSettings = settings.flushRowsSettings.toBuilder();
 
       unaryMethodSettingsBuilders =
           ImmutableList.<UnaryCallSettings.Builder<?, ?>>of(
-              createReadSessionSettings, splitReadStreamSettings);
+              createWriteStreamSettings,
+              getWriteStreamSettings,
+              finalizeWriteStreamSettings,
+              batchCommitWriteStreamsSettings,
+              flushRowsSettings);
     }
 
     private static Builder createDefault() {
@@ -310,19 +363,29 @@ public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSetti
 
     private static Builder initDefaults(Builder builder) {
       builder
-          .createReadSessionSettings()
-          .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("retry_policy_0_codes"))
-          .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("retry_policy_0_params"));
+          .createWriteStreamSettings()
+          .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("retry_policy_3_codes"))
+          .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("retry_policy_3_params"));
 
       builder
-          .readRowsSettings()
-          .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("retry_policy_1_codes"))
-          .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("retry_policy_1_params"));
+          .getWriteStreamSettings()
+          .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("retry_policy_5_codes"))
+          .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("retry_policy_5_params"));
 
       builder
-          .splitReadStreamSettings()
-          .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("retry_policy_2_codes"))
-          .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("retry_policy_2_params"));
+          .finalizeWriteStreamSettings()
+          .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("retry_policy_5_codes"))
+          .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("retry_policy_5_params"));
+
+      builder
+          .batchCommitWriteStreamsSettings()
+          .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("retry_policy_5_codes"))
+          .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("retry_policy_5_params"));
+
+      builder
+          .flushRowsSettings()
+          .setRetryableCodes(RETRYABLE_CODE_DEFINITIONS.get("retry_policy_5_codes"))
+          .setRetrySettings(RETRY_PARAM_DEFINITIONS.get("retry_policy_5_params"));
 
       return builder;
     }
@@ -342,27 +405,44 @@ public class BigQueryReadStubSettings extends StubSettings<BigQueryReadStubSetti
       return unaryMethodSettingsBuilders;
     }
 
-    /** Returns the builder for the settings used for calls to createReadSession. */
-    public UnaryCallSettings.Builder<CreateReadSessionRequest, ReadSession>
-        createReadSessionSettings() {
-      return createReadSessionSettings;
+    /** Returns the builder for the settings used for calls to createWriteStream. */
+    public UnaryCallSettings.Builder<CreateWriteStreamRequest, WriteStream>
+        createWriteStreamSettings() {
+      return createWriteStreamSettings;
     }
 
-    /** Returns the builder for the settings used for calls to readRows. */
-    public ServerStreamingCallSettings.Builder<ReadRowsRequest, ReadRowsResponse>
-        readRowsSettings() {
-      return readRowsSettings;
+    /** Returns the builder for the settings used for calls to appendRows. */
+    public StreamingCallSettings.Builder<AppendRowsRequest, AppendRowsResponse>
+        appendRowsSettings() {
+      return appendRowsSettings;
     }
 
-    /** Returns the builder for the settings used for calls to splitReadStream. */
-    public UnaryCallSettings.Builder<SplitReadStreamRequest, SplitReadStreamResponse>
-        splitReadStreamSettings() {
-      return splitReadStreamSettings;
+    /** Returns the builder for the settings used for calls to getWriteStream. */
+    public UnaryCallSettings.Builder<GetWriteStreamRequest, WriteStream> getWriteStreamSettings() {
+      return getWriteStreamSettings;
+    }
+
+    /** Returns the builder for the settings used for calls to finalizeWriteStream. */
+    public UnaryCallSettings.Builder<FinalizeWriteStreamRequest, FinalizeWriteStreamResponse>
+        finalizeWriteStreamSettings() {
+      return finalizeWriteStreamSettings;
+    }
+
+    /** Returns the builder for the settings used for calls to batchCommitWriteStreams. */
+    public UnaryCallSettings.Builder<
+            BatchCommitWriteStreamsRequest, BatchCommitWriteStreamsResponse>
+        batchCommitWriteStreamsSettings() {
+      return batchCommitWriteStreamsSettings;
+    }
+
+    /** Returns the builder for the settings used for calls to flushRows. */
+    public UnaryCallSettings.Builder<FlushRowsRequest, FlushRowsResponse> flushRowsSettings() {
+      return flushRowsSettings;
     }
 
     @Override
-    public BigQueryReadStubSettings build() throws IOException {
-      return new BigQueryReadStubSettings(this);
+    public BigQueryWriteStubSettings build() throws IOException {
+      return new BigQueryWriteStubSettings(this);
     }
   }
 }
