@@ -106,6 +106,12 @@ public class StreamWriter implements AutoCloseable {
   private boolean streamConnectionIsConnected = false;
 
   /*
+   * A boolean to track if we cleaned up inflight queue.
+   */
+  @GuardedBy("lock")
+  private boolean inflightCleanuped = false;
+
+  /*
    * Retry threshold, limits how often the connection is retried before processing halts.
    */
   private static final long RETRY_THRESHOLD = 3;
@@ -550,6 +556,7 @@ public class StreamWriter implements AutoCloseable {
       while (!this.inflightRequestQueue.isEmpty()) {
         localQueue.addLast(pollInflightRequestQueue());
       }
+      this.inflightCleanuped = true;
     } finally {
       this.lock.unlock();
     }
@@ -574,10 +581,15 @@ public class StreamWriter implements AutoCloseable {
       }
       if (!this.inflightRequestQueue.isEmpty()) {
         requestWrapper = pollInflightRequestQueue();
-      } else {
+      } else if (inflightCleanuped) {
         // It is possible when requestCallback is called, the inflight queue is already drained
         // because we timed out waiting for done.
         return;
+      } else {
+        // This is something not expected, we shouldn't have an empty inflight queue otherwise.
+        connectionFinalStatus = new StatusRuntimeException(
+            Status.fromCode(Code.FAILED_PRECONDITION)
+                .withDescription("Request callback called on an empty inflight queue.")));
       }
     } finally {
       this.lock.unlock();
