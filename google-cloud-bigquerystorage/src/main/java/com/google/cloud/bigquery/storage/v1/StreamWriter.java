@@ -591,7 +591,8 @@ public class StreamWriter implements AutoCloseable {
         log.log(Level.WARNING, "Unexpected: request callback called on an empty inflight queue.");
         connectionFinalStatus = new StatusRuntimeException(
             Status.fromCode(Code.FAILED_PRECONDITION)
-                .withDescription("Request callback called on an empty inflight queue.")));
+                .withDescription("Request callback called on an empty inflight queue."));
+        return;
       }
     } finally {
       this.lock.unlock();
