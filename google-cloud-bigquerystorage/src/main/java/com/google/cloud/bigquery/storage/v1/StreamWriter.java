@@ -465,7 +465,7 @@ public class StreamWriter implements AutoCloseable {
     // We can close the stream connection and handle the remaining inflight requests.
     if (streamConnection != null) {
       this.streamConnection.close();
-      waitForDoneCallback(1, TimeUnit.MINUTES);
+      waitForDoneCallback(2, TimeUnit.MINUTES);
     }
 
     // At this point, there cannot be more callback. It is safe to clean up all inflight requests.
@@ -650,7 +650,8 @@ public class StreamWriter implements AutoCloseable {
       this.inflightReduced.signal();
       return requestWrapper;
     } else {
-      // It is possible when requestCallback is called, the inflight queue is already drained to do timeout waiting
+      // It is possible when requestCallback is called, the inflight queue is already drained to do
+      // timeout waiting
       // for done.
       return null;
     }
