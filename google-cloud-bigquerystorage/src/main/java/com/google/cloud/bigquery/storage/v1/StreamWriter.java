@@ -573,6 +573,9 @@ public class StreamWriter implements AutoCloseable {
         conectionRetryCountWithoutCallback = 0;
       }
       requestWrapper = pollInflightRequestQueue();
+      if (requestWrapper == null) {
+        return;
+      }
     } finally {
       this.lock.unlock();
     }
@@ -640,11 +643,17 @@ public class StreamWriter implements AutoCloseable {
 
   @GuardedBy("lock")
   private AppendRequestAndResponse pollInflightRequestQueue() {
-    AppendRequestAndResponse requestWrapper = this.inflightRequestQueue.pollFirst();
-    --this.inflightRequests;
-    this.inflightBytes -= requestWrapper.messageSize;
-    this.inflightReduced.signal();
-    return requestWrapper;
+    if (!this.inflightRequestQueue.isEmpty()) {
+      AppendRequestAndResponse requestWrapper = this.inflightRequestQueue.pollFirst();
+      --this.inflightRequests;
+      this.inflightBytes -= requestWrapper.messageSize;
+      this.inflightReduced.signal();
+      return requestWrapper;
+    } else {
+      // It is possible when requestCallback is called, the inflight queue is already drained to do timeout waiting
+      // for done.
+      return null;
+    }
   }
 
   /**
