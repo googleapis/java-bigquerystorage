@@ -575,9 +575,8 @@ public class StreamWriter implements AutoCloseable {
       if (!this.inflightRequestQueue.isEmpty()) {
         requestWrapper = pollInflightRequestQueue();
       } else {
-        // It is possible when requestCallback is called, the inflight queue is already drained to
-        // do
-        // timeout waiting for done.
+        // It is possible when requestCallback is called, the inflight queue is already drained
+        // because we timed out waiting for done.
         return;
       }
     } finally {
