@@ -383,7 +383,8 @@ public class StreamWriter implements AutoCloseable {
     if (this.ownsBigQueryWriteClient) {
       this.client.close();
       try {
-        this.client.awaitTermination(1, TimeUnit.MINUTES);
+        // Backend request has a 2 minute timeout, so wait a little longer than that.
+        this.client.awaitTermination(150, TimeUnit.SECONDS);
       } catch (InterruptedException ignored) {
       }
     }
@@ -589,9 +590,10 @@ public class StreamWriter implements AutoCloseable {
       } else {
         // This is something not expected, we shouldn't have an empty inflight queue otherwise.
         log.log(Level.WARNING, "Unexpected: request callback called on an empty inflight queue.");
-        connectionFinalStatus = new StatusRuntimeException(
-            Status.fromCode(Code.FAILED_PRECONDITION)
-                .withDescription("Request callback called on an empty inflight queue."));
+        connectionFinalStatus =
+            new StatusRuntimeException(
+                Status.fromCode(Code.FAILED_PRECONDITION)
+                    .withDescription("Request callback called on an empty inflight queue."));
         return;
       }
     } finally {
