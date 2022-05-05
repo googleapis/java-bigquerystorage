@@ -22,6 +22,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.protobuf.StatusProto;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 /** Exceptions for Storage Client Libraries. */
@@ -142,16 +144,32 @@ public final class Exceptions {
       return null;
     }
     String streamName = error.getEntity();
+    // The error message should have Entity but it's missing from the message for
+    // OFFSET_ALREADY_EXISTS
+    // TODO: Simplify the logic below when backend fixes passing Entity for OFFSET_ALREADY_EXISTS
+    // error
     String errorMessage =
         error.getErrorMessage().indexOf("Entity") > 0
             ? error.getErrorMessage().substring(0, error.getErrorMessage().indexOf("Entity")).trim()
             : error.getErrorMessage().trim();
-    // Note: if errorMessage format changes, the parsing logic below might break
-    Long expectedOffet =
-        Long.parseLong(
-            errorMessage.substring(
-                errorMessage.lastIndexOf("offset") + 7, errorMessage.lastIndexOf(",")));
-    Long actualOffset = Long.parseLong(errorMessage.substring(errorMessage.lastIndexOf(" ") + 1));
+
+    // Ensure that erro message has the desirable pattern for parsing
+    String errormessagePatternString = "expected offset [0-9]+, received [0-9]+";
+    Pattern errorMessagePattern = Pattern.compile(errormessagePatternString);
+    Matcher errorMessageMatcher = errorMessagePattern.matcher(errorMessage);
+
+    Long expectedOffet;
+    Long actualOffset;
+    if (!errorMessageMatcher.find()) {
+      expectedOffet = -1L;
+      actualOffset = -1L;
+    } else {
+      expectedOffet =
+          Long.parseLong(
+              errorMessage.substring(
+                  errorMessage.lastIndexOf("offset") + 7, errorMessage.lastIndexOf(",")));
+      actualOffset = Long.parseLong(errorMessage.substring(errorMessage.lastIndexOf(" ") + 1));
+    }
     switch (error.getCode()) {
       case STREAM_FINALIZED:
         return new StreamFinalizedException(grpcStatus, streamName);
