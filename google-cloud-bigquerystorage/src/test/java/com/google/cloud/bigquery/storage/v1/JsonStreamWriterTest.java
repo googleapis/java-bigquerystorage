@@ -583,8 +583,7 @@ public class JsonStreamWriterTest {
   }
 
   // This is to test the new addition didn't break previous settings, i.e., sets the inflight limit
-  // without
-  // limit beahvior.
+  // without limit beahvior.
   @Test
   public void testFlowControlSettingNoLimitBehavior() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
