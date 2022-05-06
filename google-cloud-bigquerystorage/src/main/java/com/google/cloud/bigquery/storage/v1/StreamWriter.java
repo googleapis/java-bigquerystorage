@@ -315,14 +315,13 @@ public class StreamWriter implements AutoCloseable {
         return requestWrapper.appendResult;
       }
       // Check if queue is going to be full before adding the request.
-      if (this.inflightRequests + 1 >= this.maxInflightRequests
-          || this.inflightBytes + requestWrapper.messageSize >= this.maxInflightBytes) {
-        if (this.limitExceededBehavior == FlowController.LimitExceededBehavior.ThrowException) {
-          throw new StatusRuntimeException(
-              Status.fromCode(Code.RESOURCE_EXHAUSTED)
-                  .withDescription(
-                      "Exceeds client side inflight buffer, consider add more buffer or open more connections."));
-        }
+      if ((this.inflightRequests + 1 >= this.maxInflightRequests
+              || this.inflightBytes + requestWrapper.messageSize >= this.maxInflightBytes)
+          && (this.limitExceededBehavior == FlowController.LimitExceededBehavior.ThrowException)) {
+        throw new StatusRuntimeException(
+            Status.fromCode(Code.RESOURCE_EXHAUSTED)
+                .withDescription(
+                    "Exceeds client side inflight buffer, consider add more buffer or open more connections."));
       }
 
       if (connectionFinalStatus != null) {
