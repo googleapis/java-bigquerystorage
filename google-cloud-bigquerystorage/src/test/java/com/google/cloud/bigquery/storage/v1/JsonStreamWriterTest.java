@@ -560,7 +560,6 @@ public class JsonStreamWriterTest {
                     .setMaxOutstandingRequestBytes(1L)
                     .build())
             .build()) {
-      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
       JSONObject foo = new JSONObject();
       foo.put("test_int", 10);
       JSONArray jsonArr = new JSONArray();
@@ -595,6 +594,7 @@ public class JsonStreamWriterTest {
                          .setMaxOutstandingRequestBytes(1L)
                          .build())
                  .build()) {
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
       JSONObject foo = new JSONObject();
       foo.put("test_int", 10);
       JSONArray jsonArr = new JSONArray();
