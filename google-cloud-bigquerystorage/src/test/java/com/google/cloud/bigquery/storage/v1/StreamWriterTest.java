@@ -19,7 +19,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowController;
@@ -559,14 +558,22 @@ public class StreamWriterTest {
     for (int i = 0; i < appendCount; i++) {
       testBigQueryWrite.addResponse(createAppendResponse(i));
     }
-    try {
-      writer.append(createProtoRows(new String[] {String.valueOf(10)}), -1);
-      fail("Expect exception to throw");
-    } catch (StatusRuntimeException ex) {
-      assertEquals(
-          "RESOURCE_EXHAUSTED: Exceeds client side inflight buffer, consider add more buffer or open more connections.",
-          ex.getMessage());
-    }
+    StatusRuntimeException ex =
+        assertThrows(
+            StatusRuntimeException.class,
+            new ThrowingRunnable() {
+              @Override
+              public void run() throws Throwable {
+                writer.append(createProtoRows(new String[] {String.valueOf(10)}), -1);
+              }
+            });
+    assertEquals(ex.getStatus().getCode(), Status.RESOURCE_EXHAUSTED.getCode());
+    assertTrue(
+        ex.getStatus()
+            .getDescription()
+            .contains(
+                "Exceeds client side inflight buffer, consider add more buffer or open more connections"));
+
     writer.close();
   }
 
