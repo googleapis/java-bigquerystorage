@@ -15,7 +15,9 @@
  */
 package com.google.cloud.bigquery.storage.v1;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowControlSettings;
