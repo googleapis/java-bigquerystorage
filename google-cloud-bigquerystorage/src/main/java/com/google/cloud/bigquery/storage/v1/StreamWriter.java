@@ -314,6 +314,7 @@ public class StreamWriter implements AutoCloseable {
                     .withDescription("Connection is already closed")));
         return requestWrapper.appendResult;
       }
+      // Check if queue is going to be full before adding the request.
       if (this.inflightRequests + 1 >= this.maxInflightRequests
           || this.inflightBytes + requestWrapper.messageSize >= this.maxInflightBytes) {
         if (this.limitExceededBehavior == FlowController.LimitExceededBehavior.ThrowException) {
