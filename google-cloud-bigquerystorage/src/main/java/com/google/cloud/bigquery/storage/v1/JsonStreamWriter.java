@@ -78,8 +78,10 @@ public class JsonStreamWriter implements AutoCloseable {
     this.protoSchema = ProtoSchemaConverter.convert(this.descriptor);
     this.totalMessageSize = protoSchema.getSerializedSize();
     streamWriterBuilder.setWriterSchema(protoSchema);
-    streamWriterBuilder.setLimitExceededBehavior(
-        builder.flowControlSettings.getLimitExceededBehavior());
+    if (builder.flowControlSettings != null) {
+      streamWriterBuilder.setLimitExceededBehavior(
+          builder.flowControlSettings.getLimitExceededBehavior());
+    }
     setStreamWriterSettings(
         builder.channelProvider,
         builder.credentialsProvider,
