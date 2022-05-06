@@ -582,20 +582,19 @@ public class JsonStreamWriterTest {
     }
   }
 
-  // This is to test the new addition didn't break previous settings, i.e., sets the inflight limit without limit
-  // beahviro.
+  // This is to test the new addition didn't break previous settings, i.e., sets the inflight limit
+  // without
+  // limit beahvior.
   @Test
   public void testFlowControlSettingNoLimitBehavior() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     try (JsonStreamWriter writer =
-             JsonStreamWriter.newBuilder(TEST_STREAM, tableSchema)
-                 .setChannelProvider(channelProvider)
-                 .setCredentialsProvider(NoCredentialsProvider.create())
-                 .setFlowControlSettings(
-                     FlowControlSettings.newBuilder()
-                         .setMaxOutstandingRequestBytes(1L)
-                         .build())
-                 .build()) {
+        JsonStreamWriter.newBuilder(TEST_STREAM, tableSchema)
+            .setChannelProvider(channelProvider)
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .setFlowControlSettings(
+                FlowControlSettings.newBuilder().setMaxOutstandingRequestBytes(1L).build())
+            .build()) {
       testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
       JSONObject foo = new JSONObject();
       foo.put("test_int", 10);
