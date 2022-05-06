@@ -560,6 +560,7 @@ public class JsonStreamWriterTest {
                     .setMaxOutstandingRequestBytes(1L)
                     .build())
             .build()) {
+      testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
       JSONObject foo = new JSONObject();
       foo.put("test_int", 10);
       JSONArray jsonArr = new JSONArray();
@@ -579,6 +580,27 @@ public class JsonStreamWriterTest {
               .getDescription()
               .contains(
                   "Exceeds client side inflight buffer, consider add more buffer or open more connections"));
+    }
+  }
+
+  @Test
+  public void testFlowControlSettingNoLimitBehavior() throws Exception {
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
+    try (JsonStreamWriter writer =
+             JsonStreamWriter.newBuilder(TEST_STREAM, tableSchema)
+                 .setChannelProvider(channelProvider)
+                 .setCredentialsProvider(NoCredentialsProvider.create())
+                 .setFlowControlSettings(
+                     FlowControlSettings.newBuilder()
+                         .setMaxOutstandingRequestBytes(1L)
+                         .build())
+                 .build()) {
+      JSONObject foo = new JSONObject();
+      foo.put("test_int", 10);
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+      ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
+      appendFuture.get();
     }
   }
 }
