@@ -15,12 +15,10 @@
  */
 package com.google.cloud.bigquery.storage.v1;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import com.google.api.core.ApiFuture;
+import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
@@ -539,6 +537,31 @@ public class StreamWriterTest {
     assertEquals(appendCount, testBigQueryWrite.getAppendRequests().size());
     for (int i = 0; i < appendCount; i++) {
       assertEquals(i, testBigQueryWrite.getAppendRequests().get(i).getOffset().getValue());
+    }
+    writer.close();
+  }
+
+  @Test
+  public void testAppendsWithTinyMaxInflightBytesThrow() throws Exception {
+    StreamWriter writer =
+        StreamWriter.newBuilder(TEST_STREAM, client)
+            .setWriterSchema(createProtoSchema())
+            .setMaxInflightBytes(1)
+            .setLimitExceededBehavior(FlowController.LimitExceededBehavior.ThrowException)
+            .build();
+    // Server will sleep 100ms before every response.
+    testBigQueryWrite.setResponseSleep(Duration.ofMillis(100));
+    long appendCount = 10;
+    for (int i = 0; i < appendCount; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+    try {
+      writer.append(createProtoRows(new String[] {String.valueOf(10)}), -1);
+      fail("Expect exception to throw");
+    } catch (StatusRuntimeException ex) {
+      assertEquals(
+          "RESOURCE_EXHAUSTED: Exceeds client side inflight buffer, consider add more buffer or open more connections.",
+          ex.getMessage());
     }
     writer.close();
   }
