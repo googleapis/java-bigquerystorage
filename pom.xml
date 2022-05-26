@@ -135,11 +135,11 @@
         <version>2.12.0</version>
         <scope>test</scope>
         <exclusions>
-            <exclusion>
-                <groupId>com.google.cloud</groupId>
-                <artifactId>google-cloud-bigquerystorage</artifactId>
-            <exclusion>
-        <exclusions>
+          <exclusion>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-bigquerystorage</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
     </dependencies>
   </dependencyManagement>
