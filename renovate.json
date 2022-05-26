@@ -58,7 +58,8 @@
       "packagePatterns": [
         "^com.google.cloud:google-cloud-bigquerystorage",
         "^com.google.cloud:libraries-bom",
-        "^com.google.cloud.samples:shared-configuration"
+        "^com.google.cloud.samples:shared-configuration",
+        "^com.google.cloud:google-cloud-bigquery"
       ],
       "semanticCommitType": "chore",
       "semanticCommitScope": "deps"
