@@ -22,6 +22,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.protobuf.StatusProto;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -201,6 +202,20 @@ public final class Exceptions {
   public static StorageException toStorageException(Throwable exception) {
     com.google.rpc.Status rpcStatus = StatusProto.fromThrowable(exception);
     return toStorageException(rpcStatus, exception);
+  }
+
+  /** Append serializtion error. */
+  public static class AppendSerializtionError extends RuntimeException {
+    private final List<RowError> rowErrors;
+
+    public AppendSerializtionError(String name, List<RowError> rowErrors) {
+      super(String.format("Append serializtion failed for writer: %s", name));
+      this.rowErrors = rowErrors;
+    }
+
+    public List<RowError> getRowErrors() {
+      return rowErrors;
+    }
   }
 
   private Exceptions() {}
