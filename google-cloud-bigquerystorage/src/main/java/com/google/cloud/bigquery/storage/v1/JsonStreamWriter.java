@@ -141,9 +141,9 @@ public class JsonStreamWriter implements AutoCloseable {
 
       ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
       // Any error in convertJsonToProtoMessage will throw an
-      // IllegalArgumentException/IllegalStateException/NullPointerException and will halt
-      // processing
-      // of JSON data.
+      // IllegalArgumentException/IllegalStateException/NullPointerException which will be collected
+      // into a list of RowErrors. After the coverstion is finished an AppendSerializtionError
+      // exception that contains all the conversion errors will be thrown.
       long currentRequestSize = 0;
       List<RowError> rowErrors = new ArrayList<>();
       for (int i = 0; i < jsonArr.length(); i++) {
@@ -154,7 +154,9 @@ public class JsonStreamWriter implements AutoCloseable {
                   this.descriptor, this.tableSchema, json, ignoreUnknownFields);
           rowsBuilder.addSerializedRows(protoMessage.toByteString());
           currentRequestSize += protoMessage.getSerializedSize();
-        } catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException
+            | IllegalStateException
+            | NullPointerException exception) {
           rowErrors.add(
               RowError.newBuilder()
                   .setIndex(i)

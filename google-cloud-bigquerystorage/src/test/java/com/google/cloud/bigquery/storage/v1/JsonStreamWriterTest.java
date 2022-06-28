@@ -639,6 +639,7 @@ public class JsonStreamWriterTest {
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
       try {
         ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
+        Assert.fail("expected AppendSerializtionError");
       } catch (AppendSerializtionError appendSerializtionError) {
         List<RowError> rowErrors = appendSerializtionError.getRowErrors();
         assertEquals(2, rowErrors.size());
