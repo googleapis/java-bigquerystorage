@@ -213,8 +213,7 @@ public final class Exceptions {
     private final Map<Integer, String> rowIndexToErrorMessage;
     private final String streamName;
 
-    public AppendSerializtionError(
-        @Nullable String streamName, Map<Integer, String> rowIndexToErrorMessage) {
+    public AppendSerializtionError(String streamName, Map<Integer, String> rowIndexToErrorMessage) {
       super(String.format("Append serializtion failed for writer: %s", streamName));
       this.rowIndexToErrorMessage = rowIndexToErrorMessage;
       this.streamName = streamName;

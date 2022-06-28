@@ -522,8 +522,9 @@ public class JsonStreamWriterTest {
         Assert.fail("expected ExecutionException");
       } catch (AppendSerializtionError ex) {
         assertEquals(
-            ex.getRowIndexToErrorMessage().get(1),
-            "JSONObject has fields unknown to BigQuery: root.test_unknown.");
+            "JSONObject has fields unknown to BigQuery: root.test_unknown.",
+            ex.getRowIndexToErrorMessage().get(1));
+        assertEquals(TEST_STREAM, ex.getStreamName());
       }
     }
   }
@@ -612,10 +613,13 @@ public class JsonStreamWriterTest {
       throws DescriptorValidationException, IOException, InterruptedException {
     FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
     JSONObject foo = new JSONObject();
+    // put a field which is not part of the expected schema
     foo.put("not_foo", "allen");
     JSONObject foo1 = new JSONObject();
+    // put a vaild value into the field
     foo1.put("foo", "allen");
     JSONObject foo2 = new JSONObject();
+    // put a number into a string field
     foo2.put("foo", 666);
     JSONArray jsonArr = new JSONArray();
     jsonArr.put(foo);
