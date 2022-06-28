@@ -32,7 +32,6 @@ import com.google.cloud.bigquery.storage.test.JsonTest;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.test.Test.UpdatedFooType;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
-import com.google.cloud.bigquery.storage.v1.RowError.RowErrorCode;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Int64Value;
 import com.google.protobuf.Timestamp;
@@ -40,7 +39,7 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -523,7 +522,7 @@ public class JsonStreamWriterTest {
         Assert.fail("expected ExecutionException");
       } catch (AppendSerializtionError ex) {
         assertEquals(
-            ex.getRowErrors().get(0).getMessage(),
+            ex.getRowIndexToErrorMessage().get(1),
             "JSONObject has fields unknown to BigQuery: root.test_unknown.");
       }
     }
@@ -622,18 +621,6 @@ public class JsonStreamWriterTest {
     jsonArr.put(foo);
     jsonArr.put(foo1);
     jsonArr.put(foo2);
-    RowError columnMismatchError =
-        RowError.newBuilder()
-            .setCode(RowErrorCode.FIELDS_ERROR)
-            .setIndex(0)
-            .setMessage("JSONObject has fields unknown to BigQuery: root.not_foo.")
-            .build();
-    RowError typeError =
-        RowError.newBuilder()
-            .setCode(RowErrorCode.FIELDS_ERROR)
-            .setIndex(2)
-            .setMessage("JSONObject does not have a string field at root.foo.")
-            .build();
 
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
@@ -641,10 +628,14 @@ public class JsonStreamWriterTest {
         ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
         Assert.fail("expected AppendSerializtionError");
       } catch (AppendSerializtionError appendSerializtionError) {
-        List<RowError> rowErrors = appendSerializtionError.getRowErrors();
-        assertEquals(2, rowErrors.size());
-        assertEquals(columnMismatchError, rowErrors.get(0));
-        assertEquals(typeError, rowErrors.get(1));
+        Map<Integer, String> rowIndexToErrorMessage =
+            appendSerializtionError.getRowIndexToErrorMessage();
+        assertEquals(2, rowIndexToErrorMessage.size());
+        assertEquals(
+            "JSONObject has fields unknown to BigQuery: root.not_foo.",
+            rowIndexToErrorMessage.get(0));
+        assertEquals(
+            "JSONObject does not have a string field at root.foo.", rowIndexToErrorMessage.get(2));
       }
     }
   }

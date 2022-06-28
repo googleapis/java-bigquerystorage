@@ -20,15 +20,14 @@ import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
-import com.google.cloud.bigquery.storage.v1.RowError.RowErrorCode;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Message;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -142,10 +141,10 @@ public class JsonStreamWriter implements AutoCloseable {
       ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
       // Any error in convertJsonToProtoMessage will throw an
       // IllegalArgumentException/IllegalStateException/NullPointerException which will be collected
-      // into a list of RowErrors. After the coverstion is finished an AppendSerializtionError
-      // exception that contains all the conversion errors will be thrown.
+      // into a Map of roe indexes to error messages. After the coverstion is finished an
+      // AppendSerializtionError exception that contains all the conversion errors will be thrown.
       long currentRequestSize = 0;
-      List<RowError> rowErrors = new ArrayList<>();
+      Map<Integer, String> rowIndexToErrorMessage = new HashMap<>();
       for (int i = 0; i < jsonArr.length(); i++) {
         JSONObject json = jsonArr.getJSONObject(i);
         try {
@@ -157,17 +156,12 @@ public class JsonStreamWriter implements AutoCloseable {
         } catch (IllegalArgumentException
             | IllegalStateException
             | NullPointerException exception) {
-          rowErrors.add(
-              RowError.newBuilder()
-                  .setIndex(i)
-                  .setCode(RowErrorCode.FIELDS_ERROR)
-                  .setMessage(exception.getMessage())
-                  .build());
+          rowIndexToErrorMessage.put(i, exception.getMessage());
         }
       }
 
-      if (!rowErrors.isEmpty()) {
-        throw new AppendSerializtionError(streamName, rowErrors);
+      if (!rowIndexToErrorMessage.isEmpty()) {
+        throw new AppendSerializtionError(streamName, rowIndexToErrorMessage);
       }
       final ApiFuture<AppendRowsResponse> appendResponseFuture =
           this.streamWriter.append(rowsBuilder.build(), offset);

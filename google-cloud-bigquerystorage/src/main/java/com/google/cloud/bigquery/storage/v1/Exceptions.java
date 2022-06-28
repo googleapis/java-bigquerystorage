@@ -22,7 +22,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.protobuf.StatusProto;
-import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -206,23 +206,22 @@ public final class Exceptions {
 
   /**
    * This exception is thrown from {@link JsonStreamWriter#append()} when the client side Json to
-   * Proto serializtion fails. The exception contains a list of {@link RowError} object which
-   * represent all of the faulty lines. {@link RowError} can be also returned as part of {@link
-   * AppendRowsResponse}, after the rows were processed on the server side. using the same error
-   * object should make error hadling easier.
+   * Proto serializtion fails. The exception contains a Map of indexes of faulty lines and the
+   * corresponding error message.
    */
   public static class AppendSerializtionError extends RuntimeException {
-    private final List<RowError> rowErrors;
+    private final Map<Integer, String> rowIndexToErrorMessage;
     private final String streamName;
 
-    public AppendSerializtionError(@Nullable String streamName, List<RowError> rowErrors) {
+    public AppendSerializtionError(
+        @Nullable String streamName, Map<Integer, String> rowIndexToErrorMessage) {
       super(String.format("Append serializtion failed for writer: %s", streamName));
-      this.rowErrors = rowErrors;
+      this.rowIndexToErrorMessage = rowIndexToErrorMessage;
       this.streamName = streamName;
     }
 
-    public List<RowError> getRowErrors() {
-      return rowErrors;
+    public Map<Integer, String> getRowIndexToErrorMessage() {
+      return rowIndexToErrorMessage;
     }
 
     public String getStreamName() {
