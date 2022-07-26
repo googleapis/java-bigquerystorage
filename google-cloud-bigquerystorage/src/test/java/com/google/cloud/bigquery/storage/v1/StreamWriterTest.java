@@ -655,7 +655,7 @@ public class StreamWriterTest {
   }
 
   @Test
-  public void testWriterException() throws Exception {
+  public void testWriterAlreadyClosedException() throws Exception {
     StreamWriter writer = getTestStreamWriter();
     writer.close();
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"}, 0);
@@ -664,5 +664,26 @@ public class StreamWriterTest {
     // The basic StatusRuntimeException API is not changed.
     assertEquals(Status.Code.FAILED_PRECONDITION, actualError.getStatus().getCode());
     assertTrue(actualError.getStatus().getDescription().contains("Connection is already closed"));
+  }
+
+  @Test
+  public void testWriterConnectionException() throws Exception {
+    StreamWriter writer = getTestStreamWriter();
+    testBigQueryWrite.addException(
+        new StatusRuntimeException(
+            Status.fromCode(Status.Code.INTERNAL).withDescription("test failure.")));
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {});
+    // first request failed with internal error.
+    try {
+      appendFuture1.get();
+    } catch (Exception e) {
+    }
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"a"});
+    Exceptions.StreamWriterClosedException actualError =
+        assertFutureException(Exceptions.StreamWriterClosedException.class, appendFuture2);
+    assertEquals(Status.Code.FAILED_PRECONDITION, actualError.getStatus().getCode());
+    assertTrue(actualError.getStatus().getDescription().contains("Connection is closed"));
+
+    writer.close();
   }
 }
