@@ -322,7 +322,7 @@ public class StreamWriter implements AutoCloseable {
 
       if (connectionFinalStatus != null) {
         requestWrapper.appendResult.setException(
-            Exceptions.StreamWriterClosedException(
+            new Exceptions.StreamWriterClosedException(
                 Status.fromCode(Status.Code.FAILED_PRECONDITION)
                     .withDescription(
                         "Connection is closed due to " + connectionFinalStatus.toString()),
