@@ -39,7 +39,7 @@ import com.google.protobuf.Int64Value;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class WriteBufferedStream {
+public class WriteToBufferedStream {
 
 	public static void runWritePendingStream()
 			throws DescriptorValidationException, InterruptedException, IOException {
