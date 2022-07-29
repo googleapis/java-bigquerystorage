@@ -72,7 +72,7 @@ public class WriteCommittedStream {
           record.put("col1", String.format("batch-record %03d-%03d", i, j));
           jsonArr.put(record);
         }
-        writer.append(jsonArr);
+        writer.append(jsonArr, offset);
         offset += jsonArr.length();
       }
     } catch (ExecutionException e) {
