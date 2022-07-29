@@ -158,6 +158,7 @@ public class WriteBufferedStream implements AutoCloseable {
     return jsonArr;
   }
 
+  @GuardedBy("lock")
   private void CreateWriteStream() {
     // Initialize a write stream for the specified table.
     // For more information on WriteStream.Type, see:
@@ -170,6 +171,7 @@ public class WriteBufferedStream implements AutoCloseable {
             .setWriteStream(stream)
             .build();
     writeStream = client.createWriteStream(createWriteStreamRequest);
+    System.out.println("Created write stream:" + writeStream.getName());
   }
 
   private JsonStreamWriter createJsonWriter() {
@@ -234,9 +236,7 @@ public class WriteBufferedStream implements AutoCloseable {
             OffsetAckHandler ackHandler = ackHandlerQueue.remove();
             ackHandler.nack();
           }
-          if (writeStream == null) {
-            CreateWriteStream();
-          }
+          CreateWriteStream();
         } finally {
           this.lock.unlock();
         }
