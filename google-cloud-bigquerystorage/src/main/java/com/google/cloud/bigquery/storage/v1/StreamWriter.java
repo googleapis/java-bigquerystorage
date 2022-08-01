@@ -635,8 +635,8 @@ public class StreamWriter implements AutoCloseable {
     if (Errors.isRetryableInternalStatus(status)) {
       return true;
     }
-    return status.getCode() == Status.Code.ABORTED
-        || status.getCode() == Status.Code.UNAVAILABLE
+    return status.getCode() == Code.ABORTED
+        || status.getCode() == Code.UNAVAILABLE
         || status.getCode() == Code.CANCELLED;
   }
 
