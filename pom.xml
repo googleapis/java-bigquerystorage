@@ -76,7 +76,7 @@
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-shared-dependencies</artifactId>
-        <version>2.13.0</version>
+        <version>3.0.1</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -119,6 +119,11 @@
         <groupId>org.json</groupId>
         <artifactId>json</artifactId>
         <version>20200518</version>
+      </dependency>
+       <dependency>
+        <groupId>com.google.apis</groupId>
+        <artifactId>google-api-services-bigquery</artifactId>
+        <version>v2-rev20220716-2.0.0</version>
       </dependency>
 
 
