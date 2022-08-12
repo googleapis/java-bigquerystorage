@@ -72,8 +72,8 @@ public final class Exceptions {
   }
 
   /**
-   * Stream created by CreateWriteStream has already been finalized. You need to recreate a stream
-   * using CreateWriteStream.
+   * The write stream has already been finalized and will not accept further appends or flushes. To
+   * send additional requests, you will need to create a new write stream via CreateWriteStream.
    */
   public static final class StreamFinalizedException extends StorageException {
     protected StreamFinalizedException(Status grpcStatus, String name) {
@@ -82,10 +82,10 @@ public final class Exceptions {
   }
 
   /**
-   * This writer has been closed either by user or by some non retry errors we encounter. You need
-   * to recreate StreamWriter (or JsonStreamWriter) in order to proceed. Note that StreamWriter is
-   * different from Stream, StreamWriter is a unit used to write, while Stream is a metadata entity
-   * that associates with offset.
+   * This writer instance has either been closed by the user explicitly, or has encountered
+   * non-retriable errors.
+   *
+   * <p>To continue to write to the same stream, you will need to create a new writer instance.
    */
   public static final class StreamWriterClosedException extends StorageException {
     protected StreamWriterClosedException(Status grpcStatus, String name) {
@@ -104,9 +104,9 @@ public final class Exceptions {
   }
 
   /**
-   * Offset already exists. This happens when appending with offset that is less than the current
-   * end of the offset on the Stream. ou can also choose to append to the end of the Stream by not
-   * specifying offset.
+   * Offset already exists. This indicates that the append request attempted to write data to an
+   * offset before the current end of the stream. This is an expected exception that you can safely
+   * ignore, and keep appending until there is new data to append.
    */
   public static final class OffsetAlreadyExists extends StorageException {
     protected OffsetAlreadyExists(
@@ -116,9 +116,10 @@ public final class Exceptions {
   }
 
   /**
-   * Offset out of range. This happens when appending with offset that is larger than the current
-   * end of the offset on the Stream. You can also choose to append to the end of the Stream by not
-   * specifying offset.
+   * Offset out of range. This indicates that the append request is attempting to write data to a
+   * point beyond the current end of the stream. To append data successfully, you must either
+   * specify the offset corresponding to the current end of stream, or omit the offset from the
+   * append request. It usually means a bug in your code that introduces a gap in appends.
    */
   public static final class OffsetOutOfRange extends StorageException {
     protected OffsetOutOfRange(
@@ -128,8 +129,9 @@ public final class Exceptions {
   }
 
   /**
-   * Stream created by CreateWriteStream is not found. You need to recreate a Stream using
-   * CreateWriteStream.
+   * The stream is not found. Possible causes include incorrectly specifying the stream identifier
+   * or attempting to use an old stream identifier that no longer exists. You can invoke
+   * CreateWriteStream to create a new stream.
    */
   public static final class StreamNotFound extends StorageException {
     protected StreamNotFound(Status grpcStatus, String name) {
