@@ -33,6 +33,7 @@ import com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode;
 import com.google.common.base.Strings;
 import com.google.protobuf.Any;
 import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.Descriptors;
 import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -47,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
@@ -554,7 +556,7 @@ public class StreamWriterTest {
             .build();
     StatusRuntimeException ex =
         assertThrows(
-            StatusRuntimeException.class,
+            Exceptions.InflightBytesLimitExceededException.class,
             new ThrowingRunnable() {
               @Override
               public void run() throws Throwable {
@@ -683,5 +685,15 @@ public class StreamWriterTest {
     assertTrue(actualError instanceof StatusRuntimeException);
     assertEquals(Status.Code.FAILED_PRECONDITION, actualError.getStatus().getCode());
     assertTrue(actualError.getStatus().getDescription().contains("Connection is closed"));
+  }
+
+  @Test
+  public void testWriterId()
+      throws Descriptors.DescriptorValidationException, IOException, InterruptedException {
+    StreamWriter writer1 = getTestStreamWriter();
+    Assert.assertFalse(writer1.getWriterId().isEmpty());
+    StreamWriter writer2 = getTestStreamWriter();
+    Assert.assertFalse(writer2.getWriterId().isEmpty());
+    Assert.assertNotEquals(writer1.getWriterId(), writer2.getWriterId());
   }
 }

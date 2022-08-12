@@ -177,6 +177,11 @@ public class JsonStreamWriter implements AutoCloseable {
     return this.streamName;
   }
 
+  /** @return a unique Id for this writer. */
+  public String getWriterId() {
+    return streamWriter.getWriterId();
+  }
+
   /**
    * Gets current descriptor
    *
