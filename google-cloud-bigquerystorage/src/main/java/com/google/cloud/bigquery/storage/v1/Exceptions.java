@@ -249,7 +249,7 @@ public final class Exceptions {
   }
 
   /**
-   * FlowController.LimitExceededBehavior is set to Block and inflight limit is exceeded, this
+   * If FlowController.LimitExceededBehavior is set to Block and inflight limit is exceeded, this
    * exception will be thrown. If it is just a spike, you may retry the request. Otherwise, you can
    * increase the inflight limit or create more StreamWriter to handle your traffic.
    */
