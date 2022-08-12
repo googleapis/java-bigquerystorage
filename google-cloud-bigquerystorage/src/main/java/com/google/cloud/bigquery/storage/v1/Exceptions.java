@@ -263,6 +263,14 @@ public final class Exceptions {
       this.currentLimit = currentLimit;
       this.writerId = writerId;
     }
+
+    public String getWriterId() {
+      return writerId;
+    }
+
+    public long getCurrentLimit() {
+      return currentLimit;
+    }
   }
 
   public static class InflightRequestsLimitExceededException

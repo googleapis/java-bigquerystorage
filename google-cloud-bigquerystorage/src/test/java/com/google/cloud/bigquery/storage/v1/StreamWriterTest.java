@@ -554,7 +554,7 @@ public class StreamWriterTest {
             .setMaxInflightBytes(1)
             .setLimitExceededBehavior(FlowController.LimitExceededBehavior.ThrowException)
             .build();
-    StatusRuntimeException ex =
+    Exceptions.InflightBytesLimitExceededException ex =
         assertThrows(
             Exceptions.InflightBytesLimitExceededException.class,
             new ThrowingRunnable() {
@@ -570,6 +570,7 @@ public class StreamWriterTest {
             .contains(
                 "Exceeds client side inflight buffer, consider add more buffer or open more connections"));
 
+    assertEquals(ex.getWriterId(), writer.getWriterId());
     writer.close();
   }
 
@@ -667,6 +668,8 @@ public class StreamWriterTest {
     assertTrue(actualError instanceof StatusRuntimeException);
     assertEquals(Status.Code.FAILED_PRECONDITION, actualError.getStatus().getCode());
     assertTrue(actualError.getStatus().getDescription().contains("Connection is already closed"));
+    assertEquals(actualError.getWriterId(), writer.getWriterId());
+    assertEquals(actualError.getStreamName(), writer.getStreamName());
   }
 
   @Test
@@ -685,6 +688,8 @@ public class StreamWriterTest {
     assertTrue(actualError instanceof StatusRuntimeException);
     assertEquals(Status.Code.FAILED_PRECONDITION, actualError.getStatus().getCode());
     assertTrue(actualError.getStatus().getDescription().contains("Connection is closed"));
+    assertEquals(actualError.getWriterId(), writer.getWriterId());
+    assertEquals(actualError.getStreamName(), writer.getStreamName());
   }
 
   @Test

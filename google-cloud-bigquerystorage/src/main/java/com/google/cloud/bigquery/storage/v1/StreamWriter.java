@@ -313,8 +313,8 @@ public class StreamWriter implements AutoCloseable {
             new Exceptions.StreamWriterClosedException(
                 Status.fromCode(Status.Code.FAILED_PRECONDITION)
                     .withDescription("Connection is already closed"),
-                writerId,
-                streamName));
+                streamName,
+                writerId));
         return requestWrapper.appendResult;
       }
       // Check if queue is going to be full before adding the request.
@@ -335,8 +335,8 @@ public class StreamWriter implements AutoCloseable {
                 Status.fromCode(Status.Code.FAILED_PRECONDITION)
                     .withDescription(
                         "Connection is closed due to " + connectionFinalStatus.toString()),
-                writerId,
-                streamName));
+                streamName,
+                writerId));
         return requestWrapper.appendResult;
       }
 
@@ -388,6 +388,11 @@ public class StreamWriter implements AutoCloseable {
   /** @return a unique Id for the writer. */
   public String getWriterId() {
     return writerId;
+  }
+
+  /** @return name of the Stream that this writer is working on. */
+  public String getStreamName() {
+    return streamName;
   }
 
   /** Close the stream writer. Shut down all resources. */
