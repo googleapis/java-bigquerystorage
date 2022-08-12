@@ -324,8 +324,7 @@ public class StreamWriter implements AutoCloseable {
               writerId, this.maxInflightRequests);
         }
         if (this.inflightBytes + requestWrapper.messageSize >= this.maxInflightBytes) {
-          throw new Exceptions.InflightBytesLimitExceededException(
-              writerId, this.maxInflightBytes);
+          throw new Exceptions.InflightBytesLimitExceededException(writerId, this.maxInflightBytes);
         }
       }
 

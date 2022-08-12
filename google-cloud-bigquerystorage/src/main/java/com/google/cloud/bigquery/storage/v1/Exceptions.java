@@ -224,10 +224,10 @@ public final class Exceptions {
   }
 
   /**
-   * This writer has been closed either by user or by some non retry errors we encounter. You need
-   * to recreate StreamWriter (or JsonStreamWriter) in order to proceed. Note that StreamWriter is
-   * different from Stream, StreamWriter is a unit used to write, while Stream is a metadata entity
-   * that associates with offset.
+   * This writer instance has either been closed by the user explicitly, or has encountered
+   * non-retriable errors.
+   *
+   * <p>To continue to write to the same stream, you will need to create a new writer instance.
    */
   public static final class StreamWriterClosedException extends StatusRuntimeException {
     private final String streamName;
