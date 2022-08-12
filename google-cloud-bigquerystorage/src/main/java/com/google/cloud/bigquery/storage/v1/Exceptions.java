@@ -71,7 +71,10 @@ public final class Exceptions {
     }
   }
 
-  /** Stream has already been finalized. */
+  /**
+   * The write stream has already been finalized and will not accept further appends or flushes. To
+   * send additional requests, you will need to create a new write stream via CreateWriteStream.
+   */
   public static final class StreamFinalizedException extends StorageException {
     protected StreamFinalizedException(Status grpcStatus, String name) {
       super(grpcStatus, name, null, null, ImmutableMap.of());
@@ -88,7 +91,11 @@ public final class Exceptions {
     }
   }
 
-  /** Offset already exists. */
+  /**
+   * Offset already exists. This indicates that the append request attempted to write data to an
+   * offset before the current end of the stream. This is an expected exception when ExactOnce is
+   * enforced. You can safely ignore it, and keep appending until there is new data to append.
+   */
   public static final class OffsetAlreadyExists extends StorageException {
     protected OffsetAlreadyExists(
         Status grpcStatus, String name, Long expectedOffset, Long actualOffset) {
@@ -96,7 +103,12 @@ public final class Exceptions {
     }
   }
 
-  /** Offset out of range. */
+  /**
+   * Offset out of range. This indicates that the append request is attempting to write data to a
+   * point beyond the current end of the stream. To append data successfully, you must either
+   * specify the offset corresponding to the current end of stream, or omit the offset from the
+   * append request. It usually means a bug in your code that introduces a gap in appends.
+   */
   public static final class OffsetOutOfRange extends StorageException {
     protected OffsetOutOfRange(
         Status grpcStatus, String name, Long expectedOffset, Long actualOffset) {
@@ -104,7 +116,11 @@ public final class Exceptions {
     }
   }
 
-  /** Stream is not found. */
+  /**
+   * The stream is not found. Possible causes include incorrectly specifying the stream identifier
+   * or attempting to use an old stream identifier that no longer exists. You can invoke
+   * CreateWriteStream to create a new stream.
+   */
   public static final class StreamNotFound extends StorageException {
     protected StreamNotFound(Status grpcStatus, String name) {
       super(grpcStatus, name, null, null, ImmutableMap.of());
