@@ -105,8 +105,8 @@ public final class Exceptions {
 
   /**
    * Offset already exists. This indicates that the append request attempted to write data to an
-   * offset before the current end of the stream. This is an expected exception that you can safely
-   * ignore, and keep appending until there is new data to append.
+   * offset before the current end of the stream. This is an expected exception when ExactOnce is
+   * enforced. You can safely ignore it, and keep appending until there is new data to append.
    */
   public static final class OffsetAlreadyExists extends StorageException {
     protected OffsetAlreadyExists(
