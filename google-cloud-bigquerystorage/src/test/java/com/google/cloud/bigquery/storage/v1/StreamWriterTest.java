@@ -571,7 +571,7 @@ public class StreamWriterTest {
                 "Exceeds client side inflight buffer in terms of bytes, consider add more buffer or open more connections"));
 
     assertEquals(ex.getWriterId(), writer.getWriterId());
-    assertEquals(ex.getCurrentLimit(), 1);
+    assertEquals(1, ex.getCurrentLimit());
     writer.close();
   }
 
