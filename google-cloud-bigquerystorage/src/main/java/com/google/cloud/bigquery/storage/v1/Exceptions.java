@@ -71,13 +71,22 @@ public final class Exceptions {
     }
   }
 
-  /** Stream has already been finalized. */
+  /**
+   * Stream created by CreateWriteStream has already been finalized. You need to recreate a stream
+   * using CreateWriteStream.
+   */
   public static final class StreamFinalizedException extends StorageException {
     protected StreamFinalizedException(Status grpcStatus, String name) {
       super(grpcStatus, name, null, null, ImmutableMap.of());
     }
   }
 
+  /**
+   * This writer has been closed either by user or by some non retry errors we encounter. You need
+   * to recreate StreamWriter (or JsonStreamWriter) in order to proceed. Note that StreamWriter is
+   * different from Stream, StreamWriter is a unit used to write, while Stream is a metadata entity
+   * that associates with offset.
+   */
   public static final class StreamWriterClosedException extends StorageException {
     protected StreamWriterClosedException(Status grpcStatus, String name) {
       super(grpcStatus, name, null, null, ImmutableMap.of());
@@ -94,7 +103,11 @@ public final class Exceptions {
     }
   }
 
-  /** Offset already exists. */
+  /**
+   * Offset already exists. This happens when appending with offset that is less than the current
+   * end of the offset on the Stream. ou can also choose to append to the end of the Stream by not
+   * specifying offset.
+   */
   public static final class OffsetAlreadyExists extends StorageException {
     protected OffsetAlreadyExists(
         Status grpcStatus, String name, Long expectedOffset, Long actualOffset) {
@@ -102,7 +115,11 @@ public final class Exceptions {
     }
   }
 
-  /** Offset out of range. */
+  /**
+   * Offset out of range. This happens when appending with offset that is larger than the current
+   * end of the offset on the Stream. You can also choose to append to the end of the Stream by not
+   * specifying offset.
+   */
   public static final class OffsetOutOfRange extends StorageException {
     protected OffsetOutOfRange(
         Status grpcStatus, String name, Long expectedOffset, Long actualOffset) {
@@ -110,7 +127,10 @@ public final class Exceptions {
     }
   }
 
-  /** Stream is not found. */
+  /**
+   * Stream created by CreateWriteStream is not found. You need to recreate a Stream using
+   * CreateWriteStream.
+   */
   public static final class StreamNotFound extends StorageException {
     protected StreamNotFound(Status grpcStatus, String name) {
       super(grpcStatus, name, null, null, ImmutableMap.of());
