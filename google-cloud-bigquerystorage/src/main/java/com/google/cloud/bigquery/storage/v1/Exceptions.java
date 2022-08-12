@@ -295,7 +295,7 @@ public final class Exceptions {
       super(
           Status.fromCode(Status.Code.RESOURCE_EXHAUSTED)
               .withDescription(
-                  "Exceeds client side inflight buffer in terms of number of requests, consider add more buffer or open more connections. Current limit: "
+                  "Exceeds client side inflight buffer, consider add more buffer or open more connections. Current limit: "
                       + currentLimit),
           writerId,
           currentLimit);
@@ -307,7 +307,7 @@ public final class Exceptions {
       super(
           Status.fromCode(Status.Code.RESOURCE_EXHAUSTED)
               .withDescription(
-                  "Exceeds client side inflight buffer in terms of bytes, consider add more buffer or open more connections. Current limit:  "
+                  "Exceeds client side inflight buffer, consider add more buffer or open more connections. Current limit:  "
                       + currentLimit),
           writerId,
           currentLimit);

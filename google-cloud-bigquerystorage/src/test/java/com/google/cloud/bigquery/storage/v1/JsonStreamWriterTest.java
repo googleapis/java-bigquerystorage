@@ -582,7 +582,7 @@ public class JsonStreamWriterTest {
           ex.getStatus()
               .getDescription()
               .contains(
-                  "Exceeds client side inflight buffer in terms of bytes, consider add more buffer or open more connections"));
+                  "Exceeds client side inflight buffer, consider add more buffer or open more connections"));
     }
   }
 
