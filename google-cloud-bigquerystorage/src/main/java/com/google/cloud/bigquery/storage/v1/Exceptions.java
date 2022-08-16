@@ -237,7 +237,7 @@ public final class Exceptions {
     private final String streamName;
 
     public AppendSerializtionError(String streamName, Map<Integer, String> rowIndexToErrorMessage) {
-      super(String.format("Append serializtion failed for writer: %s", streamName));
+      super(String.format("Append serialization failed for writer: %s", streamName));
       this.rowIndexToErrorMessage = rowIndexToErrorMessage;
       this.streamName = streamName;
     }

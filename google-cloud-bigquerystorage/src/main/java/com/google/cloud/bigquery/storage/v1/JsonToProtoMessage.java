@@ -221,11 +221,22 @@ public class JsonToProtoMessage {
                   + ")");
         }
       }
-      if (!field.isRepeated()) {
-        fillField(protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
-      } else {
-        fillRepeatedField(
-            protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
+      try {
+        if (!field.isRepeated()) {
+          fillField(
+              protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
+        } else {
+          fillRepeatedField(
+              protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
+        }
+      } catch (IllegalArgumentException ex) {
+        throw ex;
+      } catch (Exception ex) {
+        throw new IllegalArgumentException(
+            String.format(
+                currentScope + " failed to convert to " + fieldSchema != null
+                    ? fieldSchema.getType().name()
+                    : field.getType() + ". Error: " + ex.getMessage()));
       }
     }
 
@@ -270,59 +281,74 @@ public class JsonToProtoMessage {
     }
     switch (fieldDescriptor.getType()) {
       case BOOL:
-        if (val instanceof Boolean) {
-          protoMsg.setField(fieldDescriptor, (Boolean) val);
-          return;
-        }
-        if (val instanceof String
-            && ("true".equals(((String) val).toLowerCase())
-                || "false".equals(((String) val).toLowerCase()))) {
-          protoMsg.setField(fieldDescriptor, Boolean.parseBoolean((String) val));
-          return;
+        try {
+          if (val instanceof Boolean) {
+            protoMsg.setField(fieldDescriptor, (Boolean) val);
+            return;
+          }
+          if (val instanceof String
+              && ("true".equals(((String) val).toLowerCase())
+                  || "false".equals(((String) val).toLowerCase()))) {
+            protoMsg.setField(fieldDescriptor, Boolean.parseBoolean((String) val));
+            return;
+          }
+        } catch (IllegalArgumentException ex) {
+          throw new IllegalArgumentException(
+              "Failed to convert field " + currentScope + " to BOOL: " + ex.getMessage());
         }
         break;
       case BYTES:
         if (fieldSchema != null) {
-          if (fieldSchema.getType() == TableFieldSchema.Type.NUMERIC) {
-            if (val instanceof String) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal((String) val)));
-              return;
-            } else if (val instanceof Integer || val instanceof Long) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).longValue())));
-              return;
-            } else if (val instanceof Float || val instanceof Double) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
-              return;
+          try {
+            if (fieldSchema.getType() == TableFieldSchema.Type.NUMERIC) {
+              if (val instanceof String) {
+                protoMsg.setField(
+                    fieldDescriptor,
+                    BigDecimalByteStringEncoder.encodeToNumericByteString(
+                        new BigDecimal((String) val)));
+                return;
+              } else if (val instanceof Integer || val instanceof Long) {
+                protoMsg.setField(
+                    fieldDescriptor,
+                    BigDecimalByteStringEncoder.encodeToNumericByteString(
+                        new BigDecimal(((Number) val).longValue())));
+                return;
+              } else if (val instanceof Float || val instanceof Double) {
+                protoMsg.setField(
+                    fieldDescriptor,
+                    BigDecimalByteStringEncoder.encodeToNumericByteString(
+                        new BigDecimal(((Number) val).doubleValue())));
+                return;
+              }
+            } else if (fieldSchema.getType() == TableFieldSchema.Type.BIGNUMERIC) {
+              if (val instanceof String) {
+                protoMsg.setField(
+                    fieldDescriptor,
+                    BigDecimalByteStringEncoder.encodeToBigNumericByteString(
+                        new BigDecimal((String) val)));
+                return;
+              } else if (val instanceof Integer || val instanceof Long) {
+                protoMsg.setField(
+                    fieldDescriptor,
+                    BigDecimalByteStringEncoder.encodeToBigNumericByteString(
+                        new BigDecimal(((Number) val).longValue())));
+                return;
+              } else if (val instanceof Float || val instanceof Double) {
+                protoMsg.setField(
+                    fieldDescriptor,
+                    BigDecimalByteStringEncoder.encodeToBigNumericByteString(
+                        new BigDecimal(((Number) val).doubleValue())));
+                return;
+              }
             }
-          } else if (fieldSchema.getType() == TableFieldSchema.Type.BIGNUMERIC) {
-            if (val instanceof String) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal((String) val)));
-              return;
-            } else if (val instanceof Integer || val instanceof Long) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).longValue())));
-              return;
-            } else if (val instanceof Float || val instanceof Double) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
-              return;
-            }
+          } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                "Failed to convert field "
+                    + currentScope
+                    + " to "
+                    + fieldSchema.getType().name()
+                    + ": "
+                    + ex.getMessage());
           }
         }
         if (val instanceof ByteString) {
@@ -352,84 +378,99 @@ public class JsonToProtoMessage {
         }
         break;
       case INT64:
-        if (fieldSchema != null) {
-          if (fieldSchema.getType() == TableFieldSchema.Type.DATETIME) {
-            if (val instanceof String) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.parse((String) val)));
-              return;
-            } else if (val instanceof Long) {
-              protoMsg.setField(fieldDescriptor, (Long) val);
-              return;
-            }
-          } else if (fieldSchema.getType() == TableFieldSchema.Type.TIME) {
-            if (val instanceof String) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
-              return;
-            } else if (val instanceof Long) {
-              protoMsg.setField(fieldDescriptor, (Long) val);
-              return;
-            }
-          } else if (fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
-            if (val instanceof String) {
-              Double parsed = Doubles.tryParse((String) val);
-              if (parsed != null) {
-                protoMsg.setField(fieldDescriptor, parsed.longValue() * 10000000);
+        try {
+          if (fieldSchema != null) {
+            if (fieldSchema.getType() == TableFieldSchema.Type.DATETIME) {
+              if (val instanceof String) {
+                protoMsg.setField(
+                    fieldDescriptor,
+                    CivilTimeEncoder.encodePacked64DatetimeMicros(
+                        LocalDateTime.parse((String) val)));
+                return;
+              } else if (val instanceof Long) {
+                protoMsg.setField(fieldDescriptor, (Long) val);
                 return;
               }
-              TemporalAccessor parsedTime = timestampFormatter.parse((String) val);
-              protoMsg.setField(
-                  fieldDescriptor,
-                  parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
-                      + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
-              return;
-            } else if (val instanceof Long) {
-              protoMsg.setField(fieldDescriptor, (Long) val);
-              return;
-            } else if (val instanceof Integer) {
-              protoMsg.setField(fieldDescriptor, new Long((Integer) val) * 10000000);
+            } else if (fieldSchema.getType() == TableFieldSchema.Type.TIME) {
+              if (val instanceof String) {
+                protoMsg.setField(
+                    fieldDescriptor,
+                    CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
+                return;
+              } else if (val instanceof Long) {
+                protoMsg.setField(fieldDescriptor, (Long) val);
+                return;
+              }
+            } else if (fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
+              if (val instanceof String) {
+                Double parsed = Doubles.tryParse((String) val);
+                if (parsed != null) {
+                  protoMsg.setField(fieldDescriptor, parsed.longValue() * 10000000);
+                  return;
+                }
+                TemporalAccessor parsedTime = timestampFormatter.parse((String) val);
+                protoMsg.setField(
+                    fieldDescriptor,
+                    parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
+                        + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
+                return;
+              } else if (val instanceof Long) {
+                protoMsg.setField(fieldDescriptor, (Long) val);
+                return;
+              } else if (val instanceof Integer) {
+                protoMsg.setField(fieldDescriptor, new Long((Integer) val) * 10000000);
+                return;
+              }
+            }
+          }
+          if (val instanceof Integer) {
+            protoMsg.setField(fieldDescriptor, new Long((Integer) val));
+            return;
+          } else if (val instanceof Long) {
+            protoMsg.setField(fieldDescriptor, (Long) val);
+            return;
+          }
+          if (val instanceof String) {
+            Long parsed = Longs.tryParse((String) val);
+            if (parsed != null) {
+              protoMsg.setField(fieldDescriptor, parsed);
               return;
             }
           }
-        }
-        if (val instanceof Integer) {
-          protoMsg.setField(fieldDescriptor, new Long((Integer) val));
-          return;
-        } else if (val instanceof Long) {
-          protoMsg.setField(fieldDescriptor, (Long) val);
-          return;
-        }
-        if (val instanceof String) {
-          Long parsed = Longs.tryParse((String) val);
-          if (parsed != null) {
-            protoMsg.setField(fieldDescriptor, parsed);
-            return;
-          }
+        } catch (IllegalArgumentException ex) {
+          throw new IllegalArgumentException(
+              "Failed to convert field " + currentScope + " to " + fieldSchema != null
+                  ? fieldSchema.getType().name()
+                  : "INT64" + ": " + ex.getMessage());
         }
         break;
       case INT32:
-        if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATE) {
+        try {
+          if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATE) {
+            if (val instanceof String) {
+              protoMsg.setField(fieldDescriptor, (int) LocalDate.parse((String) val).toEpochDay());
+              return;
+            } else if (val instanceof Integer || val instanceof Long) {
+              protoMsg.setField(fieldDescriptor, ((Number) val).intValue());
+              return;
+            }
+          }
+          if (val instanceof Integer) {
+            protoMsg.setField(fieldDescriptor, (Integer) val);
+            return;
+          }
           if (val instanceof String) {
-            protoMsg.setField(fieldDescriptor, (int) LocalDate.parse((String) val).toEpochDay());
-            return;
-          } else if (val instanceof Integer || val instanceof Long) {
-            protoMsg.setField(fieldDescriptor, ((Number) val).intValue());
-            return;
+            Integer parsed = Ints.tryParse((String) val);
+            if (parsed != null) {
+              protoMsg.setField(fieldDescriptor, parsed);
+              return;
+            }
           }
-        }
-        if (val instanceof Integer) {
-          protoMsg.setField(fieldDescriptor, (Integer) val);
-          return;
-        }
-        if (val instanceof String) {
-          Integer parsed = Ints.tryParse((String) val);
-          if (parsed != null) {
-            protoMsg.setField(fieldDescriptor, parsed);
-            return;
-          }
+        } catch (IllegalArgumentException ex) {
+          throw new IllegalArgumentException(
+              "Failed to convert field " + currentScope + " to " + fieldSchema != null
+                  ? fieldSchema.getType().name()
+                  : "INT32" + ": " + ex.getMessage());
         }
         break;
       case STRING:
@@ -439,16 +480,21 @@ public class JsonToProtoMessage {
         }
         break;
       case DOUBLE:
-        if (val instanceof Number) {
-          protoMsg.setField(fieldDescriptor, ((Number) val).doubleValue());
-          return;
-        }
-        if (val instanceof String) {
-          Double parsed = Doubles.tryParse((String) val);
-          if (parsed != null) {
-            protoMsg.setField(fieldDescriptor, parsed);
+        try {
+          if (val instanceof Number) {
+            protoMsg.setField(fieldDescriptor, ((Number) val).doubleValue());
             return;
           }
+          if (val instanceof String) {
+            Double parsed = Doubles.tryParse((String) val);
+            if (parsed != null) {
+              protoMsg.setField(fieldDescriptor, parsed);
+              return;
+            }
+          }
+        } catch (IllegalArgumentException ex) {
+          throw new IllegalArgumentException(
+              "Failed to convert field " + currentScope + " to DOUBLE: " + ex.getMessage());
         }
         break;
       case MESSAGE:
@@ -509,58 +555,81 @@ public class JsonToProtoMessage {
       index = i;
       switch (fieldDescriptor.getType()) {
         case BOOL:
-          if (val instanceof Boolean) {
-            protoMsg.addRepeatedField(fieldDescriptor, (Boolean) val);
-          } else if (val instanceof String
-              && ("true".equals(((String) val).toLowerCase())
-                  || "false".equals(((String) val).toLowerCase()))) {
-            protoMsg.addRepeatedField(fieldDescriptor, Boolean.parseBoolean((String) val));
-          } else {
-            fail = true;
+          try {
+            if (val instanceof Boolean) {
+              protoMsg.addRepeatedField(fieldDescriptor, (Boolean) val);
+            } else if (val instanceof String
+                && ("true".equals(((String) val).toLowerCase())
+                    || "false".equals(((String) val).toLowerCase()))) {
+              protoMsg.addRepeatedField(fieldDescriptor, Boolean.parseBoolean((String) val));
+            } else {
+              fail = true;
+            }
+          } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                "Failed to convert field "
+                    + currentScope
+                    + " to BOOL at index "
+                    + i
+                    + ": "
+                    + ex.getMessage());
           }
           break;
         case BYTES:
           Boolean added = false;
-          if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.NUMERIC) {
-            if (val instanceof String) {
-              protoMsg.addRepeatedField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal((String) val)));
-              added = true;
-            } else if (val instanceof Integer || val instanceof Long) {
-              protoMsg.addRepeatedField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).longValue())));
-              added = true;
-            } else if (val instanceof Float || val instanceof Double) {
-              protoMsg.addRepeatedField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
-              added = true;
-            }
-          } else if (fieldSchema != null
-              && fieldSchema.getType() == TableFieldSchema.Type.BIGNUMERIC) {
-            if (val instanceof String) {
-              protoMsg.addRepeatedField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal((String) val)));
-              added = true;
-            } else if (val instanceof Integer || val instanceof Long) {
-              protoMsg.addRepeatedField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).longValue())));
-              added = true;
-            } else if (val instanceof Float || val instanceof Double) {
-              protoMsg.addRepeatedField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
-              added = true;
+          if (fieldSchema != null) {
+            try {
+              if (fieldSchema.getType() == TableFieldSchema.Type.NUMERIC) {
+                if (val instanceof String) {
+                  protoMsg.addRepeatedField(
+                      fieldDescriptor,
+                      BigDecimalByteStringEncoder.encodeToNumericByteString(
+                          new BigDecimal((String) val)));
+                  added = true;
+                } else if (val instanceof Integer || val instanceof Long) {
+                  protoMsg.addRepeatedField(
+                      fieldDescriptor,
+                      BigDecimalByteStringEncoder.encodeToNumericByteString(
+                          new BigDecimal(((Number) val).longValue())));
+                  added = true;
+                } else if (val instanceof Float || val instanceof Double) {
+                  protoMsg.addRepeatedField(
+                      fieldDescriptor,
+                      BigDecimalByteStringEncoder.encodeToNumericByteString(
+                          new BigDecimal(((Number) val).doubleValue())));
+                  added = true;
+                }
+              } else if (fieldSchema.getType() == TableFieldSchema.Type.BIGNUMERIC) {
+                if (val instanceof String) {
+                  protoMsg.addRepeatedField(
+                      fieldDescriptor,
+                      BigDecimalByteStringEncoder.encodeToBigNumericByteString(
+                          new BigDecimal((String) val)));
+                  added = true;
+                } else if (val instanceof Integer || val instanceof Long) {
+                  protoMsg.addRepeatedField(
+                      fieldDescriptor,
+                      BigDecimalByteStringEncoder.encodeToBigNumericByteString(
+                          new BigDecimal(((Number) val).longValue())));
+                  added = true;
+                } else if (val instanceof Float || val instanceof Double) {
+                  protoMsg.addRepeatedField(
+                      fieldDescriptor,
+                      BigDecimalByteStringEncoder.encodeToBigNumericByteString(
+                          new BigDecimal(((Number) val).doubleValue())));
+                  added = true;
+                }
+              }
+            } catch (IllegalArgumentException ex) {
+              throw new IllegalArgumentException(
+                  "Failed to convert field "
+                      + currentScope
+                      + " to "
+                      + fieldSchema.getType()
+                      + " at index "
+                      + i
+                      + ": "
+                      + ex.getMessage());
             }
           }
           if (!added) {
@@ -597,82 +666,97 @@ public class JsonToProtoMessage {
           }
           break;
         case INT64:
-          if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATETIME) {
-            if (val instanceof String) {
-              protoMsg.addRepeatedField(
-                  fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.parse((String) val)));
-            } else if (val instanceof Long) {
-              protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
-            } else {
-              fail = true;
-            }
-          } else if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.TIME) {
-            if (val instanceof String) {
-              protoMsg.addRepeatedField(
-                  fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
-            } else if (val instanceof Long) {
-              protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
-            } else {
-              fail = true;
-            }
-          } else if (fieldSchema != null
-              && fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
-            if (val instanceof String) {
-              Double parsed = Doubles.tryParse((String) val);
-              if (parsed != null) {
-                protoMsg.addRepeatedField(fieldDescriptor, parsed.longValue() * 10000000);
-              } else {
-                TemporalAccessor parsedTime = timestampFormatter.parse((String) val);
+          try {
+            if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATETIME) {
+              if (val instanceof String) {
                 protoMsg.addRepeatedField(
                     fieldDescriptor,
-                    parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
-                        + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
+                    CivilTimeEncoder.encodePacked64DatetimeMicros(
+                        LocalDateTime.parse((String) val)));
+              } else if (val instanceof Long) {
+                protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+              } else {
+                fail = true;
               }
+            } else if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.TIME) {
+              if (val instanceof String) {
+                protoMsg.addRepeatedField(
+                    fieldDescriptor,
+                    CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
+              } else if (val instanceof Long) {
+                protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+              } else {
+                fail = true;
+              }
+            } else if (fieldSchema != null
+                && fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
+              if (val instanceof String) {
+                Double parsed = Doubles.tryParse((String) val);
+                if (parsed != null) {
+                  protoMsg.addRepeatedField(fieldDescriptor, parsed.longValue() * 10000000);
+                } else {
+                  TemporalAccessor parsedTime = timestampFormatter.parse((String) val);
+                  protoMsg.addRepeatedField(
+                      fieldDescriptor,
+                      parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
+                          + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
+                }
+              } else if (val instanceof Long) {
+                protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+              } else if (val instanceof Integer) {
+                protoMsg.addRepeatedField(fieldDescriptor, new Long((Integer) val) * 10000000);
+              } else {
+                fail = true;
+              }
+            } else if (val instanceof Integer) {
+              protoMsg.addRepeatedField(fieldDescriptor, new Long((Integer) val));
             } else if (val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
-            } else if (val instanceof Integer) {
-              protoMsg.addRepeatedField(fieldDescriptor, new Long((Integer) val) * 10000000);
+            } else if (val instanceof String) {
+              Long parsed = Longs.tryParse((String) val);
+              if (parsed != null) {
+                protoMsg.addRepeatedField(fieldDescriptor, parsed);
+              } else {
+                fail = true;
+              }
             } else {
               fail = true;
             }
-          } else if (val instanceof Integer) {
-            protoMsg.addRepeatedField(fieldDescriptor, new Long((Integer) val));
-          } else if (val instanceof Long) {
-            protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
-          } else if (val instanceof String) {
-            Long parsed = Longs.tryParse((String) val);
-            if (parsed != null) {
-              protoMsg.addRepeatedField(fieldDescriptor, parsed);
-            } else {
-              fail = true;
-            }
-          } else {
-            fail = true;
+          } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                "Failed to convert field " + currentScope + " to " + fieldSchema == null
+                    ? "INT64"
+                    : fieldSchema.getType() + " at index " + i + ": " + ex.getMessage());
           }
           break;
         case INT32:
-          if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATE) {
-            if (val instanceof String) {
-              protoMsg.addRepeatedField(
-                  fieldDescriptor, (int) LocalDate.parse((String) val).toEpochDay());
-            } else if (val instanceof Integer || val instanceof Long) {
-              protoMsg.addRepeatedField(fieldDescriptor, ((Number) val).intValue());
+          try {
+            if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATE) {
+              if (val instanceof String) {
+                protoMsg.addRepeatedField(
+                    fieldDescriptor, (int) LocalDate.parse((String) val).toEpochDay());
+              } else if (val instanceof Integer || val instanceof Long) {
+                protoMsg.addRepeatedField(fieldDescriptor, ((Number) val).intValue());
+              } else {
+                fail = true;
+              }
+            } else if (val instanceof Integer) {
+              protoMsg.addRepeatedField(fieldDescriptor, (Integer) val);
+            } else if (val instanceof String) {
+              Integer parsed = Ints.tryParse((String) val);
+              if (parsed != null) {
+                protoMsg.addRepeatedField(fieldDescriptor, parsed);
+              } else {
+                fail = true;
+              }
             } else {
               fail = true;
             }
-          } else if (val instanceof Integer) {
-            protoMsg.addRepeatedField(fieldDescriptor, (Integer) val);
-          } else if (val instanceof String) {
-            Integer parsed = Ints.tryParse((String) val);
-            if (parsed != null) {
-              protoMsg.addRepeatedField(fieldDescriptor, parsed);
-            } else {
-              fail = true;
-            }
-          } else {
-            fail = true;
+          } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                "Failed to convert field " + currentScope + " to " + fieldSchema == null
+                    ? "INT32"
+                    : fieldSchema.getType() + "at index " + i + ": " + ex.getMessage());
           }
           break;
         case STRING:
@@ -683,17 +767,27 @@ public class JsonToProtoMessage {
           }
           break;
         case DOUBLE:
-          if (val instanceof Number) {
-            protoMsg.addRepeatedField(fieldDescriptor, ((Number) val).doubleValue());
-          } else if (val instanceof String) {
-            Double parsed = Doubles.tryParse((String) val);
-            if (parsed != null) {
-              protoMsg.addRepeatedField(fieldDescriptor, parsed);
+          try {
+            if (val instanceof Number) {
+              protoMsg.addRepeatedField(fieldDescriptor, ((Number) val).doubleValue());
+            } else if (val instanceof String) {
+              Double parsed = Doubles.tryParse((String) val);
+              if (parsed != null) {
+                protoMsg.addRepeatedField(fieldDescriptor, parsed);
+              } else {
+                fail = true;
+              }
             } else {
               fail = true;
             }
-          } else {
-            fail = true;
+          } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                "Failed to convert field "
+                    + currentScope
+                    + " to DOUBLE at index "
+                    + i
+                    + ": "
+                    + ex.getMessage());
           }
           break;
         case MESSAGE:
