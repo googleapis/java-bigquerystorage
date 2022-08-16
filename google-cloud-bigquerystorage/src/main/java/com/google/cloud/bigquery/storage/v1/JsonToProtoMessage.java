@@ -232,6 +232,8 @@ public class JsonToProtoMessage {
       } catch (Exceptions.FieldParseError ex) {
         throw ex;
       } catch (Exception ex) {
+        // This function is recursively called, so this throw will be caught and throw directly out by the catch
+        // above.
         throw new Exceptions.FieldParseError(
             currentScope,
             fieldSchema != null ? fieldSchema.getType().name() : field.getType().name(),
