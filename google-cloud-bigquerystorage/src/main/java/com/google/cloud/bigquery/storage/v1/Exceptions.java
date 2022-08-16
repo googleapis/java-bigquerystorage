@@ -239,6 +239,35 @@ public final class Exceptions {
     }
   }
 
+  /** This exception is used internally to handle field level parsing errors. */
+  public static class FieldParseError extends IllegalArgumentException {
+    private final String fieldName;
+    private final String bqType;
+    private final Throwable cause;
+
+    public FieldParseError(String fieldName, String bqType, Throwable cause) {
+      this.fieldName = fieldName;
+      this.bqType = bqType;
+      this.cause = cause;
+    }
+
+    public String getFieldName() {
+      return fieldName;
+    }
+
+    public String getBqType() {
+      return bqType;
+    }
+
+    public Throwable getCause() {
+      return cause;
+    }
+
+    public String getMessage() {
+      return cause.getMessage();
+    }
+  }
+
   /**
    * This writer instance has either been closed by the user explicitly, or has encountered
    * non-retriable errors.

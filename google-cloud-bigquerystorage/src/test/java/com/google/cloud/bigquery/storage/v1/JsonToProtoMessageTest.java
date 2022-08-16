@@ -1247,9 +1247,33 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.convertJsonToProtoMessage(RepeatedBytes.getDescriptor(), ts, json);
       Assert.fail("Should fail");
     } catch (IllegalArgumentException ex) {
-      assertTrue(
-          ex.getMessage()
-              .startsWith("Failed to convert field root.test_repeated to NUMERIC at index 1:"));
+      assertEquals(
+          ex.getMessage(),
+          "Character b is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.");
+    }
+  }
+
+  @Test
+  public void testBadJsonFieldIntRepeated() throws Exception {
+    TableSchema ts =
+        TableSchema.newBuilder()
+            .addFields(
+                0,
+                TableFieldSchema.newBuilder()
+                    .setName("test_repeated")
+                    .setType(TableFieldSchema.Type.DATE)
+                    .setMode(TableFieldSchema.Mode.REPEATED)
+                    .build())
+            .build();
+    JSONObject json = new JSONObject();
+    json.put("test_repeated", new JSONArray(new String[] {"blah"}));
+
+    try {
+      DynamicMessage protoMsg =
+          JsonToProtoMessage.convertJsonToProtoMessage(RepeatedInt32.getDescriptor(), ts, json);
+      Assert.fail("Should fail");
+    } catch (IllegalArgumentException ex) {
+      assertEquals(ex.getMessage(), "Text 'blah' could not be parsed at index 0");
     }
   }
 }

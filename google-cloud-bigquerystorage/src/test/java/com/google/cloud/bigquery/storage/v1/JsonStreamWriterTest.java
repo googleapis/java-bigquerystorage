@@ -522,6 +522,7 @@ public class JsonStreamWriterTest {
         ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
         Assert.fail("expected ExecutionException");
       } catch (AppendSerializtionError ex) {
+        LOG.info("!!!!" + ex.getRowIndexToErrorMessage().get(1));
         assertEquals(
             "JSONObject has fields unknown to BigQuery: root.test_unknown.",
             ex.getRowIndexToErrorMessage().get(1));
@@ -640,7 +641,8 @@ public class JsonStreamWriterTest {
             "JSONObject has fields unknown to BigQuery: root.not_foo.",
             rowIndexToErrorMessage.get(0));
         assertEquals(
-            "JSONObject does not have a string field at root.foo.", rowIndexToErrorMessage.get(2));
+            "Field root.foo failed to convert to STRING. Error: JSONObject does not have a string field at root.foo.",
+            rowIndexToErrorMessage.get(2));
       }
     }
   }
@@ -678,7 +680,7 @@ public class JsonStreamWriterTest {
         assertTrue(
             rowIndexToErrorMessage
                 .get(0)
-                .startsWith("Failed to convert field root.test_field_type to NUMERIC:"));
+                .startsWith("Field root.test_field_type failed to convert to NUMERIC. Error:"));
       }
     }
   }
