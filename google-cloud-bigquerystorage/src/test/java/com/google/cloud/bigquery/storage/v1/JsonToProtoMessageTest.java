@@ -1226,4 +1226,30 @@ public class JsonToProtoMessageTest {
         JsonToProtoMessage.convertJsonToProtoMessage(TestInt64.getDescriptor(), json);
     assertEquals(expectedProto, protoMsg);
   }
+
+  @Test
+  public void testBadJsonFieldRepeated() throws Exception {
+    TableSchema ts =
+        TableSchema.newBuilder()
+            .addFields(
+                0,
+                TableFieldSchema.newBuilder()
+                    .setName("test_repeated")
+                    .setType(TableFieldSchema.Type.NUMERIC)
+                    .setMode(TableFieldSchema.Mode.REPEATED)
+                    .build())
+            .build();
+    JSONObject json = new JSONObject();
+    json.put("test_repeated", new JSONArray(new String[] {"123", "blah"}));
+
+    try {
+      DynamicMessage protoMsg =
+          JsonToProtoMessage.convertJsonToProtoMessage(RepeatedBytes.getDescriptor(), ts, json);
+      Assert.fail("Should fail");
+    } catch (IllegalArgumentException ex) {
+      assertEquals(
+          ex.getMessage(),
+          "Failed to convert field root.test_repeated to NUMERIC at index 1: Character b is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.");
+    }
+  }
 }

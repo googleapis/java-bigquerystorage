@@ -640,8 +640,7 @@ public class JsonStreamWriterTest {
             "JSONObject has fields unknown to BigQuery: root.not_foo.",
             rowIndexToErrorMessage.get(0));
         assertEquals(
-            "JSONObject does not have a string field at root.foo.",
-            rowIndexToErrorMessage.get(2));
+            "JSONObject does not have a string field at root.foo.", rowIndexToErrorMessage.get(2));
       }
     }
   }
