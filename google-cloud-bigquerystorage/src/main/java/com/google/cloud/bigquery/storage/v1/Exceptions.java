@@ -245,7 +245,7 @@ public final class Exceptions {
     private final String bqType;
     private final Throwable cause;
 
-    public FieldParseError(String fieldName, String bqType, Throwable cause) {
+    protected FieldParseError(String fieldName, String bqType, Throwable cause) {
       this.fieldName = fieldName;
       this.bqType = bqType;
       this.cause = cause;
