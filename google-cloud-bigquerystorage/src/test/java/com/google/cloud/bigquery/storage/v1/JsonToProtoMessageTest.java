@@ -1247,9 +1247,9 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.convertJsonToProtoMessage(RepeatedBytes.getDescriptor(), ts, json);
       Assert.fail("Should fail");
     } catch (IllegalArgumentException ex) {
-      assertEquals(
-          ex.getMessage(),
-          "Failed to convert field root.test_repeated to NUMERIC at index 1: Character b is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.");
+      assertTrue(
+          ex.getMessage()
+              .startsWith("Failed to convert field root.test_repeated to NUMERIC at index 1:"));
     }
   }
 }
