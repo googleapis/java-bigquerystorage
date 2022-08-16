@@ -1246,10 +1246,9 @@ public class JsonToProtoMessageTest {
       DynamicMessage protoMsg =
           JsonToProtoMessage.convertJsonToProtoMessage(RepeatedBytes.getDescriptor(), ts, json);
       Assert.fail("Should fail");
-    } catch (IllegalArgumentException ex) {
-      assertEquals(
-          ex.getMessage(),
-          "Character b is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.");
+    } catch (Exceptions.FieldParseError ex) {
+        assertEquals(ex.getBqType(), "NUMERIC");
+        assertEquals(ex.getFieldName(), "root.test_repeated");
     }
   }
 
