@@ -675,9 +675,10 @@ public class JsonStreamWriterTest {
         Map<Integer, String> rowIndexToErrorMessage =
             appendSerializtionError.getRowIndexToErrorMessage();
         assertEquals(1, rowIndexToErrorMessage.size());
-        assertEquals(
-            "Failed to convert field root.test_field_type to NUMERIC: Character a is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.",
-            rowIndexToErrorMessage.get(0));
+        assertTrue(
+            rowIndexToErrorMessage
+                .get(0)
+                .startsWith("Failed to convert field root.test_field_type to NUMERIC:"));
       }
     }
   }
