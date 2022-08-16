@@ -682,7 +682,7 @@ public class JsonStreamWriterTest {
       }
     }
   }
-  
+
   @Test
   public void testWriterId()
       throws DescriptorValidationException, IOException, InterruptedException {
