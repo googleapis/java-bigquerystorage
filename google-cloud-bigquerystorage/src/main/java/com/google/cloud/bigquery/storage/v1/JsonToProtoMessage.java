@@ -232,7 +232,8 @@ public class JsonToProtoMessage {
       } catch (Exceptions.FieldParseError ex) {
         throw ex;
       } catch (Exception ex) {
-        // This function is recursively called, so this throw will be caught and throw directly out by the catch
+        // This function is recursively called, so this throw will be caught and throw directly out
+        // by the catch
         // above.
         throw new Exceptions.FieldParseError(
             currentScope,
@@ -294,47 +295,46 @@ public class JsonToProtoMessage {
         }
         break;
       case BYTES:
-        if (fieldSchema != null) {
-          if (fieldSchema.getType() == TableFieldSchema.Type.NUMERIC) {
-            if (val instanceof String) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal((String) val)));
-              return;
-            } else if (val instanceof Integer || val instanceof Long) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).longValue())));
-              return;
-            } else if (val instanceof Float || val instanceof Double) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
-              return;
-            }
-          } else if (fieldSchema.getType() == TableFieldSchema.Type.BIGNUMERIC) {
-            if (val instanceof String) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal((String) val)));
-              return;
-            } else if (val instanceof Integer || val instanceof Long) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).longValue())));
-              return;
-            } else if (val instanceof Float || val instanceof Double) {
-              protoMsg.setField(
-                  fieldDescriptor,
-                  BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
-              return;
-            }
+        if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.NUMERIC) {
+          if (val instanceof String) {
+            protoMsg.setField(
+                fieldDescriptor,
+                BigDecimalByteStringEncoder.encodeToNumericByteString(
+                    new BigDecimal((String) val)));
+            return;
+          } else if (val instanceof Integer || val instanceof Long) {
+            protoMsg.setField(
+                fieldDescriptor,
+                BigDecimalByteStringEncoder.encodeToNumericByteString(
+                    new BigDecimal(((Number) val).longValue())));
+            return;
+          } else if (val instanceof Float || val instanceof Double) {
+            protoMsg.setField(
+                fieldDescriptor,
+                BigDecimalByteStringEncoder.encodeToNumericByteString(
+                    new BigDecimal(((Number) val).doubleValue())));
+            return;
+          }
+        } else if (fieldSchema != null
+            && fieldSchema.getType() == TableFieldSchema.Type.BIGNUMERIC) {
+          if (val instanceof String) {
+            protoMsg.setField(
+                fieldDescriptor,
+                BigDecimalByteStringEncoder.encodeToBigNumericByteString(
+                    new BigDecimal((String) val)));
+            return;
+          } else if (val instanceof Integer || val instanceof Long) {
+            protoMsg.setField(
+                fieldDescriptor,
+                BigDecimalByteStringEncoder.encodeToBigNumericByteString(
+                    new BigDecimal(((Number) val).longValue())));
+            return;
+          } else if (val instanceof Float || val instanceof Double) {
+            protoMsg.setField(
+                fieldDescriptor,
+                BigDecimalByteStringEncoder.encodeToBigNumericByteString(
+                    new BigDecimal(((Number) val).doubleValue())));
+            return;
           }
         }
         if (val instanceof ByteString) {
