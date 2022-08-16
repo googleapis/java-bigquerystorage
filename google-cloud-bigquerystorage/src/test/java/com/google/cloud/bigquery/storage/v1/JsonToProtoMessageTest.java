@@ -1247,8 +1247,8 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.convertJsonToProtoMessage(RepeatedBytes.getDescriptor(), ts, json);
       Assert.fail("Should fail");
     } catch (Exceptions.FieldParseError ex) {
-        assertEquals(ex.getBqType(), "NUMERIC");
-        assertEquals(ex.getFieldName(), "root.test_repeated");
+      assertEquals(ex.getBqType(), "NUMERIC");
+      assertEquals(ex.getFieldName(), "root.test_repeated");
     }
   }
 
