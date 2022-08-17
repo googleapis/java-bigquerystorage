@@ -522,7 +522,6 @@ public class JsonStreamWriterTest {
         ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
         Assert.fail("expected ExecutionException");
       } catch (AppendSerializtionError ex) {
-        LOG.info("!!!!" + ex.getRowIndexToErrorMessage().get(1));
         assertEquals(
             "JSONObject has fields unknown to BigQuery: root.test_unknown.",
             ex.getRowIndexToErrorMessage().get(1));
