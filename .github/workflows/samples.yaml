@@ -2,6 +2,7 @@ on:
   pull_request:
     paths-ignore:
       - 'tutorials/**'
+      // this is a dummy change for demonstration
 name: samples
 jobs:
   checkstyle:
