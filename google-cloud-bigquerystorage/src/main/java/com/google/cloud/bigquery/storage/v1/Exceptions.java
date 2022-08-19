@@ -271,7 +271,8 @@ public final class Exceptions {
   /**
    * Json input has more fields than the JsonStreamWriter's schema. It could be the table is updated
    * in the backend and the JsonStreamWriter's schema needs to be updated, so you can recreate the
-   * JsonStreamWriter with a fresher schema. If you don't want this error, then set ignoreUnknownFields to be true on JsonStreamWriter.
+   * JsonStreamWriter with a fresher schema. If you don't want this error, then set
+   * ignoreUnknownFields to be true on JsonStreamWriter.
    *
    * <p>For now, it returns the first missing field.
    */
