@@ -19,6 +19,7 @@ import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.CredentialsProvider;
+import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigquery.storage.util.Errors;
@@ -206,6 +207,7 @@ public class StreamWriter implements AutoCloseable {
           BigQueryWriteSettings.newBuilder()
               .setCredentialsProvider(builder.credentialsProvider)
               .setTransportChannelProvider(builder.channelProvider)
+              .setBackgroundExecutorProvider(builder.executorProvider)
               .setEndpoint(builder.endpoint)
               // (b/185842996): Temporily fix this by explicitly providing the header.
               .setHeaderProvider(
@@ -752,6 +754,9 @@ public class StreamWriter implements AutoCloseable {
     private CredentialsProvider credentialsProvider =
         BigQueryWriteSettings.defaultCredentialsProviderBuilder().build();
 
+    private ExecutorProvider executorProvider =
+        BigQueryWriteSettings.defaultExecutorProviderBuilder().build();
+
     private FlowController.LimitExceededBehavior limitExceededBehavior =
         FlowController.LimitExceededBehavior.Block;
 
@@ -808,6 +813,12 @@ public class StreamWriter implements AutoCloseable {
     public Builder setCredentialsProvider(CredentialsProvider credentialsProvider) {
       this.credentialsProvider =
           Preconditions.checkNotNull(credentialsProvider, "CredentialsProvider is null.");
+      return this;
+    }
+
+    /** {@code ExecutorProvider} to use to create Executor to run background jobs. */
+    public Builder setExecutorProvider(ExecutorProvider executorProvider) {
+      this.executorProvider = executorProvider;
       return this;
     }
 
