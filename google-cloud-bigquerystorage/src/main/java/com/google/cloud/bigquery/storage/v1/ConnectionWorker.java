@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 import javax.annotation.concurrent.GuardedBy;
 
 /**
- * A wrapper of a single connection for sending requests via a loop over requests queue.
+ * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
  *
  * <p>TODO: Support batching.
  */
