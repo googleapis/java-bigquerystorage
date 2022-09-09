@@ -20,9 +20,7 @@ import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
-import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
 import com.google.common.base.Preconditions;
-import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
@@ -31,12 +29,12 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
- * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
+ * A wrapper of a single connection for sending requests via a loop over requests queue.
  *
  * <p>TODO: Support batching.
  */
-public class StreamWriter implements AutoCloseable {
-  private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
+public class ConnectionWorker implements AutoCloseable {
+  private static final Logger log = Logger.getLogger(ConnectionWorker.class.getName());
 
   private final ConnectionWorker connectionWorker;
 
@@ -55,7 +53,7 @@ public class StreamWriter implements AutoCloseable {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
   }
 
-  private StreamWriter(Builder builder) throws IOException {
+  private ConnectionWorker(Builder builder) throws IOException {
     BigQueryWriteClient client;
     this.streamName = builder.streamName;
     boolean ownsBigQueryWriteClient;
@@ -160,13 +158,13 @@ public class StreamWriter implements AutoCloseable {
    * needs special headers to be added to client, so a passed in client will not work. This should
    * be used by test only.
    */
-  public static StreamWriter.Builder newBuilder(String streamName, BigQueryWriteClient client) {
-    return new StreamWriter.Builder(streamName, client);
+  public static ConnectionWorker.Builder newBuilder(String streamName, BigQueryWriteClient client) {
+    return new ConnectionWorker.Builder(streamName, client);
   }
 
   /** Constructs a new {@link StreamWriterV2.Builder} using the given stream. */
-  public static StreamWriter.Builder newBuilder(String streamName) {
-    return new StreamWriter.Builder(streamName);
+  public static ConnectionWorker.Builder newBuilder(String streamName) {
+    return new ConnectionWorker.Builder(streamName);
   }
 
   /** Thread-safe getter of updated TableSchema */
@@ -174,7 +172,7 @@ public class StreamWriter implements AutoCloseable {
     return connectionWorker.getUpdatedSchema();
   }
 
-  /** A builder of {@link StreamWriter}s. */
+  /** A builder of {@link ConnectionWorker}s. */
   public static final class Builder {
 
     private static final long DEFAULT_MAX_INFLIGHT_REQUESTS = 1000L;
@@ -290,8 +288,8 @@ public class StreamWriter implements AutoCloseable {
     }
 
     /** Builds the {@code StreamWriterV2}. */
-    public StreamWriter build() throws IOException {
-      return new StreamWriter(this);
+    public ConnectionWorker build() throws IOException {
+      return new ConnectionWorker(this);
     }
   }
 }
