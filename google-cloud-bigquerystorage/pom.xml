@@ -44,6 +44,15 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <configuration>
+          <usedDependencies>
+            <dependency>com.google.auto.value:auto-value</dependency>
+          </usedDependencies>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <dependencies>
@@ -66,10 +75,12 @@
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value</artifactId>
+      <version>1.9</version>
     </dependency>
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value-annotations</artifactId>
+      <version>1.9</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
@@ -79,7 +90,6 @@
       <groupId>com.google.api.grpc</groupId>
       <artifactId>proto-google-common-protos</artifactId>
     </dependency>
-
     <dependency>
       <groupId>com.google.api.grpc</groupId>
       <artifactId>proto-google-cloud-bigquerystorage-v1beta1</artifactId>

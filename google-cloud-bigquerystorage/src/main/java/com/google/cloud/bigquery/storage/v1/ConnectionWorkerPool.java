@@ -159,14 +159,11 @@ public class ConnectionWorkerPool {
   }
 
   /** Distributes the writing of a message to an underlying connection. */
-  public ApiFuture<AppendRowsResponse> append(
-      StreamWriter streamWriter, ProtoRows rows) {
+  public ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows) {
     throw new RuntimeException("Append is not implemented!");
   }
 
-  /**
-   * Distributes the writing of a message to an underlying connection.
-   */
+  /** Distributes the writing of a message to an underlying connection. */
   public ApiFuture<AppendRowsResponse> append(
       StreamWriter streamWriter, ProtoRows rows, long offset) {
     throw new RuntimeException("append with offset is not implemented on connection pool!");
