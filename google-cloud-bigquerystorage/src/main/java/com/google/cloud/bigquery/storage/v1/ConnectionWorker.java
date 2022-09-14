@@ -676,7 +676,6 @@ public class ConnectionWorker implements AutoCloseable {
     }
   }
 
-
   /**
    * Represent the current workload for this worker. Used for multiplexing algorithm to determine
    * the distribution of requests.
