@@ -16,6 +16,7 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.gax.rpc.InvalidArgumentException;
+import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.Descriptors;
@@ -103,6 +104,48 @@ public class ProtoSchemaConverterTest {
   @Test
   public void convertNested() {
     ComplicateType testProto = ComplicateType.newBuilder().build();
+    ProtoSchema protoSchema = ProtoSchemaConverter.convert(testProto.getDescriptorForType());
+    Assert.assertEquals(
+        "name: \"com_google_cloud_bigquery_storage_test_ComplicateType\"\n"
+            + "field {\n"
+            + "  name: \"nested_repeated_type\"\n"
+            + "  number: 1\n"
+            + "  label: LABEL_REPEATED\n"
+            + "  type: TYPE_MESSAGE\n"
+            + "  type_name: \"com_google_cloud_bigquery_storage_test_NestedType\"\n"
+            + "}\n"
+            + "field {\n"
+            + "  name: \"inner_type\"\n"
+            + "  number: 2\n"
+            + "  label: LABEL_OPTIONAL\n"
+            + "  type: TYPE_MESSAGE\n"
+            + "  type_name: \"com_google_cloud_bigquery_storage_test_InnerType\"\n"
+            + "}\n"
+            + "nested_type {\n"
+            + "  name: \"com_google_cloud_bigquery_storage_test_InnerType\"\n"
+            + "  field {\n"
+            + "    name: \"value\"\n"
+            + "    number: 1\n"
+            + "    label: LABEL_REPEATED\n"
+            + "    type: TYPE_STRING\n"
+            + "  }\n"
+            + "}\n"
+            + "nested_type {\n"
+            + "  name: \"com_google_cloud_bigquery_storage_test_NestedType\"\n"
+            + "  field {\n"
+            + "    name: \"inner_type\"\n"
+            + "    number: 1\n"
+            + "    label: LABEL_REPEATED\n"
+            + "    type: TYPE_MESSAGE\n"
+            + "    type_name: \"com_google_cloud_bigquery_storage_test_InnerType\"\n"
+            + "  }\n"
+            + "}\n",
+        protoSchema.getProtoDescriptor().toString());
+  }
+
+  @Test
+  public void convertNestedSchemaWithFlexibleNames() {
+    TestNestedFlexibleFieldName testProto = TestNestedFlexibleFieldName.newBuilder().build();
     ProtoSchema protoSchema = ProtoSchemaConverter.convert(testProto.getDescriptorForType());
     Assert.assertEquals(
         "name: \"com_google_cloud_bigquery_storage_test_ComplicateType\"\n"
