@@ -30,7 +30,7 @@ public class BigQuerySchemaUtilTest extends TestCase {
   @Test
   public void testIsProtoCompatible() {
     List<String> protoCompatibleNames = Arrays.asList("col_1", "name", "_0_");
-    List<String> protoIncompatibleNames = Arrays.asList("0_col", "()", "列");
+    List<String> protoIncompatibleNames = Arrays.asList("0_col", "()", "列", "a-1");
     protoCompatibleNames.stream()
         .forEach(
             name -> {
