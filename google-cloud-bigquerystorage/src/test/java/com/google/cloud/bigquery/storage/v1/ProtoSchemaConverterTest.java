@@ -16,7 +16,6 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.gax.rpc.InvalidArgumentException;
-import com.google.cloud.bigquery.storage.test.SchemaTest.*;
 import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.Descriptors;
