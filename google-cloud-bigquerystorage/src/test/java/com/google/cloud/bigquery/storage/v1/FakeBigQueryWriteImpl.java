@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,7 +41,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   private final LinkedBlockingQueue<GetWriteStreamRequest> writeRequests =
       new LinkedBlockingQueue<>();
   private final LinkedBlockingQueue<FlushRowsRequest> flushRequests = new LinkedBlockingQueue<>();
-  private final LinkedBlockingQueue<Response> responses = new LinkedBlockingQueue<>();
+  private final List<Response> responses = Collections.synchronizedList(new ArrayList<>());
   private final LinkedBlockingQueue<WriteStream> writeResponses = new LinkedBlockingQueue<>();
   private final LinkedBlockingQueue<FlushRowsResponse> flushResponses = new LinkedBlockingQueue<>();
   private final AtomicInteger nextMessageId = new AtomicInteger(1);
@@ -143,6 +144,10 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
             LOG.fine("Get request:" + value.toString());
             requests.add(value);
             recordCount++;
+            long offset = value.getOffset().getValue();
+            if (offset == -1) {
+              offset = recordCount;
+            }
             if (responseSleep.compareTo(Duration.ZERO) > 0) {
               LOG.fine("Sleeping before response for " + responseSleep.toString());
               Uninterruptibles.sleepUninterruptibly(
@@ -168,7 +173,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
               LOG.info("Shutting down connection from test...");
               responseObserver.onError(Status.ABORTED.asException());
             } else {
-              final Response response = responses.remove();
+              final Response response = responses.get((int) offset);
               sendResponse(response, responseObserver);
             }
           }
