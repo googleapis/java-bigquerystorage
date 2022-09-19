@@ -22,6 +22,8 @@ import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
@@ -55,7 +57,10 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   private long closeAfter = 0;
   private long recordCount = 0;
   private long connectionCount = 0;
-  private boolean firstRecord = false;
+
+  // Record whether the first record has been seen on a connection.
+  private final Map<StreamObserver<AppendRowsResponse>, Boolean> connectionToFirstRequest =
+      new ConcurrentHashMap<>();
 
   /** Class used to save the state of a possible response. */
   private static class Response {
@@ -136,7 +141,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   public StreamObserver<AppendRowsRequest> appendRows(
       final StreamObserver<AppendRowsResponse> responseObserver) {
     this.connectionCount++;
-    this.firstRecord = true;
+    connectionToFirstRequest.put(responseObserver, true);
     StreamObserver<AppendRowsRequest> requestObserver =
         new StreamObserver<AppendRowsRequest>() {
           @Override
@@ -144,16 +149,16 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
             LOG.fine("Get request:" + value.toString());
             requests.add(value);
             recordCount++;
-            long offset = value.getOffset().getValue();
-            if (offset == -1) {
-              offset = recordCount;
+            int offset = (int) (recordCount - 1);
+            if (value.hasOffset() && value.getOffset().getValue() != -1) {
+              offset = (int) value.getOffset().getValue();
             }
             if (responseSleep.compareTo(Duration.ZERO) > 0) {
               LOG.fine("Sleeping before response for " + responseSleep.toString());
               Uninterruptibles.sleepUninterruptibly(
                   responseSleep.toMillis(), TimeUnit.MILLISECONDS);
             }
-            if (firstRecord) {
+            if (connectionToFirstRequest.get(responseObserver)) {
               if (!value.getProtoRows().hasWriterSchema() || value.getWriteStream().isEmpty()) {
                 LOG.info(
                     String.valueOf(
@@ -166,14 +171,14 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
                 return;
               }
             }
-            firstRecord = false;
+            connectionToFirstRequest.put(responseObserver, false);
             if (closeAfter > 0
                 && recordCount % closeAfter == 0
                 && (numberTimesToClose == 0 || connectionCount <= numberTimesToClose)) {
               LOG.info("Shutting down connection from test...");
               responseObserver.onError(Status.ABORTED.asException());
             } else {
-              final Response response = responses.get((int) offset);
+              final Response response = responses.get(offset);
               sendResponse(response, responseObserver);
             }
           }

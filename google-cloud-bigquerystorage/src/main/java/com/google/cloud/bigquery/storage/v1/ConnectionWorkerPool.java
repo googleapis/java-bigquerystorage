@@ -35,9 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 import javax.annotation.concurrent.GuardedBy;
 
-/**
- * Pool of connections to accept
- */
+/** Pool of connections to accept appends and distirbute to different connections. */
 public class ConnectionWorkerPool {
   private static final Logger log = Logger.getLogger(ConnectionWorkerPool.class.getName());
   /*
@@ -227,11 +225,10 @@ public class ConnectionWorkerPool {
                   return existingStream;
                 }
                 // Try to create or find another existing stream to reuse.
-                ConnectionWorker createdOrExistingConnection =
-                    null;
+                ConnectionWorker createdOrExistingConnection = null;
                 try {
-                  createdOrExistingConnection = createOrReuseConnectionWorker(streamWriter,
-                      existingStream);
+                  createdOrExistingConnection =
+                      createOrReuseConnectionWorker(streamWriter, existingStream);
                 } catch (IOException e) {
                   throw new IllegalStateException(e);
                 }
@@ -245,22 +242,18 @@ public class ConnectionWorkerPool {
               }
             });
     Stopwatch stopwatch = Stopwatch.createStarted();
-    ApiFuture<AppendRowsResponse> responseFuture = connectionWorker.append(
-        streamWriter.getStreamName(), streamWriter.getProtoSchema(), rows, offset);
+    ApiFuture<AppendRowsResponse> responseFuture =
+        connectionWorker.append(
+            streamWriter.getStreamName(), streamWriter.getProtoSchema(), rows, offset);
     return responseFuture;
   }
 
   /**
    * Create a new connection if we haven't reached current maximum, or reuse an existing connection
-   * using best of random k selection (randomly select out `maxSearchConnectionRetryTimes`
-   * connections and check which one has lowest load).
-   *
-   * <p>Note: for simplicity, this function is defined as synchronized, which means only one thread
-   * can execute it once per time.
+   * with least load.
    */
   private ConnectionWorker createOrReuseConnectionWorker(
-      StreamWriter streamWriter,
-      ConnectionWorker existingConnectionWorker) throws IOException {
+      StreamWriter streamWriter, ConnectionWorker existingConnectionWorker) throws IOException {
     String streamReference = streamWriter.getStreamName();
     if (connectionWorkerPool.size() < currentMaxConnectionCount) {
       // Always create a new connection if we haven't reached current maximum.
@@ -292,16 +285,14 @@ public class ConnectionWorkerPool {
     }
   }
 
-
-  /**
-   * Select out the best connection worker among the given connection workers.
-   */
+  /** Select out the best connection worker among the given connection workers. */
   static ConnectionWorker pickBestLoadConnection(
       Comparator<Load> comparator, List<ConnectionWorker> connectionWorkerList) {
     if (connectionWorkerList.isEmpty()) {
       throw new IllegalStateException(
-          String.format("Bug in code! At least one connection worker should be passed in "
-              + "pickSemiBestLoadConnection(...)"));
+          String.format(
+              "Bug in code! At least one connection worker should be passed in "
+                  + "pickSemiBestLoadConnection(...)"));
     }
     // Compare all connection workers to find the connection worker with the smallest load.
     // Loop and find the connection with the least load.
@@ -317,7 +308,6 @@ public class ConnectionWorkerPool {
     }
     return connectionWorkerList.get(currentBestIndex);
   }
-
 
   /**
    * Creates a single connection worker.

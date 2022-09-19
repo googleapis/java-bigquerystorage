@@ -33,7 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,56 +72,50 @@ public class ConnectionWorkerPoolTest {
   public void testSingleTableConnection_noOverwhelmedConnection() throws Exception {
     // Set the max requests count to a large value so we will not scaling up.
     testSend100RequestsToMultiTable(
-        /*maxRequests=*/100000,
-        /*maxConnections=*/8,
-        /*expectedConnectionCount=*/1,
-        /*tableCount=*/1);
+        /*maxRequests=*/ 100000,
+        /*maxConnections=*/ 8,
+        /*expectedConnectionCount=*/ 1,
+        /*tableCount=*/ 1);
   }
 
   @Test
   public void testSingleTableConnections_overwhelmed() throws Exception {
     // A connection will be considered overwhelmed when the requests count reach 5 (max 10).
     testSend100RequestsToMultiTable(
-        /*maxRequests=*/10,
-        /*maxConnections=*/8,
-        /*expectedConnectionCount=*/8,
-        /*tableCount=*/1);
+        /*maxRequests=*/ 10,
+        /*maxConnections=*/ 8,
+        /*expectedConnectionCount=*/ 8,
+        /*tableCount=*/ 1);
   }
 
   @Test
   public void testMultiTableConnection_noOverwhelmedConnection() throws Exception {
     // Set the max requests count to a large value so we will not scaling up.
-    // All tables will share the same connections.
+    // All tables will share the two connections (2 becasue we set the min connections to be 2).
     testSend100RequestsToMultiTable(
-        /*maxRequests=*/100000,
-        /*maxConnections=*/8,
-        /*expectedConnectionCount=*/1,
-        /*tableCount=*/4);
+        /*maxRequests=*/ 100000,
+        /*maxConnections=*/ 8,
+        /*expectedConnectionCount=*/ 2,
+        /*tableCount=*/ 4);
   }
 
   @Test
   public void testMultiTableConnections_overwhelmed() throws Exception {
     // A connection will be considered overwhelmed when the requests count reach 5 (max 10).
     testSend100RequestsToMultiTable(
-        /*maxRequests=*/10,
-        /*maxConnections=*/8,
-        /*expectedConnectionCount=*/8,
-        /*tableCount=*/4);
+        /*maxRequests=*/ 10,
+        /*maxConnections=*/ 8,
+        /*expectedConnectionCount=*/ 8,
+        /*tableCount=*/ 4);
   }
 
   private void testSend100RequestsToMultiTable(
-      int maxRequests,
-      int maxConnections,
-      int expectedConnectionCount,
-      int tableCount) throws IOException, ExecutionException, InterruptedException {
+      int maxRequests, int maxConnections, int expectedConnectionCount, int tableCount)
+      throws IOException, ExecutionException, InterruptedException {
     ConnectionWorkerPool connectionWorkerPool =
-        createConnectionWorkerPool(
-            maxRequests,
-            /*maxBytes=*/100000);
+        createConnectionWorkerPool(maxRequests, /*maxBytes=*/ 100000);
     ConnectionWorkerPool.setOptions(
-        Settings.builder()
-            .setMaxConnectionsPerPool(maxConnections)
-            .build());
+        Settings.builder().setMaxConnectionsPerPool(maxConnections).build());
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
@@ -137,8 +130,9 @@ public class ConnectionWorkerPoolTest {
     // Create one stream writer per table.
     List<StreamWriter> streamWriterList = new ArrayList<>();
     for (int i = 0; i < tableCount; i++) {
-      streamWriterList.add(getTestStreamWriter(
-          String.format("projects/p1/datasets/d1/tables/t%s/streams/_default", i)));
+      streamWriterList.add(
+          getTestStreamWriter(
+              String.format("projects/p1/datasets/d1/tables/t%s/streams/_default", i)));
     }
 
     for (long i = 0; i < appendCount; i++) {
@@ -163,8 +157,7 @@ public class ConnectionWorkerPoolTest {
     HashSet<Long> offsets = new HashSet<>();
     for (int i = 0; i < appendCount; i++) {
       AppendRowsRequest serverRequest = testBigQueryWrite.getAppendRequests().get(i);
-      assertThat(serverRequest.getProtoRows().getRows().getSerializedRowsCount())
-          .isGreaterThan(0);
+      assertThat(serverRequest.getProtoRows().getRows().getSerializedRowsCount()).isGreaterThan(0);
       offsets.add(serverRequest.getOffset().getValue());
     }
     assertThat(offsets.size()).isEqualTo(appendCount);
@@ -204,10 +197,7 @@ public class ConnectionWorkerPoolTest {
       ConnectionWorkerPool connectionWorkerPool,
       String[] messages,
       long offset) {
-    return connectionWorkerPool.append(
-        writeStream,
-        createProtoRows(messages),
-        offset);
+    return connectionWorkerPool.append(writeStream, createProtoRows(messages), offset);
   }
 
   private ProtoRows createProtoRows(String[] messages) {
@@ -227,6 +217,6 @@ public class ConnectionWorkerPoolTest {
         FlowController.LimitExceededBehavior.Block,
         TEST_TRACE_ID,
         client,
-        /*ownsBigQueryWriteClient=*/false);
+        /*ownsBigQueryWriteClient=*/ false);
   }
 }
