@@ -313,7 +313,7 @@ public class JsonToProtoMessage {
               protoMsg.setField(
                   fieldDescriptor,
                   BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
+                      new BigDecimal(String.valueOf(val))));
               return;
             }
           } else if (fieldSchema.getType() == TableFieldSchema.Type.BIGNUMERIC) {
@@ -333,7 +333,7 @@ public class JsonToProtoMessage {
               protoMsg.setField(
                   fieldDescriptor,
                   BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
+                      new BigDecimal(String.valueOf(val))));
               return;
             }
           }
@@ -502,6 +502,11 @@ public class JsonToProtoMessage {
     try {
       jsonArray = json.getJSONArray(exactJsonKeyName);
     } catch (JSONException e) {
+      java.lang.Object val = json.get(exactJsonKeyName);
+      // It is OK for repeated field to be null.
+      if (val == JSONObject.NULL) {
+        return;
+      }
       throw new IllegalArgumentException(
           "JSONObject does not have a array field at " + currentScope + ".");
     }
@@ -542,7 +547,7 @@ public class JsonToProtoMessage {
               protoMsg.addRepeatedField(
                   fieldDescriptor,
                   BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
+                      new BigDecimal(String.valueOf(val))));
               added = true;
             }
           } else if (fieldSchema != null
@@ -563,7 +568,7 @@ public class JsonToProtoMessage {
               protoMsg.addRepeatedField(
                   fieldDescriptor,
                   BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
+                      new BigDecimal(String.valueOf(val))));
               added = true;
             }
           }
