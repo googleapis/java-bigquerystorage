@@ -114,10 +114,13 @@ public class ConnectionWorkerPoolTest {
   private void testSend100RequestsToMultiTable(
       int maxRequests, int maxConnections, int expectedConnectionCount, int tableCount)
       throws IOException, ExecutionException, InterruptedException {
+    ConnectionWorkerPool.setOptions(
+        Settings.builder()
+            .setMinConnectionsPerPool(2)
+            .setMaxConnectionsPerPool(maxConnections)
+            .build());
     ConnectionWorkerPool connectionWorkerPool =
         createConnectionWorkerPool(maxRequests, /*maxBytes=*/ 100000);
-    ConnectionWorkerPool.setOptions(
-        Settings.builder().setMaxConnectionsPerPool(maxConnections).build());
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
