@@ -16,6 +16,8 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.regex.Pattern;
 
@@ -48,7 +50,7 @@ public class BigQuerySchemaUtil {
     return PLACEHOLDER_FILED_NAME_PREFIX
         + Base64.getUrlEncoder()
             .withoutPadding()
-            .encodeToString(fieldName.getBytes())
+            .encodeToString(fieldName.getBytes(StandardCharsets.UTF_8))
             .replace('-', '_');
   }
 
