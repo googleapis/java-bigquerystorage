@@ -496,6 +496,11 @@ public class StreamWriter implements AutoCloseable {
         // TODO: Handle NOT_ENOUGH_QUOTA.
         // In the close case, the request is in the inflight queue, and will either be returned
         // to the user with an error, or will be resent.
+        log.fine(
+            "Sending "
+                + preparedRequest.getProtoRows().getRows().getSerializedRowsCount()
+                + " rows at offset "
+                + preparedRequest.getOffset().getValue());
         this.streamConnection.send(preparedRequest);
         isFirstRequestInConnection = false;
       }
@@ -607,6 +612,10 @@ public class StreamWriter implements AutoCloseable {
   }
 
   private void requestCallback(AppendRowsResponse response) {
+    log.fine(
+        "Got request callback: " + (response.hasError()
+            ? "error:" + response.getError().toString()
+            : "offset:" + response.getAppendResult().getOffset().getValue()));
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
     if (response.hasUpdatedSchema()) {
