@@ -342,6 +342,24 @@ public final class Exceptions {
           currentLimit);
     }
   }
+  /**
+   * Input Json data has unknown field to the schema of the JsonStreamWriter. User can each turn on
+   * IgnoreUnknownFields option on the JsonStreamWriter, or if they don't want the error to be
+   * ignored, they should recreate the JsonStreamWriter with the updated table schema.
+   */
+  public static final class JsonDataHasUnknownFieldException extends IllegalArgumentException {
+    private final String jsonFieldName;
 
+    protected JsonDataHasUnknownFieldException(String jsonFieldName) {
+      super(String.format("JSONObject has fields unknown to BigQuery: %s.", jsonFieldName));
+      this.jsonFieldName = jsonFieldName;
+    }
+
+    public String getFieldName() {
+      return jsonFieldName;
+    }
+  }
   private Exceptions() {}
 }
+
+
