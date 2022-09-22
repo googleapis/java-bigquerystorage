@@ -144,6 +144,7 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
    *
    * <code>int64 row_count = 2 [deprecated = true];</code>
    *
+   * @deprecated
    * @return The rowCount.
    */
   @java.lang.Override
@@ -549,6 +550,7 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
      *
      * <code>int64 row_count = 2 [deprecated = true];</code>
      *
+     * @deprecated
      * @return The rowCount.
      */
     @java.lang.Override
@@ -566,6 +568,7 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
      *
      * <code>int64 row_count = 2 [deprecated = true];</code>
      *
+     * @deprecated
      * @param value The rowCount to set.
      * @return This builder for chaining.
      */
@@ -586,6 +589,7 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
      *
      * <code>int64 row_count = 2 [deprecated = true];</code>
      *
+     * @deprecated
      * @return This builder for chaining.
      */
     @java.lang.Deprecated

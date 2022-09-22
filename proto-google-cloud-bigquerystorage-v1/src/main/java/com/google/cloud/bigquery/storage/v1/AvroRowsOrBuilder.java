@@ -46,6 +46,7 @@ public interface AvroRowsOrBuilder
    *
    * <code>int64 row_count = 2 [deprecated = true];</code>
    *
+   * @deprecated
    * @return The rowCount.
    */
   @java.lang.Deprecated

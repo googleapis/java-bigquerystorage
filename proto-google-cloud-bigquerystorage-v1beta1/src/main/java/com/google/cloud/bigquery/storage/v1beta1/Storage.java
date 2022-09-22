@@ -8533,7 +8533,7 @@ public final class Storage {
       if (estimatedRowCount_ != 0L) {
         output.writeInt64(1, estimatedRowCount_);
       }
-      if (fractionConsumed_ != 0F) {
+      if (java.lang.Float.floatToRawIntBits(fractionConsumed_) != 0) {
         output.writeFloat(2, fractionConsumed_);
       }
       if (isSplittable_ != false) {
@@ -8554,7 +8554,7 @@ public final class Storage {
       if (estimatedRowCount_ != 0L) {
         size += com.google.protobuf.CodedOutputStream.computeInt64Size(1, estimatedRowCount_);
       }
-      if (fractionConsumed_ != 0F) {
+      if (java.lang.Float.floatToRawIntBits(fractionConsumed_) != 0) {
         size += com.google.protobuf.CodedOutputStream.computeFloatSize(2, fractionConsumed_);
       }
       if (isSplittable_ != false) {
@@ -9519,10 +9519,10 @@ public final class Storage {
 
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-      if (atResponseStart_ != 0F) {
+      if (java.lang.Float.floatToRawIntBits(atResponseStart_) != 0) {
         output.writeFloat(1, atResponseStart_);
       }
-      if (atResponseEnd_ != 0F) {
+      if (java.lang.Float.floatToRawIntBits(atResponseEnd_) != 0) {
         output.writeFloat(2, atResponseEnd_);
       }
       unknownFields.writeTo(output);
@@ -9534,10 +9534,10 @@ public final class Storage {
       if (size != -1) return size;
 
       size = 0;
-      if (atResponseStart_ != 0F) {
+      if (java.lang.Float.floatToRawIntBits(atResponseStart_) != 0) {
         size += com.google.protobuf.CodedOutputStream.computeFloatSize(1, atResponseStart_);
       }
-      if (atResponseEnd_ != 0F) {
+      if (java.lang.Float.floatToRawIntBits(atResponseEnd_) != 0) {
         size += com.google.protobuf.CodedOutputStream.computeFloatSize(2, atResponseEnd_);
       }
       size += unknownFields.getSerializedSize();
@@ -15782,7 +15782,7 @@ public final class Storage {
       if (originalStream_ != null) {
         output.writeMessage(1, getOriginalStream());
       }
-      if (fraction_ != 0F) {
+      if (java.lang.Float.floatToRawIntBits(fraction_) != 0) {
         output.writeFloat(2, fraction_);
       }
       unknownFields.writeTo(output);
@@ -15797,7 +15797,7 @@ public final class Storage {
       if (originalStream_ != null) {
         size += com.google.protobuf.CodedOutputStream.computeMessageSize(1, getOriginalStream());
       }
-      if (fraction_ != 0F) {
+      if (java.lang.Float.floatToRawIntBits(fraction_) != 0) {
         size += com.google.protobuf.CodedOutputStream.computeFloatSize(2, fraction_);
       }
       size += unknownFields.getSerializedSize();
