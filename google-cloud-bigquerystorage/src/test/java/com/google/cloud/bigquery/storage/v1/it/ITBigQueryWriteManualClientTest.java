@@ -316,7 +316,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testJsonStreamWriterWithDefaultSchema()
       throws IOException, InterruptedException, ExecutionException,
-      Descriptors.DescriptorValidationException {
+          Descriptors.DescriptorValidationException {
     String tableName = "JsonTableDefaultSchema";
     TableFieldSchema TEST_STRING =
         TableFieldSchema.newBuilder()
@@ -393,10 +393,10 @@ public class ITBigQueryWriteManualClientTest {
           "test_numerics",
           new JSONArray(
               new byte[][] {
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
-                      .toByteArray(),
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
-                      .toByteArray()
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
+                    .toByteArray(),
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
+                    .toByteArray()
               }));
       row1.put("unknown_field", "a");
       row1.put(
@@ -406,8 +406,8 @@ public class ITBigQueryWriteManualClientTest {
           "test_bytestring_repeated",
           new JSONArray(
               new byte[][] {
-                  ByteString.copyFromUtf8("a").toByteArray(),
-                  ByteString.copyFromUtf8("b").toByteArray()
+                ByteString.copyFromUtf8("a").toByteArray(),
+                ByteString.copyFromUtf8("b").toByteArray()
               }));
       row1.put("test_timestamp", "2022-02-06 07:24:47.84");
       JSONArray jsonArr1 = new JSONArray(new JSONObject[] {row1});

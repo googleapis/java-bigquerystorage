@@ -68,7 +68,7 @@ public class JsonStreamWriter implements AutoCloseable {
    */
   private JsonStreamWriter(Builder builder)
       throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
-      InterruptedException {
+          InterruptedException {
     this.client = builder.client;
     this.descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(builder.tableSchema);
@@ -346,15 +346,16 @@ public class JsonStreamWriter implements AutoCloseable {
         this.streamName = streamOrTableName;
       }
       this.client = client;
-      if ( tableSchema == null) {
-        GetWriteStreamRequest writeStreamRequest =  GetWriteStreamRequest.newBuilder()
-             .setName(this.getStreamName())
-             .setView(WriteStreamView.FULL)
-             .build();
+      if (tableSchema == null) {
+        GetWriteStreamRequest writeStreamRequest =
+            GetWriteStreamRequest.newBuilder()
+                .setName(this.getStreamName())
+                .setView(WriteStreamView.FULL)
+                .build();
 
         WriteStream writeStream = this.client.getWriteStream(writeStreamRequest);
         TableSchema writeStreamTableSchema = writeStream.getTableSchema();
-          this.tableSchema = writeStreamTableSchema;
+        this.tableSchema = writeStreamTableSchema;
       } else {
         this.tableSchema = tableSchema;
       }
