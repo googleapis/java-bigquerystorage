@@ -432,6 +432,7 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals(false, iter.hasNext());
     }
   }
+
   @Test
   public void testMultipleJsonStreamWriterWithDefaultSchema()
       throws IOException, ExecutionException {
@@ -510,11 +511,11 @@ public class ITBigQueryWriteManualClientTest {
     row1.put(
         "test_numerics",
         new JSONArray(
-            new byte[][]{
-                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
-                    .toByteArray(),
-                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
-                    .toByteArray()
+            new byte[][] {
+              BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
+                  .toByteArray(),
+              BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
+                  .toByteArray()
             }));
     row1.put("unknown_field", "a");
     row1.put(
@@ -523,9 +524,8 @@ public class ITBigQueryWriteManualClientTest {
     row1.put(
         "test_bytestring_repeated",
         new JSONArray(
-            new byte[][]{
-                ByteString.copyFromUtf8("a").toByteArray(),
-                ByteString.copyFromUtf8("b").toByteArray()
+            new byte[][] {
+              ByteString.copyFromUtf8("a").toByteArray(), ByteString.copyFromUtf8("b").toByteArray()
             }));
     row1.put("test_timestamp", "2022-02-06 07:24:47.84");
     JSONObject row2 = new JSONObject();
@@ -533,9 +533,8 @@ public class ITBigQueryWriteManualClientTest {
     row2.put(
         "test_bytestring_repeated",
         new JSONArray(
-            new byte[][]{
-                ByteString.copyFromUtf8("c").toByteArray(),
-                ByteString.copyFromUtf8("d").toByteArray()
+            new byte[][] {
+              ByteString.copyFromUtf8("c").toByteArray(), ByteString.copyFromUtf8("d").toByteArray()
             }));
     JSONObject row3 = new JSONObject();
     row3.put("test_str", "ccc");
@@ -548,7 +547,7 @@ public class ITBigQueryWriteManualClientTest {
     testArr.put(1, ByteString.copyFromUtf8("b").toByteArray()); // insert 2nd bytes array
     row5.put("test_bytestring_repeated", testArr);
 
-    JSONArray jsonArr1 = new JSONArray(new JSONObject[]{row1});
+    JSONArray jsonArr1 = new JSONArray(new JSONObject[] {row1});
     JSONArray jsonArr2 = new JSONArray();
     jsonArr2.put(row2);
     jsonArr2.put(row3);
