@@ -173,6 +173,7 @@ public class JsonStreamWriter implements AutoCloseable {
       throws IOException, DescriptorValidationException {
     // Handle schema updates in a Thread-safe way by locking down the operation
     synchronized (this) {
+      // Update schema only work when connection pool is not enabled.
       if (this.streamWriter.getConnectionOperationType() == Kind.CONNECTION_WORKER
           && this.streamWriter.getUpdatedSchema() != null) {
         TableSchema updatedSchema = this.streamWriter.getUpdatedSchema();
