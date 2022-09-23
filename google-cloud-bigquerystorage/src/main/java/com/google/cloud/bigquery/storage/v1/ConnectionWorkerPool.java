@@ -331,10 +331,10 @@ public class ConnectionWorkerPool {
     if (ownsBigQueryWriteClient) {
       BigQueryWriteSettings settings = client.getSettings();
       BigQueryWriteSettings stubSettings =
-          settings.toBuilder()
+          settings
+              .toBuilder()
               .setHeaderProvider(
-                  FixedHeaderProvider.create(
-                      "x-goog-request-params", "write_stream=" + streamName))
+                  FixedHeaderProvider.create("x-goog-request-params", "write_stream=" + streamName))
               .build();
       clientAfterModification = BigQueryWriteClient.create(stubSettings);
     }

@@ -722,26 +722,6 @@ public class StreamWriterTest {
     }
   }
 
-  @Test
-  public void testInitializationTwice_closeSecondClient() throws Exception {
-    BigQueryWriteClient client2 = BigQueryWriteClient.create(
-        BigQueryWriteSettings.newBuilder()
-            .setCredentialsProvider(NoCredentialsProvider.create())
-            .setTransportChannelProvider(serviceHelper.createChannelProvider())
-            .build());
-
-    StreamWriter streamWriter1 = getMultiplexingTestStreamWriter();
-    StreamWriter streamWriter2 = StreamWriter.newBuilder(TEST_STREAM, client2)
-        .setWriterSchema(createProtoSchema())
-        .setTraceId(TEST_TRACE_ID)
-        .setLocation("US")
-        .setEnableConnectionPool(true)
-        .build();
-
-    // The second passed in client will be closed
-    assertTrue(client2.isShutdown());
-  }
-
   // Timeout to ensure close() doesn't wait for done callback timeout.
   @Test(timeout = 10000)
   public void testCloseDisconnectedStream() throws Exception {

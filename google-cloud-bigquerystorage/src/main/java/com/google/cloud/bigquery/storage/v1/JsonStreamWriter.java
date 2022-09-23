@@ -71,15 +71,10 @@ public class JsonStreamWriter implements AutoCloseable {
   private JsonStreamWriter(Builder builder)
       throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
           InterruptedException {
-    this.client = builder.client;
     this.descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(builder.tableSchema);
 
-    if (this.client == null) {
-      streamWriterBuilder = StreamWriter.newBuilder(builder.streamName);
-    } else {
-      streamWriterBuilder = StreamWriter.newBuilder(builder.streamName, builder.client);
-    }
+    streamWriterBuilder = StreamWriter.newBuilder(builder.streamName);
     this.protoSchema = ProtoSchemaConverter.convert(this.descriptor);
     this.totalMessageSize = protoSchema.getSerializedSize();
     streamWriterBuilder.setWriterSchema(protoSchema);
@@ -90,6 +85,7 @@ public class JsonStreamWriter implements AutoCloseable {
         builder.flowControlSettings,
         builder.traceId);
     streamWriterBuilder.setEnableConnectionPool(builder.enableConnectionPool);
+    streamWriterBuilder.setLocation(builder.location);
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
@@ -287,6 +283,21 @@ public class JsonStreamWriter implements AutoCloseable {
     return new Builder(streamOrTableName, tableSchema, client);
   }
 
+  /**
+   * newBuilder that constructs a JsonStreamWriter builder with TableSchema being initialized by
+   * StreamWriter by default.
+   *
+   * @param streamOrTableName name of the stream that must follow
+   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+"
+   * @param client BigQueryWriteClient
+   * @return Builder
+   */
+  public static Builder newBuilder(String streamOrTableName, BigQueryWriteClient client) {
+    Preconditions.checkNotNull(streamOrTableName, "StreamOrTableName is null.");
+    Preconditions.checkNotNull(client, "BigQuery client is null.");
+    return new Builder(streamOrTableName, null, client);
+  }
+
   /** Closes the underlying StreamWriter. */
   @Override
   public void close() {
@@ -338,8 +349,20 @@ public class JsonStreamWriter implements AutoCloseable {
       } else {
         this.streamName = streamOrTableName;
       }
-      this.tableSchema = tableSchema;
       this.client = client;
+      if (tableSchema == null) {
+        GetWriteStreamRequest writeStreamRequest =
+            GetWriteStreamRequest.newBuilder()
+                .setName(this.getStreamName())
+                .setView(WriteStreamView.FULL)
+                .build();
+
+        WriteStream writeStream = this.client.getWriteStream(writeStreamRequest);
+        TableSchema writeStreamTableSchema = writeStream.getTableSchema();
+        this.tableSchema = writeStreamTableSchema;
+      } else {
+        this.tableSchema = tableSchema;
+      }
     }
 
     /**
@@ -437,8 +460,8 @@ public class JsonStreamWriter implements AutoCloseable {
 
     /**
      * Enable multiplexing for this writer. In multiplexing mode tables will share the same
-     * connection if possible until the connection is overwhelmed.
-     * This feature is still under development, please contact write api team before using.
+     * connection if possible until the connection is overwhelmed. This feature is still under
+     * development, please contact write api team before using.
      *
      * @param enableConnectionPool
      * @return Builder
@@ -449,8 +472,8 @@ public class JsonStreamWriter implements AutoCloseable {
     }
 
     /**
-     * Location of the table this stream writer is targeting.
-     * Connection pools are shared by location.
+     * Location of the table this stream writer is targeting. Connection pools are shared by
+     * location.
      *
      * @param location
      * @return Builder
