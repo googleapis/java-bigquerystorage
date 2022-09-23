@@ -286,7 +286,7 @@ public class JsonStreamWriter implements AutoCloseable {
    * @return Builder
    */
   public static Builder newBuilder(String streamOrTableName, TableSchema tableSchema) {
-    Preconditions.checkNotNull(streamOrTableName, "streamOrTableName is null.");
+    Preconditions.checkNotNull(streamOrTableName, "StreamOrTableName is null.");
     Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
     return new Builder(streamOrTableName, tableSchema, null);
   }
@@ -303,7 +303,7 @@ public class JsonStreamWriter implements AutoCloseable {
    */
   public static Builder newBuilder(
       String streamOrTableName, TableSchema tableSchema, BigQueryWriteClient client) {
-    Preconditions.checkNotNull(streamOrTableName, "streamOrTableName is null.");
+    Preconditions.checkNotNull(streamOrTableName, "StreamOrTableName is null.");
     Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
     Preconditions.checkNotNull(client, "BigQuery client is null.");
     return new Builder(streamOrTableName, tableSchema, client);
