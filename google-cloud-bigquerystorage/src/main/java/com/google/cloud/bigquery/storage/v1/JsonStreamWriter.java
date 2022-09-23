@@ -133,7 +133,11 @@ public class JsonStreamWriter implements AutoCloseable {
       // Backend cache for GetWriteStream schema staleness can be 30 seconds, wait a bit before
       // trying to get the table schema to increase the chance of succeed. This is to avoid
       // client's invalid data caused storm of GetWriteStream.
-      Thread.sleep(3500);
+      LOG.warning(
+          "Saw Json unknown field "
+              + ex.getFieldName()
+              + ", try to refresh the writer with updated schema");
+      Thread.sleep(35000);
       GetWriteStreamRequest writeStreamRequest =
           GetWriteStreamRequest.newBuilder()
               .setName(this.streamName)
