@@ -101,6 +101,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   @Override
   public void getWriteStream(
       GetWriteStreamRequest request, StreamObserver<WriteStream> responseObserver) {
+    LOG.info("GetWriteStream called!");
     Object response = writeResponses.remove();
     if (response instanceof WriteStream) {
       writeRequests.add(request);
