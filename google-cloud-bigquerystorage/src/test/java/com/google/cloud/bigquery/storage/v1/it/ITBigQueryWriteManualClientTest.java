@@ -47,6 +47,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -318,44 +319,6 @@ public class ITBigQueryWriteManualClientTest {
       throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "JsonTableDefaultSchema";
-    TableFieldSchema TEST_STRING =
-        TableFieldSchema.newBuilder()
-            .setType(TableFieldSchema.Type.STRING)
-            .setMode(TableFieldSchema.Mode.NULLABLE)
-            .setName("test_str")
-            .build();
-    TableFieldSchema TEST_NUMERIC =
-        TableFieldSchema.newBuilder()
-            .setType(TableFieldSchema.Type.NUMERIC)
-            .setMode(TableFieldSchema.Mode.REPEATED)
-            .setName("test_numerics")
-            .build();
-    TableFieldSchema TEST_DATE =
-        TableFieldSchema.newBuilder()
-            .setType(TableFieldSchema.Type.DATETIME)
-            .setMode(TableFieldSchema.Mode.NULLABLE)
-            .setName("test_datetime")
-            .build();
-    TableFieldSchema TEST_REPEATED_BYTESTRING =
-        TableFieldSchema.newBuilder()
-            .setType(TableFieldSchema.Type.BYTES)
-            .setMode(TableFieldSchema.Mode.REPEATED)
-            .setName("test_bytestring_repeated")
-            .build();
-    TableFieldSchema TEST_TIMESTAMP =
-        TableFieldSchema.newBuilder()
-            .setName("test_timeStamp")
-            .setType(TableFieldSchema.Type.TIMESTAMP)
-            .setMode(TableFieldSchema.Mode.NULLABLE)
-            .build();
-    TableSchema tableSchema =
-        TableSchema.newBuilder()
-            .addFields(0, TEST_STRING)
-            .addFields(1, TEST_DATE)
-            .addFields(2, TEST_NUMERIC)
-            .addFields(3, TEST_REPEATED_BYTESTRING)
-            .addFields(4, TEST_TIMESTAMP)
-            .build();
     TableInfo tableInfo =
         TableInfo.newBuilder(
                 TableId.of(DATASET, tableName),
@@ -382,6 +345,8 @@ public class ITBigQueryWriteManualClientTest {
 
     bigquery.create(tableInfo);
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+
+    // Create JsonStreamWriter with newBuilder(streamOrTable, client)
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), client)
             .setIgnoreUnknownFields(true)
@@ -465,6 +430,173 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals("YQ==", currentRow2.get(3).getRepeatedValue().get(0).getStringValue());
       assertEquals("Yg==", currentRow2.get(3).getRepeatedValue().get(1).getStringValue());
       assertEquals(false, iter.hasNext());
+    }
+  }
+  @Test
+  public void testMultipleJsonStreamWriterWithDefaultSchema()
+      throws IOException, ExecutionException {
+    String tableName = "MultipleJsonTableDefaultSchema";
+
+    client = BigQueryWriteClient.create();
+
+    RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
+    bigquery = bigqueryHelper.getOptions().getService();
+    DatasetInfo datasetInfo =
+        DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription("RANDOM").build();
+
+    TableFieldSchema TEST_STRING =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.STRING)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test_str")
+            .build();
+    TableFieldSchema TEST_NUMERIC =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.NUMERIC)
+            .setMode(TableFieldSchema.Mode.REPEATED)
+            .setName("test_numerics")
+            .build();
+    TableFieldSchema TEST_DATE =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.DATETIME)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test_datetime")
+            .build();
+    TableFieldSchema TEST_REPEATED_BYTESTRING =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.BYTES)
+            .setMode(TableFieldSchema.Mode.REPEATED)
+            .setName("test_bytestring_repeated")
+            .build();
+    TableFieldSchema TEST_TIMESTAMP =
+        TableFieldSchema.newBuilder()
+            .setName("test_timeStamp")
+            .setType(TableFieldSchema.Type.TIMESTAMP)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .build();
+    TableSchema tableSchema =
+        TableSchema.newBuilder()
+            .addFields(0, TEST_STRING)
+            .addFields(1, TEST_DATE)
+            .addFields(2, TEST_NUMERIC)
+            .addFields(3, TEST_REPEATED_BYTESTRING)
+            .addFields(4, TEST_TIMESTAMP)
+            .build();
+    TableInfo tableInfo =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, tableName),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "test_str", StandardSQLTypeName.STRING)
+                            .build(),
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "test_numerics", StandardSQLTypeName.NUMERIC)
+                            .setMode(Field.Mode.REPEATED)
+                            .build(),
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "test_datetime", StandardSQLTypeName.DATETIME)
+                            .build(),
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "test_bytestring_repeated", StandardSQLTypeName.BYTES)
+                            .setMode(Field.Mode.REPEATED)
+                            .build(),
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "test_timestamp", StandardSQLTypeName.TIMESTAMP)
+                            .build())))
+            .build();
+    JSONObject row1 = new JSONObject();
+    row1.put("test_str", "aaa");
+    row1.put(
+        "test_numerics",
+        new JSONArray(
+            new byte[][]{
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
+                    .toByteArray(),
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
+                    .toByteArray()
+            }));
+    row1.put("unknown_field", "a");
+    row1.put(
+        "test_datetime",
+        CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.of(2020, 10, 1, 12, 0)));
+    row1.put(
+        "test_bytestring_repeated",
+        new JSONArray(
+            new byte[][]{
+                ByteString.copyFromUtf8("a").toByteArray(),
+                ByteString.copyFromUtf8("b").toByteArray()
+            }));
+    row1.put("test_timestamp", "2022-02-06 07:24:47.84");
+    JSONObject row2 = new JSONObject();
+    row2.put("test_str", "bbb");
+    row2.put(
+        "test_bytestring_repeated",
+        new JSONArray(
+            new byte[][]{
+                ByteString.copyFromUtf8("c").toByteArray(),
+                ByteString.copyFromUtf8("d").toByteArray()
+            }));
+    JSONObject row3 = new JSONObject();
+    row3.put("test_str", "ccc");
+    JSONObject row4 = new JSONObject();
+    row4.put("test_str", "ddd");
+    JSONObject row5 = new JSONObject();
+    // Add another ARRAY<BYTES> using a more idiomatic way
+    JSONArray testArr = new JSONArray(); // create empty JSONArray
+    testArr.put(0, ByteString.copyFromUtf8("a").toByteArray()); // insert 1st bytes array
+    testArr.put(1, ByteString.copyFromUtf8("b").toByteArray()); // insert 2nd bytes array
+    row5.put("test_bytestring_repeated", testArr);
+
+    JSONArray jsonArr1 = new JSONArray(new JSONObject[]{row1});
+    JSONArray jsonArr2 = new JSONArray();
+    jsonArr2.put(row2);
+    jsonArr2.put(row3);
+    JSONArray jsonArr3 = new JSONArray();
+    jsonArr3.put(row4);
+    JSONArray jsonArr4 = new JSONArray();
+    jsonArr4.put(row5);
+
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    try {
+      // JsonStream write created without TableSchema
+      JsonStreamWriter jsonStreamWriter1 =
+          JsonStreamWriter.newBuilder(parent.toString(), client)
+              .setIgnoreUnknownFields(true)
+              .build();
+      // JsonStream write created with TableSchema
+      JsonStreamWriter jsonStreamWriter2 =
+          JsonStreamWriter.newBuilder(parent.toString(), tableSchema)
+              .setIgnoreUnknownFields(true)
+              .build();
+
+      assertEquals(jsonStreamWriter1.getWriterId(), jsonStreamWriter2.getWriterId());
+      LOG.info("Sending one message");
+      ApiFuture<AppendRowsResponse> response1 = jsonStreamWriter1.append(jsonArr1, -1);
+      LOG.info("Sending three more messages");
+      ApiFuture<AppendRowsResponse> response2 = jsonStreamWriter2.append(jsonArr2, -1);
+      LOG.info("Sending two more messages");
+      ApiFuture<AppendRowsResponse> response3 = jsonStreamWriter2.append(jsonArr3, -1);
+      LOG.info("Sending one more message");
+      ApiFuture<AppendRowsResponse> response4 = jsonStreamWriter1.append(jsonArr4, -1);
+
+      Assert.assertFalse(response1.get().getAppendResult().hasOffset());
+      Assert.assertFalse(response2.get().getAppendResult().hasOffset());
+      Assert.assertFalse(response3.get().getAppendResult().hasOffset());
+      Assert.assertFalse(response4.get().getAppendResult().hasOffset());
+
+      LOG.info("Both JsonStreamWriters wrote to the same Table successfully!");
+    } catch (DescriptorValidationException e) {
+      e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (JSONException e) {
+      e.printStackTrace();
     }
   }
 
