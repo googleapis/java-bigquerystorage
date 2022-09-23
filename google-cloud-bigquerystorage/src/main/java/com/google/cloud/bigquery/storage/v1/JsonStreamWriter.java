@@ -20,7 +20,6 @@ import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
-import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -77,6 +76,7 @@ public class JsonStreamWriter implements AutoCloseable {
     streamWriterBuilder = StreamWriter.newBuilder(builder.streamName);
     this.protoSchema = ProtoSchemaConverter.convert(this.descriptor);
     this.totalMessageSize = protoSchema.getSerializedSize();
+    this.client = builder.client;
     streamWriterBuilder.setWriterSchema(protoSchema);
     setStreamWriterSettings(
         builder.channelProvider,
@@ -132,12 +132,11 @@ public class JsonStreamWriter implements AutoCloseable {
     } catch (Exceptions.JsonDataHasUnknownFieldException ex) {
       // Backend cache for GetWriteStream schema staleness can be 30 seconds, wait a bit before
       // trying to get the table schema to increase the chance of succeed. This is to avoid
-      // client's invalid data caused storm of GetWriteStream.
+      // client's invalid datfa caused storm of GetWriteStream.
       LOG.warning(
           "Saw Json unknown field "
               + ex.getFieldName()
               + ", try to refresh the writer with updated schema");
-      Thread.sleep(35000);
       GetWriteStreamRequest writeStreamRequest =
           GetWriteStreamRequest.newBuilder()
               .setName(this.streamName)
@@ -145,8 +144,17 @@ public class JsonStreamWriter implements AutoCloseable {
               .build();
       WriteStream writeStream = client.getWriteStream(writeStreamRequest);
       refreshWriter(writeStream.getTableSchema());
-      return JsonToProtoMessage.convertJsonToProtoMessage(
-          this.descriptor, this.tableSchema, json, ignoreUnknownFields);
+      try {
+        return JsonToProtoMessage.convertJsonToProtoMessage(
+            this.descriptor, this.tableSchema, json, ignoreUnknownFields);
+      } catch (Exceptions.JsonDataHasUnknownFieldException exex) {
+        LOG.warning("First attempt failed, waiting for 30 seconds to retry");
+        Thread.sleep(30000);
+        writeStream = client.getWriteStream(writeStreamRequest);
+        refreshWriter(writeStream.getTableSchema());
+        return JsonToProtoMessage.convertJsonToProtoMessage(
+            this.descriptor, this.tableSchema, json, ignoreUnknownFields);
+      }
     }
   }
   /**

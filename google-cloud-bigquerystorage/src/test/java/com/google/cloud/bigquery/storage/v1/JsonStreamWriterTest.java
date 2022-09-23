@@ -510,7 +510,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testWithoutIgnoreUnknownFieldsUpdateSuccess() throws Exception {
+  public void testWithoutIgnoreUnknownFieldsUpdateImmeidateSuccess() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     TableSchema updatedSchema =
         TableSchema.newBuilder()
@@ -545,9 +545,48 @@ public class JsonStreamWriterTest {
   }
 
   @Test
+  public void testWithoutIgnoreUnknownFieldsUpdateSecondSuccess() throws Exception {
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
+    TableSchema updatedSchema =
+        TableSchema.newBuilder()
+            .addFields(0, TEST_INT)
+            .addFields(
+                1,
+                TableFieldSchema.newBuilder()
+                    .setName("test_string")
+                    .setType(TableFieldSchema.Type.STRING)
+                    .setMode(Mode.NULLABLE))
+            .build();
+    // GetWriteStream is called twice and got the updated schema
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(tableSchema).build());
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(updatedSchema).build());
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
+            .build());
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, tableSchema).build()) {
+      JSONObject foo = new JSONObject();
+      foo.put("test_int", 10);
+      JSONObject bar = new JSONObject();
+      bar.put("test_string", "a");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+      jsonArr.put(bar);
+      ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
+      appendFuture.get();
+    }
+  }
+
+  @Test
   public void testWithoutIgnoreUnknownFieldsUpdateFail() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     // GetWriteStream is called once but failed to update to the right schema.
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(tableSchema).build());
     testBigQueryWrite.addResponse(
         WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(tableSchema).build());
     try (JsonStreamWriter writer =
