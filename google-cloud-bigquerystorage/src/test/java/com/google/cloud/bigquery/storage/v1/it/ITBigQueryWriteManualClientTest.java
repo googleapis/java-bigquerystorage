@@ -39,7 +39,6 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import io.grpc.Status;
 import io.grpc.Status.Code;
-import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -48,7 +47,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -433,18 +431,19 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals(false, iter.hasNext());
     }
   }
+
   @Test
   public void testJsonStreamWriterWithDefaultSchemaNoTable() {
     String tableName = "JsonStreamWriterWithDefaultSchemaNoTable";
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
 
     // Create JsonStreamWriter with newBuilder(streamOrTable, client)
-    try  {
+    try {
       JsonStreamWriter jsonStreamWriter =
           JsonStreamWriter.newBuilder(parent.toString(), client)
               .setIgnoreUnknownFields(true)
               .build();
-    }catch (Exception exception){
+    } catch (Exception exception) {
       assertTrue(exception.getMessage().contains("it may not exist"));
     }
   }
