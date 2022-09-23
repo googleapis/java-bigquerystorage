@@ -96,7 +96,7 @@ public class StreamWriterTest {
         .setWriterSchema(createProtoSchema())
         .setTraceId(TEST_TRACE_ID)
         .setLocation("US")
-        .enableConnectionPool()
+        .setEnableConnectionPool(true)
         .build();
   }
 
@@ -720,6 +720,26 @@ public class StreamWriterTest {
     try (StreamWriter streamWriter = getTestStreamWriter()) {
       Assert.assertEquals(streamWriter.getConnectionOperationType(), Kind.CONNECTION_WORKER);
     }
+  }
+
+  @Test
+  public void testInitializationTwice_closeSecondClient() throws Exception {
+    BigQueryWriteClient client2 = BigQueryWriteClient.create(
+        BigQueryWriteSettings.newBuilder()
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .setTransportChannelProvider(serviceHelper.createChannelProvider())
+            .build());
+
+    StreamWriter streamWriter1 = getMultiplexingTestStreamWriter();
+    StreamWriter streamWriter2 = StreamWriter.newBuilder(TEST_STREAM, client2)
+        .setWriterSchema(createProtoSchema())
+        .setTraceId(TEST_TRACE_ID)
+        .setLocation("US")
+        .setEnableConnectionPool(true)
+        .build();
+
+    // The second passed in client will be closed
+    assertTrue(client2.isShutdown());
   }
 
   // Timeout to ensure close() doesn't wait for done callback timeout.
