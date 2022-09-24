@@ -150,7 +150,7 @@ public class JsonStreamWriter implements AutoCloseable {
             this.descriptor, this.tableSchema, json, ignoreUnknownFields);
       } catch (Exceptions.JsonDataHasUnknownFieldException exex) {
         LOG.warning("First attempt failed, waiting for 30 seconds to retry");
-        Thread.sleep(30000);
+        Thread.sleep(30100);
         writeStream = client.getWriteStream(writeStreamRequest);
         refreshWriter(writeStream.getTableSchema());
         return JsonToProtoMessage.convertJsonToProtoMessage(
