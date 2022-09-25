@@ -152,6 +152,9 @@ public class JsonStreamWriter implements AutoCloseable {
         LOG.warning("First attempt failed, waiting for 30 seconds to retry");
         Thread.sleep(30100);
         writeStream = client.getWriteStream(writeStreamRequest);
+        // TODO(yiru): We should let TableSchema return a timestamp so that we can simply
+        //     compare the timestamp to see if the table schema is the same. If it is the
+        //     same, we don't need to go refresh the writer again.
         refreshWriter(writeStream.getTableSchema());
         return JsonToProtoMessage.convertJsonToProtoMessage(
             this.descriptor, this.tableSchema, json, ignoreUnknownFields);
