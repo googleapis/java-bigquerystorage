@@ -49,6 +49,7 @@ public class JsonStreamWriter implements AutoCloseable {
       "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+";
   private static Pattern streamPattern = Pattern.compile(streamPatternString);
   private static final Logger LOG = Logger.getLogger(JsonStreamWriter.class.getName());
+  private static final long UPDATE_SCHEMA_RETRY_INTERVAL_MILLIS = 30100L;
 
   private BigQueryWriteClient client;
   private String streamName;
@@ -113,7 +114,7 @@ public class JsonStreamWriter implements AutoCloseable {
       throws DescriptorValidationException, IOException {
     Preconditions.checkNotNull(updatedSchema, "updatedSchema is null.");
     LOG.info("Refresh internal writer due to schema update, stream: " + this.streamName);
-    // Close the StreamWriter
+    // Close the StreamWriterf
     this.streamWriter.close();
     // Update JsonStreamWriter's TableSchema and Descriptor
     this.tableSchema = updatedSchema;
@@ -152,7 +153,7 @@ public class JsonStreamWriter implements AutoCloseable {
       } catch (Exceptions.JsonDataHasUnknownFieldException exex) {
         LOG.warning(
             "First attempt failed, waiting for 30 seconds to retry, stream: " + this.streamName);
-        Thread.sleep(30100);
+        Thread.sleep(UPDATE_SCHEMA_RETRY_INTERVAL_MILLIS);
         writeStream = client.getWriteStream(writeStreamRequest);
         // TODO(yiru): We should let TableSchema return a timestamp so that we can simply
         //     compare the timestamp to see if the table schema is the same. If it is the
@@ -181,10 +182,7 @@ public class JsonStreamWriter implements AutoCloseable {
       // Update schema only work when connection pool is not enabled.
       if (this.streamWriter.getConnectionOperationType() == Kind.CONNECTION_WORKER
           && this.streamWriter.getUpdatedSchema() != null) {
-        TableSchema updatedSchema = this.streamWriter.getUpdatedSchema();
-        if (updatedSchema != null) {
-          refreshWriter(updatedSchema);
-        }
+        refreshWriter(this.streamWriter.getUpdatedSchema());
       }
 
       ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
