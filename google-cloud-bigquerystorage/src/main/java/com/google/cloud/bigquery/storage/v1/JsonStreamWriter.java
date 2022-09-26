@@ -407,6 +407,7 @@ public class JsonStreamWriter implements AutoCloseable {
         TableSchema writeStreamTableSchema = writeStream.getTableSchema();
 
         this.tableSchema = writeStreamTableSchema;
+        this.location = writeStream.getLocation();
       } else {
         this.tableSchema = tableSchema;
       }
