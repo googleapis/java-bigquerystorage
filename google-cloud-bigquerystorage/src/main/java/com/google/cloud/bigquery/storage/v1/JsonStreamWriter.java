@@ -112,7 +112,7 @@ public class JsonStreamWriter implements AutoCloseable {
   private void refreshWriter(TableSchema updatedSchema)
       throws DescriptorValidationException, IOException {
     Preconditions.checkNotNull(updatedSchema, "updatedSchema is null.");
-    LOG.info("Refresh internal writer due to schema update");
+    LOG.info("Refresh internal writer due to schema update, stream: " + this.streamName);
     // Close the StreamWriter
     this.streamWriter.close();
     // Update JsonStreamWriter's TableSchema and Descriptor
@@ -137,7 +137,8 @@ public class JsonStreamWriter implements AutoCloseable {
       LOG.warning(
           "Saw Json unknown field "
               + ex.getFieldName()
-              + ", try to refresh the writer with updated schema");
+              + ", try to refresh the writer with updated schema, stream: "
+              + streamName);
       GetWriteStreamRequest writeStreamRequest =
           GetWriteStreamRequest.newBuilder()
               .setName(this.streamName)
@@ -149,7 +150,8 @@ public class JsonStreamWriter implements AutoCloseable {
         return JsonToProtoMessage.convertJsonToProtoMessage(
             this.descriptor, this.tableSchema, json, ignoreUnknownFields);
       } catch (Exceptions.JsonDataHasUnknownFieldException exex) {
-        LOG.warning("First attempt failed, waiting for 30 seconds to retry");
+        LOG.warning(
+            "First attempt failed, waiting for 30 seconds to retry, stream: " + this.streamName);
         Thread.sleep(30100);
         writeStream = client.getWriteStream(writeStreamRequest);
         // TODO(yiru): We should let TableSchema return a timestamp so that we can simply
