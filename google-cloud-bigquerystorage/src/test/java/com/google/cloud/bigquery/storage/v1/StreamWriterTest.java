@@ -728,18 +728,19 @@ public class StreamWriterTest {
   public void createStreamWithDifferentWhetherOwnsClient() throws Exception {
     StreamWriter streamWriter1 = getMultiplexingTestStreamWriter();
 
-    assertThrows(IllegalArgumentException.class,
+    assertThrows(
+        IllegalArgumentException.class,
         new ThrowingRunnable() {
-      @Override
-      public void run() throws Throwable {
-        StreamWriter.newBuilder(TEST_STREAM)
-            .setWriterSchema(createProtoSchema())
-            .setTraceId(TEST_TRACE_ID)
-            .setLocation("US")
-            .setEnableConnectionPool(true)
-            .build();
-      }
-    });
+          @Override
+          public void run() throws Throwable {
+            StreamWriter.newBuilder(TEST_STREAM)
+                .setWriterSchema(createProtoSchema())
+                .setTraceId(TEST_TRACE_ID)
+                .setLocation("US")
+                .setEnableConnectionPool(true)
+                .build();
+          }
+        });
   }
 
   // Timeout to ensure close() doesn't wait for done callback timeout.

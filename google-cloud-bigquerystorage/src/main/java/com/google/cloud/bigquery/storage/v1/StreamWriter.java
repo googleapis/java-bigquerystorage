@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -52,6 +51,11 @@ public class StreamWriter implements AutoCloseable {
   private final ProtoSchema writerSchema;
 
   /*
+   * Location of the destination.
+   */
+  private final String location;
+
+  /*
    * A String that uniquely identifies this writer.
    */
   private final String writerId = UUID.randomUUID().toString();
@@ -62,9 +66,7 @@ public class StreamWriter implements AutoCloseable {
    */
   private final SingleConnectionOrConnectionPool singleConnectionOrConnectionPool;
 
-  /**
-   * Test only param to tell how many times a client is created.
-   */
+  /** Test only param to tell how many times a client is created. */
   private static int testOnlyClientCreatedTimes = 0;
 
   /**
@@ -167,6 +169,7 @@ public class StreamWriter implements AutoCloseable {
     BigQueryWriteClient client;
     this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
+    this.location = builder.location;
     boolean ownsBigQueryWriteClient = builder.client == null;
     if (!builder.enableConnectionPool) {
       this.singleConnectionOrConnectionPool =
@@ -181,7 +184,7 @@ public class StreamWriter implements AutoCloseable {
                   getBigQueryWriteClient(builder),
                   ownsBigQueryWriteClient));
     } else {
-      if (builder.location == "") {
+      if (builder.location == null || builder.location.isEmpty()) {
         throw new IllegalArgumentException("Location must be specified for multiplexing client!");
       }
       // Assume the connection in the same pool share the same client and trace id.
@@ -320,6 +323,11 @@ public class StreamWriter implements AutoCloseable {
     return writerSchema;
   }
 
+  /** @return the location of the destination. */
+  public String getLocation() {
+    return location;
+  }
+
   /** Close the stream writer. Shut down all resources. */
   @Override
   public void close() {
@@ -349,7 +357,7 @@ public class StreamWriter implements AutoCloseable {
   SingleConnectionOrConnectionPool.Kind getConnectionOperationType() {
     return singleConnectionOrConnectionPool.getKind();
   }
-  
+
   @VisibleForTesting
   static int getTestOnlyClientCreatedTimes() {
     return testOnlyClientCreatedTimes;
@@ -392,7 +400,7 @@ public class StreamWriter implements AutoCloseable {
 
     private TableSchema updatedTableSchema = null;
 
-    private String location;
+    private String location = null;
 
     private boolean enableConnectionPool = false;
 

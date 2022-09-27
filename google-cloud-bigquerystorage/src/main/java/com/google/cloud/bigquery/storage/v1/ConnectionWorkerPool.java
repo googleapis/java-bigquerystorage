@@ -22,7 +22,6 @@ import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.Load;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -338,10 +337,7 @@ public class ConnectionWorkerPool {
       newHeaders.putAll(settings.toBuilder().getHeaderProvider().getHeaders());
       newHeaders.put("x-goog-request-params", "write_stream=" + streamName);
       BigQueryWriteSettings stubSettings =
-          settings
-              .toBuilder()
-              .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
-              .build();
+          settings.toBuilder().setHeaderProvider(FixedHeaderProvider.create(newHeaders)).build();
       clientAfterModification = BigQueryWriteClient.create(stubSettings);
     }
     ConnectionWorker connectionWorker =
