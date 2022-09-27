@@ -16,7 +16,6 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import com.google.protobuf.Descriptors.FieldDescriptor;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.regex.Pattern;
