@@ -393,12 +393,19 @@ public class JsonStreamWriterTest {
   public void testCreateDefaultStream() throws Exception {
     TableSchema tableSchema =
         TableSchema.newBuilder().addFields(0, TEST_INT).addFields(1, TEST_STRING).build();
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder()
+            .setName(TEST_STREAM)
+            .setLocation("aa")
+            .setTableSchema(tableSchema)
+            .build());
     try (JsonStreamWriter writer =
-        JsonStreamWriter.newBuilder(TEST_TABLE, tableSchema)
+        JsonStreamWriter.newBuilder(TEST_TABLE, client)
             .setChannelProvider(channelProvider)
             .setCredentialsProvider(NoCredentialsProvider.create())
             .build()) {
       assertEquals("projects/p/datasets/d/tables/t/_default", writer.getStreamName());
+      assertEquals("aa", writer.getLocation());
     }
   }
 

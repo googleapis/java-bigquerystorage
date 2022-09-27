@@ -247,6 +247,15 @@ public class JsonStreamWriter implements AutoCloseable {
   }
 
   /**
+   * Gets the location of the destination
+   *
+   * @return Descriptor
+   */
+  public String getLocation() {
+    return this.streamWriter.getLocation();
+  }
+
+  /**
    * Returns the wait of a request in Client side before sending to the Server. Request could wait
    * in Client because it reached the client side inflight request limit (adjustable when
    * constructing the Writer). The value is the wait time for the last sent request. A constant high
