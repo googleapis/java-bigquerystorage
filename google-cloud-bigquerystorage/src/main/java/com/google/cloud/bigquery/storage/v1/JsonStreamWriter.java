@@ -536,6 +536,10 @@ public class JsonStreamWriter implements AutoCloseable {
      * @return Builder
      */
     public Builder setLocation(String location) {
+      if (this.location != null && !this.location.equals(location)) {
+        throw new IllegalArgumentException(
+            "Specified location " + location + " does not match the system value " + this.location);
+      }
       this.location = location;
       return this;
     }

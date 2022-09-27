@@ -410,6 +410,32 @@ public class JsonStreamWriterTest {
   }
 
   @Test
+  public void testCreateDefaultStreamWrongLocation() throws Exception {
+    TableSchema tableSchema =
+        TableSchema.newBuilder().addFields(0, TEST_INT).addFields(1, TEST_STRING).build();
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder()
+            .setName(TEST_STREAM)
+            .setLocation("aa")
+            .setTableSchema(tableSchema)
+            .build());
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            new ThrowingRunnable() {
+              @Override
+              public void run() throws Throwable {
+                JsonStreamWriter.newBuilder(TEST_TABLE, client)
+                    .setChannelProvider(channelProvider)
+                    .setCredentialsProvider(NoCredentialsProvider.create())
+                    .setLocation("bb")
+                    .build();
+              }
+            });
+    assertEquals("Specified location bb does not match the system value aa", ex.getMessage());
+  }
+
+  @Test
   public void testSimpleSchemaUpdate() throws Exception {
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
