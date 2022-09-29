@@ -592,9 +592,10 @@ public class ConnectionWorker implements AutoCloseable {
       AppendRowsResponse responseWithUpdatedSchemaRemoved =
           response.toBuilder().clearUpdatedSchema().build();
 
-      log.fine(String.format(
-          "Got response with schema updated (omitting updated schema in response here): %s",
-          responseWithUpdatedSchemaRemoved.toString()));
+      log.fine(
+          String.format(
+              "Got response with schema updated (omitting updated schema in response here): %s",
+              responseWithUpdatedSchemaRemoved.toString()));
     }
 
     AppendRequestAndResponse requestWrapper;
