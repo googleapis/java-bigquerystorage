@@ -586,13 +586,17 @@ public class ConnectionWorker implements AutoCloseable {
   }
 
   private void requestCallback(AppendRowsResponse response) {
-    log.fine(
-        "Got response on stream '"
-            + response.getWriteStream()
-            + "' "
-            + (response.hasError()
-                ? "error: " + response.getError()
-                : "offset: " + response.getAppendResult().getOffset().getValue()));
+    if (!response.hasUpdatedSchema()) {
+      log.fine(String.format("Got response on stream %s", response.toString()));
+    } else {
+      AppendRowsResponse responseWithUpdatedSchemaRemoved =
+          response.toBuilder().clearUpdatedSchema().build();
+
+      log.fine(String.format(
+          "Got response with schema updated (omitting updated schema in response here): %s",
+          responseWithUpdatedSchemaRemoved.toString()));
+    }
+
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
     if (response.hasUpdatedSchema()) {
@@ -730,8 +734,8 @@ public class ConnectionWorker implements AutoCloseable {
   public abstract static class Load {
     // Consider the load on this worker to be overwhelmed when above some percentage of
     // in-flight bytes or in-flight requests count.
-    private static double overwhelmedInflightCount = 0.5;
-    private static double overwhelmedInflightBytes = 0.6;
+    private static double overwhelmedInflightCount = 0.2;
+    private static double overwhelmedInflightBytes = 0.2;
 
     // Number of in-flight requests bytes in the worker.
     abstract long inFlightRequestsBytes();
