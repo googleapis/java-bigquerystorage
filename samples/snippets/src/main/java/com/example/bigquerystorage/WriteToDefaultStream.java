@@ -114,7 +114,7 @@ public class WriteToDefaultStream {
 
     public void initialize(TableName parentTable)
         throws DescriptorValidationException, IOException, InterruptedException {
-      // Retrive table schema information.
+      // Retrieve table schema information.
       BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
       Table table = bigquery.getTable(parentTable.getDataset(), parentTable.getTable());
       Schema schema = table.getDefinition().getSchema();
