@@ -132,7 +132,7 @@ public class ConnectionWorkerTest {
           case 0:
             assertThat(serverRequest.getWriteStream()).isEqualTo(TEST_STREAM_1);
             assertThat(
-                serverRequest.getProtoRows().getWriterSchema().getProtoDescriptor().getName())
+                    serverRequest.getProtoRows().getWriterSchema().getProtoDescriptor().getName())
                 .isEqualTo("foo");
             break;
           case 1:
@@ -150,7 +150,7 @@ public class ConnectionWorkerTest {
             assertThat(serverRequest.getWriteStream()).isEqualTo(TEST_STREAM_2);
             // Schema is populated after table switch.
             assertThat(
-                serverRequest.getProtoRows().getWriterSchema().getProtoDescriptor().getName())
+                    serverRequest.getProtoRows().getWriterSchema().getProtoDescriptor().getName())
                 .isEqualTo("complicate");
             break;
           case 3:

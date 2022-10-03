@@ -178,7 +178,7 @@ public class ConnectionWorkerPoolTest {
           sendFooStringTestMessage(
               streamWriterList.get((int) (i % streamWriterList.size())),
               connectionWorkerPool,
-              new String[]{String.valueOf(i)},
+              new String[] {String.valueOf(i)},
               i));
     }
 
@@ -228,7 +228,7 @@ public class ConnectionWorkerPoolTest {
       StreamWriter writeStream = i % 2 == 0 ? writeStream1 : writeStream2;
       futures.add(
           sendFooStringTestMessage(
-              writeStream, connectionWorkerPool, new String[]{String.valueOf(i)}, i));
+              writeStream, connectionWorkerPool, new String[] {String.valueOf(i)}, i));
     }
 
     for (ApiFuture<?> future : futures) {
@@ -277,7 +277,7 @@ public class ConnectionWorkerPoolTest {
       StreamWriter writeStream = i % 2 == 0 ? writeStream1 : writeStream2;
       futures.add(
           sendFooStringTestMessage(
-              writeStream, connectionWorkerPool, new String[]{String.valueOf(i)}, i));
+              writeStream, connectionWorkerPool, new String[] {String.valueOf(i)}, i));
     }
     assertThat(connectionWorkerPool.getCreateConnectionCount()).isEqualTo(5);
     assertThat(connectionWorkerPool.getTotalConnectionCount()).isEqualTo(5);
@@ -295,7 +295,7 @@ public class ConnectionWorkerPoolTest {
       StreamWriter writeStream = i % 2 == 0 ? writeStream1 : writeStream2;
       futures.add(
           sendFooStringTestMessage(
-              writeStream, connectionWorkerPool, new String[]{String.valueOf(i)}, i));
+              writeStream, connectionWorkerPool, new String[] {String.valueOf(i)}, i));
     }
     assertThat(connectionWorkerPool.getTotalConnectionCount()).isEqualTo(5);
     for (ApiFuture<?> future : futures) {
