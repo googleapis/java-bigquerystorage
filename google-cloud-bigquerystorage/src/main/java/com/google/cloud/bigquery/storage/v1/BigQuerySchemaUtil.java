@@ -48,9 +48,9 @@ public class BigQuerySchemaUtil {
   public static String generatePlaceholderFieldName(String fieldName) {
     return PLACEHOLDER_FILED_NAME_PREFIX
         + Base64.getUrlEncoder()
-        .withoutPadding()
-        .encodeToString(fieldName.getBytes(StandardCharsets.UTF_8))
-        .replace('-', '_');
+            .withoutPadding()
+            .encodeToString(fieldName.getBytes(StandardCharsets.UTF_8))
+            .replace('-', '_');
   }
 
   /**
