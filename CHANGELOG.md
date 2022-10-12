@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.3](https://github.com/googleapis/java-bigquerystorage/compare/v2.12.2...v2.12.3) (2022-10-12)
+
+
+### Dependencies
+
+* Regenerating with new Protobuf (2.12.x) ([#1793](https://github.com/googleapis/java-bigquerystorage/issues/1793)) ([db1b130](https://github.com/googleapis/java-bigquerystorage/commit/db1b130cfd2527ff762d1cc230f89a5de760c695))
+
 ### [2.12.2](https://github.com/googleapis/java-bigquerystorage/compare/v2.12.1...v2.12.2) (2022-04-18)
 
 
