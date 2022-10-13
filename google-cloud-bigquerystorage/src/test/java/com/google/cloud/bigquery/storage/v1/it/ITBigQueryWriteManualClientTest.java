@@ -28,6 +28,7 @@ import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.cloud.bigquery.storage.v1.*;
+import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.OffsetAlreadyExists;
 import com.google.cloud.bigquery.storage.v1.Exceptions.OffsetOutOfRange;
 import com.google.cloud.bigquery.storage.v1.Exceptions.SchemaMismatchedException;
@@ -72,6 +73,18 @@ public class ITBigQueryWriteManualClientTest {
   private static String tableId2;
   private static String tableIdEU;
   private static BigQuery bigquery;
+
+  public class StringWithSecondsNanos {
+    public String foo;
+    public long seconds;
+    public int nanos;
+
+    public StringWithSecondsNanos(String fooParam, long secondsParam, int nanosParam) {
+      foo = fooParam;
+      seconds = secondsParam;
+      nanos = nanosParam;
+    }
+  }
 
   @BeforeClass
   public static void beforeClass() throws IOException {
@@ -182,6 +195,23 @@ public class ITBigQueryWriteManualClientTest {
               .setInnerType(InnerType.newBuilder().addValue(message).addValue(message).build())
               .build();
       rows.addSerializedRows(foo.toByteString());
+    }
+    return rows.build();
+  }
+
+  ProtoRows CreateProtoRowsMixed(StringWithSecondsNanos[] messages) {
+    ProtoRows.Builder rows = ProtoRows.newBuilder();
+    for (StringWithSecondsNanos message : messages) {
+      FooTimestampType datum =
+          FooTimestampType.newBuilder()
+              .setFoo(message.foo)
+              .setBar(
+                  com.google.protobuf.Timestamp.newBuilder()
+                      .setSeconds(message.seconds)
+                      .setNanos(message.nanos)
+                      .build())
+              .build();
+      rows.addSerializedRows(datum.toByteString());
     }
     return rows.build();
   }
@@ -311,6 +341,96 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals("ddd", iter.next().get(0).getStringValue());
       assertEquals(false, iter.hasNext());
     }
+  }
+
+  @Test
+  public void testRowErrors()
+      throws IOException, InterruptedException, ExecutionException,
+          Descriptors.DescriptorValidationException {
+    String tableName = "TestBadRowsTable";
+    TableInfo tableInfo =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, tableName),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "foo", StandardSQLTypeName.STRING)
+                            .setMaxLength(10L)
+                            .build(),
+                        com.google.cloud.bigquery.Field.newBuilder(
+                                "bar", StandardSQLTypeName.TIMESTAMP)
+                            .build())))
+            .build();
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    StreamWriter streamWriter =
+        StreamWriter.newBuilder(parent.toString() + "/_default")
+            .setWriterSchema(ProtoSchemaConverter.convert(FooTimestampType.getDescriptor()))
+            .build();
+
+    LOG.info("Sending three messages");
+    StringWithSecondsNanos[] myBadList = {
+      new StringWithSecondsNanos("aaabbbcccddd", 1663821424, 0),
+      new StringWithSecondsNanos("bbb", Long.MIN_VALUE, 0),
+      new StringWithSecondsNanos("cccdddeeefffggg", 1663621424, 0)
+    };
+    ApiFuture<AppendRowsResponse> futureResponse =
+        streamWriter.append(CreateProtoRowsMixed(myBadList), -1);
+    AppendRowsResponse actualResponse = null;
+    try {
+      actualResponse = futureResponse.get();
+    } catch (Throwable t) {
+      assertTrue(t instanceof ExecutionException);
+      t = t.getCause();
+      assertTrue(t instanceof AppendSerializtionError);
+      AppendSerializtionError e = (AppendSerializtionError) t;
+      LOG.info("Found row errors on stream: " + e.getStreamName());
+      assertEquals(
+          "Field foo: STRING(10) has maximum length 10 but got a value with length 12 on field foo.",
+          e.getRowIndexToErrorMessage().get(0));
+      assertEquals(
+          "Timestamp field value is out of range: -9223372036854775808 on field bar.",
+          e.getRowIndexToErrorMessage().get(1));
+      assertEquals(
+          "Field foo: STRING(10) has maximum length 10 but got a value with length 15 on field foo.",
+          e.getRowIndexToErrorMessage().get(2));
+      for (Map.Entry<Integer, String> entry : e.getRowIndexToErrorMessage().entrySet()) {
+        LOG.info("Bad row index: " + entry.getKey() + ", has problem: " + entry.getValue());
+      }
+    }
+    assertEquals(null, actualResponse);
+
+    LOG.info("Resending with three good messages");
+    StringWithSecondsNanos[] myGoodList = {
+      new StringWithSecondsNanos("aaa", 1664821424, 0),
+      new StringWithSecondsNanos("bbb", 1663821424, 0),
+      new StringWithSecondsNanos("ccc", 1664801424, 0)
+    };
+    ApiFuture<AppendRowsResponse> futureResponse1 =
+        streamWriter.append(CreateProtoRowsMixed(myGoodList), -1);
+    assertEquals(0, futureResponse1.get().getAppendResult().getOffset().getValue());
+
+    TableResult result =
+        bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    Iterator<FieldValueList> iterDump = result.getValues().iterator();
+    while (iterDump.hasNext()) {
+      FieldValueList currentRow = iterDump.next();
+      LOG.info("Table row contains " + currentRow.size() + " field values.");
+      LOG.info("Table column has foo: " + currentRow.get(0).getStringValue());
+      LOG.info("Table column has bar: " + currentRow.get(1).getTimestampValue());
+    }
+
+    Iterator<FieldValueList> iter = result.getValues().iterator();
+    FieldValueList currentRow = iter.next();
+    assertEquals("aaa", currentRow.get(0).getStringValue());
+    assertEquals(1664821424000000L, currentRow.get(1).getTimestampValue());
+    currentRow = iter.next();
+    assertEquals("bbb", currentRow.get(0).getStringValue());
+    assertEquals(1663821424000000L, currentRow.get(1).getTimestampValue());
+    currentRow = iter.next();
+    assertEquals("ccc", currentRow.get(0).getStringValue());
+    assertEquals(1664801424000000L, currentRow.get(1).getTimestampValue());
+    assertEquals(false, iter.hasNext());
   }
 
   @Test
