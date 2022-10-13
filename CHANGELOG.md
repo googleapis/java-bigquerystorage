@@ -1,5 +1,112 @@
 # Changelog
 
+## [2.23.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.23.0...v2.23.1) (2022-10-04)
+
+
+### Bug Fixes
+
+* update protobuf to v3.21.7 ([77bf65b](https://github.com/googleapis/java-bigquerystorage/commit/77bf65b94e324712ff957cb709d393c1f825ebcf))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.17.0 ([#1821](https://github.com/googleapis/java-bigquerystorage/issues/1821)) ([8747079](https://github.com/googleapis/java-bigquerystorage/commit/87470799a55b60d671af977dca14140e9f6d94c6))
+
+## [2.23.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.22.0...v2.23.0) (2022-10-03)
+
+
+### Features
+
+* return list of row errors from append ([df7c6e9](https://github.com/googleapis/java-bigquerystorage/commit/df7c6e9816d43eac196d77604bc99db6115de670))
+
+
+### Bug Fixes
+
+* return row-level error information via an AppendSerializtionError exception ([df7c6e9](https://github.com/googleapis/java-bigquerystorage/commit/df7c6e9816d43eac196d77604bc99db6115de670))
+
+## [2.22.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.21.0...v2.22.0) (2022-09-29)
+
+
+### Features
+
+* Add a new specific exception about json data has unknown field ([#1792](https://github.com/googleapis/java-bigquerystorage/issues/1792)) ([18f93c1](https://github.com/googleapis/java-bigquerystorage/commit/18f93c124334464a951b3d3065bdf11bbda13dac))
+* Add cache for location in stream writer, and trigger that when location is not presented ([#1804](https://github.com/googleapis/java-bigquerystorage/issues/1804)) ([c24c14f](https://github.com/googleapis/java-bigquerystorage/commit/c24c14f14b1a6f8249f55630d51e3cadd500c1ad))
+* Add close() to multiplexing client ([#1788](https://github.com/googleapis/java-bigquerystorage/issues/1788)) ([6b3a974](https://github.com/googleapis/java-bigquerystorage/commit/6b3a97491bf718333ae7c085f9b10723d8b24388))
+* Add fully managed schema support on json writer ([#1794](https://github.com/googleapis/java-bigquerystorage/issues/1794)) ([b6b515f](https://github.com/googleapis/java-bigquerystorage/commit/b6b515f57a0f6956c9d9f902a5e3e16edc845a48))
+* Add more retry error code to the sample ([#1805](https://github.com/googleapis/java-bigquerystorage/issues/1805)) ([4bf67bc](https://github.com/googleapis/java-bigquerystorage/commit/4bf67bcf0de2d370f0b04d8df236d30466b91598))
+* Add multiplexing client core algorithm and basic testing, plus fix a tiny bug in fake server ([#1787](https://github.com/googleapis/java-bigquerystorage/issues/1787)) ([1bb8e26](https://github.com/googleapis/java-bigquerystorage/commit/1bb8e262941f570d7f2de60123ec5a6a0cf43600))
+* Add multiplexing support to connection worker.  ([#1784](https://github.com/googleapis/java-bigquerystorage/issues/1784)) ([a869a1d](https://github.com/googleapis/java-bigquerystorage/commit/a869a1d8baba3cc0f6046d661c6f52ec12a3f12d))
+* Add support for flexible column name in JsonStreamWriter ([#1786](https://github.com/googleapis/java-bigquerystorage/issues/1786)) ([694abbb](https://github.com/googleapis/java-bigquerystorage/commit/694abbb43bf2970cd81803521c349dc31a38f484))
+* Add two fine logs that would allow Datastream to look into the stuck issue ([#1791](https://github.com/googleapis/java-bigquerystorage/issues/1791)) ([745ceb4](https://github.com/googleapis/java-bigquerystorage/commit/745ceb46dec5922efe394773028532dcd84a4f9b))
+* Always pass a null bigquery client lib to StreamWriter ([#1795](https://github.com/googleapis/java-bigquerystorage/issues/1795)) ([eec50c1](https://github.com/googleapis/java-bigquerystorage/commit/eec50c14e1dff84ae9a3e70f9d08d27b9e225e55))
+* Bug fix for checking write_stream field but proto might not contain the field to unblock the release ([#1806](https://github.com/googleapis/java-bigquerystorage/issues/1806)) ([9791d69](https://github.com/googleapis/java-bigquerystorage/commit/9791d693c75367bec6451ebf65ae4ea3347bf50f))
+* Client unknown fields drives writer refreshment ([#1797](https://github.com/googleapis/java-bigquerystorage/issues/1797)) ([d8aaed5](https://github.com/googleapis/java-bigquerystorage/commit/d8aaed522b9de487539165ea662465e5a96222f1))
+* ExecutorProvider can now be replaced ([#1770](https://github.com/googleapis/java-bigquerystorage/issues/1770)) ([6380f71](https://github.com/googleapis/java-bigquerystorage/commit/6380f713b8f42fa3a58df2750ea2cf3b7397d29c)), closes [#1769](https://github.com/googleapis/java-bigquerystorage/issues/1769)
+* Fix some todos and reject stream writer if it's created with mixed behavior of passed in client or not ([#1803](https://github.com/googleapis/java-bigquerystorage/issues/1803)) ([1a69192](https://github.com/googleapis/java-bigquerystorage/commit/1a69192e2ffc6475a7e4b67c5a452f1c0e8aaddc))
+* Minor tune after offline testing  ([#1807](https://github.com/googleapis/java-bigquerystorage/issues/1807)) ([694a870](https://github.com/googleapis/java-bigquerystorage/commit/694a870bac623ef038168a4358b9d73972077edb))
+* Populate location info if we already called GetWriteStream ([#1802](https://github.com/googleapis/java-bigquerystorage/issues/1802)) ([5f43103](https://github.com/googleapis/java-bigquerystorage/commit/5f4310321e7f90385f7ef5c32e3e5395f719d0ca))
+* Some fixes for multiplexing client  ([#1798](https://github.com/googleapis/java-bigquerystorage/issues/1798)) ([b3ffd77](https://github.com/googleapis/java-bigquerystorage/commit/b3ffd77e4b86708f241ba517c55bb3508964bc0e))
+* Wire connection pool to stream writer without implementing updated schema  ([#1790](https://github.com/googleapis/java-bigquerystorage/issues/1790)) ([3eb1475](https://github.com/googleapis/java-bigquerystorage/commit/3eb147545db2415e5a68752b8ede1c4d342d1a84))
+
+## [2.21.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.20.1...v2.21.0) (2022-09-15)
+
+
+### Features
+
+* Add connection worker skeleton used for multiplexing client ([#1778](https://github.com/googleapis/java-bigquerystorage/issues/1778)) ([b26265e](https://github.com/googleapis/java-bigquerystorage/commit/b26265e56a47cda3fca1329d349ab4a18288d4cb))
+* Add Load api for connection worker for multiplexing worker ([#1779](https://github.com/googleapis/java-bigquerystorage/issues/1779)) ([179930e](https://github.com/googleapis/java-bigquerystorage/commit/179930e6b0017f1fa12dcd3ef7c3efa374f41576))
+* Add location to WriteStream and add WriteStreamView support ([#1771](https://github.com/googleapis/java-bigquerystorage/issues/1771)) ([f446ff4](https://github.com/googleapis/java-bigquerystorage/commit/f446ff4f7d3f9d217501201289be416cbfdbe937))
+* Add proto annotation for non-ascii field mapping ([#1776](https://github.com/googleapis/java-bigquerystorage/issues/1776)) ([1a079ee](https://github.com/googleapis/java-bigquerystorage/commit/1a079ee0761bad2e942081f7f02b530f32e55afe))
+* introducing connection worker to run a loop for fetching / sending requests in a queue. ([7dd447d](https://github.com/googleapis/java-bigquerystorage/commit/7dd447da206cdd7a403191bd15203bb4cc53ccb5))
+
+
+### Bug Fixes
+
+* **api:** Numeric/bignumeric conversion issue [#1757](https://github.com/googleapis/java-bigquerystorage/issues/1757) ([#1768](https://github.com/googleapis/java-bigquerystorage/issues/1768)) ([5cc96a0](https://github.com/googleapis/java-bigquerystorage/commit/5cc96a0c5da5c8b557e96cd1a25afdff9d583a0f))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.15.0 ([#1766](https://github.com/googleapis/java-bigquerystorage/issues/1766)) ([40e0ba0](https://github.com/googleapis/java-bigquerystorage/commit/40e0ba09527c564004fcbbb0c3af2fb97eb811c0))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.16.0 ([#1777](https://github.com/googleapis/java-bigquerystorage/issues/1777)) ([08a7c8f](https://github.com/googleapis/java-bigquerystorage/commit/08a7c8f1dde71f48706bb0b1aa780f79012594bf))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.16.1 ([#1781](https://github.com/googleapis/java-bigquerystorage/issues/1781)) ([7ff7099](https://github.com/googleapis/java-bigquerystorage/commit/7ff709951f40c3683da628a9bcf66a5fe0a2e368))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.0.2 ([#1772](https://github.com/googleapis/java-bigquerystorage/issues/1772)) ([3279ef4](https://github.com/googleapis/java-bigquerystorage/commit/3279ef42e915881c255a8db8e677799f530c5d53))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.0.3 ([#1780](https://github.com/googleapis/java-bigquerystorage/issues/1780)) ([ed2cd66](https://github.com/googleapis/java-bigquerystorage/commit/ed2cd66a3804140711b9f4aa05b67641f2494bc9))
+
+## [2.20.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.20.0...v2.20.1) (2022-08-24)
+
+
+### Bug Fixes
+
+* Add unit test for closing disconnected streamwriter. Also reduce wait from 5->3 minutes ([#1751](https://github.com/googleapis/java-bigquerystorage/issues/1751)) ([095d7d5](https://github.com/googleapis/java-bigquerystorage/commit/095d7d59b47becf72a5e9cd3ced383fa45b04b50))
+* allow repeated field to have a null or missing json array ([#1760](https://github.com/googleapis/java-bigquerystorage/issues/1760)) ([ef24825](https://github.com/googleapis/java-bigquerystorage/commit/ef24825ca40e6156f6f3ce38c3c6051673a5f6cc))
+
+
+### Dependencies
+
+* update dependency com.google.cloud:google-cloud-bigquery to v2.14.7 ([#1759](https://github.com/googleapis/java-bigquerystorage/issues/1759)) ([ac3f0b8](https://github.com/googleapis/java-bigquerystorage/commit/ac3f0b871a1db4bcbd5ce8fa019ae8e1559ed3ec))
+
+## [2.20.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.19.1...v2.20.0) (2022-08-17)
+
+
+### Features
+
+* introduce InflightLimitExceededException ([#1746](https://github.com/googleapis/java-bigquerystorage/issues/1746)) ([449353b](https://github.com/googleapis/java-bigquerystorage/commit/449353bd3b1fc78d46990c8203e1607d83f7ad03))
+
+
+### Bug Fixes
+
+* Add documentation to Exceptions ([#1745](https://github.com/googleapis/java-bigquerystorage/issues/1745)) ([3bc7aca](https://github.com/googleapis/java-bigquerystorage/commit/3bc7acaa4a110a0ce487e3976b5fd4ddb865ea24))
+* Add missing field error to row error message ([#1752](https://github.com/googleapis/java-bigquerystorage/issues/1752)) ([186d213](https://github.com/googleapis/java-bigquerystorage/commit/186d2135cb7e18410b89c93e909b03dc8e92ac6c))
+* Close based on whether connection is active, not status variable ([#1750](https://github.com/googleapis/java-bigquerystorage/issues/1750)) ([ce7f3e0](https://github.com/googleapis/java-bigquerystorage/commit/ce7f3e04046be6b4c1321be877034f5d0ab007f4))
+
+
+### Dependencies
+
+* fixing the test scope dependency to runtime ([#1742](https://github.com/googleapis/java-bigquerystorage/issues/1742)) ([878020b](https://github.com/googleapis/java-bigquerystorage/commit/878020b3667040aef1b8d610b37cd678ef932870))
+* update dependency com.google.cloud:google-cloud-bigquery to v2.14.4 ([#1740](https://github.com/googleapis/java-bigquerystorage/issues/1740)) ([f842d51](https://github.com/googleapis/java-bigquerystorage/commit/f842d517b70847b8e67359257a213129586513f6))
+* update dependency com.google.cloud:google-cloud-bigquery to v2.14.6 ([#1747](https://github.com/googleapis/java-bigquerystorage/issues/1747)) ([329bd9d](https://github.com/googleapis/java-bigquerystorage/commit/329bd9da268f48a4d18158845895b07a43c766ab))
+
 ## [2.19.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.19.0...v2.19.1) (2022-08-06)
 
 

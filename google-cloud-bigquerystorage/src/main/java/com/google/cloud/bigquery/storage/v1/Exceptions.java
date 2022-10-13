@@ -71,15 +71,12 @@ public final class Exceptions {
     }
   }
 
-  /** Stream has already been finalized. */
+  /**
+   * The write stream has already been finalized and will not accept further appends or flushes. To
+   * send additional requests, you will need to create a new write stream via CreateWriteStream.
+   */
   public static final class StreamFinalizedException extends StorageException {
     protected StreamFinalizedException(Status grpcStatus, String name) {
-      super(grpcStatus, name, null, null, ImmutableMap.of());
-    }
-  }
-
-  public static final class StreamWriterClosedException extends StorageException {
-    protected StreamWriterClosedException(Status grpcStatus, String name) {
       super(grpcStatus, name, null, null, ImmutableMap.of());
     }
   }
@@ -94,7 +91,11 @@ public final class Exceptions {
     }
   }
 
-  /** Offset already exists. */
+  /**
+   * Offset already exists. This indicates that the append request attempted to write data to an
+   * offset before the current end of the stream. This is an expected exception when ExactOnce is
+   * enforced. You can safely ignore it, and keep appending until there is new data to append.
+   */
   public static final class OffsetAlreadyExists extends StorageException {
     protected OffsetAlreadyExists(
         Status grpcStatus, String name, Long expectedOffset, Long actualOffset) {
@@ -102,7 +103,12 @@ public final class Exceptions {
     }
   }
 
-  /** Offset out of range. */
+  /**
+   * Offset out of range. This indicates that the append request is attempting to write data to a
+   * point beyond the current end of the stream. To append data successfully, you must either
+   * specify the offset corresponding to the current end of stream, or omit the offset from the
+   * append request. It usually means a bug in your code that introduces a gap in appends.
+   */
   public static final class OffsetOutOfRange extends StorageException {
     protected OffsetOutOfRange(
         Status grpcStatus, String name, Long expectedOffset, Long actualOffset) {
@@ -110,7 +116,11 @@ public final class Exceptions {
     }
   }
 
-  /** Stream is not found. */
+  /**
+   * The stream is not found. Possible causes include incorrectly specifying the stream identifier
+   * or attempting to use an old stream identifier that no longer exists. You can invoke
+   * CreateWriteStream to create a new stream.
+   */
   public static final class StreamNotFound extends StorageException {
     protected StreamNotFound(Status grpcStatus, String name) {
       super(grpcStatus, name, null, null, ImmutableMap.of());
@@ -207,15 +217,20 @@ public final class Exceptions {
 
   /**
    * This exception is thrown from {@link JsonStreamWriter#append()} when the client side Json to
-   * Proto serializtion fails. The exception contains a Map of indexes of faulty lines and the
-   * corresponding error message.
+   * Proto serializtion fails. It can also be thrown by the server in case rows contains invalid
+   * data. The exception contains a Map of indexes of faulty rows and the corresponding error
+   * message.
    */
-  public static class AppendSerializtionError extends RuntimeException {
+  public static class AppendSerializtionError extends StatusRuntimeException {
     private final Map<Integer, String> rowIndexToErrorMessage;
     private final String streamName;
 
-    public AppendSerializtionError(String streamName, Map<Integer, String> rowIndexToErrorMessage) {
-      super(String.format("Append serializtion failed for writer: %s", streamName));
+    public AppendSerializtionError(
+        int codeValue,
+        String description,
+        String streamName,
+        Map<Integer, String> rowIndexToErrorMessage) {
+      super(Status.fromCodeValue(codeValue).withDescription(description));
       this.rowIndexToErrorMessage = rowIndexToErrorMessage;
       this.streamName = streamName;
     }
@@ -226,6 +241,127 @@ public final class Exceptions {
 
     public String getStreamName() {
       return streamName;
+    }
+  }
+
+  /** This exception is used internally to handle field level parsing errors. */
+  public static class FieldParseError extends IllegalArgumentException {
+    private final String fieldName;
+    private final String bqType;
+    private final Throwable cause;
+
+    protected FieldParseError(String fieldName, String bqType, Throwable cause) {
+      this.fieldName = fieldName;
+      this.bqType = bqType;
+      this.cause = cause;
+    }
+
+    public String getFieldName() {
+      return fieldName;
+    }
+
+    public String getBqType() {
+      return bqType;
+    }
+
+    public Throwable getCause() {
+      return cause;
+    }
+
+    public String getMessage() {
+      return cause.getMessage();
+    }
+  }
+
+  /**
+   * This writer instance has either been closed by the user explicitly, or has encountered
+   * non-retriable errors.
+   *
+   * <p>To continue to write to the same stream, you will need to create a new writer instance.
+   */
+  public static final class StreamWriterClosedException extends StatusRuntimeException {
+    private final String streamName;
+    private final String writerId;
+
+    protected StreamWriterClosedException(Status grpcStatus, String streamName, String writerId) {
+      super(grpcStatus);
+      this.streamName = streamName;
+      this.writerId = writerId;
+    }
+
+    public String getStreamName() {
+      return streamName;
+    }
+
+    public String getWriterId() {
+      return writerId;
+    }
+  }
+
+  /**
+   * If FlowController.LimitExceededBehavior is set to Block and inflight limit is exceeded, this
+   * exception will be thrown. If it is just a spike, you may retry the request. Otherwise, you can
+   * increase the inflight limit or create more StreamWriter to handle your traffic.
+   */
+  public static class InflightLimitExceededException extends StatusRuntimeException {
+    private final long currentLimit;
+    private final String writerId;
+
+    protected InflightLimitExceededException(
+        Status grpcStatus, String writerId, long currentLimit) {
+      super(grpcStatus);
+      this.currentLimit = currentLimit;
+      this.writerId = writerId;
+    }
+
+    public String getWriterId() {
+      return writerId;
+    }
+
+    public long getCurrentLimit() {
+      return currentLimit;
+    }
+  }
+
+  public static class InflightRequestsLimitExceededException
+      extends InflightLimitExceededException {
+    protected InflightRequestsLimitExceededException(String writerId, long currentLimit) {
+      super(
+          Status.fromCode(Status.Code.RESOURCE_EXHAUSTED)
+              .withDescription(
+                  "Exceeds client side inflight buffer, consider add more buffer or open more connections. Current limit: "
+                      + currentLimit),
+          writerId,
+          currentLimit);
+    }
+  }
+
+  public static class InflightBytesLimitExceededException extends InflightLimitExceededException {
+    protected InflightBytesLimitExceededException(String writerId, long currentLimit) {
+      super(
+          Status.fromCode(Status.Code.RESOURCE_EXHAUSTED)
+              .withDescription(
+                  "Exceeds client side inflight buffer, consider add more buffer or open more connections. Current limit:  "
+                      + currentLimit),
+          writerId,
+          currentLimit);
+    }
+  }
+  /**
+   * Input Json data has unknown field to the schema of the JsonStreamWriter. User can either turn
+   * on IgnoreUnknownFields option on the JsonStreamWriter, or if they don't want the error to be
+   * ignored, they should recreate the JsonStreamWriter with the updated table schema.
+   */
+  public static final class JsonDataHasUnknownFieldException extends IllegalArgumentException {
+    private final String jsonFieldName;
+
+    protected JsonDataHasUnknownFieldException(String jsonFieldName) {
+      super(String.format("JSONObject has fields unknown to BigQuery: %s.", jsonFieldName));
+      this.jsonFieldName = jsonFieldName;
+    }
+
+    public String getFieldName() {
+      return jsonFieldName;
     }
   }
 

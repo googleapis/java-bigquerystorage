@@ -30,9 +30,11 @@ import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.api.gax.rpc.UnknownException;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode;
+import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
 import com.google.common.base.Strings;
 import com.google.protobuf.Any;
 import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.Descriptors;
 import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -47,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
@@ -79,6 +82,7 @@ public class StreamWriterTest {
                 .setCredentialsProvider(NoCredentialsProvider.create())
                 .setTransportChannelProvider(serviceHelper.createChannelProvider())
                 .build());
+    StreamWriter.cleanUp();
   }
 
   @After
@@ -86,6 +90,16 @@ public class StreamWriterTest {
     log.info("tearDown called");
     client.close();
     serviceHelper.stop();
+    StreamWriter.cleanUp();
+  }
+
+  private StreamWriter getMultiplexingTestStreamWriter() throws IOException {
+    return StreamWriter.newBuilder(TEST_STREAM, client)
+        .setWriterSchema(createProtoSchema())
+        .setTraceId(TEST_TRACE_ID)
+        .setLocation("US")
+        .setEnableConnectionPool(true)
+        .build();
   }
 
   private StreamWriter getTestStreamWriter() throws IOException {
@@ -194,7 +208,6 @@ public class StreamWriterTest {
     }
   }
 
-  @Test
   public void testBuildBigQueryWriteClientInWriter() throws Exception {
     StreamWriter writer =
         StreamWriter.newBuilder(TEST_STREAM)
@@ -552,9 +565,9 @@ public class StreamWriterTest {
             .setMaxInflightBytes(1)
             .setLimitExceededBehavior(FlowController.LimitExceededBehavior.ThrowException)
             .build();
-    StatusRuntimeException ex =
+    Exceptions.InflightBytesLimitExceededException ex =
         assertThrows(
-            StatusRuntimeException.class,
+            Exceptions.InflightBytesLimitExceededException.class,
             new ThrowingRunnable() {
               @Override
               public void run() throws Throwable {
@@ -568,6 +581,8 @@ public class StreamWriterTest {
             .contains(
                 "Exceeds client side inflight buffer, consider add more buffer or open more connections"));
 
+    assertEquals(ex.getWriterId(), writer.getWriterId());
+    assertEquals(1, ex.getCurrentLimit());
     writer.close();
   }
 
@@ -665,6 +680,8 @@ public class StreamWriterTest {
     assertTrue(actualError instanceof StatusRuntimeException);
     assertEquals(Status.Code.FAILED_PRECONDITION, actualError.getStatus().getCode());
     assertTrue(actualError.getStatus().getDescription().contains("Connection is already closed"));
+    assertEquals(actualError.getWriterId(), writer.getWriterId());
+    assertEquals(actualError.getStreamName(), writer.getStreamName());
   }
 
   @Test
@@ -683,5 +700,62 @@ public class StreamWriterTest {
     assertTrue(actualError instanceof StatusRuntimeException);
     assertEquals(Status.Code.FAILED_PRECONDITION, actualError.getStatus().getCode());
     assertTrue(actualError.getStatus().getDescription().contains("Connection is closed"));
+    assertEquals(actualError.getWriterId(), writer.getWriterId());
+    assertEquals(actualError.getStreamName(), writer.getStreamName());
+  }
+
+  @Test
+  public void testWriterId()
+      throws Descriptors.DescriptorValidationException, IOException, InterruptedException {
+    StreamWriter writer1 = getTestStreamWriter();
+    Assert.assertFalse(writer1.getWriterId().isEmpty());
+    StreamWriter writer2 = getTestStreamWriter();
+    Assert.assertFalse(writer2.getWriterId().isEmpty());
+    Assert.assertNotEquals(writer1.getWriterId(), writer2.getWriterId());
+  }
+
+  @Test
+  public void testInitialization_operationKind() throws Exception {
+    try (StreamWriter streamWriter = getMultiplexingTestStreamWriter()) {
+      Assert.assertEquals(streamWriter.getConnectionOperationType(), Kind.CONNECTION_WORKER_POOL);
+    }
+    try (StreamWriter streamWriter = getTestStreamWriter()) {
+      Assert.assertEquals(streamWriter.getConnectionOperationType(), Kind.CONNECTION_WORKER);
+    }
+  }
+
+  @Test
+  public void testExtractDatasetName() throws Exception {
+    Assert.assertEquals(
+        StreamWriter.extractDatasetAndProjectName(
+            "projects/project1/datasets/dataset2/tables/something"),
+        "projects/project1/datasets/dataset2/");
+
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> {
+              StreamWriter.extractDatasetAndProjectName(
+                  "wrong/projects/project1/wrong/datasets/dataset2/tables/something");
+            });
+    Assert.assertTrue(ex.getMessage().contains("The passed in stream name does not match"));
+  }
+
+  // Timeout to ensure close() doesn't wait for done callback timeout.
+  @Test(timeout = 10000)
+  public void testCloseDisconnectedStream() throws Exception {
+    StreamWriter writer =
+        StreamWriter.newBuilder(TEST_STREAM)
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .setChannelProvider(serviceHelper.createChannelProvider())
+            .setWriterSchema(createProtoSchema())
+            .build();
+
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    serviceHelper.stop();
+    // Ensure closing the writer after disconnect succeeds.
+    writer.close();
   }
 }

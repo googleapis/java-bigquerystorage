@@ -29,9 +29,12 @@ import com.google.api.gax.grpc.testing.LocalChannelProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
 import com.google.cloud.bigquery.storage.test.JsonTest;
+import com.google.cloud.bigquery.storage.test.SchemaTest;
+import com.google.cloud.bigquery.storage.test.Test.FlexibleType;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.test.Test.UpdatedFooType;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
+import com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Int64Value;
 import com.google.protobuf.Timestamp;
@@ -66,6 +69,7 @@ public class JsonStreamWriterTest {
   private FakeScheduledExecutorService fakeExecutor;
   private FakeBigQueryWrite testBigQueryWrite;
   private static MockServiceHelper serviceHelper;
+  private BigQueryWriteClient client;
 
   private final TableFieldSchema FOO =
       TableFieldSchema.newBuilder()
@@ -115,14 +119,15 @@ public class JsonStreamWriterTest {
     channelProvider = serviceHelper.createChannelProvider();
     fakeExecutor = new FakeScheduledExecutorService();
     testBigQueryWrite.setExecutor(fakeExecutor);
+    BigQueryWriteSettings settings =
+        BigQueryWriteSettings.newBuilder()
+            .setTransportChannelProvider(channelProvider)
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .build();
+    client = BigQueryWriteClient.create(settings);
     Instant time = Instant.now();
     Timestamp timestamp =
         Timestamp.newBuilder().setSeconds(time.getEpochSecond()).setNanos(time.getNano()).build();
-    // Add enough GetWriteStream response.
-    for (int i = 0; i < 4; i++) {
-      testBigQueryWrite.addResponse(
-          WriteStream.newBuilder().setName(TEST_STREAM).setCreateTime(timestamp).build());
-    }
   }
 
   @After
@@ -132,9 +137,10 @@ public class JsonStreamWriterTest {
 
   private JsonStreamWriter.Builder getTestJsonStreamWriterBuilder(
       String testStream, TableSchema BQTableSchema) {
-    return JsonStreamWriter.newBuilder(testStream, BQTableSchema)
+    return JsonStreamWriter.newBuilder(testStream, BQTableSchema, client)
         .setChannelProvider(channelProvider)
-        .setCredentialsProvider(NoCredentialsProvider.create());
+        .setCredentialsProvider(NoCredentialsProvider.create())
+        .setExecutorProvider(InstantiatingExecutorProvider.newBuilder().build());
   }
 
   @Test
@@ -176,6 +182,54 @@ public class JsonStreamWriterTest {
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
             .setTraceId("test:empty")
             .build()) {
+
+      testBigQueryWrite.addResponse(
+          AppendRowsResponse.newBuilder()
+              .setAppendResult(
+                  AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
+              .build());
+
+      ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
+      assertEquals(0L, appendFuture.get().getAppendResult().getOffset().getValue());
+      appendFuture.get();
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          expectedProto.toByteString());
+      assertEquals(
+          testBigQueryWrite.getAppendRequests().get(0).getTraceId(), "JsonWriter_test:empty");
+    }
+  }
+
+  @Test
+  public void testFlexibleColumnAppend() throws Exception {
+    TableFieldSchema field =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.STRING)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test-列")
+            .build();
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, field).build();
+    FlexibleType expectedProto = FlexibleType.newBuilder().setColDGVzdC3LiJc("allen").build();
+    JSONObject flexible = new JSONObject();
+    flexible.put("test-列", "allen");
+    JSONArray jsonArr = new JSONArray();
+    jsonArr.put(flexible);
+
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, tableSchema).setTraceId("test:empty").build()) {
 
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()
@@ -386,16 +440,72 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testCreateDefaultStream() throws Exception {
+  public void testCreateDefaultStream_withNoSchemaPassedIn() throws Exception {
     TableSchema tableSchema =
         TableSchema.newBuilder().addFields(0, TEST_INT).addFields(1, TEST_STRING).build();
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder()
+            .setName(TEST_STREAM)
+            .setLocation("aa")
+            .setTableSchema(tableSchema)
+            .build());
+    try (JsonStreamWriter writer =
+        JsonStreamWriter.newBuilder(TEST_TABLE, client)
+            .setChannelProvider(channelProvider)
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .setExecutorProvider(InstantiatingExecutorProvider.newBuilder().build())
+            .build()) {
+      assertEquals("projects/p/datasets/d/tables/t/_default", writer.getStreamName());
+      assertEquals("aa", writer.getLocation());
+    }
+  }
+
+  @Test
+  public void testCreateDefaultStream_withNoClientPassedIn() throws Exception {
+    TableSchema tableSchema =
+        TableSchema.newBuilder().addFields(0, TEST_INT).addFields(1, TEST_STRING).build();
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder()
+            .setName(TEST_STREAM)
+            .setLocation("aa")
+            .setTableSchema(tableSchema)
+            .build());
     try (JsonStreamWriter writer =
         JsonStreamWriter.newBuilder(TEST_TABLE, tableSchema)
             .setChannelProvider(channelProvider)
             .setCredentialsProvider(NoCredentialsProvider.create())
+            .setExecutorProvider(InstantiatingExecutorProvider.newBuilder().build())
+            .setEnableConnectionPool(true)
             .build()) {
       assertEquals("projects/p/datasets/d/tables/t/_default", writer.getStreamName());
+      assertEquals("aa", writer.getLocation());
     }
+  }
+
+  @Test
+  public void testCreateDefaultStreamWrongLocation() throws Exception {
+    TableSchema tableSchema =
+        TableSchema.newBuilder().addFields(0, TEST_INT).addFields(1, TEST_STRING).build();
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder()
+            .setName(TEST_STREAM)
+            .setLocation("aa")
+            .setTableSchema(tableSchema)
+            .build());
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            new ThrowingRunnable() {
+              @Override
+              public void run() throws Throwable {
+                JsonStreamWriter.newBuilder(TEST_TABLE, client)
+                    .setChannelProvider(channelProvider)
+                    .setCredentialsProvider(NoCredentialsProvider.create())
+                    .setLocation("bb")
+                    .build();
+              }
+            });
+    assertEquals("Specified location bb does not match the system value aa", ex.getMessage());
   }
 
   @Test
@@ -506,8 +616,85 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testWithoutIgnoreUnknownFields() throws Exception {
+  public void testWithoutIgnoreUnknownFieldsUpdateImmeidateSuccess() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
+    TableSchema updatedSchema =
+        TableSchema.newBuilder()
+            .addFields(0, TEST_INT)
+            .addFields(
+                1,
+                TableFieldSchema.newBuilder()
+                    .setName("test_string")
+                    .setType(TableFieldSchema.Type.STRING)
+                    .setMode(Mode.NULLABLE))
+            .build();
+    // GetWriteStream is called once and the writer is fixed to accept unknown fields.
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(updatedSchema).build());
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
+            .build());
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, tableSchema).build()) {
+      JSONObject foo = new JSONObject();
+      foo.put("test_int", 10);
+      JSONObject bar = new JSONObject();
+      bar.put("test_string", "a");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+      jsonArr.put(bar);
+      ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
+      appendFuture.get();
+    }
+  }
+
+  @Test
+  public void testWithoutIgnoreUnknownFieldsUpdateSecondSuccess() throws Exception {
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
+    TableSchema updatedSchema =
+        TableSchema.newBuilder()
+            .addFields(0, TEST_INT)
+            .addFields(
+                1,
+                TableFieldSchema.newBuilder()
+                    .setName("test_string")
+                    .setType(TableFieldSchema.Type.STRING)
+                    .setMode(Mode.NULLABLE))
+            .build();
+    // GetWriteStream is called twice and got the updated schema
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(tableSchema).build());
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(updatedSchema).build());
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
+            .build());
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, tableSchema).build()) {
+      JSONObject foo = new JSONObject();
+      foo.put("test_int", 10);
+      JSONObject bar = new JSONObject();
+      bar.put("test_string", "a");
+      JSONArray jsonArr = new JSONArray();
+      jsonArr.put(foo);
+      jsonArr.put(bar);
+      ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
+      appendFuture.get();
+    }
+  }
+
+  @Test
+  public void testWithoutIgnoreUnknownFieldsUpdateFail() throws Exception {
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
+    // GetWriteStream is called once but failed to update to the right schema.
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(tableSchema).build());
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(tableSchema).build());
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, tableSchema).build()) {
       JSONObject foo = new JSONObject();
@@ -537,6 +724,7 @@ public class JsonStreamWriterTest {
             .setChannelProvider(channelProvider)
             .setIgnoreUnknownFields(true)
             .setCredentialsProvider(NoCredentialsProvider.create())
+            .setExecutorProvider(InstantiatingExecutorProvider.newBuilder().build())
             .build()) {
       testBigQueryWrite.addResponse(AppendRowsResponse.newBuilder().build());
       JSONObject foo = new JSONObject();
@@ -558,6 +746,7 @@ public class JsonStreamWriterTest {
         JsonStreamWriter.newBuilder(TEST_STREAM, tableSchema)
             .setChannelProvider(channelProvider)
             .setCredentialsProvider(NoCredentialsProvider.create())
+            .setExecutorProvider(InstantiatingExecutorProvider.newBuilder().build())
             .setFlowControlSettings(
                 FlowControlSettings.newBuilder()
                     .setLimitExceededBehavior(FlowController.LimitExceededBehavior.ThrowException)
@@ -595,6 +784,7 @@ public class JsonStreamWriterTest {
         JsonStreamWriter.newBuilder(TEST_STREAM, tableSchema)
             .setChannelProvider(channelProvider)
             .setCredentialsProvider(NoCredentialsProvider.create())
+            .setExecutorProvider(InstantiatingExecutorProvider.newBuilder().build())
             .setFlowControlSettings(
                 FlowControlSettings.newBuilder().setMaxOutstandingRequestBytes(1L).build())
             .build()) {
@@ -625,6 +815,10 @@ public class JsonStreamWriterTest {
     jsonArr.put(foo);
     jsonArr.put(foo1);
     jsonArr.put(foo2);
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(TABLE_SCHEMA).build());
+    testBigQueryWrite.addResponse(
+        WriteStream.newBuilder().setName(TEST_STREAM).setTableSchema(TABLE_SCHEMA).build());
 
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
@@ -639,8 +833,57 @@ public class JsonStreamWriterTest {
             "JSONObject has fields unknown to BigQuery: root.not_foo.",
             rowIndexToErrorMessage.get(0));
         assertEquals(
-            "JSONObject does not have a string field at root.foo.", rowIndexToErrorMessage.get(2));
+            "Field root.foo failed to convert to STRING. Error: JSONObject does not have a string field at root.foo.",
+            rowIndexToErrorMessage.get(2));
       }
     }
+  }
+
+  @Test
+  public void testBadStringToNumericRowError()
+      throws DescriptorValidationException, IOException, InterruptedException {
+    TableSchema TABLE_SCHEMA =
+        TableSchema.newBuilder()
+            .addFields(
+                0,
+                TableFieldSchema.newBuilder()
+                    .setName("test_field_type")
+                    .setType(TableFieldSchema.Type.NUMERIC)
+                    .setMode(TableFieldSchema.Mode.NULLABLE)
+                    .build())
+            .build();
+    SchemaTest.StringType expectedProto =
+        SchemaTest.StringType.newBuilder().setTestFieldType("allen").build();
+    JSONObject foo = new JSONObject();
+    // put a field which is not part of the expected schema
+    foo.put("test_field_type", "allen");
+    JSONArray jsonArr = new JSONArray();
+    jsonArr.put(foo);
+
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
+      try {
+        ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
+        Assert.fail("expected AppendSerializtionError");
+      } catch (AppendSerializtionError appendSerializtionError) {
+        Map<Integer, String> rowIndexToErrorMessage =
+            appendSerializtionError.getRowIndexToErrorMessage();
+        assertEquals(1, rowIndexToErrorMessage.size());
+        assertTrue(
+            rowIndexToErrorMessage
+                .get(0)
+                .startsWith("Field root.test_field_type failed to convert to NUMERIC. Error:"));
+      }
+    }
+  }
+
+  @Test
+  public void testWriterId()
+      throws DescriptorValidationException, IOException, InterruptedException {
+    JsonStreamWriter writer1 = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    Assert.assertFalse(writer1.getWriterId().isEmpty());
+    JsonStreamWriter writer2 = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    Assert.assertFalse(writer2.getWriterId().isEmpty());
+    Assert.assertNotEquals(writer1.getWriterId(), writer2.getWriterId());
   }
 }

@@ -16,32 +16,27 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.core.ApiFuture;
-import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.CredentialsProvider;
+import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
-import com.google.cloud.bigquery.storage.util.Errors;
-import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
-import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
-import com.google.cloud.bigquery.storage.v1.StreamConnection.RequestCallback;
+import com.google.auto.value.AutoOneOf;
+import com.google.auto.value.AutoValue;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.Uninterruptibles;
-import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
-import java.util.Deque;
-import java.util.LinkedList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.concurrent.GuardedBy;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
@@ -51,150 +46,231 @@ import javax.annotation.concurrent.GuardedBy;
 public class StreamWriter implements AutoCloseable {
   private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
 
-  private Lock lock;
-  private Condition hasMessageInWaitingQueue;
-  private Condition inflightReduced;
+  private static String datasetsMatching = "projects/[^/]+/datasets/[^/]+/";
+  private static Pattern streamPattern = Pattern.compile(datasetsMatching);
+
+  // Cache of location info for a given dataset.
+  private static Map<String, String> projectAndDatasetToLocation = new ConcurrentHashMap<>();
 
   /*
    * The identifier of stream to write to.
    */
   private final String streamName;
 
-  /*
-   * The proto schema of rows to write.
-   */
+  /** Every writer has a fixed proto schema. */
   private final ProtoSchema writerSchema;
 
   /*
-   * Max allowed inflight requests in the stream. Method append is blocked at this.
+   * Location of the destination.
    */
-  private final long maxInflightRequests;
+  private final String location;
 
   /*
-   * Max allowed inflight bytes in the stream. Method append is blocked at this.
+   * A String that uniquely identifies this writer.
    */
-  private final long maxInflightBytes;
+  private final String writerId = UUID.randomUUID().toString();
 
-  /*
-   * Behavior when inflight queue is exceeded. Only supports Block or Throw, default is Block.
+  /**
+   * Stream can access a single connection or a pool of connection depending on whether multiplexing
+   * is enabled.
    */
-  private final FlowController.LimitExceededBehavior limitExceededBehavior;
+  private final SingleConnectionOrConnectionPool singleConnectionOrConnectionPool;
 
-  /*
-   * TraceId for debugging purpose.
-   */
-  private final String traceId;
+  /** Test only param to tell how many times a client is created. */
+  private static int testOnlyClientCreatedTimes = 0;
 
-  /*
-   * Tracks current inflight requests in the stream.
+  /**
+   * Static map from {@link ConnectionPoolKey} to connection pool. Note this map is static to be
+   * shared by every stream writer in the same process.
    */
-  @GuardedBy("lock")
-  private long inflightRequests = 0;
-
-  /*
-   * Tracks current inflight bytes in the stream.
-   */
-  @GuardedBy("lock")
-  private long inflightBytes = 0;
-
-  /*
-   * Tracks how often the stream was closed due to a retriable error. Streaming will stop when the
-   * count hits a threshold. Streaming should only be halted, if it isn't possible to establish a
-   * connection. Keep track of the number of reconnections in succession. This will be reset if
-   * a row is successfully called back.
-   */
-  @GuardedBy("lock")
-  private long conectionRetryCountWithoutCallback = 0;
-
-  /*
-   * If false, streamConnection needs to be reset.
-   */
-  @GuardedBy("lock")
-  private boolean streamConnectionIsConnected = false;
-
-  /*
-   * A boolean to track if we cleaned up inflight queue.
-   */
-  @GuardedBy("lock")
-  private boolean inflightCleanuped = false;
-
-  /*
-   * Indicates whether user has called Close() or not.
-   */
-  @GuardedBy("lock")
-  private boolean userClosed = false;
-
-  /*
-   * The final status of connection. Set to nonnull when connection is permanently closed.
-   */
-  @GuardedBy("lock")
-  private Throwable connectionFinalStatus = null;
-
-  /*
-   * Contains requests buffered in the client and not yet sent to server.
-   */
-  @GuardedBy("lock")
-  private final Deque<AppendRequestAndResponse> waitingRequestQueue;
-
-  /*
-   * Contains sent append requests waiting for response from server.
-   */
-  @GuardedBy("lock")
-  private final Deque<AppendRequestAndResponse> inflightRequestQueue;
-
-  /*
-   * Contains the updated TableSchema.
-   */
-  @GuardedBy("lock")
-  private TableSchema updatedSchema;
-
-  /*
-   * A client used to interact with BigQuery.
-   */
-  private BigQueryWriteClient client;
-
-  /*
-   * If true, the client above is created by this writer and should be closed.
-   */
-  private boolean ownsBigQueryWriteClient = false;
-
-  /*
-   * Wraps the underlying bi-directional stream connection with server.
-   */
-  private StreamConnection streamConnection;
-
-  /*
-   * A separate thread to handle actual communication with server.
-   */
-  private Thread appendThread;
-
-  /*
-   * The inflight wait time for the previous sent request.
-   */
-  private final AtomicLong inflightWaitSec = new AtomicLong(0);
+  private static final Map<ConnectionPoolKey, ConnectionWorkerPool> connectionPoolMap =
+      new ConcurrentHashMap<>();
 
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
   }
 
-  private StreamWriter(Builder builder) throws IOException {
-    this.lock = new ReentrantLock();
-    this.hasMessageInWaitingQueue = lock.newCondition();
-    this.inflightReduced = lock.newCondition();
-    this.streamName = builder.streamName;
-    if (builder.writerSchema == null) {
-      throw new StatusRuntimeException(
-          Status.fromCode(Code.INVALID_ARGUMENT)
-              .withDescription("Writer schema must be provided when building this writer."));
+  /**
+   * Connection pool with different key will be split.
+   *
+   * <p>Shard based only on location right now.
+   */
+  @AutoValue
+  abstract static class ConnectionPoolKey {
+    abstract String location();
+
+    public static ConnectionPoolKey create(String location) {
+      return new AutoValue_StreamWriter_ConnectionPoolKey(location);
     }
+  }
+
+  /**
+   * When in single table mode, append directly to connectionWorker. Otherwise append to connection
+   * pool in multiplexing mode.
+   */
+  @AutoOneOf(SingleConnectionOrConnectionPool.Kind.class)
+  public abstract static class SingleConnectionOrConnectionPool {
+    /** Kind of connection operation mode. */
+    public enum Kind {
+      CONNECTION_WORKER,
+      CONNECTION_WORKER_POOL
+    }
+
+    public abstract Kind getKind();
+
+    public abstract ConnectionWorker connectionWorker();
+
+    public abstract ConnectionWorkerPool connectionWorkerPool();
+
+    public ApiFuture<AppendRowsResponse> append(
+        StreamWriter streamWriter, ProtoRows protoRows, long offset) {
+      if (getKind() == Kind.CONNECTION_WORKER) {
+        return connectionWorker()
+            .append(streamWriter.getStreamName(), streamWriter.getProtoSchema(), protoRows, offset);
+      } else {
+        return connectionWorkerPool().append(streamWriter, protoRows, offset);
+      }
+    }
+
+    public void close(StreamWriter streamWriter) {
+      if (getKind() == Kind.CONNECTION_WORKER) {
+        connectionWorker().close();
+      } else {
+        connectionWorkerPool().close(streamWriter);
+      }
+    }
+
+    long getInflightWaitSeconds() {
+      if (getKind() == Kind.CONNECTION_WORKER_POOL) {
+        throw new IllegalStateException(
+            "getInflightWaitSeconds is not supported in multiplexing mode.");
+      }
+      return connectionWorker().getInflightWaitSeconds();
+    }
+
+    TableSchema getUpdatedSchema() {
+      if (getKind() == Kind.CONNECTION_WORKER_POOL) {
+        // TODO(gaole): implement updated schema support for multiplexing.
+        throw new IllegalStateException("getUpdatedSchema is not implemented for multiplexing.");
+      }
+      return connectionWorker().getUpdatedSchema();
+    }
+
+    String getWriterId(String streamWriterId) {
+      if (getKind() == Kind.CONNECTION_WORKER_POOL) {
+        return streamWriterId;
+      }
+      return connectionWorker().getWriterId();
+    }
+
+    public static SingleConnectionOrConnectionPool ofSingleConnection(ConnectionWorker connection) {
+      return AutoOneOf_StreamWriter_SingleConnectionOrConnectionPool.connectionWorker(connection);
+    }
+
+    public static SingleConnectionOrConnectionPool ofConnectionPool(
+        ConnectionWorkerPool connectionPool) {
+      return AutoOneOf_StreamWriter_SingleConnectionOrConnectionPool.connectionWorkerPool(
+          connectionPool);
+    }
+  }
+
+  private StreamWriter(Builder builder) throws IOException {
+    this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
-    this.maxInflightRequests = builder.maxInflightRequest;
-    this.maxInflightBytes = builder.maxInflightBytes;
-    this.limitExceededBehavior = builder.limitExceededBehavior;
-    this.traceId = builder.traceId;
-    this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
-    this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
+    boolean ownsBigQueryWriteClient = builder.client == null;
+    if (!builder.enableConnectionPool) {
+      this.location = builder.location;
+      this.singleConnectionOrConnectionPool =
+          SingleConnectionOrConnectionPool.ofSingleConnection(
+              new ConnectionWorker(
+                  builder.streamName,
+                  builder.writerSchema,
+                  builder.maxInflightRequest,
+                  builder.maxInflightBytes,
+                  builder.limitExceededBehavior,
+                  builder.traceId,
+                  getBigQueryWriteClient(builder),
+                  ownsBigQueryWriteClient));
+    } else {
+      BigQueryWriteClient client = getBigQueryWriteClient(builder);
+      String location = builder.location;
+      if (location == null || location.isEmpty()) {
+        // Location is not passed in, try to fetch from RPC
+        String datasetAndProjectName = extractDatasetAndProjectName(builder.streamName);
+        location =
+            projectAndDatasetToLocation.computeIfAbsent(
+                datasetAndProjectName,
+                (key) -> {
+                  GetWriteStreamRequest writeStreamRequest =
+                      GetWriteStreamRequest.newBuilder()
+                          .setName(this.getStreamName())
+                          .setView(WriteStreamView.BASIC)
+                          .build();
+
+                  WriteStream writeStream = client.getWriteStream(writeStreamRequest);
+                  TableSchema writeStreamTableSchema = writeStream.getTableSchema();
+                  String fetchedLocation = writeStream.getLocation();
+                  log.info(
+                      String.format(
+                          "Fethed location %s for stream name %s, extracted project and dataset name: %s\"",
+                          fetchedLocation, streamName, datasetAndProjectName));
+                  return fetchedLocation;
+                });
+        if (location.isEmpty()) {
+          throw new IllegalStateException(
+              String.format(
+                  "The location is empty for both user passed in value and looked up value for "
+                      + "stream: %s, extracted project and dataset name: %s",
+                  streamName, datasetAndProjectName));
+        }
+      }
+      this.location = location;
+      // Assume the connection in the same pool share the same client and trace id.
+      // The first StreamWriter for a new stub will create the pool for the other
+      // streams in the same region, meaning the per StreamWriter settings are no
+      // longer working unless all streams share the same set of settings
+      this.singleConnectionOrConnectionPool =
+          SingleConnectionOrConnectionPool.ofConnectionPool(
+              connectionPoolMap.computeIfAbsent(
+                  ConnectionPoolKey.create(location),
+                  (key) -> {
+                    return new ConnectionWorkerPool(
+                        builder.maxInflightRequest,
+                        builder.maxInflightBytes,
+                        builder.limitExceededBehavior,
+                        builder.traceId,
+                        client,
+                        ownsBigQueryWriteClient);
+                  }));
+      validateFetchedConnectonPool(builder);
+      // Shut down the passed in client. Internally we will create another client inside connection
+      // pool for every new connection worker.
+      if (client != singleConnectionOrConnectionPool.connectionWorkerPool().bigQueryWriteClient()
+          && ownsBigQueryWriteClient) {
+        client.shutdown();
+        try {
+          client.awaitTermination(150, TimeUnit.SECONDS);
+        } catch (InterruptedException unused) {
+          // Ignore interruption as this client is not used.
+        }
+        client.close();
+      }
+    }
+  }
+
+  @VisibleForTesting
+  static String extractDatasetAndProjectName(String streamName) {
+    Matcher streamMatcher = streamPattern.matcher(streamName);
+    if (streamMatcher.find()) {
+      return streamMatcher.group();
+    } else {
+      throw new IllegalStateException(
+          String.format("The passed in stream name does not match standard format %s", streamName));
+    }
+  }
+
+  private BigQueryWriteClient getBigQueryWriteClient(Builder builder) throws IOException {
     if (builder.client == null) {
       BigQueryWriteSettings stubSettings =
           BigQueryWriteSettings.newBuilder()
@@ -206,40 +282,36 @@ public class StreamWriter implements AutoCloseable {
                   FixedHeaderProvider.create(
                       "x-goog-request-params", "write_stream=" + this.streamName))
               .build();
-      this.client = BigQueryWriteClient.create(stubSettings);
-      this.ownsBigQueryWriteClient = true;
+      testOnlyClientCreatedTimes++;
+      return BigQueryWriteClient.create(stubSettings);
     } else {
-      this.client = builder.client;
-      this.ownsBigQueryWriteClient = false;
+      return builder.client;
     }
-
-    this.appendThread =
-        new Thread(
-            new Runnable() {
-              @Override
-              public void run() {
-                appendLoop();
-              }
-            });
-    this.appendThread.start();
   }
 
-  private void resetConnection() {
-    this.streamConnection =
-        new StreamConnection(
-            this.client,
-            new RequestCallback() {
-              @Override
-              public void run(AppendRowsResponse response) {
-                requestCallback(response);
-              }
-            },
-            new DoneCallback() {
-              @Override
-              public void run(Throwable finalStatus) {
-                doneCallback(finalStatus);
-              }
-            });
+  // Validate whether the fetched connection pool matched certain properties.
+  private void validateFetchedConnectonPool(StreamWriter.Builder builder) {
+    String paramsValidatedFailed = "";
+    if (!Objects.equals(
+        this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId(),
+        builder.traceId)) {
+      paramsValidatedFailed = "Trace id";
+    } else if (!Objects.equals(
+        this.singleConnectionOrConnectionPool.connectionWorkerPool().ownsBigQueryWriteClient(),
+        builder.client == null)) {
+      paramsValidatedFailed = "Whether using passed in clients";
+    } else if (!Objects.equals(
+        this.singleConnectionOrConnectionPool.connectionWorkerPool().limitExceededBehavior(),
+        builder.limitExceededBehavior)) {
+      paramsValidatedFailed = "Limit Exceeds Behavior";
+    }
+
+    if (!paramsValidatedFailed.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "%s used for the same connection pool for the same location must be the same!",
+              paramsValidatedFailed));
+    }
   }
 
   /**
@@ -279,88 +351,7 @@ public class StreamWriter implements AutoCloseable {
    * @return the append response wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
-    AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
-    requestBuilder.setProtoRows(ProtoData.newBuilder().setRows(rows).build());
-    if (offset >= 0) {
-      requestBuilder.setOffset(Int64Value.of(offset));
-    }
-    return appendInternal(requestBuilder.build());
-  }
-
-  private ApiFuture<AppendRowsResponse> appendInternal(AppendRowsRequest message) {
-    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message);
-    if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
-      requestWrapper.appendResult.setException(
-          new StatusRuntimeException(
-              Status.fromCode(Code.INVALID_ARGUMENT)
-                  .withDescription(
-                      "MessageSize is too large. Max allow: "
-                          + getApiMaxRequestBytes()
-                          + " Actual: "
-                          + requestWrapper.messageSize)));
-      return requestWrapper.appendResult;
-    }
-    this.lock.lock();
-    try {
-      if (userClosed) {
-        requestWrapper.appendResult.setException(
-            new Exceptions.StreamWriterClosedException(
-                Status.fromCode(Status.Code.FAILED_PRECONDITION)
-                    .withDescription("Connection is already closed"),
-                streamName));
-        return requestWrapper.appendResult;
-      }
-      // Check if queue is going to be full before adding the request.
-      if ((this.inflightRequests + 1 >= this.maxInflightRequests
-              || this.inflightBytes + requestWrapper.messageSize >= this.maxInflightBytes)
-          && (this.limitExceededBehavior == FlowController.LimitExceededBehavior.ThrowException)) {
-        throw new StatusRuntimeException(
-            Status.fromCode(Code.RESOURCE_EXHAUSTED)
-                .withDescription(
-                    "Exceeds client side inflight buffer, consider add more buffer or open more connections."));
-      }
-
-      if (connectionFinalStatus != null) {
-        requestWrapper.appendResult.setException(
-            new Exceptions.StreamWriterClosedException(
-                Status.fromCode(Status.Code.FAILED_PRECONDITION)
-                    .withDescription(
-                        "Connection is closed due to " + connectionFinalStatus.toString()),
-                streamName));
-        return requestWrapper.appendResult;
-      }
-
-      ++this.inflightRequests;
-      this.inflightBytes += requestWrapper.messageSize;
-      waitingRequestQueue.addLast(requestWrapper);
-      hasMessageInWaitingQueue.signal();
-      maybeWaitForInflightQuota();
-      return requestWrapper.appendResult;
-    } finally {
-      this.lock.unlock();
-    }
-  }
-
-  @GuardedBy("lock")
-  private void maybeWaitForInflightQuota() {
-    long start_time = System.currentTimeMillis();
-    while (this.inflightRequests >= this.maxInflightRequests
-        || this.inflightBytes >= this.maxInflightBytes) {
-      try {
-        inflightReduced.await(100, TimeUnit.MILLISECONDS);
-      } catch (InterruptedException e) {
-        log.warning(
-            "Interrupted while waiting for inflight quota. Stream: "
-                + streamName
-                + " Error: "
-                + e.toString());
-        throw new StatusRuntimeException(
-            Status.fromCode(Code.CANCELLED)
-                .withCause(e)
-                .withDescription("Interrupted while waiting for quota."));
-      }
-    }
-    inflightWaitSec.set((System.currentTimeMillis() - start_time) / 1000);
+    return this.singleConnectionOrConnectionPool.append(this, rows, offset);
   }
 
   /**
@@ -372,320 +363,33 @@ public class StreamWriter implements AutoCloseable {
    * stream case.
    */
   public long getInflightWaitSeconds() {
-    return inflightWaitSec.longValue();
+    return singleConnectionOrConnectionPool.getInflightWaitSeconds();
+  }
+
+  /** @return a unique Id for the writer. */
+  public String getWriterId() {
+    return singleConnectionOrConnectionPool.getWriterId(writerId);
+  }
+
+  /** @return name of the Stream that this writer is working on. */
+  public String getStreamName() {
+    return streamName;
+  }
+
+  /** @return the passed in user schema. */
+  public ProtoSchema getProtoSchema() {
+    return writerSchema;
+  }
+
+  /** @return the location of the destination. */
+  public String getLocation() {
+    return location;
   }
 
   /** Close the stream writer. Shut down all resources. */
   @Override
   public void close() {
-    log.info("User closing stream: " + streamName);
-    this.lock.lock();
-    try {
-      this.userClosed = true;
-    } finally {
-      this.lock.unlock();
-    }
-    log.fine("Waiting for append thread to finish. Stream: " + streamName);
-    try {
-      appendThread.join();
-      log.info("User close complete. Stream: " + streamName);
-    } catch (InterruptedException e) {
-      // Unexpected. Just swallow the exception with logging.
-      log.warning(
-          "Append handler join is interrupted. Stream: " + streamName + " Error: " + e.toString());
-    }
-    if (this.ownsBigQueryWriteClient) {
-      this.client.close();
-      try {
-        // Backend request has a 2 minute timeout, so wait a little longer than that.
-        this.client.awaitTermination(150, TimeUnit.SECONDS);
-      } catch (InterruptedException ignored) {
-      }
-    }
-  }
-
-  /*
-   * This loop is executed in a separate thread.
-   *
-   * It takes requests from waiting queue and sends them to server.
-   */
-  private void appendLoop() {
-    Deque<AppendRequestAndResponse> localQueue = new LinkedList<AppendRequestAndResponse>();
-    boolean streamNeedsConnecting = false;
-    // Set firstRequestInConnection to true immediately after connecting the steam,
-    // indicates then next row sent, needs the schema and other metadata.
-    boolean isFirstRequestInConnection = true;
-    while (!waitingQueueDrained()) {
-      this.lock.lock();
-      try {
-        hasMessageInWaitingQueue.await(100, TimeUnit.MILLISECONDS);
-        // Copy the streamConnectionIsConnected guarded by lock to a local variable.
-        // In addition, only reconnect if there is a retriable error.
-        streamNeedsConnecting = !streamConnectionIsConnected && connectionFinalStatus == null;
-        if (streamNeedsConnecting) {
-          // If the stream connection is broken, any requests on inflightRequestQueue will need
-          // to be resent, as the new connection has no knowledge of the requests. Copy the requests
-          // from inflightRequestQueue and prepent them onto the waitinRequestQueue. They need to be
-          // prepended as they need to be sent before new requests.
-          while (!inflightRequestQueue.isEmpty()) {
-            waitingRequestQueue.addFirst(inflightRequestQueue.pollLast());
-          }
-        }
-        while (!this.waitingRequestQueue.isEmpty()) {
-          AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
-          this.inflightRequestQueue.addLast(requestWrapper);
-          localQueue.addLast(requestWrapper);
-        }
-      } catch (InterruptedException e) {
-        log.warning(
-            "Interrupted while waiting for message. Stream: "
-                + streamName
-                + " Error: "
-                + e.toString());
-      } finally {
-        this.lock.unlock();
-      }
-
-      if (localQueue.isEmpty()) {
-        continue;
-      }
-      if (streamNeedsConnecting) {
-        // Set streamConnectionIsConnected to true, to indicate the stream has been connected. This
-        // should happen before the call to resetConnection. As it is unknown when the connection
-        // could be closed and the doneCallback called, and thus clearing the flag.
-        lock.lock();
-        try {
-          this.streamConnectionIsConnected = true;
-        } finally {
-          lock.unlock();
-        }
-        resetConnection();
-        // Set firstRequestInConnection to indicate the next request to be sent should include
-        // metedata.
-        isFirstRequestInConnection = true;
-      }
-      while (!localQueue.isEmpty()) {
-        AppendRowsRequest preparedRequest =
-            prepareRequestBasedOnPosition(
-                localQueue.pollFirst().message, isFirstRequestInConnection);
-        // Send should only throw an exception if there is a problem with the request. The catch
-        // block will handle this case, and return the exception with the result.
-        // Otherwise send will return:
-        //   SUCCESS: Message was sent, wait for the callback.
-        //   STREAM_CLOSED: Stream was closed, normally or due to en error
-        //   NOT_ENOUGH_QUOTA: Message wasn't sent due to not enough quota.
-        // TODO: Handle NOT_ENOUGH_QUOTA.
-        // In the close case, the request is in the inflight queue, and will either be returned
-        // to the user with an error, or will be resent.
-        this.streamConnection.send(preparedRequest);
-        isFirstRequestInConnection = false;
-      }
-    }
-
-    log.fine("Cleanup starts. Stream: " + streamName);
-    // At this point, the waiting queue is drained, so no more requests.
-    // We can close the stream connection and handle the remaining inflight requests.
-    if (streamConnection != null) {
-      this.streamConnection.close();
-      waitForDoneCallback(5, TimeUnit.MINUTES);
-    }
-
-    // At this point, there cannot be more callback. It is safe to clean up all inflight requests.
-    log.fine(
-        "Stream connection is fully closed. Cleaning up inflight requests. Stream: " + streamName);
-    cleanupInflightRequests();
-    log.fine("Append thread is done. Stream: " + streamName);
-  }
-
-  /*
-   * Returns true if waiting queue is drain, a.k.a. no more requests in the waiting queue.
-   *
-   * It serves as a signal to append thread that there cannot be any more requests in the waiting
-   * queue and it can prepare to stop.
-   */
-  private boolean waitingQueueDrained() {
-    this.lock.lock();
-    try {
-      return (this.userClosed || this.connectionFinalStatus != null)
-          && this.waitingRequestQueue.isEmpty();
-    } finally {
-      this.lock.unlock();
-    }
-  }
-
-  private void waitForDoneCallback(long duration, TimeUnit timeUnit) {
-    log.fine("Waiting for done callback from stream connection. Stream: " + streamName);
-    long deadline = System.nanoTime() + timeUnit.toNanos(duration);
-    while (System.nanoTime() <= deadline) {
-      this.lock.lock();
-      try {
-        if (connectionFinalStatus != null) {
-          // Done callback is received, return.
-          return;
-        }
-      } finally {
-        this.lock.unlock();
-      }
-      Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
-    }
-    this.lock.lock();
-    try {
-      if (connectionFinalStatus == null) {
-        connectionFinalStatus =
-            new StatusRuntimeException(
-                Status.fromCode(Code.CANCELLED)
-                    .withDescription("Timeout waiting for DoneCallback."));
-      }
-    } finally {
-      this.lock.unlock();
-    }
-
-    return;
-  }
-
-  private AppendRowsRequest prepareRequestBasedOnPosition(
-      AppendRowsRequest original, boolean isFirstRequest) {
-    AppendRowsRequest.Builder requestBuilder = original.toBuilder();
-    if (isFirstRequest) {
-      if (this.writerSchema != null) {
-        requestBuilder.getProtoRowsBuilder().setWriterSchema(this.writerSchema);
-      }
-      requestBuilder.setWriteStream(this.streamName);
-      if (this.traceId != null) {
-        requestBuilder.setTraceId(this.traceId);
-      }
-    } else {
-      requestBuilder.clearWriteStream();
-      requestBuilder.getProtoRowsBuilder().clearWriterSchema();
-    }
-    return requestBuilder.build();
-  }
-
-  private void cleanupInflightRequests() {
-    Throwable finalStatus =
-        new Exceptions.StreamWriterClosedException(
-            Status.fromCode(Status.Code.FAILED_PRECONDITION)
-                .withDescription("Connection is already closed, cleanup inflight request"),
-            streamName);
-    Deque<AppendRequestAndResponse> localQueue = new LinkedList<AppendRequestAndResponse>();
-    this.lock.lock();
-    try {
-      if (this.connectionFinalStatus != null) {
-        finalStatus = this.connectionFinalStatus;
-      }
-      while (!this.inflightRequestQueue.isEmpty()) {
-        localQueue.addLast(pollInflightRequestQueue());
-      }
-      this.inflightCleanuped = true;
-    } finally {
-      this.lock.unlock();
-    }
-    log.fine("Cleaning " + localQueue.size() + " inflight requests with error: " + finalStatus);
-    while (!localQueue.isEmpty()) {
-      localQueue.pollFirst().appendResult.setException(finalStatus);
-    }
-  }
-
-  private void requestCallback(AppendRowsResponse response) {
-    AppendRequestAndResponse requestWrapper;
-    this.lock.lock();
-    if (response.hasUpdatedSchema()) {
-      this.updatedSchema = response.getUpdatedSchema();
-    }
-    try {
-      // Had a successful connection with at least one result, reset retries.
-      // conectionRetryCountWithoutCallback is reset so that only multiple retries, without
-      // successful records sent, will cause the stream to fail.
-      if (conectionRetryCountWithoutCallback != 0) {
-        conectionRetryCountWithoutCallback = 0;
-      }
-      if (!this.inflightRequestQueue.isEmpty()) {
-        requestWrapper = pollInflightRequestQueue();
-      } else if (inflightCleanuped) {
-        // It is possible when requestCallback is called, the inflight queue is already drained
-        // because we timed out waiting for done.
-        return;
-      } else {
-        // This is something not expected, we shouldn't have an empty inflight queue otherwise.
-        log.log(Level.WARNING, "Unexpected: request callback called on an empty inflight queue.");
-        connectionFinalStatus =
-            new StatusRuntimeException(
-                Status.fromCode(Code.FAILED_PRECONDITION)
-                    .withDescription("Request callback called on an empty inflight queue."));
-        return;
-      }
-    } finally {
-      this.lock.unlock();
-    }
-    if (response.hasError()) {
-      Exceptions.StorageException storageException =
-          Exceptions.toStorageException(response.getError(), null);
-      if (storageException != null) {
-        requestWrapper.appendResult.setException(storageException);
-      } else {
-        StatusRuntimeException exception =
-            new StatusRuntimeException(
-                Status.fromCodeValue(response.getError().getCode())
-                    .withDescription(response.getError().getMessage()));
-        requestWrapper.appendResult.setException(exception);
-      }
-    } else {
-      requestWrapper.appendResult.set(response);
-    }
-  }
-
-  private boolean isRetriableError(Throwable t) {
-    Status status = Status.fromThrowable(t);
-    if (Errors.isRetryableInternalStatus(status)) {
-      return true;
-    }
-    return status.getCode() == Code.ABORTED
-        || status.getCode() == Code.UNAVAILABLE
-        || status.getCode() == Code.CANCELLED;
-  }
-
-  private void doneCallback(Throwable finalStatus) {
-    log.fine(
-        "Received done callback. Stream: "
-            + streamName
-            + " Final status: "
-            + finalStatus.toString());
-    this.lock.lock();
-    try {
-      this.streamConnectionIsConnected = false;
-      if (connectionFinalStatus == null) {
-        // If the error can be retried, don't set it here, let it try to retry later on.
-        if (isRetriableError(finalStatus) && !userClosed) {
-          this.conectionRetryCountWithoutCallback++;
-          log.fine(
-              "Retriable error "
-                  + finalStatus.toString()
-                  + " received, retry count "
-                  + conectionRetryCountWithoutCallback
-                  + " for stream "
-                  + streamName);
-        } else {
-          Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
-          this.connectionFinalStatus = storageException != null ? storageException : finalStatus;
-          log.info(
-              "Connection finished with error "
-                  + finalStatus.toString()
-                  + " for stream "
-                  + streamName);
-        }
-      }
-    } finally {
-      this.lock.unlock();
-    }
-  }
-
-  @GuardedBy("lock")
-  private AppendRequestAndResponse pollInflightRequestQueue() {
-    AppendRequestAndResponse requestWrapper = this.inflightRequestQueue.pollFirst();
-    --this.inflightRequests;
-    this.inflightBytes -= requestWrapper.messageSize;
-    this.inflightReduced.signal();
-    return requestWrapper;
+    singleConnectionOrConnectionPool.close(this);
   }
 
   /**
@@ -704,12 +408,27 @@ public class StreamWriter implements AutoCloseable {
 
   /** Thread-safe getter of updated TableSchema */
   public synchronized TableSchema getUpdatedSchema() {
-    return this.updatedSchema;
+    return singleConnectionOrConnectionPool.getUpdatedSchema();
+  }
+
+  @VisibleForTesting
+  SingleConnectionOrConnectionPool.Kind getConnectionOperationType() {
+    return singleConnectionOrConnectionPool.getKind();
+  }
+
+  @VisibleForTesting
+  static int getTestOnlyClientCreatedTimes() {
+    return testOnlyClientCreatedTimes;
+  }
+
+  @VisibleForTesting
+  static void cleanUp() {
+    testOnlyClientCreatedTimes = 0;
+    connectionPoolMap.clear();
   }
 
   /** A builder of {@link StreamWriter}s. */
   public static final class Builder {
-
     private static final long DEFAULT_MAX_INFLIGHT_REQUESTS = 1000L;
 
     private static final long DEFAULT_MAX_INFLIGHT_BYTES = 100 * 1024 * 1024; // 100Mb.
@@ -732,12 +451,19 @@ public class StreamWriter implements AutoCloseable {
     private CredentialsProvider credentialsProvider =
         BigQueryWriteSettings.defaultCredentialsProviderBuilder().build();
 
+    private ExecutorProvider executorProvider =
+        BigQueryWriteSettings.defaultExecutorProviderBuilder().build();
+
     private FlowController.LimitExceededBehavior limitExceededBehavior =
         FlowController.LimitExceededBehavior.Block;
 
     private String traceId = null;
 
     private TableSchema updatedTableSchema = null;
+
+    private String location = null;
+
+    private boolean enableConnectionPool = false;
 
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
@@ -772,6 +498,19 @@ public class StreamWriter implements AutoCloseable {
     }
 
     /**
+     * Enable multiplexing for this writer. In multiplexing mode tables will share the same
+     * connection if possible until the connection is overwhelmed. This feature is still under
+     * development, please contact write api team before using.
+     *
+     * @param enableConnectionPool
+     * @return Builder
+     */
+    public Builder setEnableConnectionPool(boolean enableConnectionPool) {
+      this.enableConnectionPool = enableConnectionPool;
+      return this;
+    }
+
+    /**
      * {@code ChannelProvider} to use to create Channels, which must point at Cloud BigQuery Storage
      * API endpoint.
      *
@@ -791,6 +530,12 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
+    /** {@code ExecutorProvider} to use to create Executor to run background jobs. */
+    public Builder setExecutorProvider(ExecutorProvider executorProvider) {
+      this.executorProvider = executorProvider;
+      return this;
+    }
+
     /**
      * Sets traceId for debuging purpose. TraceId must follow the format of
      * CustomerDomain:DebugString, e.g. DATAFLOW:job_id_x.
@@ -802,6 +547,12 @@ public class StreamWriter implements AutoCloseable {
             "TraceId must follow the format of A:B. Actual:" + traceId);
       }
       this.traceId = traceId;
+      return this;
+    }
+
+    /** Location of the table this stream writer is targeting. */
+    public Builder setLocation(String location) {
+      this.location = location;
       return this;
     }
 
@@ -825,19 +576,6 @@ public class StreamWriter implements AutoCloseable {
     /** Builds the {@code StreamWriterV2}. */
     public StreamWriter build() throws IOException {
       return new StreamWriter(this);
-    }
-  }
-
-  // Class that wraps AppendRowsRequest and its corresponding Response future.
-  private static final class AppendRequestAndResponse {
-    final SettableApiFuture<AppendRowsResponse> appendResult;
-    final AppendRowsRequest message;
-    final long messageSize;
-
-    AppendRequestAndResponse(AppendRowsRequest message) {
-      this.appendResult = SettableApiFuture.create();
-      this.message = message;
-      this.messageSize = message.getProtoRows().getSerializedSize();
     }
   }
 }

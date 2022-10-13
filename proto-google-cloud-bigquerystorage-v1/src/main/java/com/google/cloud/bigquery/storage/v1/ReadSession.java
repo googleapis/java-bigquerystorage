@@ -56,179 +56,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     return this.unknownFields;
   }
 
-  private ReadSession(
-      com.google.protobuf.CodedInputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-      throws com.google.protobuf.InvalidProtocolBufferException {
-    this();
-    if (extensionRegistry == null) {
-      throw new java.lang.NullPointerException();
-    }
-    int mutable_bitField0_ = 0;
-    com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-        com.google.protobuf.UnknownFieldSet.newBuilder();
-    try {
-      boolean done = false;
-      while (!done) {
-        int tag = input.readTag();
-        switch (tag) {
-          case 0:
-            done = true;
-            break;
-          case 10:
-            {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              name_ = s;
-              break;
-            }
-          case 18:
-            {
-              com.google.protobuf.Timestamp.Builder subBuilder = null;
-              if (expireTime_ != null) {
-                subBuilder = expireTime_.toBuilder();
-              }
-              expireTime_ =
-                  input.readMessage(com.google.protobuf.Timestamp.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(expireTime_);
-                expireTime_ = subBuilder.buildPartial();
-              }
-
-              break;
-            }
-          case 24:
-            {
-              int rawValue = input.readEnum();
-
-              dataFormat_ = rawValue;
-              break;
-            }
-          case 34:
-            {
-              com.google.cloud.bigquery.storage.v1.AvroSchema.Builder subBuilder = null;
-              if (schemaCase_ == 4) {
-                subBuilder =
-                    ((com.google.cloud.bigquery.storage.v1.AvroSchema) schema_).toBuilder();
-              }
-              schema_ =
-                  input.readMessage(
-                      com.google.cloud.bigquery.storage.v1.AvroSchema.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom((com.google.cloud.bigquery.storage.v1.AvroSchema) schema_);
-                schema_ = subBuilder.buildPartial();
-              }
-              schemaCase_ = 4;
-              break;
-            }
-          case 42:
-            {
-              com.google.cloud.bigquery.storage.v1.ArrowSchema.Builder subBuilder = null;
-              if (schemaCase_ == 5) {
-                subBuilder =
-                    ((com.google.cloud.bigquery.storage.v1.ArrowSchema) schema_).toBuilder();
-              }
-              schema_ =
-                  input.readMessage(
-                      com.google.cloud.bigquery.storage.v1.ArrowSchema.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom((com.google.cloud.bigquery.storage.v1.ArrowSchema) schema_);
-                schema_ = subBuilder.buildPartial();
-              }
-              schemaCase_ = 5;
-              break;
-            }
-          case 50:
-            {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              table_ = s;
-              break;
-            }
-          case 58:
-            {
-              com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers.Builder subBuilder =
-                  null;
-              if (tableModifiers_ != null) {
-                subBuilder = tableModifiers_.toBuilder();
-              }
-              tableModifiers_ =
-                  input.readMessage(
-                      com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers.parser(),
-                      extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(tableModifiers_);
-                tableModifiers_ = subBuilder.buildPartial();
-              }
-
-              break;
-            }
-          case 66:
-            {
-              com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions.Builder subBuilder =
-                  null;
-              if (readOptions_ != null) {
-                subBuilder = readOptions_.toBuilder();
-              }
-              readOptions_ =
-                  input.readMessage(
-                      com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions.parser(),
-                      extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(readOptions_);
-                readOptions_ = subBuilder.buildPartial();
-              }
-
-              break;
-            }
-          case 82:
-            {
-              if (!((mutable_bitField0_ & 0x00000001) != 0)) {
-                streams_ =
-                    new java.util.ArrayList<com.google.cloud.bigquery.storage.v1.ReadStream>();
-                mutable_bitField0_ |= 0x00000001;
-              }
-              streams_.add(
-                  input.readMessage(
-                      com.google.cloud.bigquery.storage.v1.ReadStream.parser(), extensionRegistry));
-              break;
-            }
-          case 96:
-            {
-              estimatedTotalBytesScanned_ = input.readInt64();
-              break;
-            }
-          case 106:
-            {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              traceId_ = s;
-              break;
-            }
-          default:
-            {
-              if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-        }
-      }
-    } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-      throw e.setUnfinishedMessage(this);
-    } catch (com.google.protobuf.UninitializedMessageException e) {
-      throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-    } catch (java.io.IOException e) {
-      throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
-    } finally {
-      if (((mutable_bitField0_ & 0x00000001) != 0)) {
-        streams_ = java.util.Collections.unmodifiableList(streams_);
-      }
-      this.unknownFields = unknownFields.build();
-      makeExtensionsImmutable();
-    }
-  }
-
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
     return com.google.cloud.bigquery.storage.v1.StreamProto
         .internal_static_google_cloud_bigquery_storage_v1_ReadSession_descriptor;
@@ -316,60 +143,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       return this.unknownFields;
     }
 
-    private TableModifiers(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10:
-              {
-                com.google.protobuf.Timestamp.Builder subBuilder = null;
-                if (snapshotTime_ != null) {
-                  subBuilder = snapshotTime_.toBuilder();
-                }
-                snapshotTime_ =
-                    input.readMessage(com.google.protobuf.Timestamp.parser(), extensionRegistry);
-                if (subBuilder != null) {
-                  subBuilder.mergeFrom(snapshotTime_);
-                  snapshotTime_ = subBuilder.buildPartial();
-                }
-
-                break;
-              }
-            default:
-              {
-                if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
-                  done = true;
-                }
-                break;
-              }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
       return com.google.cloud.bigquery.storage.v1.StreamProto
           .internal_static_google_cloud_bigquery_storage_v1_ReadSession_TableModifiers_descriptor;
@@ -450,7 +223,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       if (snapshotTime_ != null) {
         output.writeMessage(1, getSnapshotTime());
       }
-      unknownFields.writeTo(output);
+      getUnknownFields().writeTo(output);
     }
 
     @java.lang.Override
@@ -462,7 +235,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       if (snapshotTime_ != null) {
         size += com.google.protobuf.CodedOutputStream.computeMessageSize(1, getSnapshotTime());
       }
-      size += unknownFields.getSerializedSize();
+      size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -482,7 +255,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       if (hasSnapshotTime()) {
         if (!getSnapshotTime().equals(other.getSnapshotTime())) return false;
       }
-      if (!unknownFields.equals(other.unknownFields)) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
 
@@ -497,7 +270,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         hash = (37 * hash) + SNAPSHOT_TIME_FIELD_NUMBER;
         hash = (53 * hash) + getSnapshotTime().hashCode();
       }
-      hash = (29 * hash) + unknownFields.hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
     }
@@ -631,17 +404,10 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
 
       // Construct using
       // com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
+      private Builder() {}
 
       private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
         super(parent);
-        maybeForceBuilderInitialization();
-      }
-
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
       }
 
       @java.lang.Override
@@ -743,7 +509,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         if (other.hasSnapshotTime()) {
           mergeSnapshotTime(other.getSnapshotTime());
         }
-        this.mergeUnknownFields(other.unknownFields);
+        this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
         return this;
       }
@@ -758,19 +524,37 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers parsedMessage = null;
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
         try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10:
+                {
+                  input.readMessage(getSnapshotTimeFieldBuilder().getBuilder(), extensionRegistry);
+
+                  break;
+                } // case 10
+              default:
+                {
+                  if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                    done = true; // was an endgroup tag
+                  }
+                  break;
+                } // default:
+            } // switch (tag)
+          } // while (!done)
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage =
-              (com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers)
-                  e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
+          onChanged();
+        } // finally
         return this;
       }
 
@@ -994,7 +778,19 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
               com.google.protobuf.CodedInputStream input,
               com.google.protobuf.ExtensionRegistryLite extensionRegistry)
               throws com.google.protobuf.InvalidProtocolBufferException {
-            return new TableModifiers(input, extensionRegistry);
+            Builder builder = newBuilder();
+            try {
+              builder.mergeFrom(input, extensionRegistry);
+            } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+              throw e.setUnfinishedMessage(builder.buildPartial());
+            } catch (com.google.protobuf.UninitializedMessageException e) {
+              throw e.asInvalidProtocolBufferException()
+                  .setUnfinishedMessage(builder.buildPartial());
+            } catch (java.io.IOException e) {
+              throw new com.google.protobuf.InvalidProtocolBufferException(e)
+                  .setUnfinishedMessage(builder.buildPartial());
+            }
+            return builder.buildPartial();
           }
         };
 
@@ -1023,10 +819,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      *
      * <pre>
-     * Names of the fields in the table that should be read. If empty, all
-     * fields will be read. If the specified field is a nested field, all
-     * the sub-fields in the field will be selected. The output field order is
-     * unrelated to the order of fields in selected_fields.
+     * Optional. The names of the fields in the table to be returned. If no
+     * field names are specified, then all fields in the table are returned.
+     * Nested fields -- the child elements of a STRUCT field -- can be selected
+     * individually using their fully-qualified names, and will be returned as
+     * record fields containing only the selected nested fields. If a STRUCT
+     * field is specified in the selected fields list, all of the child elements
+     * will be returned.
+     * As an example, consider a table with the following schema:
+     *   {
+     *       "name": "struct_field",
+     *       "type": "RECORD",
+     *       "mode": "NULLABLE",
+     *       "fields": [
+     *           {
+     *               "name": "string_field1",
+     *               "type": "STRING",
+     * .              "mode": "NULLABLE"
+     *           },
+     *           {
+     *               "name": "string_field2",
+     *               "type": "STRING",
+     *               "mode": "NULLABLE"
+     *           }
+     *       ]
+     *   }
+     * Specifying "struct_field" in the selected fields list will result in a
+     * read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *       string_field2
+     *   }
+     * Specifying "struct_field.string_field1" in the selected fields list will
+     * result in a read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *   }
+     * The order of the fields in the read session schema is derived from the
+     * table schema and does not correspond to the order in which the fields are
+     * specified in this list.
      * </pre>
      *
      * <code>repeated string selected_fields = 1;</code>
@@ -1038,10 +869,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      *
      * <pre>
-     * Names of the fields in the table that should be read. If empty, all
-     * fields will be read. If the specified field is a nested field, all
-     * the sub-fields in the field will be selected. The output field order is
-     * unrelated to the order of fields in selected_fields.
+     * Optional. The names of the fields in the table to be returned. If no
+     * field names are specified, then all fields in the table are returned.
+     * Nested fields -- the child elements of a STRUCT field -- can be selected
+     * individually using their fully-qualified names, and will be returned as
+     * record fields containing only the selected nested fields. If a STRUCT
+     * field is specified in the selected fields list, all of the child elements
+     * will be returned.
+     * As an example, consider a table with the following schema:
+     *   {
+     *       "name": "struct_field",
+     *       "type": "RECORD",
+     *       "mode": "NULLABLE",
+     *       "fields": [
+     *           {
+     *               "name": "string_field1",
+     *               "type": "STRING",
+     * .              "mode": "NULLABLE"
+     *           },
+     *           {
+     *               "name": "string_field2",
+     *               "type": "STRING",
+     *               "mode": "NULLABLE"
+     *           }
+     *       ]
+     *   }
+     * Specifying "struct_field" in the selected fields list will result in a
+     * read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *       string_field2
+     *   }
+     * Specifying "struct_field.string_field1" in the selected fields list will
+     * result in a read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *   }
+     * The order of the fields in the read session schema is derived from the
+     * table schema and does not correspond to the order in which the fields are
+     * specified in this list.
      * </pre>
      *
      * <code>repeated string selected_fields = 1;</code>
@@ -1053,10 +919,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      *
      * <pre>
-     * Names of the fields in the table that should be read. If empty, all
-     * fields will be read. If the specified field is a nested field, all
-     * the sub-fields in the field will be selected. The output field order is
-     * unrelated to the order of fields in selected_fields.
+     * Optional. The names of the fields in the table to be returned. If no
+     * field names are specified, then all fields in the table are returned.
+     * Nested fields -- the child elements of a STRUCT field -- can be selected
+     * individually using their fully-qualified names, and will be returned as
+     * record fields containing only the selected nested fields. If a STRUCT
+     * field is specified in the selected fields list, all of the child elements
+     * will be returned.
+     * As an example, consider a table with the following schema:
+     *   {
+     *       "name": "struct_field",
+     *       "type": "RECORD",
+     *       "mode": "NULLABLE",
+     *       "fields": [
+     *           {
+     *               "name": "string_field1",
+     *               "type": "STRING",
+     * .              "mode": "NULLABLE"
+     *           },
+     *           {
+     *               "name": "string_field2",
+     *               "type": "STRING",
+     *               "mode": "NULLABLE"
+     *           }
+     *       ]
+     *   }
+     * Specifying "struct_field" in the selected fields list will result in a
+     * read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *       string_field2
+     *   }
+     * Specifying "struct_field.string_field1" in the selected fields list will
+     * result in a read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *   }
+     * The order of the fields in the read session schema is derived from the
+     * table schema and does not correspond to the order in which the fields are
+     * specified in this list.
      * </pre>
      *
      * <code>repeated string selected_fields = 1;</code>
@@ -1069,10 +970,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      *
      * <pre>
-     * Names of the fields in the table that should be read. If empty, all
-     * fields will be read. If the specified field is a nested field, all
-     * the sub-fields in the field will be selected. The output field order is
-     * unrelated to the order of fields in selected_fields.
+     * Optional. The names of the fields in the table to be returned. If no
+     * field names are specified, then all fields in the table are returned.
+     * Nested fields -- the child elements of a STRUCT field -- can be selected
+     * individually using their fully-qualified names, and will be returned as
+     * record fields containing only the selected nested fields. If a STRUCT
+     * field is specified in the selected fields list, all of the child elements
+     * will be returned.
+     * As an example, consider a table with the following schema:
+     *   {
+     *       "name": "struct_field",
+     *       "type": "RECORD",
+     *       "mode": "NULLABLE",
+     *       "fields": [
+     *           {
+     *               "name": "string_field1",
+     *               "type": "STRING",
+     * .              "mode": "NULLABLE"
+     *           },
+     *           {
+     *               "name": "string_field2",
+     *               "type": "STRING",
+     *               "mode": "NULLABLE"
+     *           }
+     *       ]
+     *   }
+     * Specifying "struct_field" in the selected fields list will result in a
+     * read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *       string_field2
+     *   }
+     * Specifying "struct_field.string_field1" in the selected fields list will
+     * result in a read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *   }
+     * The order of the fields in the read session schema is derived from the
+     * table schema and does not correspond to the order in which the fields are
+     * specified in this list.
      * </pre>
      *
      * <code>repeated string selected_fields = 1;</code>
@@ -1163,6 +1099,48 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     com.google.cloud.bigquery.storage.v1.ArrowSerializationOptionsOrBuilder
         getArrowSerializationOptionsOrBuilder();
 
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Options specific to the Apache Avro output format
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     *
+     * @return Whether the avroSerializationOptions field is set.
+     */
+    boolean hasAvroSerializationOptions();
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Options specific to the Apache Avro output format
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     *
+     * @return The avroSerializationOptions.
+     */
+    com.google.cloud.bigquery.storage.v1.AvroSerializationOptions getAvroSerializationOptions();
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Options specific to the Apache Avro output format
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     */
+    com.google.cloud.bigquery.storage.v1.AvroSerializationOptionsOrBuilder
+        getAvroSerializationOptionsOrBuilder();
+
     public com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions
             .OutputFormatSerializationOptionsCase
         getOutputFormatSerializationOptionsCase();
@@ -1202,89 +1180,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       return this.unknownFields;
     }
 
-    private TableReadOptions(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10:
-              {
-                java.lang.String s = input.readStringRequireUtf8();
-                if (!((mutable_bitField0_ & 0x00000001) != 0)) {
-                  selectedFields_ = new com.google.protobuf.LazyStringArrayList();
-                  mutable_bitField0_ |= 0x00000001;
-                }
-                selectedFields_.add(s);
-                break;
-              }
-            case 18:
-              {
-                java.lang.String s = input.readStringRequireUtf8();
-
-                rowRestriction_ = s;
-                break;
-              }
-            case 26:
-              {
-                com.google.cloud.bigquery.storage.v1.ArrowSerializationOptions.Builder subBuilder =
-                    null;
-                if (outputFormatSerializationOptionsCase_ == 3) {
-                  subBuilder =
-                      ((com.google.cloud.bigquery.storage.v1.ArrowSerializationOptions)
-                              outputFormatSerializationOptions_)
-                          .toBuilder();
-                }
-                outputFormatSerializationOptions_ =
-                    input.readMessage(
-                        com.google.cloud.bigquery.storage.v1.ArrowSerializationOptions.parser(),
-                        extensionRegistry);
-                if (subBuilder != null) {
-                  subBuilder.mergeFrom(
-                      (com.google.cloud.bigquery.storage.v1.ArrowSerializationOptions)
-                          outputFormatSerializationOptions_);
-                  outputFormatSerializationOptions_ = subBuilder.buildPartial();
-                }
-                outputFormatSerializationOptionsCase_ = 3;
-                break;
-              }
-            default:
-              {
-                if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
-                  done = true;
-                }
-                break;
-              }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
-      } finally {
-        if (((mutable_bitField0_ & 0x00000001) != 0)) {
-          selectedFields_ = selectedFields_.getUnmodifiableView();
-        }
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
       return com.google.cloud.bigquery.storage.v1.StreamProto
           .internal_static_google_cloud_bigquery_storage_v1_ReadSession_TableReadOptions_descriptor;
@@ -1308,6 +1203,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             com.google.protobuf.Internal.EnumLite,
             com.google.protobuf.AbstractMessage.InternalOneOfEnum {
       ARROW_SERIALIZATION_OPTIONS(3),
+      AVRO_SERIALIZATION_OPTIONS(4),
       OUTPUTFORMATSERIALIZATIONOPTIONS_NOT_SET(0);
       private final int value;
 
@@ -1328,6 +1224,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         switch (value) {
           case 3:
             return ARROW_SERIALIZATION_OPTIONS;
+          case 4:
+            return AVRO_SERIALIZATION_OPTIONS;
           case 0:
             return OUTPUTFORMATSERIALIZATIONOPTIONS_NOT_SET;
           default:
@@ -1350,10 +1248,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      *
      * <pre>
-     * Names of the fields in the table that should be read. If empty, all
-     * fields will be read. If the specified field is a nested field, all
-     * the sub-fields in the field will be selected. The output field order is
-     * unrelated to the order of fields in selected_fields.
+     * Optional. The names of the fields in the table to be returned. If no
+     * field names are specified, then all fields in the table are returned.
+     * Nested fields -- the child elements of a STRUCT field -- can be selected
+     * individually using their fully-qualified names, and will be returned as
+     * record fields containing only the selected nested fields. If a STRUCT
+     * field is specified in the selected fields list, all of the child elements
+     * will be returned.
+     * As an example, consider a table with the following schema:
+     *   {
+     *       "name": "struct_field",
+     *       "type": "RECORD",
+     *       "mode": "NULLABLE",
+     *       "fields": [
+     *           {
+     *               "name": "string_field1",
+     *               "type": "STRING",
+     * .              "mode": "NULLABLE"
+     *           },
+     *           {
+     *               "name": "string_field2",
+     *               "type": "STRING",
+     *               "mode": "NULLABLE"
+     *           }
+     *       ]
+     *   }
+     * Specifying "struct_field" in the selected fields list will result in a
+     * read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *       string_field2
+     *   }
+     * Specifying "struct_field.string_field1" in the selected fields list will
+     * result in a read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *   }
+     * The order of the fields in the read session schema is derived from the
+     * table schema and does not correspond to the order in which the fields are
+     * specified in this list.
      * </pre>
      *
      * <code>repeated string selected_fields = 1;</code>
@@ -1367,10 +1300,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      *
      * <pre>
-     * Names of the fields in the table that should be read. If empty, all
-     * fields will be read. If the specified field is a nested field, all
-     * the sub-fields in the field will be selected. The output field order is
-     * unrelated to the order of fields in selected_fields.
+     * Optional. The names of the fields in the table to be returned. If no
+     * field names are specified, then all fields in the table are returned.
+     * Nested fields -- the child elements of a STRUCT field -- can be selected
+     * individually using their fully-qualified names, and will be returned as
+     * record fields containing only the selected nested fields. If a STRUCT
+     * field is specified in the selected fields list, all of the child elements
+     * will be returned.
+     * As an example, consider a table with the following schema:
+     *   {
+     *       "name": "struct_field",
+     *       "type": "RECORD",
+     *       "mode": "NULLABLE",
+     *       "fields": [
+     *           {
+     *               "name": "string_field1",
+     *               "type": "STRING",
+     * .              "mode": "NULLABLE"
+     *           },
+     *           {
+     *               "name": "string_field2",
+     *               "type": "STRING",
+     *               "mode": "NULLABLE"
+     *           }
+     *       ]
+     *   }
+     * Specifying "struct_field" in the selected fields list will result in a
+     * read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *       string_field2
+     *   }
+     * Specifying "struct_field.string_field1" in the selected fields list will
+     * result in a read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *   }
+     * The order of the fields in the read session schema is derived from the
+     * table schema and does not correspond to the order in which the fields are
+     * specified in this list.
      * </pre>
      *
      * <code>repeated string selected_fields = 1;</code>
@@ -1384,10 +1352,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      *
      * <pre>
-     * Names of the fields in the table that should be read. If empty, all
-     * fields will be read. If the specified field is a nested field, all
-     * the sub-fields in the field will be selected. The output field order is
-     * unrelated to the order of fields in selected_fields.
+     * Optional. The names of the fields in the table to be returned. If no
+     * field names are specified, then all fields in the table are returned.
+     * Nested fields -- the child elements of a STRUCT field -- can be selected
+     * individually using their fully-qualified names, and will be returned as
+     * record fields containing only the selected nested fields. If a STRUCT
+     * field is specified in the selected fields list, all of the child elements
+     * will be returned.
+     * As an example, consider a table with the following schema:
+     *   {
+     *       "name": "struct_field",
+     *       "type": "RECORD",
+     *       "mode": "NULLABLE",
+     *       "fields": [
+     *           {
+     *               "name": "string_field1",
+     *               "type": "STRING",
+     * .              "mode": "NULLABLE"
+     *           },
+     *           {
+     *               "name": "string_field2",
+     *               "type": "STRING",
+     *               "mode": "NULLABLE"
+     *           }
+     *       ]
+     *   }
+     * Specifying "struct_field" in the selected fields list will result in a
+     * read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *       string_field2
+     *   }
+     * Specifying "struct_field.string_field1" in the selected fields list will
+     * result in a read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *   }
+     * The order of the fields in the read session schema is derived from the
+     * table schema and does not correspond to the order in which the fields are
+     * specified in this list.
      * </pre>
      *
      * <code>repeated string selected_fields = 1;</code>
@@ -1402,10 +1405,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      *
      * <pre>
-     * Names of the fields in the table that should be read. If empty, all
-     * fields will be read. If the specified field is a nested field, all
-     * the sub-fields in the field will be selected. The output field order is
-     * unrelated to the order of fields in selected_fields.
+     * Optional. The names of the fields in the table to be returned. If no
+     * field names are specified, then all fields in the table are returned.
+     * Nested fields -- the child elements of a STRUCT field -- can be selected
+     * individually using their fully-qualified names, and will be returned as
+     * record fields containing only the selected nested fields. If a STRUCT
+     * field is specified in the selected fields list, all of the child elements
+     * will be returned.
+     * As an example, consider a table with the following schema:
+     *   {
+     *       "name": "struct_field",
+     *       "type": "RECORD",
+     *       "mode": "NULLABLE",
+     *       "fields": [
+     *           {
+     *               "name": "string_field1",
+     *               "type": "STRING",
+     * .              "mode": "NULLABLE"
+     *           },
+     *           {
+     *               "name": "string_field2",
+     *               "type": "STRING",
+     *               "mode": "NULLABLE"
+     *           }
+     *       ]
+     *   }
+     * Specifying "struct_field" in the selected fields list will result in a
+     * read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *       string_field2
+     *   }
+     * Specifying "struct_field.string_field1" in the selected fields list will
+     * result in a read session schema with the following logical structure:
+     *   struct_field {
+     *       string_field1
+     *   }
+     * The order of the fields in the read session schema is derived from the
+     * table schema and does not correspond to the order in which the fields are
+     * specified in this list.
      * </pre>
      *
      * <code>repeated string selected_fields = 1;</code>
@@ -1541,6 +1579,67 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       return com.google.cloud.bigquery.storage.v1.ArrowSerializationOptions.getDefaultInstance();
     }
 
+    public static final int AVRO_SERIALIZATION_OPTIONS_FIELD_NUMBER = 4;
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Options specific to the Apache Avro output format
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     *
+     * @return Whether the avroSerializationOptions field is set.
+     */
+    @java.lang.Override
+    public boolean hasAvroSerializationOptions() {
+      return outputFormatSerializationOptionsCase_ == 4;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Options specific to the Apache Avro output format
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     *
+     * @return The avroSerializationOptions.
+     */
+    @java.lang.Override
+    public com.google.cloud.bigquery.storage.v1.AvroSerializationOptions
+        getAvroSerializationOptions() {
+      if (outputFormatSerializationOptionsCase_ == 4) {
+        return (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
+            outputFormatSerializationOptions_;
+      }
+      return com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.getDefaultInstance();
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Options specific to the Apache Avro output format
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     */
+    @java.lang.Override
+    public com.google.cloud.bigquery.storage.v1.AvroSerializationOptionsOrBuilder
+        getAvroSerializationOptionsOrBuilder() {
+      if (outputFormatSerializationOptionsCase_ == 4) {
+        return (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
+            outputFormatSerializationOptions_;
+      }
+      return com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.getDefaultInstance();
+    }
+
     private byte memoizedIsInitialized = -1;
 
     @java.lang.Override
@@ -1567,7 +1666,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             (com.google.cloud.bigquery.storage.v1.ArrowSerializationOptions)
                 outputFormatSerializationOptions_);
       }
-      unknownFields.writeTo(output);
+      if (outputFormatSerializationOptionsCase_ == 4) {
+        output.writeMessage(
+            4,
+            (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
+                outputFormatSerializationOptions_);
+      }
+      getUnknownFields().writeTo(output);
     }
 
     @java.lang.Override
@@ -1594,7 +1699,14 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
                 (com.google.cloud.bigquery.storage.v1.ArrowSerializationOptions)
                     outputFormatSerializationOptions_);
       }
-      size += unknownFields.getSerializedSize();
+      if (outputFormatSerializationOptionsCase_ == 4) {
+        size +=
+            com.google.protobuf.CodedOutputStream.computeMessageSize(
+                4,
+                (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
+                    outputFormatSerializationOptions_);
+      }
+      size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
     }
@@ -1619,10 +1731,14 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
           if (!getArrowSerializationOptions().equals(other.getArrowSerializationOptions()))
             return false;
           break;
+        case 4:
+          if (!getAvroSerializationOptions().equals(other.getAvroSerializationOptions()))
+            return false;
+          break;
         case 0:
         default:
       }
-      if (!unknownFields.equals(other.unknownFields)) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
 
@@ -1644,10 +1760,14 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
           hash = (37 * hash) + ARROW_SERIALIZATION_OPTIONS_FIELD_NUMBER;
           hash = (53 * hash) + getArrowSerializationOptions().hashCode();
           break;
+        case 4:
+          hash = (37 * hash) + AVRO_SERIALIZATION_OPTIONS_FIELD_NUMBER;
+          hash = (53 * hash) + getAvroSerializationOptions().hashCode();
+          break;
         case 0:
         default:
       }
-      hash = (29 * hash) + unknownFields.hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
     }
@@ -1781,17 +1901,10 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
 
       // Construct using
       // com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
+      private Builder() {}
 
       private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
         super(parent);
-        maybeForceBuilderInitialization();
-      }
-
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
       }
 
       @java.lang.Override
@@ -1801,6 +1914,12 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         bitField0_ = (bitField0_ & ~0x00000001);
         rowRestriction_ = "";
 
+        if (arrowSerializationOptionsBuilder_ != null) {
+          arrowSerializationOptionsBuilder_.clear();
+        }
+        if (avroSerializationOptionsBuilder_ != null) {
+          avroSerializationOptionsBuilder_.clear();
+        }
         outputFormatSerializationOptionsCase_ = 0;
         outputFormatSerializationOptions_ = null;
         return this;
@@ -1844,6 +1963,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             result.outputFormatSerializationOptions_ = outputFormatSerializationOptions_;
           } else {
             result.outputFormatSerializationOptions_ = arrowSerializationOptionsBuilder_.build();
+          }
+        }
+        if (outputFormatSerializationOptionsCase_ == 4) {
+          if (avroSerializationOptionsBuilder_ == null) {
+            result.outputFormatSerializationOptions_ = outputFormatSerializationOptions_;
+          } else {
+            result.outputFormatSerializationOptions_ = avroSerializationOptionsBuilder_.build();
           }
         }
         result.outputFormatSerializationOptionsCase_ = outputFormatSerializationOptionsCase_;
@@ -1922,12 +2048,17 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
               mergeArrowSerializationOptions(other.getArrowSerializationOptions());
               break;
             }
+          case AVRO_SERIALIZATION_OPTIONS:
+            {
+              mergeAvroSerializationOptions(other.getAvroSerializationOptions());
+              break;
+            }
           case OUTPUTFORMATSERIALIZATIONOPTIONS_NOT_SET:
             {
               break;
             }
         }
-        this.mergeUnknownFields(other.unknownFields);
+        this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
         return this;
       }
@@ -1942,19 +2073,58 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions parsedMessage = null;
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
         try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10:
+                {
+                  java.lang.String s = input.readStringRequireUtf8();
+                  ensureSelectedFieldsIsMutable();
+                  selectedFields_.add(s);
+                  break;
+                } // case 10
+              case 18:
+                {
+                  rowRestriction_ = input.readStringRequireUtf8();
+
+                  break;
+                } // case 18
+              case 26:
+                {
+                  input.readMessage(
+                      getArrowSerializationOptionsFieldBuilder().getBuilder(), extensionRegistry);
+                  outputFormatSerializationOptionsCase_ = 3;
+                  break;
+                } // case 26
+              case 34:
+                {
+                  input.readMessage(
+                      getAvroSerializationOptionsFieldBuilder().getBuilder(), extensionRegistry);
+                  outputFormatSerializationOptionsCase_ = 4;
+                  break;
+                } // case 34
+              default:
+                {
+                  if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                    done = true; // was an endgroup tag
+                  }
+                  break;
+                } // default:
+            } // switch (tag)
+          } // while (!done)
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage =
-              (com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions)
-                  e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
+          onChanged();
+        } // finally
         return this;
       }
 
@@ -1988,10 +2158,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *
        *
        * <pre>
-       * Names of the fields in the table that should be read. If empty, all
-       * fields will be read. If the specified field is a nested field, all
-       * the sub-fields in the field will be selected. The output field order is
-       * unrelated to the order of fields in selected_fields.
+       * Optional. The names of the fields in the table to be returned. If no
+       * field names are specified, then all fields in the table are returned.
+       * Nested fields -- the child elements of a STRUCT field -- can be selected
+       * individually using their fully-qualified names, and will be returned as
+       * record fields containing only the selected nested fields. If a STRUCT
+       * field is specified in the selected fields list, all of the child elements
+       * will be returned.
+       * As an example, consider a table with the following schema:
+       *   {
+       *       "name": "struct_field",
+       *       "type": "RECORD",
+       *       "mode": "NULLABLE",
+       *       "fields": [
+       *           {
+       *               "name": "string_field1",
+       *               "type": "STRING",
+       * .              "mode": "NULLABLE"
+       *           },
+       *           {
+       *               "name": "string_field2",
+       *               "type": "STRING",
+       *               "mode": "NULLABLE"
+       *           }
+       *       ]
+       *   }
+       * Specifying "struct_field" in the selected fields list will result in a
+       * read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *       string_field2
+       *   }
+       * Specifying "struct_field.string_field1" in the selected fields list will
+       * result in a read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *   }
+       * The order of the fields in the read session schema is derived from the
+       * table schema and does not correspond to the order in which the fields are
+       * specified in this list.
        * </pre>
        *
        * <code>repeated string selected_fields = 1;</code>
@@ -2005,10 +2210,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *
        *
        * <pre>
-       * Names of the fields in the table that should be read. If empty, all
-       * fields will be read. If the specified field is a nested field, all
-       * the sub-fields in the field will be selected. The output field order is
-       * unrelated to the order of fields in selected_fields.
+       * Optional. The names of the fields in the table to be returned. If no
+       * field names are specified, then all fields in the table are returned.
+       * Nested fields -- the child elements of a STRUCT field -- can be selected
+       * individually using their fully-qualified names, and will be returned as
+       * record fields containing only the selected nested fields. If a STRUCT
+       * field is specified in the selected fields list, all of the child elements
+       * will be returned.
+       * As an example, consider a table with the following schema:
+       *   {
+       *       "name": "struct_field",
+       *       "type": "RECORD",
+       *       "mode": "NULLABLE",
+       *       "fields": [
+       *           {
+       *               "name": "string_field1",
+       *               "type": "STRING",
+       * .              "mode": "NULLABLE"
+       *           },
+       *           {
+       *               "name": "string_field2",
+       *               "type": "STRING",
+       *               "mode": "NULLABLE"
+       *           }
+       *       ]
+       *   }
+       * Specifying "struct_field" in the selected fields list will result in a
+       * read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *       string_field2
+       *   }
+       * Specifying "struct_field.string_field1" in the selected fields list will
+       * result in a read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *   }
+       * The order of the fields in the read session schema is derived from the
+       * table schema and does not correspond to the order in which the fields are
+       * specified in this list.
        * </pre>
        *
        * <code>repeated string selected_fields = 1;</code>
@@ -2022,10 +2262,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *
        *
        * <pre>
-       * Names of the fields in the table that should be read. If empty, all
-       * fields will be read. If the specified field is a nested field, all
-       * the sub-fields in the field will be selected. The output field order is
-       * unrelated to the order of fields in selected_fields.
+       * Optional. The names of the fields in the table to be returned. If no
+       * field names are specified, then all fields in the table are returned.
+       * Nested fields -- the child elements of a STRUCT field -- can be selected
+       * individually using their fully-qualified names, and will be returned as
+       * record fields containing only the selected nested fields. If a STRUCT
+       * field is specified in the selected fields list, all of the child elements
+       * will be returned.
+       * As an example, consider a table with the following schema:
+       *   {
+       *       "name": "struct_field",
+       *       "type": "RECORD",
+       *       "mode": "NULLABLE",
+       *       "fields": [
+       *           {
+       *               "name": "string_field1",
+       *               "type": "STRING",
+       * .              "mode": "NULLABLE"
+       *           },
+       *           {
+       *               "name": "string_field2",
+       *               "type": "STRING",
+       *               "mode": "NULLABLE"
+       *           }
+       *       ]
+       *   }
+       * Specifying "struct_field" in the selected fields list will result in a
+       * read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *       string_field2
+       *   }
+       * Specifying "struct_field.string_field1" in the selected fields list will
+       * result in a read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *   }
+       * The order of the fields in the read session schema is derived from the
+       * table schema and does not correspond to the order in which the fields are
+       * specified in this list.
        * </pre>
        *
        * <code>repeated string selected_fields = 1;</code>
@@ -2040,10 +2315,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *
        *
        * <pre>
-       * Names of the fields in the table that should be read. If empty, all
-       * fields will be read. If the specified field is a nested field, all
-       * the sub-fields in the field will be selected. The output field order is
-       * unrelated to the order of fields in selected_fields.
+       * Optional. The names of the fields in the table to be returned. If no
+       * field names are specified, then all fields in the table are returned.
+       * Nested fields -- the child elements of a STRUCT field -- can be selected
+       * individually using their fully-qualified names, and will be returned as
+       * record fields containing only the selected nested fields. If a STRUCT
+       * field is specified in the selected fields list, all of the child elements
+       * will be returned.
+       * As an example, consider a table with the following schema:
+       *   {
+       *       "name": "struct_field",
+       *       "type": "RECORD",
+       *       "mode": "NULLABLE",
+       *       "fields": [
+       *           {
+       *               "name": "string_field1",
+       *               "type": "STRING",
+       * .              "mode": "NULLABLE"
+       *           },
+       *           {
+       *               "name": "string_field2",
+       *               "type": "STRING",
+       *               "mode": "NULLABLE"
+       *           }
+       *       ]
+       *   }
+       * Specifying "struct_field" in the selected fields list will result in a
+       * read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *       string_field2
+       *   }
+       * Specifying "struct_field.string_field1" in the selected fields list will
+       * result in a read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *   }
+       * The order of the fields in the read session schema is derived from the
+       * table schema and does not correspond to the order in which the fields are
+       * specified in this list.
        * </pre>
        *
        * <code>repeated string selected_fields = 1;</code>
@@ -2058,10 +2368,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *
        *
        * <pre>
-       * Names of the fields in the table that should be read. If empty, all
-       * fields will be read. If the specified field is a nested field, all
-       * the sub-fields in the field will be selected. The output field order is
-       * unrelated to the order of fields in selected_fields.
+       * Optional. The names of the fields in the table to be returned. If no
+       * field names are specified, then all fields in the table are returned.
+       * Nested fields -- the child elements of a STRUCT field -- can be selected
+       * individually using their fully-qualified names, and will be returned as
+       * record fields containing only the selected nested fields. If a STRUCT
+       * field is specified in the selected fields list, all of the child elements
+       * will be returned.
+       * As an example, consider a table with the following schema:
+       *   {
+       *       "name": "struct_field",
+       *       "type": "RECORD",
+       *       "mode": "NULLABLE",
+       *       "fields": [
+       *           {
+       *               "name": "string_field1",
+       *               "type": "STRING",
+       * .              "mode": "NULLABLE"
+       *           },
+       *           {
+       *               "name": "string_field2",
+       *               "type": "STRING",
+       *               "mode": "NULLABLE"
+       *           }
+       *       ]
+       *   }
+       * Specifying "struct_field" in the selected fields list will result in a
+       * read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *       string_field2
+       *   }
+       * Specifying "struct_field.string_field1" in the selected fields list will
+       * result in a read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *   }
+       * The order of the fields in the read session schema is derived from the
+       * table schema and does not correspond to the order in which the fields are
+       * specified in this list.
        * </pre>
        *
        * <code>repeated string selected_fields = 1;</code>
@@ -2083,10 +2428,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *
        *
        * <pre>
-       * Names of the fields in the table that should be read. If empty, all
-       * fields will be read. If the specified field is a nested field, all
-       * the sub-fields in the field will be selected. The output field order is
-       * unrelated to the order of fields in selected_fields.
+       * Optional. The names of the fields in the table to be returned. If no
+       * field names are specified, then all fields in the table are returned.
+       * Nested fields -- the child elements of a STRUCT field -- can be selected
+       * individually using their fully-qualified names, and will be returned as
+       * record fields containing only the selected nested fields. If a STRUCT
+       * field is specified in the selected fields list, all of the child elements
+       * will be returned.
+       * As an example, consider a table with the following schema:
+       *   {
+       *       "name": "struct_field",
+       *       "type": "RECORD",
+       *       "mode": "NULLABLE",
+       *       "fields": [
+       *           {
+       *               "name": "string_field1",
+       *               "type": "STRING",
+       * .              "mode": "NULLABLE"
+       *           },
+       *           {
+       *               "name": "string_field2",
+       *               "type": "STRING",
+       *               "mode": "NULLABLE"
+       *           }
+       *       ]
+       *   }
+       * Specifying "struct_field" in the selected fields list will result in a
+       * read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *       string_field2
+       *   }
+       * Specifying "struct_field.string_field1" in the selected fields list will
+       * result in a read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *   }
+       * The order of the fields in the read session schema is derived from the
+       * table schema and does not correspond to the order in which the fields are
+       * specified in this list.
        * </pre>
        *
        * <code>repeated string selected_fields = 1;</code>
@@ -2107,10 +2487,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *
        *
        * <pre>
-       * Names of the fields in the table that should be read. If empty, all
-       * fields will be read. If the specified field is a nested field, all
-       * the sub-fields in the field will be selected. The output field order is
-       * unrelated to the order of fields in selected_fields.
+       * Optional. The names of the fields in the table to be returned. If no
+       * field names are specified, then all fields in the table are returned.
+       * Nested fields -- the child elements of a STRUCT field -- can be selected
+       * individually using their fully-qualified names, and will be returned as
+       * record fields containing only the selected nested fields. If a STRUCT
+       * field is specified in the selected fields list, all of the child elements
+       * will be returned.
+       * As an example, consider a table with the following schema:
+       *   {
+       *       "name": "struct_field",
+       *       "type": "RECORD",
+       *       "mode": "NULLABLE",
+       *       "fields": [
+       *           {
+       *               "name": "string_field1",
+       *               "type": "STRING",
+       * .              "mode": "NULLABLE"
+       *           },
+       *           {
+       *               "name": "string_field2",
+       *               "type": "STRING",
+       *               "mode": "NULLABLE"
+       *           }
+       *       ]
+       *   }
+       * Specifying "struct_field" in the selected fields list will result in a
+       * read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *       string_field2
+       *   }
+       * Specifying "struct_field.string_field1" in the selected fields list will
+       * result in a read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *   }
+       * The order of the fields in the read session schema is derived from the
+       * table schema and does not correspond to the order in which the fields are
+       * specified in this list.
        * </pre>
        *
        * <code>repeated string selected_fields = 1;</code>
@@ -2128,10 +2543,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *
        *
        * <pre>
-       * Names of the fields in the table that should be read. If empty, all
-       * fields will be read. If the specified field is a nested field, all
-       * the sub-fields in the field will be selected. The output field order is
-       * unrelated to the order of fields in selected_fields.
+       * Optional. The names of the fields in the table to be returned. If no
+       * field names are specified, then all fields in the table are returned.
+       * Nested fields -- the child elements of a STRUCT field -- can be selected
+       * individually using their fully-qualified names, and will be returned as
+       * record fields containing only the selected nested fields. If a STRUCT
+       * field is specified in the selected fields list, all of the child elements
+       * will be returned.
+       * As an example, consider a table with the following schema:
+       *   {
+       *       "name": "struct_field",
+       *       "type": "RECORD",
+       *       "mode": "NULLABLE",
+       *       "fields": [
+       *           {
+       *               "name": "string_field1",
+       *               "type": "STRING",
+       * .              "mode": "NULLABLE"
+       *           },
+       *           {
+       *               "name": "string_field2",
+       *               "type": "STRING",
+       *               "mode": "NULLABLE"
+       *           }
+       *       ]
+       *   }
+       * Specifying "struct_field" in the selected fields list will result in a
+       * read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *       string_field2
+       *   }
+       * Specifying "struct_field.string_field1" in the selected fields list will
+       * result in a read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *   }
+       * The order of the fields in the read session schema is derived from the
+       * table schema and does not correspond to the order in which the fields are
+       * specified in this list.
        * </pre>
        *
        * <code>repeated string selected_fields = 1;</code>
@@ -2148,10 +2598,45 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *
        *
        * <pre>
-       * Names of the fields in the table that should be read. If empty, all
-       * fields will be read. If the specified field is a nested field, all
-       * the sub-fields in the field will be selected. The output field order is
-       * unrelated to the order of fields in selected_fields.
+       * Optional. The names of the fields in the table to be returned. If no
+       * field names are specified, then all fields in the table are returned.
+       * Nested fields -- the child elements of a STRUCT field -- can be selected
+       * individually using their fully-qualified names, and will be returned as
+       * record fields containing only the selected nested fields. If a STRUCT
+       * field is specified in the selected fields list, all of the child elements
+       * will be returned.
+       * As an example, consider a table with the following schema:
+       *   {
+       *       "name": "struct_field",
+       *       "type": "RECORD",
+       *       "mode": "NULLABLE",
+       *       "fields": [
+       *           {
+       *               "name": "string_field1",
+       *               "type": "STRING",
+       * .              "mode": "NULLABLE"
+       *           },
+       *           {
+       *               "name": "string_field2",
+       *               "type": "STRING",
+       *               "mode": "NULLABLE"
+       *           }
+       *       ]
+       *   }
+       * Specifying "struct_field" in the selected fields list will result in a
+       * read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *       string_field2
+       *   }
+       * Specifying "struct_field.string_field1" in the selected fields list will
+       * result in a read session schema with the following logical structure:
+       *   struct_field {
+       *       string_field1
+       *   }
+       * The order of the fields in the read session schema is derived from the
+       * table schema and does not correspond to the order in which the fields are
+       * specified in this list.
        * </pre>
        *
        * <code>repeated string selected_fields = 1;</code>
@@ -2555,6 +3040,247 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         return arrowSerializationOptionsBuilder_;
       }
 
+      private com.google.protobuf.SingleFieldBuilderV3<
+              com.google.cloud.bigquery.storage.v1.AvroSerializationOptions,
+              com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.Builder,
+              com.google.cloud.bigquery.storage.v1.AvroSerializationOptionsOrBuilder>
+          avroSerializationOptionsBuilder_;
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Options specific to the Apache Avro output format
+       * </pre>
+       *
+       * <code>
+       * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       *
+       * @return Whether the avroSerializationOptions field is set.
+       */
+      @java.lang.Override
+      public boolean hasAvroSerializationOptions() {
+        return outputFormatSerializationOptionsCase_ == 4;
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Options specific to the Apache Avro output format
+       * </pre>
+       *
+       * <code>
+       * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       *
+       * @return The avroSerializationOptions.
+       */
+      @java.lang.Override
+      public com.google.cloud.bigquery.storage.v1.AvroSerializationOptions
+          getAvroSerializationOptions() {
+        if (avroSerializationOptionsBuilder_ == null) {
+          if (outputFormatSerializationOptionsCase_ == 4) {
+            return (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
+                outputFormatSerializationOptions_;
+          }
+          return com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.getDefaultInstance();
+        } else {
+          if (outputFormatSerializationOptionsCase_ == 4) {
+            return avroSerializationOptionsBuilder_.getMessage();
+          }
+          return com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.getDefaultInstance();
+        }
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Options specific to the Apache Avro output format
+       * </pre>
+       *
+       * <code>
+       * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       */
+      public Builder setAvroSerializationOptions(
+          com.google.cloud.bigquery.storage.v1.AvroSerializationOptions value) {
+        if (avroSerializationOptionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          outputFormatSerializationOptions_ = value;
+          onChanged();
+        } else {
+          avroSerializationOptionsBuilder_.setMessage(value);
+        }
+        outputFormatSerializationOptionsCase_ = 4;
+        return this;
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Options specific to the Apache Avro output format
+       * </pre>
+       *
+       * <code>
+       * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       */
+      public Builder setAvroSerializationOptions(
+          com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.Builder builderForValue) {
+        if (avroSerializationOptionsBuilder_ == null) {
+          outputFormatSerializationOptions_ = builderForValue.build();
+          onChanged();
+        } else {
+          avroSerializationOptionsBuilder_.setMessage(builderForValue.build());
+        }
+        outputFormatSerializationOptionsCase_ = 4;
+        return this;
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Options specific to the Apache Avro output format
+       * </pre>
+       *
+       * <code>
+       * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       */
+      public Builder mergeAvroSerializationOptions(
+          com.google.cloud.bigquery.storage.v1.AvroSerializationOptions value) {
+        if (avroSerializationOptionsBuilder_ == null) {
+          if (outputFormatSerializationOptionsCase_ == 4
+              && outputFormatSerializationOptions_
+                  != com.google.cloud.bigquery.storage.v1.AvroSerializationOptions
+                      .getDefaultInstance()) {
+            outputFormatSerializationOptions_ =
+                com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.newBuilder(
+                        (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
+                            outputFormatSerializationOptions_)
+                    .mergeFrom(value)
+                    .buildPartial();
+          } else {
+            outputFormatSerializationOptions_ = value;
+          }
+          onChanged();
+        } else {
+          if (outputFormatSerializationOptionsCase_ == 4) {
+            avroSerializationOptionsBuilder_.mergeFrom(value);
+          } else {
+            avroSerializationOptionsBuilder_.setMessage(value);
+          }
+        }
+        outputFormatSerializationOptionsCase_ = 4;
+        return this;
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Options specific to the Apache Avro output format
+       * </pre>
+       *
+       * <code>
+       * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       */
+      public Builder clearAvroSerializationOptions() {
+        if (avroSerializationOptionsBuilder_ == null) {
+          if (outputFormatSerializationOptionsCase_ == 4) {
+            outputFormatSerializationOptionsCase_ = 0;
+            outputFormatSerializationOptions_ = null;
+            onChanged();
+          }
+        } else {
+          if (outputFormatSerializationOptionsCase_ == 4) {
+            outputFormatSerializationOptionsCase_ = 0;
+            outputFormatSerializationOptions_ = null;
+          }
+          avroSerializationOptionsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Options specific to the Apache Avro output format
+       * </pre>
+       *
+       * <code>
+       * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       */
+      public com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.Builder
+          getAvroSerializationOptionsBuilder() {
+        return getAvroSerializationOptionsFieldBuilder().getBuilder();
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Options specific to the Apache Avro output format
+       * </pre>
+       *
+       * <code>
+       * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       */
+      @java.lang.Override
+      public com.google.cloud.bigquery.storage.v1.AvroSerializationOptionsOrBuilder
+          getAvroSerializationOptionsOrBuilder() {
+        if ((outputFormatSerializationOptionsCase_ == 4)
+            && (avroSerializationOptionsBuilder_ != null)) {
+          return avroSerializationOptionsBuilder_.getMessageOrBuilder();
+        } else {
+          if (outputFormatSerializationOptionsCase_ == 4) {
+            return (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
+                outputFormatSerializationOptions_;
+          }
+          return com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.getDefaultInstance();
+        }
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Options specific to the Apache Avro output format
+       * </pre>
+       *
+       * <code>
+       * .google.cloud.bigquery.storage.v1.AvroSerializationOptions avro_serialization_options = 4 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+              com.google.cloud.bigquery.storage.v1.AvroSerializationOptions,
+              com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.Builder,
+              com.google.cloud.bigquery.storage.v1.AvroSerializationOptionsOrBuilder>
+          getAvroSerializationOptionsFieldBuilder() {
+        if (avroSerializationOptionsBuilder_ == null) {
+          if (!(outputFormatSerializationOptionsCase_ == 4)) {
+            outputFormatSerializationOptions_ =
+                com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.getDefaultInstance();
+          }
+          avroSerializationOptionsBuilder_ =
+              new com.google.protobuf.SingleFieldBuilderV3<
+                  com.google.cloud.bigquery.storage.v1.AvroSerializationOptions,
+                  com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.Builder,
+                  com.google.cloud.bigquery.storage.v1.AvroSerializationOptionsOrBuilder>(
+                  (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
+                      outputFormatSerializationOptions_,
+                  getParentForChildren(),
+                  isClean());
+          outputFormatSerializationOptions_ = null;
+        }
+        outputFormatSerializationOptionsCase_ = 4;
+        onChanged();
+        ;
+        return avroSerializationOptionsBuilder_;
+      }
+
       @java.lang.Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -2590,7 +3316,19 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
               com.google.protobuf.CodedInputStream input,
               com.google.protobuf.ExtensionRegistryLite extensionRegistry)
               throws com.google.protobuf.InvalidProtocolBufferException {
-            return new TableReadOptions(input, extensionRegistry);
+            Builder builder = newBuilder();
+            try {
+              builder.mergeFrom(input, extensionRegistry);
+            } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+              throw e.setUnfinishedMessage(builder.buildPartial());
+            } catch (com.google.protobuf.UninitializedMessageException e) {
+              throw e.asInvalidProtocolBufferException()
+                  .setUnfinishedMessage(builder.buildPartial());
+            } catch (java.io.IOException e) {
+              throw new com.google.protobuf.InvalidProtocolBufferException(e)
+                  .setUnfinishedMessage(builder.buildPartial());
+            }
+            return builder.buildPartial();
           }
         };
 
@@ -3307,7 +4045,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(traceId_)) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 13, traceId_);
     }
-    unknownFields.writeTo(output);
+    getUnknownFields().writeTo(output);
   }
 
   @java.lang.Override
@@ -3355,7 +4093,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(traceId_)) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(13, traceId_);
     }
-    size += unknownFields.getSerializedSize();
+    size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
   }
@@ -3400,7 +4138,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       case 0:
       default:
     }
-    if (!unknownFields.equals(other.unknownFields)) return false;
+    if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
 
@@ -3449,7 +4187,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       case 0:
       default:
     }
-    hash = (29 * hash) + unknownFields.hashCode();
+    hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
   }
@@ -3578,19 +4316,10 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     }
 
     // Construct using com.google.cloud.bigquery.storage.v1.ReadSession.newBuilder()
-    private Builder() {
-      maybeForceBuilderInitialization();
-    }
+    private Builder() {}
 
     private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
       super(parent);
-      maybeForceBuilderInitialization();
-    }
-
-    private void maybeForceBuilderInitialization() {
-      if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {
-        getStreamsFieldBuilder();
-      }
     }
 
     @java.lang.Override
@@ -3606,6 +4335,12 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       }
       dataFormat_ = 0;
 
+      if (avroSchemaBuilder_ != null) {
+        avroSchemaBuilder_.clear();
+      }
+      if (arrowSchemaBuilder_ != null) {
+        arrowSchemaBuilder_.clear();
+      }
       table_ = "";
 
       if (tableModifiersBuilder_ == null) {
@@ -3622,10 +4357,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       }
       if (streamsBuilder_ == null) {
         streams_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00000001);
       } else {
+        streams_ = null;
         streamsBuilder_.clear();
       }
+      bitField0_ = (bitField0_ & ~0x00000001);
       estimatedTotalBytesScanned_ = 0L;
 
       traceId_ = "";
@@ -3824,7 +4560,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             break;
           }
       }
-      this.mergeUnknownFields(other.unknownFields);
+      this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
       return this;
     }
@@ -3839,17 +4575,105 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      com.google.cloud.bigquery.storage.v1.ReadSession parsedMessage = null;
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       try {
-        parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            case 10:
+              {
+                name_ = input.readStringRequireUtf8();
+
+                break;
+              } // case 10
+            case 18:
+              {
+                input.readMessage(getExpireTimeFieldBuilder().getBuilder(), extensionRegistry);
+
+                break;
+              } // case 18
+            case 24:
+              {
+                dataFormat_ = input.readEnum();
+
+                break;
+              } // case 24
+            case 34:
+              {
+                input.readMessage(getAvroSchemaFieldBuilder().getBuilder(), extensionRegistry);
+                schemaCase_ = 4;
+                break;
+              } // case 34
+            case 42:
+              {
+                input.readMessage(getArrowSchemaFieldBuilder().getBuilder(), extensionRegistry);
+                schemaCase_ = 5;
+                break;
+              } // case 42
+            case 50:
+              {
+                table_ = input.readStringRequireUtf8();
+
+                break;
+              } // case 50
+            case 58:
+              {
+                input.readMessage(getTableModifiersFieldBuilder().getBuilder(), extensionRegistry);
+
+                break;
+              } // case 58
+            case 66:
+              {
+                input.readMessage(getReadOptionsFieldBuilder().getBuilder(), extensionRegistry);
+
+                break;
+              } // case 66
+            case 82:
+              {
+                com.google.cloud.bigquery.storage.v1.ReadStream m =
+                    input.readMessage(
+                        com.google.cloud.bigquery.storage.v1.ReadStream.parser(),
+                        extensionRegistry);
+                if (streamsBuilder_ == null) {
+                  ensureStreamsIsMutable();
+                  streams_.add(m);
+                } else {
+                  streamsBuilder_.addMessage(m);
+                }
+                break;
+              } // case 82
+            case 96:
+              {
+                estimatedTotalBytesScanned_ = input.readInt64();
+
+                break;
+              } // case 96
+            case 106:
+              {
+                traceId_ = input.readStringRequireUtf8();
+
+                break;
+              } // case 106
+            default:
+              {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+          } // switch (tag)
+        } // while (!done)
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        parsedMessage = (com.google.cloud.bigquery.storage.v1.ReadSession) e.getUnfinishedMessage();
         throw e.unwrapIOException();
       } finally {
-        if (parsedMessage != null) {
-          mergeFrom(parsedMessage);
-        }
-      }
+        onChanged();
+      } // finally
       return this;
     }
 
@@ -5973,7 +6797,18 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             com.google.protobuf.CodedInputStream input,
             com.google.protobuf.ExtensionRegistryLite extensionRegistry)
             throws com.google.protobuf.InvalidProtocolBufferException {
-          return new ReadSession(input, extensionRegistry);
+          Builder builder = newBuilder();
+          try {
+            builder.mergeFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            throw e.setUnfinishedMessage(builder.buildPartial());
+          } catch (com.google.protobuf.UninitializedMessageException e) {
+            throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+          } catch (java.io.IOException e) {
+            throw new com.google.protobuf.InvalidProtocolBufferException(e)
+                .setUnfinishedMessage(builder.buildPartial());
+          }
+          return builder.buildPartial();
         }
       };
 

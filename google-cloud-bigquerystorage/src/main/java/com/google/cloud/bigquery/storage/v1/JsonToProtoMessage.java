@@ -197,12 +197,17 @@ public class JsonToProtoMessage {
       String jsonName = jsonNames[i];
       // We want lowercase here to support case-insensitive data writes.
       // The protobuf descriptor that is used is assumed to have all lowercased fields
-      String jsonLowercaseName = jsonName.toLowerCase();
+      String jsonFieldLocator = jsonName.toLowerCase();
+
+      // If jsonName is not compatible with proto naming convention, we should look by its
+      // placeholder name.
+      if (!BigQuerySchemaUtil.isProtoCompatible(jsonFieldLocator)) {
+        jsonFieldLocator = BigQuerySchemaUtil.generatePlaceholderFieldName(jsonFieldLocator);
+      }
       String currentScope = jsonScope + "." + jsonName;
-      FieldDescriptor field = protoSchema.findFieldByName(jsonLowercaseName);
+      FieldDescriptor field = protoSchema.findFieldByName(jsonFieldLocator);
       if (field == null && !ignoreUnknownFields) {
-        throw new IllegalArgumentException(
-            String.format("JSONObject has fields unknown to BigQuery: %s.", currentScope));
+        throw new Exceptions.JsonDataHasUnknownFieldException(currentScope);
       } else if (field == null) {
         continue;
       }
@@ -210,7 +215,7 @@ public class JsonToProtoMessage {
       if (tableSchema != null) {
         // protoSchema is generated from tableSchema so their field ordering should match.
         fieldSchema = tableSchema.get(field.getIndex());
-        if (!fieldSchema.getName().toLowerCase().equals(field.getName())) {
+        if (!fieldSchema.getName().toLowerCase().equals(BigQuerySchemaUtil.getFieldName(field))) {
           throw new ValidationException(
               "Field at index "
                   + field.getIndex()
@@ -221,11 +226,24 @@ public class JsonToProtoMessage {
                   + ")");
         }
       }
-      if (!field.isRepeated()) {
-        fillField(protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
-      } else {
-        fillRepeatedField(
-            protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
+      try {
+        if (!field.isRepeated()) {
+          fillField(
+              protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
+        } else {
+          fillRepeatedField(
+              protoMsg, field, fieldSchema, json, jsonName, currentScope, ignoreUnknownFields);
+        }
+      } catch (Exceptions.FieldParseError ex) {
+        throw ex;
+      } catch (Exception ex) {
+        // This function is recursively called, so this throw will be caught and throw directly out
+        // by the catch
+        // above.
+        throw new Exceptions.FieldParseError(
+            currentScope,
+            fieldSchema != null ? fieldSchema.getType().name() : field.getType().name(),
+            ex);
       }
     }
 
@@ -300,7 +318,7 @@ public class JsonToProtoMessage {
               protoMsg.setField(
                   fieldDescriptor,
                   BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
+                      new BigDecimal(String.valueOf(val))));
               return;
             } else if (val instanceof BigDecimal) {
               protoMsg.setField(
@@ -325,7 +343,7 @@ public class JsonToProtoMessage {
               protoMsg.setField(
                   fieldDescriptor,
                   BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
+                      new BigDecimal(String.valueOf(val))));
               return;
             } else if (val instanceof BigDecimal) {
               protoMsg.setField(
@@ -339,26 +357,17 @@ public class JsonToProtoMessage {
           protoMsg.setField(fieldDescriptor, ((ByteString) val).toByteArray());
           return;
         } else if (val instanceof JSONArray) {
-          try {
-            byte[] bytes = new byte[((JSONArray) val).length()];
-            for (int j = 0; j < ((JSONArray) val).length(); j++) {
-              bytes[j] = (byte) ((JSONArray) val).getInt(j);
-              if (bytes[j] != ((JSONArray) val).getInt(j)) {
-                throw new IllegalArgumentException(
-                    String.format(
-                        "Error: "
-                            + currentScope
-                            + "["
-                            + j
-                            + "] could not be converted to byte[]."));
-              }
+          byte[] bytes = new byte[((JSONArray) val).length()];
+          for (int j = 0; j < ((JSONArray) val).length(); j++) {
+            bytes[j] = (byte) ((JSONArray) val).getInt(j);
+            if (bytes[j] != ((JSONArray) val).getInt(j)) {
+              throw new IllegalArgumentException(
+                  String.format(
+                      "Error: " + currentScope + "[" + j + "] could not be converted to byte[]."));
             }
-            protoMsg.setField(fieldDescriptor, bytes);
-            return;
-          } catch (JSONException e) {
-            throw new IllegalArgumentException(
-                String.format("Error: " + currentScope + "could not be converted to byte[]."));
           }
+          protoMsg.setField(fieldDescriptor, bytes);
+          return;
         }
         break;
       case INT64:
@@ -508,6 +517,11 @@ public class JsonToProtoMessage {
     try {
       jsonArray = json.getJSONArray(exactJsonKeyName);
     } catch (JSONException e) {
+      java.lang.Object val = json.get(exactJsonKeyName);
+      // It is OK for repeated field to be null.
+      if (val == JSONObject.NULL) {
+        return;
+      }
       throw new IllegalArgumentException(
           "JSONObject does not have a array field at " + currentScope + ".");
     }
@@ -548,7 +562,7 @@ public class JsonToProtoMessage {
               protoMsg.addRepeatedField(
                   fieldDescriptor,
                   BigDecimalByteStringEncoder.encodeToNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
+                      new BigDecimal(String.valueOf(val))));
               added = true;
             } else if (val instanceof BigDecimal) {
               protoMsg.addRepeatedField(
@@ -574,7 +588,7 @@ public class JsonToProtoMessage {
               protoMsg.addRepeatedField(
                   fieldDescriptor,
                   BigDecimalByteStringEncoder.encodeToBigNumericByteString(
-                      new BigDecimal(((Number) val).doubleValue())));
+                      new BigDecimal(String.valueOf(val))));
               added = true;
             } else if (val instanceof BigDecimal) {
               protoMsg.addRepeatedField(

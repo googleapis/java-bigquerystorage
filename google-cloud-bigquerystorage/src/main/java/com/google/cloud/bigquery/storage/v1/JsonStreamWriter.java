@@ -18,13 +18,16 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
+import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
+import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Message;
+import com.google.rpc.Code;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,6 +51,7 @@ public class JsonStreamWriter implements AutoCloseable {
       "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+";
   private static Pattern streamPattern = Pattern.compile(streamPatternString);
   private static final Logger LOG = Logger.getLogger(JsonStreamWriter.class.getName());
+  private static final long UPDATE_SCHEMA_RETRY_INTERVAL_MILLIS = 30100L;
 
   private BigQueryWriteClient client;
   private String streamName;
@@ -60,6 +64,7 @@ public class JsonStreamWriter implements AutoCloseable {
   private long totalMessageSize = 0;
   private long absTotal = 0;
   private ProtoSchema protoSchema;
+  private boolean enableConnectionPool = false;
 
   /**
    * Constructs the JsonStreamWriter
@@ -69,24 +74,23 @@ public class JsonStreamWriter implements AutoCloseable {
   private JsonStreamWriter(Builder builder)
       throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
           InterruptedException {
-    this.client = builder.client;
     this.descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(builder.tableSchema);
 
-    if (this.client == null) {
-      streamWriterBuilder = StreamWriter.newBuilder(builder.streamName);
-    } else {
-      streamWriterBuilder = StreamWriter.newBuilder(builder.streamName, builder.client);
-    }
+    streamWriterBuilder = StreamWriter.newBuilder(builder.streamName);
     this.protoSchema = ProtoSchemaConverter.convert(this.descriptor);
     this.totalMessageSize = protoSchema.getSerializedSize();
+    this.client = builder.client;
     streamWriterBuilder.setWriterSchema(protoSchema);
     setStreamWriterSettings(
         builder.channelProvider,
         builder.credentialsProvider,
+        builder.executorProvider,
         builder.endpoint,
         builder.flowControlSettings,
         builder.traceId);
+    streamWriterBuilder.setEnableConnectionPool(builder.enableConnectionPool);
+    streamWriterBuilder.setLocation(builder.location);
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
@@ -109,6 +113,60 @@ public class JsonStreamWriter implements AutoCloseable {
     return append(jsonArr, -1);
   }
 
+  private void refreshWriter(TableSchema updatedSchema)
+      throws DescriptorValidationException, IOException {
+    Preconditions.checkNotNull(updatedSchema, "updatedSchema is null.");
+    LOG.info("Refresh internal writer due to schema update, stream: " + this.streamName);
+    // Close the StreamWriterf
+    this.streamWriter.close();
+    // Update JsonStreamWriter's TableSchema and Descriptor
+    this.tableSchema = updatedSchema;
+    this.descriptor =
+        BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
+    this.protoSchema = ProtoSchemaConverter.convert(this.descriptor);
+    this.totalMessageSize = protoSchema.getSerializedSize();
+    // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
+    this.streamWriter = streamWriterBuilder.setWriterSchema(this.protoSchema).build();
+  }
+
+  private Message buildMessage(JSONObject json)
+      throws InterruptedException, DescriptorValidationException, IOException {
+    try {
+      return JsonToProtoMessage.convertJsonToProtoMessage(
+          this.descriptor, this.tableSchema, json, ignoreUnknownFields);
+    } catch (Exceptions.JsonDataHasUnknownFieldException ex) {
+      // Backend cache for GetWriteStream schema staleness can be 30 seconds, wait a bit before
+      // trying to get the table schema to increase the chance of succeed. This is to avoid
+      // client's invalid datfa caused storm of GetWriteStream.
+      LOG.warning(
+          "Saw Json unknown field "
+              + ex.getFieldName()
+              + ", try to refresh the writer with updated schema, stream: "
+              + streamName);
+      GetWriteStreamRequest writeStreamRequest =
+          GetWriteStreamRequest.newBuilder()
+              .setName(this.streamName)
+              .setView(WriteStreamView.FULL)
+              .build();
+      WriteStream writeStream = client.getWriteStream(writeStreamRequest);
+      refreshWriter(writeStream.getTableSchema());
+      try {
+        return JsonToProtoMessage.convertJsonToProtoMessage(
+            this.descriptor, this.tableSchema, json, ignoreUnknownFields);
+      } catch (Exceptions.JsonDataHasUnknownFieldException exex) {
+        LOG.warning(
+            "First attempt failed, waiting for 30 seconds to retry, stream: " + this.streamName);
+        Thread.sleep(UPDATE_SCHEMA_RETRY_INTERVAL_MILLIS);
+        writeStream = client.getWriteStream(writeStreamRequest);
+        // TODO(yiru): We should let TableSchema return a timestamp so that we can simply
+        //     compare the timestamp to see if the table schema is the same. If it is the
+        //     same, we don't need to go refresh the writer again.
+        refreshWriter(writeStream.getTableSchema());
+        return JsonToProtoMessage.convertJsonToProtoMessage(
+            this.descriptor, this.tableSchema, json, ignoreUnknownFields);
+      }
+    }
+  }
   /**
    * Writes a JSONArray that contains JSONObjects to the BigQuery table by first converting the JSON
    * data to protobuf messages, then using StreamWriter's append() to write the data at the
@@ -124,18 +182,10 @@ public class JsonStreamWriter implements AutoCloseable {
       throws IOException, DescriptorValidationException {
     // Handle schema updates in a Thread-safe way by locking down the operation
     synchronized (this) {
-      TableSchema updatedSchema = this.streamWriter.getUpdatedSchema();
-      if (updatedSchema != null) {
-        // Close the StreamWriter
-        this.streamWriter.close();
-        // Update JsonStreamWriter's TableSchema and Descriptor
-        this.tableSchema = updatedSchema;
-        this.descriptor =
-            BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(updatedSchema);
-        this.protoSchema = ProtoSchemaConverter.convert(this.descriptor);
-        this.totalMessageSize = protoSchema.getSerializedSize();
-        // Create a new underlying StreamWriter with the updated TableSchema and Descriptor
-        this.streamWriter = streamWriterBuilder.setWriterSchema(this.protoSchema).build();
+      // Update schema only work when connection pool is not enabled.
+      if (this.streamWriter.getConnectionOperationType() == Kind.CONNECTION_WORKER
+          && this.streamWriter.getUpdatedSchema() != null) {
+        refreshWriter(this.streamWriter.getUpdatedSchema());
       }
 
       ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
@@ -149,18 +199,34 @@ public class JsonStreamWriter implements AutoCloseable {
       for (int i = 0; i < jsonArr.length(); i++) {
         JSONObject json = jsonArr.getJSONObject(i);
         try {
-          Message protoMessage =
-              JsonToProtoMessage.convertJsonToProtoMessage(
-                  this.descriptor, this.tableSchema, json, ignoreUnknownFields);
+          Message protoMessage = buildMessage(json);
           rowsBuilder.addSerializedRows(protoMessage.toByteString());
           currentRequestSize += protoMessage.getSerializedSize();
         } catch (IllegalArgumentException exception) {
-          rowIndexToErrorMessage.put(i, exception.getMessage());
+          if (exception instanceof Exceptions.FieldParseError) {
+            Exceptions.FieldParseError ex = (Exceptions.FieldParseError) exception;
+            rowIndexToErrorMessage.put(
+                i,
+                "Field "
+                    + ex.getFieldName()
+                    + " failed to convert to "
+                    + ex.getBqType()
+                    + ". Error: "
+                    + ex.getCause().getMessage());
+          } else {
+            rowIndexToErrorMessage.put(i, exception.getMessage());
+          }
+        } catch (InterruptedException ex) {
+          throw new RuntimeException(ex);
         }
       }
 
       if (!rowIndexToErrorMessage.isEmpty()) {
-        throw new AppendSerializtionError(streamName, rowIndexToErrorMessage);
+        throw new AppendSerializtionError(
+            Code.INVALID_ARGUMENT.getNumber(),
+            "Append serialization failed for writer: " + streamName,
+            streamName,
+            rowIndexToErrorMessage);
       }
       final ApiFuture<AppendRowsResponse> appendResponseFuture =
           this.streamWriter.append(rowsBuilder.build(), offset);
@@ -168,13 +234,14 @@ public class JsonStreamWriter implements AutoCloseable {
     }
   }
 
-  /**
-   * Gets streamName
-   *
-   * @return String
-   */
+  /** @return The name of the write stream associated with this writer. */
   public String getStreamName() {
     return this.streamName;
+  }
+
+  /** @return A unique Id for this writer. */
+  public String getWriterId() {
+    return streamWriter.getWriterId();
   }
 
   /**
@@ -184,6 +251,15 @@ public class JsonStreamWriter implements AutoCloseable {
    */
   public Descriptor getDescriptor() {
     return this.descriptor;
+  }
+
+  /**
+   * Gets the location of the destination
+   *
+   * @return Descriptor
+   */
+  public String getLocation() {
+    return this.streamWriter.getLocation();
   }
 
   /**
@@ -201,6 +277,7 @@ public class JsonStreamWriter implements AutoCloseable {
   private void setStreamWriterSettings(
       @Nullable TransportChannelProvider channelProvider,
       @Nullable CredentialsProvider credentialsProvider,
+      @Nullable ExecutorProvider executorProvider,
       @Nullable String endpoint,
       @Nullable FlowControlSettings flowControlSettings,
       @Nullable String traceId) {
@@ -209,6 +286,9 @@ public class JsonStreamWriter implements AutoCloseable {
     }
     if (credentialsProvider != null) {
       streamWriterBuilder.setCredentialsProvider(credentialsProvider);
+    }
+    if (executorProvider != null) {
+      streamWriterBuilder.setExecutorProvider(executorProvider);
     }
     if (endpoint != null) {
       streamWriterBuilder.setEndpoint(endpoint);
@@ -263,10 +343,25 @@ public class JsonStreamWriter implements AutoCloseable {
    */
   public static Builder newBuilder(
       String streamOrTableName, TableSchema tableSchema, BigQueryWriteClient client) {
-    Preconditions.checkNotNull(streamOrTableName, "StreamName is null.");
+    Preconditions.checkNotNull(streamOrTableName, "StreamOrTableName is null.");
     Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
     Preconditions.checkNotNull(client, "BigQuery client is null.");
     return new Builder(streamOrTableName, tableSchema, client);
+  }
+
+  /**
+   * newBuilder that constructs a JsonStreamWriter builder with TableSchema being initialized by
+   * StreamWriter by default.
+   *
+   * @param streamOrTableName name of the stream that must follow
+   *     "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+"
+   * @param client BigQueryWriteClient
+   * @return Builder
+   */
+  public static Builder newBuilder(String streamOrTableName, BigQueryWriteClient client) {
+    Preconditions.checkNotNull(streamOrTableName, "StreamOrTableName is null.");
+    Preconditions.checkNotNull(client, "BigQuery client is null.");
+    return new Builder(streamOrTableName, null, client);
   }
 
   /** Closes the underlying StreamWriter. */
@@ -282,12 +377,16 @@ public class JsonStreamWriter implements AutoCloseable {
 
     private TransportChannelProvider channelProvider;
     private CredentialsProvider credentialsProvider;
+    private ExecutorProvider executorProvider;
     private FlowControlSettings flowControlSettings;
     private String endpoint;
     private boolean createDefaultStream = false;
     private String traceId;
     private boolean ignoreUnknownFields = false;
     private boolean reconnectAfter10M = false;
+    // Indicte whether multiplexing mode is enabled.
+    private boolean enableConnectionPool = false;
+    private String location;
 
     private static String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
@@ -317,8 +416,22 @@ public class JsonStreamWriter implements AutoCloseable {
       } else {
         this.streamName = streamOrTableName;
       }
-      this.tableSchema = tableSchema;
       this.client = client;
+      if (tableSchema == null) {
+        GetWriteStreamRequest writeStreamRequest =
+            GetWriteStreamRequest.newBuilder()
+                .setName(this.getStreamName())
+                .setView(WriteStreamView.FULL)
+                .build();
+
+        WriteStream writeStream = this.client.getWriteStream(writeStreamRequest);
+        TableSchema writeStreamTableSchema = writeStream.getTableSchema();
+
+        this.tableSchema = writeStreamTableSchema;
+        this.location = writeStream.getLocation();
+      } else {
+        this.tableSchema = tableSchema;
+      }
     }
 
     /**
@@ -342,6 +455,18 @@ public class JsonStreamWriter implements AutoCloseable {
     public Builder setCredentialsProvider(CredentialsProvider credentialsProvider) {
       this.credentialsProvider =
           Preconditions.checkNotNull(credentialsProvider, "CredentialsProvider is null.");
+      return this;
+    }
+
+    /**
+     * Setter for the underlying StreamWriter's ExecutorProvider.
+     *
+     * @param executorProvider
+     * @return
+     */
+    public Builder setExecutorProvider(ExecutorProvider executorProvider) {
+      this.executorProvider =
+          Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null.");
       return this;
     }
 
@@ -411,6 +536,35 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setReconnectAfter10M(boolean reconnectAfter10M) {
       this.reconnectAfter10M = false;
+      return this;
+    }
+
+    /**
+     * Enable multiplexing for this writer. In multiplexing mode tables will share the same
+     * connection if possible until the connection is overwhelmed. This feature is still under
+     * development, please contact write api team before using.
+     *
+     * @param enableConnectionPool
+     * @return Builder
+     */
+    public Builder setEnableConnectionPool(boolean enableConnectionPool) {
+      this.enableConnectionPool = enableConnectionPool;
+      return this;
+    }
+
+    /**
+     * Location of the table this stream writer is targeting. Connection pools are shared by
+     * location.
+     *
+     * @param location
+     * @return Builder
+     */
+    public Builder setLocation(String location) {
+      if (this.location != null && !this.location.equals(location)) {
+        throw new IllegalArgumentException(
+            "Specified location " + location + " does not match the system value " + this.location);
+      }
+      this.location = location;
       return this;
     }
 
