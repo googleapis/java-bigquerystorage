@@ -76,6 +76,7 @@ public class ITBigQueryWriteManualClientTest {
   private static BigQuery bigquery;
   
   public class StringWithSecondsNanos {
+
     public String foo;
     public long seconds;
     public int nanos;
@@ -85,6 +86,7 @@ public class ITBigQueryWriteManualClientTest {
       seconds = secondsParam;
       nanos = nanosParam;
     }
+  }
 
   // Helper to create a table and returns the default stream name to the table.
   private static String createTableHelper(int count) {
