@@ -62,15 +62,24 @@ public class ITBigQueryWriteManualClientTest {
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String DATASET_EU = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
-  private static final String TABLE2 = "complicatedtable";
+  private static final String TABLENESTED = "complicatedtable";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
 
   private static BigQueryWriteClient client;
   private static TableInfo tableInfo;
   private static TableInfo tableInfo2;
+  private static TableInfo tableInfo3;
+  private static TableInfo tableInfo4;
+  private static TableInfo tableInfo5;
+  private static String tableInfoDefaultStream;
+  private static String tableInfo2DefaultStream;
+  private static String tableInfo3DefaultStream;
+  private static String tableInfo4DefaultStream;
+  private static String tableInfo5DefaultStream;
+  private static TableInfo tableInfoNested;
   private static TableInfo tableInfoEU;
   private static String tableId;
-  private static String tableId2;
+  private static String tableIdNested;
   private static String tableIdEU;
   private static BigQuery bigquery;
 
@@ -105,6 +114,72 @@ public class ITBigQueryWriteManualClientTest {
                             .setMode(Field.Mode.NULLABLE)
                             .build())))
             .build();
+    bigquery.create(tableInfo);
+    tableId =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s",
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
+    tableInfoDefaultStream =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s/streams/_default",
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
+    tableInfo2 =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, TABLE + "2"),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .setMode(Field.Mode.NULLABLE)
+                            .build())))
+            .build();
+    bigquery.create(tableInfo2);
+    tableInfo2DefaultStream =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s/streams/_default",
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE + "2");
+    tableInfo3 =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, TABLE + "3"),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .setMode(Field.Mode.NULLABLE)
+                            .build())))
+            .build();
+    bigquery.create(tableInfo3);
+    tableInfo3DefaultStream =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s/streams/_default",
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE + "3");
+    tableInfo4 =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, TABLE + "4"),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .setMode(Field.Mode.NULLABLE)
+                            .build())))
+            .build();
+    bigquery.create(tableInfo4);
+    tableInfo4DefaultStream =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s/streams/_default",
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE + "4");
+    tableInfo5 =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, TABLE + "5"),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .setMode(Field.Mode.NULLABLE)
+                            .build())))
+            .build();
+    bigquery.create(tableInfo5);
+    tableInfo5DefaultStream =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s/streams/_default",
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE + "5");
+
     com.google.cloud.bigquery.Field.Builder innerTypeFieldBuilder =
         com.google.cloud.bigquery.Field.newBuilder(
             "inner_type",
@@ -112,10 +187,9 @@ public class ITBigQueryWriteManualClientTest {
             com.google.cloud.bigquery.Field.newBuilder("value", LegacySQLTypeName.STRING)
                 .setMode(Field.Mode.REPEATED)
                 .build());
-
-    tableInfo2 =
+    tableInfoNested =
         TableInfo.newBuilder(
-                TableId.of(DATASET, TABLE2),
+                TableId.of(DATASET, TABLENESTED),
                 StandardTableDefinition.of(
                     Schema.of(
                         Field.newBuilder(
@@ -126,16 +200,13 @@ public class ITBigQueryWriteManualClientTest {
                             .build(),
                         innerTypeFieldBuilder.setMode(Field.Mode.NULLABLE).build())))
             .build();
-    bigquery.create(tableInfo);
-    bigquery.create(tableInfo2);
-    tableId =
+
+    bigquery.create(tableInfoNested);
+
+    tableIdNested =
         String.format(
             "projects/%s/datasets/%s/tables/%s",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
-    tableId2 =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE2);
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLENESTED);
     DatasetInfo datasetInfoEU =
         DatasetInfo.newBuilder(/* datasetId = */ DATASET_EU)
             .setLocation("EU")
@@ -155,6 +226,7 @@ public class ITBigQueryWriteManualClientTest {
             "projects/%s/datasets/%s/tables/%s",
             ServiceOptions.getDefaultProjectId(), DATASET_EU, TABLE);
     bigquery.create(tableInfoEU);
+
   }
 
   @AfterClass
@@ -994,7 +1066,7 @@ public class ITBigQueryWriteManualClientTest {
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()
-                .setParent(tableId2)
+                .setParent(tableIdNested)
                 .setWriteStream(WriteStream.newBuilder().setType(WriteStream.Type.PENDING).build())
                 .build());
     FinalizeWriteStreamResponse finalizeResponse = FinalizeWriteStreamResponse.getDefaultInstance();
@@ -1014,7 +1086,7 @@ public class ITBigQueryWriteManualClientTest {
       // Nothing showed up since rows are not committed.
       TableResult result =
           bigquery.listTableData(
-              tableInfo2.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+              tableInfoNested.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
       Iterator<FieldValueList> iter = result.getValues().iterator();
       assertEquals(false, iter.hasNext());
 
@@ -1037,13 +1109,13 @@ public class ITBigQueryWriteManualClientTest {
     BatchCommitWriteStreamsResponse batchCommitWriteStreamsResponse =
         client.batchCommitWriteStreams(
             BatchCommitWriteStreamsRequest.newBuilder()
-                .setParent(tableId2)
+                .setParent(tableIdNested)
                 .addWriteStreams(writeStream.getName())
                 .build());
     assertEquals(true, batchCommitWriteStreamsResponse.hasCommitTime());
     TableResult queryResult =
         bigquery.query(
-            QueryJobConfiguration.newBuilder("SELECT * from " + DATASET + '.' + TABLE2).build());
+            QueryJobConfiguration.newBuilder("SELECT * from " + DATASET + '.' + TABLENESTED).build());
     Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
     assertTrue(queryIter.hasNext());
     assertEquals(
@@ -1227,33 +1299,56 @@ public class ITBigQueryWriteManualClientTest {
     }
   }
 
-  @Test
-  public void testStreamReconnect() throws IOException, InterruptedException, ExecutionException {
-    WriteStream writeStream =
-        client.createWriteStream(
-            CreateWriteStreamRequest.newBuilder()
-                .setParent(tableId)
-                .setWriteStream(
-                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
-                .build());
-    try (StreamWriter streamWriter =
-        StreamWriter.newBuilder(writeStream.getName())
-            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
-            .build()) {
-      ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(CreateProtoRows(new String[] {"aaa"}), 0L);
-      assertEquals(0L, response.get().getAppendResult().getOffset().getValue());
+  void writeSomeRows(StreamWriter sw, List<Future<AppendRowsResponse>> futureList) {
+    for (int i = 0; i < 100; i++) {
+      sw.append(CreateProtoRows(new String[]{"aaa", "bbb", "ccc"}));
     }
+  }
 
-    try (StreamWriter streamWriter =
-        StreamWriter.newBuilder(writeStream.getName())
+  @Test
+  public void testConnectionPool() throws IOException, InterruptedException, ExecutionException {
+    StreamWriter streamWriter1 =
+        StreamWriter.newBuilder(tableInfoDefaultStream)
             .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
-            .build()) {
-      // Currently there is a bug that reconnection must wait 5 seconds to get the real row count.
-      Thread.sleep(5000L);
-      ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(CreateProtoRows(new String[] {"bbb"}), 1L);
-      assertEquals(1L, response.get().getAppendResult().getOffset().getValue());
+            .setLocation("us")
+            .setEnableConnectionPool(true)
+            .build();
+    StreamWriter streamWriter2 =
+        StreamWriter.newBuilder(tableInfo2DefaultStream)
+            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+            .setLocation("us")
+            .setEnableConnectionPool(true)
+            .build();
+    StreamWriter streamWriter3 =
+        StreamWriter.newBuilder(tableInfo3DefaultStream)
+            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+            .setLocation("us")
+            .setEnableConnectionPool(true)
+            .build();
+    StreamWriter streamWriter4 =
+        StreamWriter.newBuilder(tableInfo4DefaultStream)
+            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+            .setLocation("us")
+            .setEnableConnectionPool(true)
+            .build();
+    StreamWriter streamWriter5 =
+        StreamWriter.newBuilder(tableInfo5DefaultStream)
+            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+            .setLocation("us")
+            .setEnableConnectionPool(true)
+            .build();
+    // Will force open 5 connections.
+    ConnectionWorkerPool.setOptions(ConnectionWorkerPool.Settings.builder().setMinConnectionsPerRegion(5).build());
+    List<Future<AppendRowsResponse>> futureList = new ArrayList<Future<AppendRowsResponse>>();
+    writeSomeRows(streamWriter1, futureList);
+    writeSomeRows(streamWriter2, futureList);
+    writeSomeRows(streamWriter3, futureList);
+    writeSomeRows(streamWriter4, futureList);
+    writeSomeRows(streamWriter5, futureList);
+    client.shutdownNow();
+    client.awaitTermination(60, TimeUnit.SECONDS);
+    for (Future<AppendRowsResponse> f : futureList) {
+      assertFalse(f.get().hasError());
     }
   }
 }
