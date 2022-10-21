@@ -132,6 +132,7 @@ public class ITBigQueryWriteManualClientTest {
         String.format(
             "projects/%s/datasets/%s/tables/%s/streams/_default",
             ServiceOptions.getDefaultProjectId(), DATASET, TABLE));
+    // Create 19 more tables.
     for (int i = 1; i < 20; i++) {
       defaultStreams.add(createTableHelper(i));
     }
