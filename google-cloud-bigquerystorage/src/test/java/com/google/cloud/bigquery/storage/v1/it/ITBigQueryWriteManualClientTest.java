@@ -124,18 +124,9 @@ public class ITBigQueryWriteManualClientTest {
                             .setMode(Field.Mode.NULLABLE)
                             .build())))
             .build();
-    bigquery.create(tableInfo);
-    tableId =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
     defaultStreams = new ArrayList<String>();
-    defaultStreams.add(
-        String.format(
-            "projects/%s/datasets/%s/tables/%s/streams/_default",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE));
-    // Create 19 more tables.
-    for (int i = 1; i < 20; i++) {
+    // Create 20 tables.
+    for (int i = 0; i < 20; i++) {
       defaultStreams.add(createTableHelper(i));
     }
 
@@ -1258,15 +1249,15 @@ public class ITBigQueryWriteManualClientTest {
     }
   }
 
-  void writeSomeRows(StreamWriter sw, List<Future<AppendRowsResponse>> futureList) {
-    for (int i = 0; i < 100; i++) {
+  void writeRows(StreamWriter sw, List<Future<AppendRowsResponse>> futureList, int numRequests) {
+    for (int i = 0; i < numRequests; i++) {
       sw.append(CreateProtoRows(new String[] {"aaa", "bbb", "ccc"}));
     }
   }
 
   @Test
   public void testConnectionPool() throws IOException, InterruptedException, ExecutionException {
-    // Will force open 20 connections.
+    // Will force open 10 connections.
     ConnectionWorkerPool.setOptions(
         ConnectionWorkerPool.Settings.builder()
             .setMinConnectionsPerRegion(defaultStreams.size())
@@ -1283,7 +1274,7 @@ public class ITBigQueryWriteManualClientTest {
 
     List<Future<AppendRowsResponse>> futureList = new ArrayList<Future<AppendRowsResponse>>();
     for (int i = 0; i < defaultStreams.size(); i++) {
-      writeSomeRows(sws.get(i), futureList);
+      writeRows(sws.get(i), futureList, 100);
     }
     client.shutdownNow();
     client.awaitTermination(60, TimeUnit.SECONDS);
