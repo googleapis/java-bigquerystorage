@@ -74,7 +74,7 @@ public class ITBigQueryWriteManualClientTest {
   private static String tableIdNested;
   private static String tableIdEU;
   private static BigQuery bigquery;
-  
+
   public class StringWithSecondsNanos {
 
     public String foo;
