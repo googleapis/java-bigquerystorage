@@ -62,7 +62,7 @@ public class ITBigQueryWriteManualClientTest {
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String DATASET_EU = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
-  private static final String TABLENESTED = "complicatedtable";
+  private static final String TABLE_NESTED = "complicatedtable";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
 
   private static BigQueryWriteClient client;
@@ -70,9 +70,18 @@ public class ITBigQueryWriteManualClientTest {
   private static List<String> defaultStreams;
   private static TableInfo tableInfoNested;
   private static TableInfo tableInfoEU;
-  private static String tableId;
-  private static String tableIdNested;
-  private static String tableIdEU;
+  private static String tableId =
+      String.format(
+          "projects/%s/datasets/%s/tables/%s",
+          ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
+  private static String tableIdNested =
+      String.format(
+          "projects/%s/datasets/%s/tables/%s",
+          ServiceOptions.getDefaultProjectId(), DATASET, TABLE_NESTED);
+  private static String tableIdEU =
+      String.format(
+          "projects/%s/datasets/%s/tables/%s",
+          ServiceOptions.getDefaultProjectId(), DATASET_EU, TABLE);
   private static BigQuery bigquery;
 
   public class StringWithSecondsNanos {
@@ -90,9 +99,10 @@ public class ITBigQueryWriteManualClientTest {
 
   // Helper to create a table and returns the default stream name to the table.
   private static String createTableHelper(int count) {
+    String tableName = TABLE + (count == 0 ? "" : count);
     TableInfo tableInfo =
         TableInfo.newBuilder(
-                TableId.of(DATASET, TABLE + count),
+                TableId.of(DATASET, tableName),
                 StandardTableDefinition.of(
                     Schema.of(
                         com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
@@ -102,7 +112,7 @@ public class ITBigQueryWriteManualClientTest {
     bigquery.create(tableInfo);
     return String.format(
         "projects/%s/datasets/%s/tables/%s/streams/_default",
-        ServiceOptions.getDefaultProjectId(), DATASET, TABLE + count);
+        ServiceOptions.getDefaultProjectId(), DATASET, tableName);
   }
 
   @BeforeClass
@@ -139,7 +149,7 @@ public class ITBigQueryWriteManualClientTest {
                 .build());
     tableInfoNested =
         TableInfo.newBuilder(
-                TableId.of(DATASET, TABLENESTED),
+                TableId.of(DATASET, TABLE_NESTED),
                 StandardTableDefinition.of(
                     Schema.of(
                         Field.newBuilder(
@@ -153,10 +163,6 @@ public class ITBigQueryWriteManualClientTest {
 
     bigquery.create(tableInfoNested);
 
-    tableIdNested =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLENESTED);
     DatasetInfo datasetInfoEU =
         DatasetInfo.newBuilder(/* datasetId = */ DATASET_EU)
             .setLocation("EU")
@@ -171,10 +177,7 @@ public class ITBigQueryWriteManualClientTest {
                         com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
                             .build())))
             .build();
-    tableIdEU =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s",
-            ServiceOptions.getDefaultProjectId(), DATASET_EU, TABLE);
+
     bigquery.create(tableInfoEU);
   }
 
@@ -1064,7 +1067,7 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals(true, batchCommitWriteStreamsResponse.hasCommitTime());
     TableResult queryResult =
         bigquery.query(
-            QueryJobConfiguration.newBuilder("SELECT * from " + DATASET + '.' + TABLENESTED)
+            QueryJobConfiguration.newBuilder("SELECT * from " + DATASET + '.' + TABLE_NESTED)
                 .build());
     Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
     assertTrue(queryIter.hasNext());
