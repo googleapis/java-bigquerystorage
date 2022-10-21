@@ -67,22 +67,14 @@ public class ITBigQueryWriteManualClientTest {
 
   private static BigQueryWriteClient client;
   private static TableInfo tableInfo;
-  private static TableInfo tableInfo2;
-  private static TableInfo tableInfo3;
-  private static TableInfo tableInfo4;
-  private static TableInfo tableInfo5;
-  private static String tableInfoDefaultStream;
-  private static String tableInfo2DefaultStream;
-  private static String tableInfo3DefaultStream;
-  private static String tableInfo4DefaultStream;
-  private static String tableInfo5DefaultStream;
+  private static List<String> defaultStreams;
   private static TableInfo tableInfoNested;
   private static TableInfo tableInfoEU;
   private static String tableId;
   private static String tableIdNested;
   private static String tableIdEU;
   private static BigQuery bigquery;
-
+  
   public class StringWithSecondsNanos {
     public String foo;
     public long seconds;
@@ -93,6 +85,22 @@ public class ITBigQueryWriteManualClientTest {
       seconds = secondsParam;
       nanos = nanosParam;
     }
+
+  // Helper to create a table and returns the default stream name to the table.
+  private static String createTableHelper(int count) {
+    TableInfo tableInfo =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, TABLE + count),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .setMode(Field.Mode.NULLABLE)
+                            .build())))
+            .build();
+    bigquery.create(tableInfo);
+    return String.format(
+        "projects/%s/datasets/%s/tables/%s/streams/_default",
+        ServiceOptions.getDefaultProjectId(), DATASET, TABLE + count);
   }
 
   @BeforeClass
@@ -119,66 +127,14 @@ public class ITBigQueryWriteManualClientTest {
         String.format(
             "projects/%s/datasets/%s/tables/%s",
             ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
-    tableInfoDefaultStream =
+    defaultStreams = new ArrayList<String>();
+    defaultStreams.add(
         String.format(
             "projects/%s/datasets/%s/tables/%s/streams/_default",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
-    tableInfo2 =
-        TableInfo.newBuilder(
-                TableId.of(DATASET, TABLE + "2"),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
-                            .setMode(Field.Mode.NULLABLE)
-                            .build())))
-            .build();
-    bigquery.create(tableInfo2);
-    tableInfo2DefaultStream =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s/streams/_default",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE + "2");
-    tableInfo3 =
-        TableInfo.newBuilder(
-                TableId.of(DATASET, TABLE + "3"),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
-                            .setMode(Field.Mode.NULLABLE)
-                            .build())))
-            .build();
-    bigquery.create(tableInfo3);
-    tableInfo3DefaultStream =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s/streams/_default",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE + "3");
-    tableInfo4 =
-        TableInfo.newBuilder(
-                TableId.of(DATASET, TABLE + "4"),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
-                            .setMode(Field.Mode.NULLABLE)
-                            .build())))
-            .build();
-    bigquery.create(tableInfo4);
-    tableInfo4DefaultStream =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s/streams/_default",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE + "4");
-    tableInfo5 =
-        TableInfo.newBuilder(
-                TableId.of(DATASET, TABLE + "5"),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        com.google.cloud.bigquery.Field.newBuilder("foo", LegacySQLTypeName.STRING)
-                            .setMode(Field.Mode.NULLABLE)
-                            .build())))
-            .build();
-    bigquery.create(tableInfo5);
-    tableInfo5DefaultStream =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s/streams/_default",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE + "5");
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE));
+    for (int i = 2; i < 20; i++) {
+      defaultStreams.add(createTableHelper(i));
+    }
 
     com.google.cloud.bigquery.Field.Builder innerTypeFieldBuilder =
         com.google.cloud.bigquery.Field.newBuilder(
@@ -226,7 +182,6 @@ public class ITBigQueryWriteManualClientTest {
             "projects/%s/datasets/%s/tables/%s",
             ServiceOptions.getDefaultProjectId(), DATASET_EU, TABLE);
     bigquery.create(tableInfoEU);
-
   }
 
   @AfterClass
@@ -1115,7 +1070,8 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals(true, batchCommitWriteStreamsResponse.hasCommitTime());
     TableResult queryResult =
         bigquery.query(
-            QueryJobConfiguration.newBuilder("SELECT * from " + DATASET + '.' + TABLENESTED).build());
+            QueryJobConfiguration.newBuilder("SELECT * from " + DATASET + '.' + TABLENESTED)
+                .build());
     Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
     assertTrue(queryIter.hasNext());
     assertEquals(
@@ -1301,50 +1257,31 @@ public class ITBigQueryWriteManualClientTest {
 
   void writeSomeRows(StreamWriter sw, List<Future<AppendRowsResponse>> futureList) {
     for (int i = 0; i < 100; i++) {
-      sw.append(CreateProtoRows(new String[]{"aaa", "bbb", "ccc"}));
+      sw.append(CreateProtoRows(new String[] {"aaa", "bbb", "ccc"}));
     }
   }
 
   @Test
   public void testConnectionPool() throws IOException, InterruptedException, ExecutionException {
-    StreamWriter streamWriter1 =
-        StreamWriter.newBuilder(tableInfoDefaultStream)
-            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
-            .setLocation("us")
-            .setEnableConnectionPool(true)
-            .build();
-    StreamWriter streamWriter2 =
-        StreamWriter.newBuilder(tableInfo2DefaultStream)
-            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
-            .setLocation("us")
-            .setEnableConnectionPool(true)
-            .build();
-    StreamWriter streamWriter3 =
-        StreamWriter.newBuilder(tableInfo3DefaultStream)
-            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
-            .setLocation("us")
-            .setEnableConnectionPool(true)
-            .build();
-    StreamWriter streamWriter4 =
-        StreamWriter.newBuilder(tableInfo4DefaultStream)
-            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
-            .setLocation("us")
-            .setEnableConnectionPool(true)
-            .build();
-    StreamWriter streamWriter5 =
-        StreamWriter.newBuilder(tableInfo5DefaultStream)
-            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
-            .setLocation("us")
-            .setEnableConnectionPool(true)
-            .build();
-    // Will force open 5 connections.
-    ConnectionWorkerPool.setOptions(ConnectionWorkerPool.Settings.builder().setMinConnectionsPerRegion(5).build());
+    // Will force open 20 connections.
+    ConnectionWorkerPool.setOptions(
+        ConnectionWorkerPool.Settings.builder()
+            .setMinConnectionsPerRegion(defaultStreams.size())
+            .build());
+    List<StreamWriter> sws = new ArrayList<StreamWriter>();
+    for (int i = 0; i < defaultStreams.size(); i++) {
+      sws.add(
+          StreamWriter.newBuilder(defaultStreams.get(i))
+              .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+              .setLocation("us")
+              .setEnableConnectionPool(true)
+              .build());
+    }
+
     List<Future<AppendRowsResponse>> futureList = new ArrayList<Future<AppendRowsResponse>>();
-    writeSomeRows(streamWriter1, futureList);
-    writeSomeRows(streamWriter2, futureList);
-    writeSomeRows(streamWriter3, futureList);
-    writeSomeRows(streamWriter4, futureList);
-    writeSomeRows(streamWriter5, futureList);
+    for (int i = 0; i < defaultStreams.size(); i++) {
+      writeSomeRows(sws.get(i), futureList);
+    }
     client.shutdownNow();
     client.awaitTermination(60, TimeUnit.SECONDS);
     for (Future<AppendRowsResponse> f : futureList) {
