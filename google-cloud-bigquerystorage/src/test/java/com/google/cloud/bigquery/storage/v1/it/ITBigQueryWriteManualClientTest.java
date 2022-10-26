@@ -1252,6 +1252,33 @@ public class ITBigQueryWriteManualClientTest {
     }
   }
 
+  @Test
+  public void testStreamReconnect() throws IOException, InterruptedException, ExecutionException {
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(tableId)
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+    try (StreamWriter streamWriter =
+        StreamWriter.newBuilder(writeStream.getName())
+            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+            .build()) {
+      ApiFuture<AppendRowsResponse> response =
+          streamWriter.append(CreateProtoRows(new String[]{"aaa"}), 0L);
+      assertEquals(0L, response.get().getAppendResult().getOffset().getValue());
+    }
+    try (StreamWriter streamWriter =
+        StreamWriter.newBuilder(writeStream.getName())
+            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+            .build()) {
+      ApiFuture<AppendRowsResponse> response =
+          streamWriter.append(CreateProtoRows(new String[]{"aaa"}), 1L);
+      assertEquals(1L, response.get().getAppendResult().getOffset().getValue());
+    }
+  }
+
   void writeRows(StreamWriter sw, List<Future<AppendRowsResponse>> futureList, int numRequests) {
     for (int i = 0; i < numRequests; i++) {
       sw.append(CreateProtoRows(new String[] {"aaa", "bbb", "ccc"}));
