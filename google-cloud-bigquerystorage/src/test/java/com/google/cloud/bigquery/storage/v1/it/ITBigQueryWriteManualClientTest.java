@@ -1266,7 +1266,7 @@ public class ITBigQueryWriteManualClientTest {
             .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
             .build()) {
       ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(CreateProtoRows(new String[]{"aaa"}), 0L);
+          streamWriter.append(CreateProtoRows(new String[] {"aaa"}), 0L);
       assertEquals(0L, response.get().getAppendResult().getOffset().getValue());
     }
     try (StreamWriter streamWriter =
@@ -1274,7 +1274,7 @@ public class ITBigQueryWriteManualClientTest {
             .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
             .build()) {
       ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(CreateProtoRows(new String[]{"aaa"}), 1L);
+          streamWriter.append(CreateProtoRows(new String[] {"bbb"}), 1L);
       assertEquals(1L, response.get().getAppendResult().getOffset().getValue());
     }
   }
