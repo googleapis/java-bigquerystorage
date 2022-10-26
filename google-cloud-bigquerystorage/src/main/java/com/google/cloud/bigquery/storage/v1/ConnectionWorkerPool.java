@@ -328,18 +328,6 @@ public class ConnectionWorkerPool {
     // currently we use different header for the client in each connection worker to be different
     // as the backend require the header to have the same write_stream field as request body.
     BigQueryWriteClient clientAfterModification = client;
-    if (ownsBigQueryWriteClient) {
-      BigQueryWriteSettings settings = client.getSettings();
-
-      // Every header to write api is required to set write_stream in the header to help routing
-      // the request to correct region.
-      HashMap<String, String> newHeaders = new HashMap<>();
-      newHeaders.putAll(settings.toBuilder().getHeaderProvider().getHeaders());
-      newHeaders.put("x-goog-request-params", "write_stream=" + streamName);
-      BigQueryWriteSettings stubSettings =
-          settings.toBuilder().setHeaderProvider(FixedHeaderProvider.create(newHeaders)).build();
-      clientAfterModification = BigQueryWriteClient.create(stubSettings);
-    }
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             streamName,
