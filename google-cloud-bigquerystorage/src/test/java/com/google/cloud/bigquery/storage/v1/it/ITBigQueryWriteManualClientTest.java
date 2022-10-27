@@ -243,6 +243,10 @@ public class ITBigQueryWriteManualClientTest {
         streamWriter.append(CreateProtoRows(new String[] {"ddd"}), 3);
     assertEquals(1, response1.get().getAppendResult().getOffset().getValue());
     assertEquals(3, response2.get().getAppendResult().getOffset().getValue());
+    TableResult result =
+        bigquery.listTableData(
+            tableInfoEU.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    assertTrue(result.getTotalRows() >= 4);
   }
 
   @Test
