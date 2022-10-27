@@ -1292,5 +1292,8 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals(0L, response1.get().getAppendResult().getOffset().getValue());
     assertEquals(0L, response2.get().getAppendResult().getOffset().getValue());
     assertEquals(0L, response3.get().getAppendResult().getOffset().getValue());
+    assertEquals("us", streamWriter1.getLocation());
+    assertEquals("us", streamWriter2.getLocation());
+    assertEquals("eu", streamWriter3.getLocation());
   }
 }
