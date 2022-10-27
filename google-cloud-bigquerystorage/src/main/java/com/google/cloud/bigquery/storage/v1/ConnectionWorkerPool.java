@@ -17,7 +17,6 @@ package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowController;
-import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.Load;
 import com.google.common.base.Stopwatch;
@@ -25,7 +24,6 @@ import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
