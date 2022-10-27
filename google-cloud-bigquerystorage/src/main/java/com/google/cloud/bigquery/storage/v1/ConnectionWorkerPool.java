@@ -325,7 +325,6 @@ public class ConnectionWorkerPool {
     }
     // currently we use different header for the client in each connection worker to be different
     // as the backend require the header to have the same write_stream field as request body.
-    BigQueryWriteClient clientAfterModification = client;
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             streamName,
@@ -334,7 +333,7 @@ public class ConnectionWorkerPool {
             maxInflightBytes,
             limitExceededBehavior,
             traceId,
-            clientAfterModification,
+            client,
             ownsBigQueryWriteClient);
     connectionWorkerPool.add(connectionWorker);
     log.info(
