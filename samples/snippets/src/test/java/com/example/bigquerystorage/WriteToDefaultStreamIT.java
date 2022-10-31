@@ -73,7 +73,11 @@ public class WriteToDefaultStreamIT {
     // Create a new dataset and table for each test.
     datasetName = "WRITE_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
     tableName = "DEFAULT_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
-    Schema schema = Schema.of(Field.of("test_string", StandardSQLTypeName.STRING));
+    Schema schema = Schema.of(
+                      com.google.cloud.bigquery.Field.newBuilder(
+                        "test_string", StandardSQLTypeName.STRING)
+                      .setMaxLength(20L)
+                      .build());
     bigquery.create(DatasetInfo.newBuilder(datasetName).build());
     TableInfo tableInfo =
         TableInfo.newBuilder(TableId.of(datasetName, tableName), StandardTableDefinition.of(schema))
