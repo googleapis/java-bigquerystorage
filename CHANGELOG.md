@@ -1,5 +1,58 @@
 # Changelog
 
+## [2.24.2](https://github.com/googleapis/java-bigquerystorage/compare/v2.24.1...v2.24.2) (2022-10-28)
+
+
+### Bug Fixes
+
+* Remove applying header for multiplexing client and add a unit test for multiplexing with different location ([df9b487](https://github.com/googleapis/java-bigquerystorage/commit/df9b4876f868d1e33a1c2273a83fc7bfcd3ddf27))
+
+
+### Dependencies
+
+* Revert dependency upgrade for protobuf to v3.20.2 ([#1659](https://github.com/googleapis/java-bigquerystorage/issues/1659)) ([#1856](https://github.com/googleapis/java-bigquerystorage/issues/1856)) ([df9b487](https://github.com/googleapis/java-bigquerystorage/commit/df9b4876f868d1e33a1c2273a83fc7bfcd3ddf27))
+* Update arrow.version to v10 (major) (https://togithub.com/googleapis/java-bigquerystorage/issues/1847) ([b0b5f06](https://togithub.com/googleapis/java-bigquerystorage/commit/b0b5f06de60bce556b813e91c7ac665d8f045906)) ([df9b487](https://github.com/googleapis/java-bigquerystorage/commit/df9b4876f868d1e33a1c2273a83fc7bfcd3ddf27))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.18.0 (https://togithub.com/googleapis/java-bigquerystorage/issues/1852) ([bb475bd](https://togithub.com/googleapis/java-bigquerystorage/commit/bb475bdbeb0749889fec32fcecf36d0b51fdd8ac)) ([df9b487](https://github.com/googleapis/java-bigquerystorage/commit/df9b4876f868d1e33a1c2273a83fc7bfcd3ddf27))
+* Update dependency org.apache.arrow:arrow-memory-netty to v10 (https://togithub.com/googleapis/java-bigquerystorage/issues/1848) ([d6d96ff](https://togithub.com/googleapis/java-bigquerystorage/commit/d6d96ffb58be65d2a06c4f02de351fadd08da8e4)) ([df9b487](https://github.com/googleapis/java-bigquerystorage/commit/df9b4876f868d1e33a1c2273a83fc7bfcd3ddf27))
+* Update dependency org.apache.arrow:arrow-vector to v10 (https://togithub.com/googleapis/java-bigquerystorage/issues/1849) ([66853c2](https://togithub.com/googleapis/java-bigquerystorage/commit/66853c216ed2887e2d56f987cfffcb10d616f4bb)) ([df9b487](https://github.com/googleapis/java-bigquerystorage/commit/df9b4876f868d1e33a1c2273a83fc7bfcd3ddf27))
+
+## [2.24.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.24.0...v2.24.1) (2022-10-28)
+
+
+### Bug Fixes
+
+* Remove applying header for multiplexing client and add a unit test for multiplexing with different location ([#1850](https://github.com/googleapis/java-bigquerystorage/issues/1850)) ([1733d5a](https://github.com/googleapis/java-bigquerystorage/commit/1733d5a380080a0826aa9fcc41672bdb6a64c249))
+
+
+### Dependencies
+
+* Update arrow.version to v10 (major) ([#1847](https://github.com/googleapis/java-bigquerystorage/issues/1847)) ([b0b5f06](https://github.com/googleapis/java-bigquerystorage/commit/b0b5f06de60bce556b813e91c7ac665d8f045906))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.18.0 ([#1852](https://github.com/googleapis/java-bigquerystorage/issues/1852)) ([bb475bd](https://github.com/googleapis/java-bigquerystorage/commit/bb475bdbeb0749889fec32fcecf36d0b51fdd8ac))
+* Update dependency org.apache.arrow:arrow-memory-netty to v10 ([#1848](https://github.com/googleapis/java-bigquerystorage/issues/1848)) ([d6d96ff](https://github.com/googleapis/java-bigquerystorage/commit/d6d96ffb58be65d2a06c4f02de351fadd08da8e4))
+* Update dependency org.apache.arrow:arrow-vector to v10 ([#1849](https://github.com/googleapis/java-bigquerystorage/issues/1849)) ([66853c2](https://github.com/googleapis/java-bigquerystorage/commit/66853c216ed2887e2d56f987cfffcb10d616f4bb))
+
+## [2.24.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.23.1...v2.24.0) (2022-10-25)
+
+
+### Features
+
+* Add getInflightWaitSeconds implementation ([#1835](https://github.com/googleapis/java-bigquerystorage/issues/1835)) ([b569116](https://github.com/googleapis/java-bigquerystorage/commit/b569116179700123e405eb7712abb136456f2f26))
+* **shortsAndBigDecimals:** Add shorts and big decimals ([#1674](https://github.com/googleapis/java-bigquerystorage/issues/1674)) ([604d7df](https://github.com/googleapis/java-bigquerystorage/commit/604d7df2afa54e445a4d310e5293d8d19901d565))
+
+
+### Bug Fixes
+
+* **java:** Restore native image configurations ([#1844](https://github.com/googleapis/java-bigquerystorage/issues/1844)) ([8ce670a](https://github.com/googleapis/java-bigquerystorage/commit/8ce670a487a192807ccfd58613fc271d9402ca7c))
+* Remove the client lib header setting since after router migration, it is no longer needed ([#1842](https://github.com/googleapis/java-bigquerystorage/issues/1842)) ([5f3b821](https://github.com/googleapis/java-bigquerystorage/commit/5f3b8214116b17b315d589bfde184e0e045cff69))
+
+
+### Dependencies
+
+* Update dependency com.google.auto.value:auto-value to v1.10 ([#1825](https://github.com/googleapis/java-bigquerystorage/issues/1825)) ([f7b8f2b](https://github.com/googleapis/java-bigquerystorage/commit/f7b8f2b4df8ca9b306a75d46eb223124ac9bdebb))
+* Update dependency com.google.auto.value:auto-value-annotations to v1.10 ([#1826](https://github.com/googleapis/java-bigquerystorage/issues/1826)) ([37eb8a1](https://github.com/googleapis/java-bigquerystorage/commit/37eb8a1df34e8ae4d5e2849c76d9a591ec5505d4))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.17.1 ([#1829](https://github.com/googleapis/java-bigquerystorage/issues/1829)) ([7e8d900](https://github.com/googleapis/java-bigquerystorage/commit/7e8d90037f5ae426882f90ab251d315767b3a6b7))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.0.5 ([#1840](https://github.com/googleapis/java-bigquerystorage/issues/1840)) ([474756b](https://github.com/googleapis/java-bigquerystorage/commit/474756bd6547254ed6d761a73f2e69920fa79458))
+
 ## [2.23.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.23.0...v2.23.1) (2022-10-04)
 
 
