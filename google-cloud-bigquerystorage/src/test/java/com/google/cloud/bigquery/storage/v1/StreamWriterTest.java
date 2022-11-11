@@ -20,10 +20,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-import com.google.api.client.util.Sleeper;
 import com.google.api.core.ApiFuture;
-import com.google.api.core.ApiFutureCallback;
-import com.google.api.core.ApiFutures;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
@@ -36,8 +33,6 @@ import com.google.cloud.bigquery.storage.v1.ConnectionWorkerPool.Settings;
 import com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode;
 import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.Any;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
@@ -51,14 +46,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
-import javax.annotation.concurrent.GuardedBy;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -71,14 +62,38 @@ import org.threeten.bp.Duration;
 @RunWith(JUnit4.class)
 public class StreamWriterTest {
   private static final Logger log = Logger.getLogger(StreamWriterTest.class.getName());
-  private static final Logger logger = Logger.getLogger(StreamWriterTest.class.getName());
-  private static final String TEST_STREAM_1 = "projects/p/datasets/d/tables/t/streams/s";
-  private static final String TEST_STREAM_2 = "projects/p/datasets/d/tables/t/streams/s";
+  private static final String TEST_STREAM_1 = "projects/p/datasets/d1/tables/t1/streams/s1";
+  private static final String TEST_STREAM_2 = "projects/p/datasets/d2/tables/t2/streams/s2";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
   private FakeScheduledExecutorService fakeExecutor;
   private FakeBigQueryWrite testBigQueryWrite;
   private static MockServiceHelper serviceHelper;
   private BigQueryWriteClient client;
+  private final TableFieldSchema FOO =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.STRING)
+          .setMode(TableFieldSchema.Mode.NULLABLE)
+          .setName("foo")
+          .build();
+  private final TableFieldSchema BAR =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.STRING)
+          .setMode(TableFieldSchema.Mode.NULLABLE)
+          .setName("bar")
+          .build();
+  private final TableSchema TABLE_SCHEMA = TableSchema.newBuilder().addFields(0, FOO).build();
+  private final ProtoSchema PROTO_SCHEMA =
+      ProtoSchemaConverter.convert(
+          BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(TABLE_SCHEMA));
+
+  private final TableSchema UPDATED_TABLE_SCHEMA =
+      TableSchema.newBuilder().addFields(0, FOO).addFields(1, BAR).build();
+  private final ProtoSchema UPDATED_PROTO_SCHEMA =
+      ProtoSchemaConverter.convert(
+          BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(
+              UPDATED_TABLE_SCHEMA));
+
+  public StreamWriterTest() throws DescriptorValidationException {}
 
   @Before
   public void setUp() throws Exception {
@@ -119,18 +134,21 @@ public class StreamWriterTest {
     return StreamWriter.newBuilder(TEST_STREAM_1, client)
         .setWriterSchema(createProtoSchema())
         .setTraceId(TEST_TRACE_ID)
-        .setMaxInflightRequests(3)
         .build();
   }
 
   private ProtoSchema createProtoSchema() {
+    return createProtoSchema("foo");
+  }
+
+  private ProtoSchema createProtoSchema(String fieldName) {
     return ProtoSchema.newBuilder()
         .setProtoDescriptor(
             DescriptorProtos.DescriptorProto.newBuilder()
                 .setName("Message")
                 .addField(
                     DescriptorProtos.FieldDescriptorProto.newBuilder()
-                        .setName("foo")
+                        .setName(fieldName)
                         .setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_STRING)
                         .setNumber(1)
                         .build())
@@ -260,6 +278,52 @@ public class StreamWriterTest {
   }
 
   @Test
+  public void testUpdatedSchemaFetch_multiplexing() throws Exception {
+    testUpdatedSchemaFetch(/*enableMultiplexing=*/ true);
+  }
+
+  @Test
+  public void testUpdatedSchemaFetch_nonMultiplexing() throws Exception {
+    testUpdatedSchemaFetch(/*enableMultiplexing=*/ false);
+  }
+
+  private void testUpdatedSchemaFetch(boolean enableMultiplexing)
+      throws IOException, ExecutionException, InterruptedException {
+    StreamWriter writer =
+        StreamWriter.newBuilder(TEST_STREAM_1)
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .setChannelProvider(serviceHelper.createChannelProvider())
+            .setWriterSchema(PROTO_SCHEMA)
+            .setEnableConnectionPool(enableMultiplexing)
+            .setLocation("us")
+            .build();
+    testBigQueryWrite.addResponse(
+        AppendRowsResponse.newBuilder()
+            .setAppendResult(
+                AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
+            .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
+            .setWriteStream(TEST_STREAM_1)
+            .build());
+
+    assertEquals(writer.getUpdatedSchema(), null);
+    AppendRowsResponse response =
+        writer.append(createProtoRows(new String[] {String.valueOf(0)}), 0).get();
+    assertEquals(writer.getUpdatedSchema(), UPDATED_TABLE_SCHEMA);
+
+    // Create another writer, although it's the same stream name but the time stamp is newer, thus
+    // the old updated schema won't get returned.
+    StreamWriter writer2 =
+        StreamWriter.newBuilder(TEST_STREAM_1)
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .setChannelProvider(serviceHelper.createChannelProvider())
+            .setWriterSchema(PROTO_SCHEMA)
+            .setEnableConnectionPool(enableMultiplexing)
+            .setLocation("us")
+            .build();
+    assertEquals(writer2.getUpdatedSchema(), null);
+  }
+
+  @Test
   public void testNoSchema() throws Exception {
     StatusRuntimeException ex =
         assertThrows(
@@ -336,61 +400,6 @@ public class StreamWriterTest {
     assertEquals(Status.Code.INVALID_ARGUMENT, actualError.getStatus().getCode());
     assertEquals("test message", actualError.getStatus().getDescription());
     assertEquals(1, appendFuture3.get().getAppendResult().getOffset().getValue());
-
-    writer.close();
-  }
-
-  @Test
-  public void testStuck() throws Exception {
-    StreamWriter writer = getTestStreamWriter();
-    testBigQueryWrite.addResponse(createAppendResponse(0));
-    testBigQueryWrite.addResponse(
-        createAppendResponseWithError(Status.INVALID_ARGUMENT.getCode(), "test message"));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-
-    log.warning("before first send");
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
-
-    ArrayList<ApiFuture<AppendRowsResponse>> appendFutureList = new ArrayList<>();
-    ApiFutures.addCallback(
-        appendFuture2,
-        new ApiFutureCallback<AppendRowsResponse>() {
-          public void onSuccess(AppendRowsResponse response) {
-            if (!response.hasError()) {
-              System.out.println("written with offset: " + response.getAppendResult().getOffset());
-            } else {
-              System.out.println("received an in stream error: " + response.getError().toString());
-            }
-          }
-
-          public void onFailure(Throwable t) {
-            // appendFutureList.add(sendTestMessage(writer, new String[] {"D"}));
-            log.warning("There is an append happen before ");
-            writer.append(createProtoRows(new String[] {"D"}));
-          }
-        },
-        MoreExecutors.directExecutor());
-
-    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
-    StatusRuntimeException actualError =
-        assertFutureException(StatusRuntimeException.class, appendFuture2);
-    assertEquals(Status.Code.INVALID_ARGUMENT, actualError.getStatus().getCode());
-    assertEquals("test message", actualError.getStatus().getDescription());
-    // assertEquals(1, appendFuture3.get().getAppendResult().getOffset().getValue());
-
-    log.warning("Before first get");
-    appendFuture1.get();
-    try {
-      appendFuture2.get();
-    } catch (Exception exception) {
-      log.warning("Expected " + exception.getMessage());
-    }
-
-    Sleeper.DEFAULT.sleep(1000);
-    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"D"});
-    appendFuture3.get();
 
     writer.close();
   }
@@ -630,6 +639,107 @@ public class StreamWriterTest {
   }
 
   @Test
+  public void testProtoSchemaPiping_nonMultiplexingCase() throws Exception {
+    ProtoSchema protoSchema = createProtoSchema();
+    StreamWriter writer =
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setWriterSchema(protoSchema)
+            .setMaxInflightBytes(1)
+            .build();
+    long appendCount = 5;
+    for (int i = 0; i < appendCount; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    for (int i = 0; i < appendCount; i++) {
+      futures.add(writer.append(createProtoRows(new String[] {String.valueOf(i)}), i));
+    }
+
+    for (int i = 0; i < appendCount; i++) {
+      assertEquals(i, futures.get(i).get().getAppendResult().getOffset().getValue());
+    }
+    assertEquals(appendCount, testBigQueryWrite.getAppendRequests().size());
+    for (int i = 0; i < appendCount; i++) {
+      AppendRowsRequest appendRowsRequest = testBigQueryWrite.getAppendRequests().get(i);
+      assertEquals(i, appendRowsRequest.getOffset().getValue());
+      if (i == 0) {
+        appendRowsRequest.getProtoRows().getWriterSchema().equals(protoSchema);
+        assertEquals(appendRowsRequest.getWriteStream(), TEST_STREAM_1);
+      } else {
+        appendRowsRequest.getProtoRows().getWriterSchema().equals(ProtoSchema.getDefaultInstance());
+      }
+    }
+    writer.close();
+  }
+
+  @Test
+  public void testProtoSchemaPiping_multiplexingCase() throws Exception {
+    // Use the shared connection mode.
+    ConnectionWorkerPool.setOptions(
+        Settings.builder().setMinConnectionsPerRegion(1).setMaxConnectionsPerRegion(1).build());
+    ProtoSchema schema1 = createProtoSchema("Schema1");
+    ProtoSchema schema2 = createProtoSchema("Schema2");
+    StreamWriter writer1 =
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setWriterSchema(schema1)
+            .setLocation("US")
+            .setEnableConnectionPool(true)
+            .setMaxInflightRequests(1)
+            .build();
+    StreamWriter writer2 =
+        StreamWriter.newBuilder(TEST_STREAM_2, client)
+            .setWriterSchema(schema2)
+            .setMaxInflightRequests(1)
+            .setEnableConnectionPool(true)
+            .setLocation("US")
+            .build();
+
+    long appendCountPerStream = 5;
+    for (int i = 0; i < appendCountPerStream * 4; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    // In total insert append `appendCountPerStream` * 4 requests.
+    // We insert using the pattern of streamWriter1, streamWriter1, streamWriter2, streamWriter2
+    for (int i = 0; i < appendCountPerStream; i++) {
+      futures.add(writer1.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4));
+      futures.add(writer1.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4 + 1));
+      futures.add(writer2.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4 + 2));
+      futures.add(writer2.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4 + 3));
+    }
+
+    for (int i = 0; i < appendCountPerStream * 4; i++) {
+      AppendRowsRequest appendRowsRequest = testBigQueryWrite.getAppendRequests().get(i);
+      assertEquals(i, appendRowsRequest.getOffset().getValue());
+      if (i % 4 == 0) {
+        assertEquals(appendRowsRequest.getProtoRows().getWriterSchema(), schema1);
+        assertEquals(appendRowsRequest.getWriteStream(), TEST_STREAM_1);
+      } else if (i % 4 == 1) {
+        assertEquals(
+            appendRowsRequest.getProtoRows().getWriterSchema(), ProtoSchema.getDefaultInstance());
+        // Before entering multiplexing (i == 1) case, the write stream won't be populated.
+        if (i == 1) {
+          assertEquals(appendRowsRequest.getWriteStream(), "");
+        } else {
+          assertEquals(appendRowsRequest.getWriteStream(), TEST_STREAM_1);
+        }
+      } else if (i % 4 == 2) {
+        assertEquals(appendRowsRequest.getProtoRows().getWriterSchema(), schema2);
+        assertEquals(appendRowsRequest.getWriteStream(), TEST_STREAM_2);
+      } else {
+        assertEquals(
+            appendRowsRequest.getProtoRows().getWriterSchema(), ProtoSchema.getDefaultInstance());
+        assertEquals(appendRowsRequest.getWriteStream(), TEST_STREAM_2);
+      }
+    }
+
+    writer1.close();
+    writer2.close();
+  }
+
+  @Test
   public void testAppendsWithTinyMaxInflightBytes() throws Exception {
     StreamWriter writer =
         StreamWriter.newBuilder(TEST_STREAM_1, client)
@@ -861,359 +971,5 @@ public class StreamWriterTest {
     serviceHelper.stop();
     // Ensure closing the writer after disconnect succeeds.
     writer.close();
-  }
-
-  @Test
-  public void PhaserBehavior() throws Exception {
-    StreamWriter writer = getTestStreamWriter();
-    // StreamWriter errorWriter = getTestStreamWriter();
-    StreamWriter errorWriter = writer;
-    DataWriter dataWriter = new DataWriter();
-    dataWriter.initialize(writer);
-    DataWriter errorDataWriter = new DataWriter();
-    errorDataWriter.initialize(errorWriter);
-
-    testBigQueryWrite.setResponseSleep(Duration.ofMillis(100));
-    testBigQueryWrite.addResponse(createAppendResponse(0));
-    testBigQueryWrite.addResponse(
-        createAppendResponseWithError(Status.ABORTED.getCode(), "test message"));
-    // testBigQueryWrite.addResponse(
-    //     createAppendResponseWithError(Status.ABORTED.getCode(), "test message"));
-    // testBigQueryWrite.addResponse(createAppendResponse(1));
-    // testBigQueryWrite.addResponse(
-    //     createAppendResponseWithError(Status.ABORTED.getCode(), "test message"));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-    testBigQueryWrite.addResponse(createAppendResponse(1));
-
-    log.warning("before first send");
-
-    dataWriter.append(new AppendContext(createProtoRows(new String[] {"A"}), 2, errorDataWriter));
-    log.warning("before second send");
-    dataWriter.append(new AppendContext(createProtoRows(new String[] {"B"}), 2, errorDataWriter));
-    dataWriter.append(new AppendContext(createProtoRows(new String[] {"B"}), 2, errorDataWriter));
-    dataWriter.append(new AppendContext(createProtoRows(new String[] {"B"}), 2, errorDataWriter));
-    dataWriter.append(new AppendContext(createProtoRows(new String[] {"B"}), 2, errorDataWriter));
-    // dataWriter.append(new AppendContext(createProtoRows(new String[] {"B"}), 2,
-    // errorDataWriter));
-    // dataWriter.append(new AppendContext(createProtoRows(new String[] {"B"}), 2,
-    // errorDataWriter));
-    // dataWriter.append(new AppendContext(createProtoRows(new String[] {"B"}), 2,
-    // errorDataWriter));
-    // dataWriter.append(new AppendContext(createProtoRows(new String[] {"B"}), 2,
-    // errorDataWriter));
-    //
-    // log.warning("before third send");
-    // dataWriter.append(new AppendContext(createProtoRows(new String[] {"C"}), 2,
-    // errorDataWriter));
-    // dataWriter.append(new AppendContext(createProtoRows(new String[] {"D"}), 2,
-    // errorDataWriter));
-    // writer.append(createProtoRows(new String[] {"B"}));
-
-    Thread.sleep(2000);
-    dataWriter.waitInFlightRequestFinish();
-    errorDataWriter.waitInFlightRequestFinish();
-    // writer.append(createProtoRows(new String[] {"A"}));
-    // writer.w
-
-    // ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
-    // ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
-
-    // ArrayList<ApiFuture<AppendRowsResponse>> appendFutureList = new ArrayList<>();
-    // ApiFutures.addCallback(appendFuture2, new ApiFutureCallback<AppendRowsResponse>() {
-    //   public void onSuccess(AppendRowsResponse response) {
-    //     if (!response.hasError()) {
-    //       System.out.println("written with offset: " + response.getAppendResult().getOffset());
-    //     } else {
-    //       System.out.println("received an in stream error: " + response.getError().toString());
-    //     }
-    //   }
-    //   public void onFailure(Throwable t) {
-    //     // appendFutureList.add(sendTestMessage(writer, new String[] {"D"}));
-    //     log.warning("There is an append happen before ");
-    //     writer.append(createProtoRows(new String[] {"D"}));
-    //   }
-    // }, MoreExecutors.directExecutor());
-    //
-    // assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
-    // StatusRuntimeException actualError =
-    //     assertFutureException(StatusRuntimeException.class, appendFuture2);
-    // assertEquals(Status.Code.INVALID_ARGUMENT, actualError.getStatus().getCode());
-    // assertEquals("test message", actualError.getStatus().getDescription());
-    // // assertEquals(1, appendFuture3.get().getAppendResult().getOffset().getValue());
-    //
-    // log.warning("Before first get");
-    // appendFuture1.get();
-    // try {
-    //   appendFuture2.get();
-    // } catch (Exception exception) {
-    //   log.warning("Expected " + exception.getMessage());
-    // }
-    //
-    // Sleeper.DEFAULT.sleep(1000);
-    // ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"D"});
-    // appendFuture3.get();
-    //
-    // writer.close();
-  }
-
-  public class AppendCompleteCallback implements ApiFutureCallback<AppendRowsResponse> {
-
-    private final DataWriter dataWriter;
-    // TODO REMOVED FINAL
-    private AppendContext appendContext;
-
-    ExecutorService pool = Executors.newFixedThreadPool(100);
-
-    public AppendCompleteCallback(DataWriter dataWriter, AppendContext appendContext) {
-      this.dataWriter = dataWriter;
-      this.appendContext = appendContext;
-    }
-
-    public void onSuccess(AppendRowsResponse response) {
-      logger.info("[STREAM-DEBUG] onSuccess ran with retryCount = {}, tableId = {}");
-      logger.warning("On success is called");
-      done();
-    }
-
-    public void onFailure(Throwable throwable) {
-      log.warning("on failure is triggered " + throwable.toString());
-      if (appendContext.errorWriter != null) {
-        log.warning("Retrying............");
-        // Exceptions.AppendSerializtionError ase = (Exceptions.AppendSerializtionError) throwable;
-        // Map<Integer, String> rowIndexTOErrorMessage = ase.getRowIndexToErrorMessage();
-        if (true) {
-          ProtoRows correctRows = createProtoRows(new String[] {"Correct rows"});
-          ProtoRows wrongRows = createProtoRows(new String[] {"Wrong rows"});
-
-          // if AppendSerializtionError happens in one append, there will be no records streaming
-          // into GBQ successfully
-          // therefore, we need to retry streaming the correct rows
-          // if (correctRows. > 0){
-          try {
-            log.warning(
-                "[STREAM-DEBUG] apppending correct rows length = {}, retryCount = {}, tableId = {}");
-
-            pool.submit(
-                () -> {
-                  try {
-                    this.dataWriter.append(
-                        new AppendContext(
-                            correctRows, appendContext.getRetryCount(), appendContext.errorWriter));
-                  } catch (DescriptorValidationException | IOException e) {
-                    throw new RuntimeException(e);
-                  }
-                });
-          } catch (Exception i) {
-            log.warning("[STREAM] Failed to retry append the correct rows");
-            registerErrorInDataWriter(i);
-          }
-          // }
-
-          // if (errorRows.length() > 0){
-          try {
-            log.warning("before calling");
-            log.warning(
-                "[STREAM-DEBUG] apppending error rows length = {}, retryCount = {}, tableId = {}");
-
-            pool.submit(
-                () -> {
-                  try {
-                    appendContext.errorWriter.append(new AppendContext(wrongRows));
-                  } catch (DescriptorValidationException | IOException e) {
-                    throw new RuntimeException(e);
-                  }
-                });
-          } catch (Exception i) {
-            log.warning("[STREAM] Failed to retry append the error rows");
-            registerErrorInDataWriter(i);
-          }
-          doneWithErrorWriter();
-          // }
-
-          // Mark the existing attempt as done since we got a response for it
-          logger.warning("[STREAM-DEBUG] done() for rowIndexTOErrorMessage, tableId = {}");
-          done();
-          return;
-        }
-        logger.info("[STREAM-DEBUG] in AppendSerializtionError but no messages, tableId = {}");
-      }
-
-      if (appendContext.getRetryCount() < 5) {
-        try {
-          logger.info(
-              "[STREAM-DEBUG] try to retry error with retryCount = {}, tableId = {}"
-                  + appendContext.getRetryCount());
-          if (appendContext.getRetryCount() > 0) {
-            waitRandomTime(appendContext.getRetryCount());
-          }
-          appendContext.setRetryCount(appendContext.getRetryCount() + 1);
-          logger.info("[STREAM-DEBUG] after adding retryCount, retryCount = {}, tableId = {}");
-          logger.warning(String.format("[STREAM] try to retry error %s", throwable));
-          // Since default stream appends are not ordered, we can simply retry the appends.
-          // Retrying with exclusive streams requires more careful consideration.
-          pool.submit(
-              () -> {
-                try {
-                  this.dataWriter.append(appendContext);
-                } catch (DescriptorValidationException | IOException e) {
-                  throw new RuntimeException(e);
-                }
-              });
-          logger.info("[STREAM-DEBUG] done() for appendContext.retryCount, tableId = {}");
-          // Mark the existing attempt as done since it's being retried.
-          done();
-          return;
-        } catch (Exception e) {
-          // Fall through to return error.
-          logger.warning(
-              "[STREAM] Failed to retry append when the failure is one of retriable error codes");
-        }
-      }
-
-      logger.warning("[STREAM] Error happens");
-      registerErrorInDataWriter(throwable);
-      done();
-    }
-
-    private void done() {
-      // Reduce the count of in-flight requests.
-      this.dataWriter.inflightRequestCount.arriveAndDeregister();
-      log.warning("Done is called");
-    }
-
-    private void doneWithErrorWriter() {
-      this.appendContext.errorWriter.inflightRequestCount.arriveAndDeregister();
-      log.warning("Writer arrive and deregister");
-    }
-
-    private void registerErrorInDataWriter(Throwable throwable) {
-      synchronized (this.dataWriter.lock) {
-        if (this.dataWriter.error == null) {
-          logger.info(
-              String.format(
-                  "[STREAM-DEBUG] registerErrorInDataWriter with throwable = {%s} ",
-                  throwable.getMessage()));
-        }
-      }
-    }
-
-    private void waitRandomTime(int retryCount) throws InterruptedException {
-      long waitingTimeMs = (long) Math.pow(this.dataWriter.waitExponentialBase, retryCount) * 1000;
-      waitingTimeMs = Math.min(waitingTimeMs, this.dataWriter.retryWaitMsMax);
-      logger.info("[STREAM] will wait for {} milliseconds, {} retry");
-
-      // wait
-      Thread.sleep(waitingTimeMs);
-    }
-  }
-
-  public class AppendContext {
-
-    ProtoRows data;
-
-    public int getRetryCount() {
-      return retryCount;
-    }
-
-    public void setRetryCount(int retryCount) {
-      this.retryCount = retryCount;
-    }
-
-    private int retryCount;
-    DataWriter errorWriter;
-
-    public AppendContext(ProtoRows data) {
-      this.data = data;
-    }
-
-    public AppendContext(ProtoRows data, int retryCount) {
-      this.data = data;
-      this.retryCount = retryCount;
-    }
-
-    public AppendContext(ProtoRows data, int retryCount, DataWriter errorWriter) {
-      this.data = data;
-      this.retryCount = retryCount;
-      this.errorWriter = errorWriter;
-    }
-  }
-
-  protected static final ImmutableList<Status.Code> RETRIABLE_ERROR_CODES =
-      ImmutableList.of(
-          Status.Code.INTERNAL,
-          Status.Code.ABORTED,
-          Status.Code.CANCELLED,
-          Status.Code.FAILED_PRECONDITION,
-          Status.Code.DEADLINE_EXCEEDED,
-          Status.Code.UNAVAILABLE);
-
-  public class DataWriter {
-    public int MAX_RETRY_COUNT = 3;
-    public long retryWaitMsMax;
-    protected final int waitExponentialBase = 3;
-
-    // Track the number of in-flight requests to wait for all responses before shutting down.
-    protected final Phaser inflightRequestCount = new Phaser(1);
-    protected final Object lock = new Object();
-    private StreamWriter streamWriter;
-
-    @GuardedBy("lock")
-    protected RuntimeException error = null;
-
-    public void initialize(StreamWriter writer)
-        throws Descriptors.DescriptorValidationException, IOException, InterruptedException {
-      // Retrive table schema information.
-      streamWriter = writer;
-    }
-
-    public void append(AppendContext appendContext)
-        throws Descriptors.DescriptorValidationException, IOException {
-
-      // Append asynchronously for increased throughput.
-      log.warning("Right before append");
-      ApiFuture<AppendRowsResponse> future = streamWriter.append(appendContext.data);
-      log.warning("Right after append " + inflightRequestCount.getArrivedParties());
-      ApiFutures.addCallback(
-          future, new AppendCompleteCallback(this, appendContext), MoreExecutors.directExecutor());
-      // Increase the count of in-flight requests.
-      inflightRequestCount.register();
-      log.warning("Increment once");
-    }
-
-    public void appendWithoutCallback(AppendContext appendContext)
-        throws Descriptors.DescriptorValidationException, IOException, ExecutionException,
-            InterruptedException {
-
-      // Append asynchronously for increased throughput.
-      streamWriter.append(appendContext.data).get();
-      // Increase the count of in-flight requests.
-      inflightRequestCount.register();
-    }
-
-    public void cleanup() {
-      // Close the connection to the server.
-      streamWriter.close();
-    }
-
-    public void waitInFlightRequestFinish() {
-      // Wait for all in-flight requests to complete.
-      logger.warning("[STREAM-DEBUG] waitInFlightRequestFinish start for tableId =");
-      inflightRequestCount.arriveAndAwaitAdvance();
-      logger.warning("[STREAM-DEBUG] waitInFlightRequestFinish end for tableId = ");
-    }
-
-    public void checkError() {
-      // Verify that no error occurred in the stream.
-      if (this.error != null) {
-        logger.warning("[STREAM-DEBUG] checkError has error = {}");
-        throw this.error;
-      }
-    }
   }
 }
