@@ -92,22 +92,22 @@ public class WriteToDefaultStream {
 
   private static void verifyExpectedRowCount(TableName parentTable, int expectedRowCount)
       throws InterruptedException {
-    String queryRowCount = "SELECT COUNT(*) FROM `"
+    String queryRowCount =
+        "SELECT COUNT(*) FROM `"
             + parentTable.getProject()
             + "."
             + parentTable.getDataset()
             + "."
             + parentTable.getTable()
             + "`";
-    QueryJobConfiguration queryConfig =
-            QueryJobConfiguration.newBuilder(queryRowCount).build();
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(queryRowCount).build();
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
     TableResult results = bigquery.query(queryConfig);
-    int countRowsActual = Integer.parseInt(
-            results.getValues().iterator().next().get("f0_").getStringValue());
+    int countRowsActual =
+        Integer.parseInt(results.getValues().iterator().next().get("f0_").getStringValue());
     if (countRowsActual != expectedRowCount) {
-      throw new RuntimeException("Unexpected row count. Expected: "
-              + expectedRowCount + ". Actual: " + countRowsActual);
+      throw new RuntimeException(
+          "Unexpected row count. Expected: " + expectedRowCount + ". Actual: " + countRowsActual);
     }
   }
 
@@ -213,16 +213,19 @@ public class WriteToDefaultStream {
             && RETRIABLE_ERROR_CODES.contains(status.getCode())) {
           appendContext.retryCount++;
           // Use a separate thread to avoid potentially blocking while we are in a callback.
-          new Thread(() -> {
-            try {
-              // Since default stream appends are not ordered, we can simply retry the appends.
-              // Retrying with exclusive streams requires more careful consideration.
-              this.parent.append(appendContext);
-            } catch (Exception e) {
-              // Fall through to return error.
-              System.out.format("Failed to retry append: %s%n", e);
-            }
-          }).start();
+          new Thread(
+                  () -> {
+                    try {
+                      // Since default stream appends are not ordered, we can simply retry the
+                      // appends.
+                      // Retrying with exclusive streams requires more careful consideration.
+                      this.parent.append(appendContext);
+                    } catch (Exception e) {
+                      // Fall through to return error.
+                      System.out.format("Failed to retry append: %s%n", e);
+                    }
+                  })
+              .start();
           // Mark the existing attempt as done since it's being retried.
           done();
           return;
@@ -248,13 +251,15 @@ public class WriteToDefaultStream {
             // Retry the remaining valid rows, but using a separate thread to
             // avoid potentially blocking while we are in a callback.
             if (dataNew.length() > 0) {
-              new Thread(() -> {
-                try {
-                  this.parent.append(new AppendContext(dataNew, 0));
-                } catch (Exception e2) {
-                  System.out.format("Failed to retry append with filtered rows: %s%n", e2);
-                }
-              }).start();
+              new Thread(
+                      () -> {
+                        try {
+                          this.parent.append(new AppendContext(dataNew, 0));
+                        } catch (Exception e2) {
+                          System.out.format("Failed to retry append with filtered rows: %s%n", e2);
+                        }
+                      })
+                  .start();
             }
             return;
           }
