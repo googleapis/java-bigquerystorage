@@ -29,7 +29,7 @@ import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableResult;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.Exceptions;
-import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
+import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.StorageException;
 import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableName;
