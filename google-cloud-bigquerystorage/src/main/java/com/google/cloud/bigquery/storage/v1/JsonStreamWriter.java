@@ -110,6 +110,7 @@ public class JsonStreamWriter implements AutoCloseable {
    * @param jsonArr The JSON array that contains JSONObjects to be written
    * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
    *     ApiFuture
+   * @throws AppendSerializationError when there is any row in the request that failed Json parsing.
    */
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr)
       throws IOException, DescriptorValidationException {
