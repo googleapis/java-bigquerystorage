@@ -221,11 +221,11 @@ public final class Exceptions {
    * data. The exception contains a Map of indexes of faulty rows and the corresponding error
    * message.
    */
-  public static class AppendSerializtionError extends StatusRuntimeException {
+  public static class AppendSerializationError extends StatusRuntimeException {
     private final Map<Integer, String> rowIndexToErrorMessage;
     private final String streamName;
 
-    public AppendSerializtionError(
+    public AppendSerializationError(
         int codeValue,
         String description,
         String streamName,

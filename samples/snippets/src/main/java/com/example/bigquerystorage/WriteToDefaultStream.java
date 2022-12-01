@@ -234,7 +234,7 @@ public class WriteToDefaultStream {
           return;
         }
 
-        if (throwable instanceof AppendSerializtionError) {
+        if (throwable instanceof AppendSerializationError) {
           AppendSerializtionError ase = (AppendSerializtionError) throwable;
           Map<Integer, String> rowIndexToErrorMessage = ase.getRowIndexToErrorMessage();
           if (rowIndexToErrorMessage.size() > 0) {

@@ -35,7 +35,7 @@ import com.google.cloud.bigquery.storage.test.Test.FlexibleType;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.test.Test.UpdatedFooType;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorkerPool.Settings;
-import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
+import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Int64Value;
@@ -959,7 +959,7 @@ public class JsonStreamWriterTest {
       try {
         ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
         Assert.fail("expected ExecutionException");
-      } catch (AppendSerializtionError ex) {
+      } catch (AppendSerializationError ex) {
         assertEquals(
             "JSONObject has fields unknown to BigQuery: root.test_unknown.",
             ex.getRowIndexToErrorMessage().get(1));
@@ -1077,7 +1077,7 @@ public class JsonStreamWriterTest {
       try {
         ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
         Assert.fail("expected AppendSerializtionError");
-      } catch (AppendSerializtionError appendSerializtionError) {
+      } catch (AppendSerializationError appendSerializtionError) {
         Map<Integer, String> rowIndexToErrorMessage =
             appendSerializtionError.getRowIndexToErrorMessage();
         assertEquals(2, rowIndexToErrorMessage.size());
@@ -1117,7 +1117,7 @@ public class JsonStreamWriterTest {
       try {
         ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
         Assert.fail("expected AppendSerializtionError");
-      } catch (AppendSerializtionError appendSerializtionError) {
+      } catch (AppendSerializationError appendSerializtionError) {
         Map<Integer, String> rowIndexToErrorMessage =
             appendSerializtionError.getRowIndexToErrorMessage();
         assertEquals(1, rowIndexToErrorMessage.size());

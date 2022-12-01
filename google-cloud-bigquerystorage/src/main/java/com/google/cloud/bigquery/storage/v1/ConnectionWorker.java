@@ -21,7 +21,7 @@ import com.google.api.gax.batching.FlowController;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.util.Errors;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
-import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
+import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.RequestCallback;
 import com.google.common.annotations.VisibleForTesting;
@@ -647,8 +647,8 @@ public class ConnectionWorker implements AutoCloseable {
           RowError rowError = response.getRowErrors(i);
           rowIndexToErrorMessage.put(Math.toIntExact(rowError.getIndex()), rowError.getMessage());
         }
-        AppendSerializtionError exception =
-            new AppendSerializtionError(
+        AppendSerializationError exception =
+            new AppendSerializationError(
                 response.getError().getCode(),
                 response.getError().getMessage(),
                 streamName,
