@@ -34,7 +34,6 @@ import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.StorageException;
 import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableName;
-import com.google.cloud.bigquery.storage.v1.TableSchema;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
