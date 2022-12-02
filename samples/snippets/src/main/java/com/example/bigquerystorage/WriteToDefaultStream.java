@@ -47,6 +47,7 @@ import java.util.concurrent.Phaser;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
 
 public class WriteToDefaultStream {
 
@@ -150,13 +151,13 @@ public class WriteToDefaultStream {
       BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
       Table table = bigquery.getTable(parentTable.getDataset(), parentTable.getTable());
       Schema schema = table.getDefinition().getSchema();
-      TableSchema tableSchema = BqToBqStorageSchemaConverter.convertTableSchema(schema);
+      BigQueryWriteClient client = BigQueryWriteClient.create();
 
       // Use the JSON stream writer to send records in JSON format. Specify the table name to write
       // to the default stream.
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
-      streamWriter = JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema).build();
+      streamWriter = JsonStreamWriter.newBuilder(parentTable.toString(), client).build();
     }
 
     public void append(AppendContext appendContext)
