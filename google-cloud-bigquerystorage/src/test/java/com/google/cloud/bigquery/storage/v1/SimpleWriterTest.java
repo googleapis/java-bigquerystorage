@@ -1,6 +1,5 @@
 package com.google.cloud.bigquery.storage.v1;
 
-
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;

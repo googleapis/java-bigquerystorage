@@ -96,8 +96,8 @@ public class SimpleWriter {
     }
 
     /**
-     * One time set ignoreUnknown field. If you want different behavior, you will need to build a
-     * different simple writer.
+     * One time set ignoreUnknown field. If true, then if the input has unknown fields to bigquery
+     * table, the append will not fail. By default, the setting is false.
      */
     public SimpleWriter.Builder setIgnoreUnknownField(boolean ignoreUnknownField) {
       this.ignoreUnknownField = ignoreUnknownField;
