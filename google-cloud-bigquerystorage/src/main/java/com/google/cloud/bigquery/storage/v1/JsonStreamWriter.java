@@ -170,7 +170,6 @@ public class JsonStreamWriter implements AutoCloseable {
       }
     }
   }
-
   /**
    * Writes a JSONArray that contains JSONObjects to the BigQuery table by first converting the JSON
    * data to protobuf messages, then using StreamWriter's append() to write the data at the
