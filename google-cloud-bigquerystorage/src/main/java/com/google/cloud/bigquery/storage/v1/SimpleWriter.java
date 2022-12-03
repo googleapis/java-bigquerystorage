@@ -49,7 +49,7 @@ public class SimpleWriter {
                 public JsonStreamWriter load(String key)
                     throws DescriptorValidationException, IOException, InterruptedException {
                   return JsonStreamWriter.newBuilder(key, client)
-                      .setEnableConnectionPool(true).build();
+                      .setEnableConnectionPool(true).setTraceId("SimpleWrite").build();
                 }
               });
   }
