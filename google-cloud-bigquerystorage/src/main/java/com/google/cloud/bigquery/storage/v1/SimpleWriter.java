@@ -74,6 +74,7 @@ public class SimpleWriter {
 
   /**
    * Appends data to a BigQuery Table.
+   * Rows will appear AT_LEAST_ONCE in BigQuery.
    *
    * @param rows the rows in serialized format to write to BigQuery.
    * @return the append response wrapped in a future.
