@@ -1296,4 +1296,52 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals("us", streamWriter2.getLocation());
     assertEquals("eu", streamWriter3.getLocation());
   }
+
+  @Test
+  public void testSimpleWriter()
+      throws IOException, InterruptedException, ExecutionException, DescriptorValidationException {
+    String table1 =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s",
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
+    String table2 =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s",
+            ServiceOptions.getDefaultProjectId(), DATASET_EU, TABLE);
+
+    SimpleWriter simpleWriter = SimpleWriter.newBuilder(BigQueryWriteClient.create()).build();
+    JSONObject foo = new JSONObject();
+    foo.put("foo", "aaa");
+    JSONArray jsonArr = new JSONArray();
+    jsonArr.put(foo);
+    ApiFuture<AppendRowsResponse> r1 = simpleWriter.append(table1, jsonArr);
+    foo = new JSONObject();
+    foo.put("foo", "bbb");
+    jsonArr = new JSONArray();
+    jsonArr.put(foo);
+    ApiFuture<AppendRowsResponse> r2 = simpleWriter.append(table2, jsonArr);
+    foo = new JSONObject();
+    foo.put("foo", "ccc");
+    jsonArr = new JSONArray();
+    jsonArr.put(foo);
+    ApiFuture<AppendRowsResponse> r3 = simpleWriter.append(table1, jsonArr);
+    r1.get();
+    r2.get();
+    r3.get();
+    TableResult result =
+        bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    Iterator<FieldValueList> iter = result.getValues().iterator();
+    FieldValueList currentRow = iter.next();
+    assertEquals("aaa", currentRow.get(0).getStringValue());
+    currentRow = iter.next();
+    assertEquals("ccc", currentRow.get(0).getStringValue());
+    assertFalse(iter.hasNext());
+    result =
+        bigquery.listTableData(
+            tableInfoEU.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    iter = result.getValues().iterator();
+    currentRow = iter.next();
+    assertEquals("bbb", currentRow.get(0).getStringValue());
+    assertFalse(iter.hasNext());
+  }
 }
