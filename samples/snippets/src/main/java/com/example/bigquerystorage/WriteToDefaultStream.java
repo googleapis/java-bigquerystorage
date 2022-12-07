@@ -24,8 +24,6 @@ import com.google.api.core.ApiFutures;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.QueryJobConfiguration;
-import com.google.cloud.bigquery.Schema;
-import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableResult;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
@@ -150,8 +148,8 @@ public class WriteToDefaultStream {
       // to the default stream.
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
-      streamWriter = JsonStreamWriter.newBuilder(
-          parentTable.toString(), BigQueryWriteClient.create()).build();
+      streamWriter =
+          JsonStreamWriter.newBuilder(parentTable.toString(), BigQueryWriteClient.create()).build();
     }
 
     public void append(AppendContext appendContext)
