@@ -452,6 +452,12 @@ public class JsonToProtoMessage {
         }
         break;
       case STRING:
+        if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATE) {
+          if (val instanceof String) {
+            protoMsg.setField(fieldDescriptor, (String) val);
+            return;
+          }
+        }
         if (val instanceof String) {
           protoMsg.setField(fieldDescriptor, (String) val);
           return;
@@ -710,6 +716,12 @@ public class JsonToProtoMessage {
           }
           break;
         case STRING:
+          if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATE) {
+            if (val instanceof String) {
+              protoMsg.setField(fieldDescriptor, (String) val);
+              return;
+            }
+          }
           if (val instanceof String) {
             protoMsg.addRepeatedField(fieldDescriptor, (String) val);
           } else {
