@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.25.0...v2.25.1) (2023-01-10)
+
+
+### Bug Fixes
+
+* Add back the accidentally removed background executor provider ([#1923](https://github.com/googleapis/java-bigquerystorage/issues/1923)) ([b886e9c](https://github.com/googleapis/java-bigquerystorage/commit/b886e9c7a21bfea3777e80e564030f69d2a4e439))
+
 ## [2.25.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.24.2...v2.25.0) (2022-11-08)
 
 
