@@ -274,6 +274,7 @@ public class StreamWriter implements AutoCloseable {
           BigQueryWriteSettings.newBuilder()
               .setCredentialsProvider(builder.credentialsProvider)
               .setTransportChannelProvider(builder.channelProvider)
+              .setBackgroundExecutorProvider(builder.executorProvider)
               .setEndpoint(builder.endpoint)
               .build();
       testOnlyClientCreatedTimes++;
