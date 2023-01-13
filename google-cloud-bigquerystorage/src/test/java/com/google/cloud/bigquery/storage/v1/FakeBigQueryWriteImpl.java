@@ -284,7 +284,9 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     this.numberTimesToClose = numberTimesToClose;
   }
 
-  public void setCloseForeverAfter(long numberTimesToClose) {
-    this.closeForeverAfter = numberTimesToClose;
+  /* The connection will forever return failure after numberTimesToClose. This option shouldn't
+   * be used together with setCloseEveryNAppends and setTimesToClose*/
+  public void setCloseForeverAfter(long closeForeverAfter) {
+    this.closeForeverAfter = closeForeverAfter;
   }
 }

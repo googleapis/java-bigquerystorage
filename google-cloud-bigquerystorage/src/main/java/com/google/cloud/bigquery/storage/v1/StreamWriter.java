@@ -608,7 +608,8 @@ public class StreamWriter implements AutoCloseable {
     }
 
     /*
-     * Max duration to retry on retryable errors. Default is 5 minutes.
+     * Max duration to retry on retryable errors. Default is 5 minutes. You can allow unlimited
+     * retry by setting the value to be 0.
      */
     public Builder setMaxRetryDuration(java.time.Duration maxRetryDuration) {
       this.maxRetryDuration = maxRetryDuration;
