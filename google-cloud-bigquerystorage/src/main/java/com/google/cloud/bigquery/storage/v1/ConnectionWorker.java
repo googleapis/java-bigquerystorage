@@ -703,7 +703,7 @@ public class ConnectionWorker implements AutoCloseable {
         // If the error can be retried, don't set it here, let it try to retry later on.
         if (isRetriableError(finalStatus)
             && !userClosed
-            && (maxRetryDuration.toMillis() == 0
+            && (maxRetryDuration.toMillis() == 0f
                 || System.currentTimeMillis() - connectionRetryStartTime
                     <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
@@ -713,7 +713,8 @@ public class ConnectionWorker implements AutoCloseable {
                   + " received, retry count "
                   + conectionRetryCountWithoutCallback
                   + ", millis left to retry "
-                  + (System.currentTimeMillis() - connectionRetryStartTime)
+                  + (maxRetryDuration.toMillis()
+                      - (System.currentTimeMillis() - connectionRetryStartTime))
                   + ", for stream "
                   + streamName);
         } else {
