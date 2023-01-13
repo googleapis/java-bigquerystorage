@@ -25,6 +25,7 @@ import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
+import com.google.api.gax.rpc.AbortedException;
 import com.google.api.gax.rpc.ApiException;
 import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.api.gax.rpc.UnknownException;
@@ -127,6 +128,7 @@ public class StreamWriterTest {
         .setTraceId(TEST_TRACE_ID)
         .setLocation("US")
         .setEnableConnectionPool(true)
+        .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
         .build();
   }
 
@@ -134,6 +136,7 @@ public class StreamWriterTest {
     return StreamWriter.newBuilder(TEST_STREAM_1, client)
         .setWriterSchema(createProtoSchema())
         .setTraceId(TEST_TRACE_ID)
+        .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
         .build();
   }
 
@@ -854,6 +857,48 @@ public class StreamWriterTest {
         assertEquals(futures.get(i).get().getAppendResult().getOffset().getValue(), (long) i);
       }
       assertTrue(testBigQueryWrite.getConnectionCount() >= (int) (appendCount / 113.0));
+    }
+  }
+
+  @Test
+  public void testAppendWithResetNeverSuccess() throws Exception {
+    try (StreamWriter writer = getTestStreamWriter()) {
+      testBigQueryWrite.setCloseForeverAfter(1);
+      long appendCount = 100;
+      for (long i = 0; i < appendCount; i++) {
+        testBigQueryWrite.addResponse(createAppendResponse(i));
+      }
+      List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+      for (long i = 0; i < appendCount; i++) {
+        futures.add(sendTestMessage(writer, new String[] {String.valueOf(i)}, i));
+      }
+      // first request succeeded.
+      assertEquals(futures.get(0).get().getAppendResult().getOffset().getValue(), 0);
+      // after 5 minutes, the requests will bail out.
+      for (int i = 1; i < appendCount; i++) {
+        assertFutureException(AbortedException.class, futures.get(i));
+      }
+    }
+  }
+
+  @Test
+  public void testAppendWithResetNeverSuccessWithMultiplexing() throws Exception {
+    try (StreamWriter writer = getMultiplexingTestStreamWriter()) {
+      testBigQueryWrite.setCloseForeverAfter(1);
+      long appendCount = 100;
+      for (long i = 0; i < appendCount; i++) {
+        testBigQueryWrite.addResponse(createAppendResponse(i));
+      }
+      List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+      for (long i = 0; i < appendCount; i++) {
+        futures.add(sendTestMessage(writer, new String[] {String.valueOf(i)}, i));
+      }
+      // first request succeeded.
+      assertEquals(futures.get(0).get().getAppendResult().getOffset().getValue(), 0);
+      // after 5 minutes, the requests will bail out.
+      for (int i = 1; i < appendCount; i++) {
+        assertFutureException(AbortedException.class, futures.get(i));
+      }
     }
   }
 

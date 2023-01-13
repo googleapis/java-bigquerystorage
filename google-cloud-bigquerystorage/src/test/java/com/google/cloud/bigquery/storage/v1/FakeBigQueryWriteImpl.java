@@ -57,6 +57,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   private long closeAfter = 0;
   private long recordCount = 0;
   private long connectionCount = 0;
+  private long closeForeverAfter = 0;
 
   // Record whether the first record has been seen on a connection.
   private final Map<StreamObserver<AppendRowsResponse>, Boolean> connectionToFirstRequest =
@@ -177,6 +178,9 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
                 && (numberTimesToClose == 0 || connectionCount <= numberTimesToClose)) {
               LOG.info("Shutting down connection from test...");
               responseObserver.onError(Status.ABORTED.asException());
+            } else if (closeForeverAfter > 0 && recordCount > closeForeverAfter) {
+              LOG.info("Shutting down connection from test...");
+              responseObserver.onError(Status.ABORTED.asException());
             } else {
               final Response response = responses.get(offset);
               sendResponse(response, responseObserver);
@@ -278,5 +282,9 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
    **/
   public void setTimesToClose(long numberTimesToClose) {
     this.numberTimesToClose = numberTimesToClose;
+  }
+
+  public void setCloseForeverAfter(long numberTimesToClose) {
+    this.closeForeverAfter = numberTimesToClose;
   }
 }

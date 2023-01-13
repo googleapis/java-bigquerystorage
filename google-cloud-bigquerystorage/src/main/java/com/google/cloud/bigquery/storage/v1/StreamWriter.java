@@ -29,6 +29,7 @@ import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -190,6 +191,7 @@ public class StreamWriter implements AutoCloseable {
                   builder.writerSchema,
                   builder.maxInflightRequest,
                   builder.maxInflightBytes,
+                  builder.maxRetryDuration,
                   builder.limitExceededBehavior,
                   builder.traceId,
                   getBigQueryWriteClient(builder),
@@ -240,6 +242,7 @@ public class StreamWriter implements AutoCloseable {
                     return new ConnectionWorkerPool(
                         builder.maxInflightRequest,
                         builder.maxInflightBytes,
+                        builder.maxRetryDuration,
                         builder.limitExceededBehavior,
                         builder.traceId,
                         client,
@@ -477,6 +480,8 @@ public class StreamWriter implements AutoCloseable {
 
     private boolean enableConnectionPool = false;
 
+    private java.time.Duration maxRetryDuration = Duration.ofMinutes(5);
+
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
       this.client = null;
@@ -582,6 +587,14 @@ public class StreamWriter implements AutoCloseable {
                 .withDescription("LimitExceededBehavior.Ignore is not supported on StreamWriter."));
       }
       this.limitExceededBehavior = limitExceededBehavior;
+      return this;
+    }
+
+    /*
+     * Max duration to retry on retryable errors. Default is 5 minutes.
+     */
+    public Builder setMaxRetryDuration(java.time.Duration maxRetryDuration) {
+      this.maxRetryDuration = maxRetryDuration;
       return this;
     }
 
