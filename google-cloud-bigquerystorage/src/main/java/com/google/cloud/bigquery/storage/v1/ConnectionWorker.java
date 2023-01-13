@@ -713,7 +713,7 @@ public class ConnectionWorker implements AutoCloseable {
                   + conectionRetryCountWithoutCallback
                   + ", millis left to retry "
                   + (System.currentTimeMillis() - connectionRetryStartTime)
-                  + " for stream "
+                  + ", for stream "
                   + streamName);
         } else {
           Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
