@@ -874,7 +874,7 @@ public class StreamWriterTest {
       }
       // first request succeeded.
       assertEquals(futures.get(0).get().getAppendResult().getOffset().getValue(), 0);
-      // after 5 minutes, the requests will bail out.
+      // after 5 seconds, the requests will bail out.
       for (int i = 1; i < appendCount; i++) {
         assertFutureException(AbortedException.class, futures.get(i));
       }
@@ -895,7 +895,7 @@ public class StreamWriterTest {
       }
       // first request succeeded.
       assertEquals(futures.get(0).get().getAppendResult().getOffset().getValue(), 0);
-      // after 5 minutes, the requests will bail out.
+      // after 5 seconds, the requests will bail out.
       for (int i = 1; i < appendCount; i++) {
         assertFutureException(AbortedException.class, futures.get(i));
       }
