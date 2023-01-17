@@ -167,11 +167,6 @@ public class ConnectionWorker implements AutoCloseable {
   private BigQueryWriteClient client;
 
   /*
-   * If true, the client above is created by this writer and should be closed.
-   */
-  private boolean ownsBigQueryWriteClient = false;
-
-  /*
    * Wraps the underlying bi-directional stream connection with server.
    */
   private StreamConnection streamConnection;
@@ -373,13 +368,11 @@ public class ConnectionWorker implements AutoCloseable {
       log.warning(
           "Append handler join is interrupted. Stream: " + streamName + " Error: " + e.toString());
     }
-    if (this.ownsBigQueryWriteClient) {
-      this.client.close();
-      try {
-        // Backend request has a 2 minute timeout, so wait a little longer than that.
-        this.client.awaitTermination(150, TimeUnit.SECONDS);
-      } catch (InterruptedException ignored) {
-      }
+    this.client.close();
+    try {
+      // Backend request has a 2 minute timeout, so wait a little longer than that.
+      this.client.awaitTermination(150, TimeUnit.SECONDS);
+    } catch (InterruptedException ignored) {
     }
   }
 

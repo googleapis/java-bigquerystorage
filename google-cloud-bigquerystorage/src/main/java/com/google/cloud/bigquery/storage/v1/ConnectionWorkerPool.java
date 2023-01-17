@@ -386,7 +386,9 @@ public class ConnectionWorkerPool {
           String.format(
               "During closing of writeStream for %s with writer id %s, we decided to close %s "
                   + "connections, pool size after removal $s",
-              streamWriter.getStreamName(), streamWriter.getWriterId(), connectionToRemove.size(),
+              streamWriter.getStreamName(),
+              streamWriter.getWriterId(),
+              connectionToRemove.size(),
               connectionToWriteStream.size() - 1));
       connectionToWriteStream.keySet().removeAll(connectionToRemove);
     } finally {
