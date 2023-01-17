@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.28.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.28.0...v2.28.1) (2023-01-12)
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.20.1 ([#1919](https://github.com/googleapis/java-bigquerystorage/issues/1919)) ([b6565f2](https://github.com/googleapis/java-bigquerystorage/commit/b6565f2ee0d3b45f55bc3ade6918d36cf0bd20da))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.1.1 ([#1922](https://github.com/googleapis/java-bigquerystorage/issues/1922)) ([074a20e](https://github.com/googleapis/java-bigquerystorage/commit/074a20e0a9baf228e34fa01511a980862650c66a))
+
+## [2.28.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.27.0...v2.28.0) (2023-01-04)
+
+
+### Features
+
+* Add estimated number of rows to CreateReadSession response ([#1913](https://github.com/googleapis/java-bigquerystorage/issues/1913)) ([4840b26](https://github.com/googleapis/java-bigquerystorage/commit/4840b26956c22e40b6edcefe57f26dd0386e90e5))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.20.0 ([#1912](https://github.com/googleapis/java-bigquerystorage/issues/1912)) ([e9e7ac3](https://github.com/googleapis/java-bigquerystorage/commit/e9e7ac3d4e655f7b77d830108226891c45464069))
+* Update dependency org.json:json to v20220924 ([#1799](https://github.com/googleapis/java-bigquerystorage/issues/1799)) ([a0a5d52](https://github.com/googleapis/java-bigquerystorage/commit/a0a5d52cdd06739992944126a89fe58daf4ee605))
+
 ## [2.27.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.26.0...v2.27.0) (2022-12-12)
 
 
