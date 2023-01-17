@@ -205,7 +205,6 @@ public class StreamWriter implements AutoCloseable {
             "Trying to enable connection pool in non-default stream.");
       }
 
-      boolean ownsBigQueryWriteClient = builder.client == null;
       // We need a client to perform some getWriteStream calls.
       BigQueryWriteClient client =
           builder.client != null ? builder.client : new BigQueryWriteClient(clientSettings);
@@ -258,7 +257,8 @@ public class StreamWriter implements AutoCloseable {
                         client.getSettings());
                   }));
       validateFetchedConnectonPool(builder);
-      if (ownsBigQueryWriteClient) {
+      // If the client is not from outside, then shutdown the client we created.
+      if (builder.client == null) {
         client.shutdown();
         try {
           client.awaitTermination(150, TimeUnit.SECONDS);
