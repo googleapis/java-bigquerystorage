@@ -203,8 +203,7 @@ public class ConnectionWorker implements AutoCloseable {
       long maxInflightBytes,
       FlowController.LimitExceededBehavior limitExceededBehavior,
       String traceId,
-      BigQueryWriteClient client,
-      boolean ownsBigQueryWriteClient)
+      BigQueryWriteSettings clientSettings)
       throws IOException {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
@@ -222,8 +221,8 @@ public class ConnectionWorker implements AutoCloseable {
     this.traceId = traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
-    this.client = client;
-    this.ownsBigQueryWriteClient = ownsBigQueryWriteClient;
+    // Always recreate a client for connection worker.
+    this.client = BigQueryWriteClient.create(clientSettings);
 
     this.appendThread =
         new Thread(

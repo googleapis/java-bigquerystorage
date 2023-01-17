@@ -375,7 +375,6 @@ public class ConnectionWorkerPoolTest {
         maxBytes,
         FlowController.LimitExceededBehavior.Block,
         TEST_TRACE_ID,
-        client,
-        /*ownsBigQueryWriteClient=*/ false);
+        client.getSettings());
   }
 }
