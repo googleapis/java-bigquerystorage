@@ -326,7 +326,8 @@ public class ConnectionWorkerPoolTest {
       throws IOException, InterruptedException, ExecutionException {
     ConnectionWorkerPool.setOptions(
         Settings.builder().setMinConnectionsPerRegion(2).setMaxConnectionsPerRegion(2).build());
-    ConnectionWorkerPool connectionWorkerPool = createConnectionWorkerPool(1, /*maxBytes=*/ 100000);
+    ConnectionWorkerPool connectionWorkerPool =
+        createConnectionWorkerPool(/*maxRequests=*/ 1, /*maxBytes=*/ 100000);
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
