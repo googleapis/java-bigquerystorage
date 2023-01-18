@@ -25,6 +25,9 @@ import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorkerPool.Settings;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Int64Value;
@@ -35,7 +38,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -314,6 +320,68 @@ public class ConnectionWorkerPoolTest {
     connectionWorkerPool.close(writeStream2);
     assertThat(connectionWorkerPool.getTotalConnectionCount()).isEqualTo(0);
   }
+
+  @Test
+  public void testBlocking() throws Exception {
+    ConnectionWorkerPool.setOptions(
+        Settings.builder().setMaxConnectionsPerRegion(10).setMinConnectionsPerRegion(5).build());
+    ConnectionWorkerPool connectionWorkerPool =
+        createConnectionWorkerPool(
+            /*maxRequests=*/ 3, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
+
+    // Sets the sleep time to simulate requests stuck in connection.
+    testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
+    StreamWriter writeStream1 = getTestStreamWriter(TEST_STREAM_1);
+
+    ListeningExecutorService threadPool =
+        MoreExecutors.listeningDecorator(
+            Executors.newCachedThreadPool(
+                new ThreadFactoryBuilder()
+                    .setDaemon(true)
+                    .setNameFormat("AsyncStreamReadThread")
+                    .build()));
+
+
+    StreamWriter writeStream2 = getTestStreamWriter(TEST_STREAM_2);
+
+    // Try append 10 requests, at the end we should have 2 requests per connection, and 5
+    // connections created.
+    long appendCount = 10;
+    for (long i = 0; i < appendCount; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+    List<Future<?>> futures = new ArrayList<>();
+
+
+    // for (int i = 0; i < 1000; i++) {
+      futures.add(threadPool.submit(() -> {
+        // log.warning("before get inflithg seconds");
+        // writeStream1.getInflightWaitSeconds();
+        // log.warning("after get inflithg seconds");
+
+        sendFooStringTestMessage(
+            writeStream1, connectionWorkerPool, new String[] {String.valueOf(0)}, 0);
+      }));
+    // }
+
+    Thread.sleep(100);
+    connectionWorkerPool.close(writeStream1);
+
+    // sendFooStringTestMessage(
+    //     writeStream1, connectionWorkerPool, new String[] {String.valueOf(0)}, 0);
+    //
+    // log.warning("The stream is " + futures.size());
+    // for (int i = 0; i < 1000; i++) {
+    //   futures.add(threadPool.submit(() -> writeStream1.getInflightWaitSeconds()));
+    // }
+    // log.warning("The stream is " + futures.size());
+    //
+
+    for(int i = 0; i < 1; i++) {
+      futures.get(i).get();
+    }
+  }
+
 
   @Test
   public void testToTableName() {
