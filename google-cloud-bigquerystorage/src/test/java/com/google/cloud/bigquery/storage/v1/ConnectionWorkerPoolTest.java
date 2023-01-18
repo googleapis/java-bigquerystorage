@@ -345,9 +345,9 @@ public class ConnectionWorkerPoolTest {
                 .setCredentialsProvider(NoCredentialsProvider.create())
                 .setTransportChannelProvider(serviceHelper.createChannelProvider())
                 .build());
-    // Create one stream writer per table.
+    // Create some stream writers.
     List<StreamWriter> streamWriterList = new ArrayList<>();
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 4; i++) {
       StreamWriter sw =
           StreamWriter.newBuilder(
                   String.format("projects/p1/datasets/d1/tables/t%s/streams/_default", i),
@@ -370,8 +370,8 @@ public class ConnectionWorkerPoolTest {
     }
     externalClient.close();
     externalClient.awaitTermination(1, TimeUnit.MINUTES);
+    // Send more requests, the connections should still work.
     for (long i = appendCount; i < appendCount * 2; i++) {
-      // Round robinly insert requests to different tables.
       futures.add(
           sendFooStringTestMessage(
               streamWriterList.get((int) (i % streamWriterList.size())),
@@ -383,9 +383,7 @@ public class ConnectionWorkerPoolTest {
       AppendRowsResponse response = futures.get(i).get();
       assertThat(response.getAppendResult().getOffset().getValue()).isEqualTo(i);
     }
-    // At the end we should scale up to 8 connections.
     assertThat(connectionWorkerPool.getCreateConnectionCount()).isEqualTo(2);
-
     assertThat(testBigQueryWrite.getAppendRequests().size()).isEqualTo(appendCount * 2);
   }
 
