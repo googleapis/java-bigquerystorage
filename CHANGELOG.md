@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.28.2](https://github.com/googleapis/java-bigquerystorage/compare/v2.28.1...v2.28.2) (2023-01-18)
+
+
+### Bug Fixes
+
+* Add a timeout on retry for retryable errors ([#1930](https://github.com/googleapis/java-bigquerystorage/issues/1930)) ([2d648cf](https://github.com/googleapis/java-bigquerystorage/commit/2d648cf9706a6e7bc155e8769ba7dda2a6bc3061))
+* Add precision overwritten to 9 digit if the passed in JSON type is FLOAT or DOUBLE ([#1932](https://github.com/googleapis/java-bigquerystorage/issues/1932)) ([417bc6c](https://github.com/googleapis/java-bigquerystorage/commit/417bc6c76f7b9fa602721c3c183c487c5aab2e09))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.20.2 ([#1929](https://github.com/googleapis/java-bigquerystorage/issues/1929)) ([a95ae9d](https://github.com/googleapis/java-bigquerystorage/commit/a95ae9d708bd3e2d8f55297a6004a0d937c8d83f))
+
+## [2.28.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.28.0...v2.28.1) (2023-01-12)
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.20.1 ([#1919](https://github.com/googleapis/java-bigquerystorage/issues/1919)) ([b6565f2](https://github.com/googleapis/java-bigquerystorage/commit/b6565f2ee0d3b45f55bc3ade6918d36cf0bd20da))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.1.1 ([#1922](https://github.com/googleapis/java-bigquerystorage/issues/1922)) ([074a20e](https://github.com/googleapis/java-bigquerystorage/commit/074a20e0a9baf228e34fa01511a980862650c66a))
+
 ## [2.28.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.27.0...v2.28.0) (2023-01-04)
 
 
