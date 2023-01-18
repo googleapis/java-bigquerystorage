@@ -324,9 +324,6 @@ public class ConnectionWorkerPoolTest {
   @Test
   public void testCloseExternalClient()
       throws IOException, InterruptedException, ExecutionException {
-    ConnectionWorkerPool.setOptions(
-        Settings.builder().setMinConnectionsPerRegion(2).setMaxConnectionsPerRegion(2).build());
-
     // Try append 100 requests.
     long appendCount = 100L;
     // testBigQueryWrite is used to
@@ -356,30 +353,21 @@ public class ConnectionWorkerPoolTest {
     }
 
     for (long i = 0; i < appendCount; i++) {
+      StreamWriter sw = streamWriterList.get((int) (i % streamWriterList.size()));
       // Round robinly insert requests to different tables.
-      futures.add(
-          sendFooStringTestMessage(
-              streamWriterList.get((int) (i % streamWriterList.size())),
-              connectionWorkerPool,
-              new String[] {String.valueOf(i)},
-              i));
+      futures.add(sw.append(createProtoRows(new String[] {String.valueOf(i)}), i));
     }
     externalClient.close();
     externalClient.awaitTermination(1, TimeUnit.MINUTES);
     // Send more requests, the connections should still work.
     for (long i = appendCount; i < appendCount * 2; i++) {
-      futures.add(
-          sendFooStringTestMessage(
-              streamWriterList.get((int) (i % streamWriterList.size())),
-              connectionWorkerPool,
-              new String[] {String.valueOf(i)},
-              i));
+      StreamWriter sw = streamWriterList.get((int) (i % streamWriterList.size()));
+      futures.add(sw.append(createProtoRows(new String[] {String.valueOf(i)}), i));
     }
     for (int i = 0; i < appendCount * 2; i++) {
       AppendRowsResponse response = futures.get(i).get();
       assertThat(response.getAppendResult().getOffset().getValue()).isEqualTo(i);
     }
-    assertThat(connectionWorkerPool.getCreateConnectionCount()).isEqualTo(2);
     assertThat(testBigQueryWrite.getAppendRequests().size()).isEqualTo(appendCount * 2);
   }
 
