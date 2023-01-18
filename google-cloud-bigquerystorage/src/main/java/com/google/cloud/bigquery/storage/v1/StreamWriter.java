@@ -183,7 +183,7 @@ public class StreamWriter implements AutoCloseable {
   private StreamWriter(Builder builder) throws IOException {
     this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
-    BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder, builder.client);
+    BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
     if (!builder.enableConnectionPool) {
       this.location = builder.location;
       this.singleConnectionOrConnectionPool =
@@ -288,10 +288,9 @@ public class StreamWriter implements AutoCloseable {
     return streamMatcher.find();
   }
 
-  private BigQueryWriteSettings getBigQueryWriteSettings(
-      Builder builder, BigQueryWriteClient existingClient) throws IOException {
-    if (existingClient != null) {
-      return existingClient.getSettings();
+  private BigQueryWriteSettings getBigQueryWriteSettings(Builder builder) throws IOException {
+    if (builder.client != null) {
+      return builder.client.getSettings();
     } else {
       return BigQueryWriteSettings.newBuilder()
           .setCredentialsProvider(builder.credentialsProvider)
