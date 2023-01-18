@@ -326,8 +326,6 @@ public class ConnectionWorkerPoolTest {
       throws IOException, InterruptedException, ExecutionException {
     ConnectionWorkerPool.setOptions(
         Settings.builder().setMinConnectionsPerRegion(2).setMaxConnectionsPerRegion(2).build());
-    ConnectionWorkerPool connectionWorkerPool =
-        createConnectionWorkerPool(/*maxRequests=*/ 1, /*maxBytes=*/ 100000);
 
     // Try append 100 requests.
     long appendCount = 100L;
