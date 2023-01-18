@@ -383,9 +383,9 @@ public class ConnectionWorkerPool {
    * that worker.
    */
   public void close(StreamWriter streamWriter) {
-    streamWriterToConnection.remove(streamWriter);
     lock.lock();
     try {
+      streamWriterToConnection.remove(streamWriter);
       // Since it's possible some other connections may have served this writeStream, we
       // iterate and see whether it's also fine to close other connections.
       Set<ConnectionWorker> connectionToRemove = new HashSet<>();
