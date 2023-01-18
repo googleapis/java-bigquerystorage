@@ -329,9 +329,6 @@ public class ConnectionWorkerPoolTest {
     ConnectionWorkerPool connectionWorkerPool =
         createConnectionWorkerPool(/*maxRequests=*/ 1, /*maxBytes=*/ 100000);
 
-    // Sets the sleep time to simulate requests stuck in connection.
-    testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
-
     // Try append 100 requests.
     long appendCount = 100L;
     // testBigQueryWrite is used to
