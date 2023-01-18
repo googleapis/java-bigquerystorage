@@ -222,8 +222,7 @@ public class ConnectionWorker implements AutoCloseable {
     this.traceId = traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
-    this.client = client;
-    this.ownsBigQueryWriteClient = ownsBigQueryWriteClient;
+    this.client = BigQueryWriteClient.create(client.getSettings());
 
     this.appendThread =
         new Thread(
@@ -374,13 +373,11 @@ public class ConnectionWorker implements AutoCloseable {
       log.warning(
           "Append handler join is interrupted. Stream: " + streamName + " Error: " + e.toString());
     }
-    if (this.ownsBigQueryWriteClient) {
-      this.client.close();
-      try {
-        // Backend request has a 2 minute timeout, so wait a little longer than that.
-        this.client.awaitTermination(150, TimeUnit.SECONDS);
-      } catch (InterruptedException ignored) {
-      }
+    this.client.close();
+    try {
+      // Backend request has a 2 minute timeout, so wait a little longer than that.
+      this.client.awaitTermination(150, TimeUnit.SECONDS);
+    } catch (InterruptedException ignored) {
     }
   }
 
