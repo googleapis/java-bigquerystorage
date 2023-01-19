@@ -162,7 +162,8 @@ public class BQTableSchemaToProtoDescriptor {
       fieldDescriptor.setName(BigQuerySchemaUtil.generatePlaceholderFieldName(fieldName));
       fieldDescriptor.setOptions(
           FieldOptions.newBuilder()
-              .setExtension((ExtensionLite<FieldOptions, String>) AnnotationsProto.columnName,
+              .setExtension(
+                  (ExtensionLite<FieldOptions, String>) AnnotationsProto.columnName,
                   // Remove ExtensionLite after protobuf linkage error is resolved.
                   fieldName)
               .build());
