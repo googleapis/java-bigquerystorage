@@ -35,6 +35,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -164,7 +165,7 @@ public class ConnectionWorker implements AutoCloseable {
    * Contains the updated TableSchema.
    */
   @GuardedBy("lock")
-  private TableSchemaAndTimestamp updatedSchema;
+  private TableSchema updatedSchema;
 
   /*
    * A client used to interact with BigQuery.
@@ -195,6 +196,12 @@ public class ConnectionWorker implements AutoCloseable {
    * A String that uniquely identifies this writer.
    */
   private final String writerId = UUID.randomUUID().toString();
+
+  /**
+   * When using connection pooling, this is the set of StreamWriters that are currently using this
+   * connection. This object is only accessed by ConnectionWorkerPool when the pool's lock is held.
+   */
+  private final Set<StreamWriter> streamWriters;
 
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
@@ -241,6 +248,7 @@ public class ConnectionWorker implements AutoCloseable {
               }
             });
     this.appendThread.start();
+    this.streamWriters = new HashSet<>();
   }
 
   private void resetConnection() {
@@ -390,6 +398,10 @@ public class ConnectionWorker implements AutoCloseable {
       } catch (InterruptedException ignored) {
       }
     }
+  }
+
+  Set<StreamWriter> getCurrentStreamWriters() {
+    return streamWriters;
   }
 
   /*
@@ -616,8 +628,7 @@ public class ConnectionWorker implements AutoCloseable {
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
     if (response.hasUpdatedSchema()) {
-      this.updatedSchema =
-          TableSchemaAndTimestamp.create(System.nanoTime(), response.getUpdatedSchema());
+      this.updatedSchema = response.getUpdatedSchema();
     }
     try {
       // Had a successful connection with at least one result, reset retries.
@@ -742,7 +753,7 @@ public class ConnectionWorker implements AutoCloseable {
   }
 
   /** Thread-safe getter of updated TableSchema */
-  synchronized TableSchemaAndTimestamp getUpdatedSchema() {
+  synchronized TableSchema getUpdatedSchema() {
     return this.updatedSchema;
   }
 
@@ -838,19 +849,6 @@ public class ConnectionWorker implements AutoCloseable {
     @VisibleForTesting
     public static void setOverwhelmedCountsThreshold(double newThreshold) {
       overwhelmedInflightCount = newThreshold;
-    }
-  }
-
-  @AutoValue
-  abstract static class TableSchemaAndTimestamp {
-    // Shows the timestamp updated schema is reported from response
-    abstract long updateTimeStamp();
-
-    // The updated schema returned from server.
-    abstract TableSchema updatedSchema();
-
-    static TableSchemaAndTimestamp create(long updateTimeStamp, TableSchema updatedSchema) {
-      return new AutoValue_ConnectionWorker_TableSchemaAndTimestamp(updateTimeStamp, updatedSchema);
     }
   }
 }

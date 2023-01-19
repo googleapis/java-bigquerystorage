@@ -310,10 +310,10 @@ public class StreamWriterTest {
             .setWriteStream(TEST_STREAM_1)
             .build());
 
-    assertEquals(writer.getUpdatedSchema(), null);
+    assertEquals(null, writer.getUpdatedSchema());
     AppendRowsResponse response =
         writer.append(createProtoRows(new String[] {String.valueOf(0)}), 0).get();
-    assertEquals(writer.getUpdatedSchema(), UPDATED_TABLE_SCHEMA);
+    assertEquals(UPDATED_TABLE_SCHEMA, writer.getUpdatedSchema());
 
     // Create another writer, although it's the same stream name but the time stamp is newer, thus
     // the old updated schema won't get returned.
@@ -325,7 +325,7 @@ public class StreamWriterTest {
             .setEnableConnectionPool(enableMultiplexing)
             .setLocation("us")
             .build();
-    assertEquals(writer2.getUpdatedSchema(), null);
+    assertEquals(null, writer2.getUpdatedSchema());
   }
 
   @Test

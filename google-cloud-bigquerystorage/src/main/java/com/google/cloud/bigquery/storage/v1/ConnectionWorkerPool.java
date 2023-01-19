@@ -20,7 +20,6 @@ import com.google.api.core.ApiFutures;
 import com.google.api.gax.batching.FlowController;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.Load;
-import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
@@ -29,6 +28,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,14 +67,6 @@ public class ConnectionWorkerPool {
    */
   private final FlowController.LimitExceededBehavior limitExceededBehavior;
 
-  /** Map from write stream to corresponding connection. */
-  private final Map<StreamWriter, ConnectionWorker> streamWriterToConnection =
-      new ConcurrentHashMap<>();
-
-  /** Map from a connection to a set of write stream that have sent requests onto it. */
-  private final Map<ConnectionWorker, Set<StreamWriter>> connectionToWriteStream =
-      new ConcurrentHashMap<>();
-
   /** Collection of all the created connections. */
   private final Set<ConnectionWorker> connectionWorkerPool =
       Collections.synchronizedSet(new HashSet<>());
@@ -82,7 +74,8 @@ public class ConnectionWorkerPool {
   /*
    * Contains the mapping from stream name to updated schema.
    */
-  private Map<String, TableSchemaAndTimestamp> tableNameToUpdatedSchema = new ConcurrentHashMap<>();
+  private Map<String, Set<StreamWriter>> streamNameToStreamWriter = new ConcurrentHashMap();
+  private Map<StreamWriter, TableSchema> streamWriterToUpdatedSchema = new ConcurrentHashMap<>();
 
   /** Enable test related logic. */
   private static boolean enableTesting = false;
@@ -225,6 +218,12 @@ public class ConnectionWorkerPool {
     ConnectionWorkerPool.settings = settings;
   }
 
+  public void registerStreamWriter(StreamWriter streamWriter) {
+    streamNameToStreamWriter
+        .computeIfAbsent(streamWriter.getStreamName(), k -> new HashSet<>())
+        .add(streamWriter);
+  }
+
   /** Distributes the writing of a message to an underlying connection. */
   public ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows) {
     return append(streamWriter, rows, -1);
@@ -234,47 +233,52 @@ public class ConnectionWorkerPool {
   public ApiFuture<AppendRowsResponse> append(
       StreamWriter streamWriter, ProtoRows rows, long offset) {
     // We are in multiplexing mode after entering the following logic.
-    ConnectionWorker connectionWorker =
-        streamWriterToConnection.compute(
-            streamWriter,
-            (key, existingStream) -> {
-              // Though compute on concurrent map is atomic, we still do explicit locking as we
-              // may have concurrent close(...) triggered.
-              lock.lock();
-              try {
-                // Stick to the existing stream if it's not overwhelmed.
-                if (existingStream != null && !existingStream.getLoad().isOverwhelmed()) {
-                  return existingStream;
-                }
-                // Try to create or find another existing stream to reuse.
-                ConnectionWorker createdOrExistingConnection = null;
-                try {
-                  createdOrExistingConnection =
-                      createOrReuseConnectionWorker(streamWriter, existingStream);
-                } catch (IOException e) {
-                  throw new IllegalStateException(e);
-                }
-                // Update connection to write stream relationship.
-                connectionToWriteStream.computeIfAbsent(
-                    createdOrExistingConnection, (ConnectionWorker k) -> new HashSet<>());
-                connectionToWriteStream.get(createdOrExistingConnection).add(streamWriter);
-                return createdOrExistingConnection;
-              } finally {
-                lock.unlock();
-              }
-            });
+    ConnectionWorker currentConnection;
+    // TODO: Do we need a global lock here? Or is it enough to just lock the StreamWriter?
+    lock.lock();
+    try {
+      currentConnection = streamWriter.getCurrentConnectionPoolConnection();
+      // TODO: Experiment with only checking isOverwhelmed less often per StreamWriter (once per
+      // second?) instead of on every append call.
+      if (currentConnection == null || currentConnection.getLoad().isOverwhelmed()) {
+        // Try to create or find another existing stream to reuse.
+        ConnectionWorker createdOrExistingConnection = null;
+        try {
+          createdOrExistingConnection =
+              createOrReuseConnectionWorker(streamWriter, currentConnection);
+        } catch (IOException e) {
+          throw new IllegalStateException(e);
+        }
+        currentConnection = createdOrExistingConnection;
+        streamWriter.setCurrentConnectionPoolConnection(currentConnection);
+        // Update connection to write stream relationship.
+        // TODO: What if we simply kept an atomic refcount in ConnectionWorker? We could also
+        // manage the refcount in the callback below to precisely track which connections are being
+        // used.
+        currentConnection.getCurrentStreamWriters().add(streamWriter);
+      }
+    } finally {
+      lock.unlock();
+    }
+
     Stopwatch stopwatch = Stopwatch.createStarted();
     ApiFuture<AppendRowsResponse> responseFuture =
-        connectionWorker.append(
+        currentConnection.append(
             streamWriter.getStreamName(), streamWriter.getProtoSchema(), rows, offset);
     return ApiFutures.transform(
         responseFuture,
         // Add callback for update schema
         (response) -> {
           if (response.getWriteStream() != "" && response.hasUpdatedSchema()) {
-            tableNameToUpdatedSchema.put(
-                response.getWriteStream(),
-                TableSchemaAndTimestamp.create(System.nanoTime(), response.getUpdatedSchema()));
+            Set<StreamWriter> streamWritersToUpdate =
+                streamNameToStreamWriter.get(response.getWriteStream());
+            if (streamWritersToUpdate != null) {
+              for (StreamWriter updateStream : streamWritersToUpdate) {
+                // Alternatively, just call a setter on each of these StreamWriters to tell it about
+                // the new schema. That would eliminate another static map.
+                streamWriterToUpdatedSchema.put(updateStream, response.getUpdatedSchema());
+              }
+            }
           }
           return response;
         },
@@ -385,26 +389,30 @@ public class ConnectionWorkerPool {
   public void close(StreamWriter streamWriter) {
     lock.lock();
     try {
-      streamWriterToConnection.remove(streamWriter);
+      Set<StreamWriter> streamWriters = streamNameToStreamWriter.get(streamWriter.getStreamName());
+      if (streamWriters != null) {
+        streamWriters.remove(streamWriter);
+      }
+
+      streamWriter.setCurrentConnectionPoolConnection(null);
       // Since it's possible some other connections may have served this writeStream, we
       // iterate and see whether it's also fine to close other connections.
-      Set<ConnectionWorker> connectionToRemove = new HashSet<>();
-      for (ConnectionWorker connectionWorker : connectionToWriteStream.keySet()) {
-        if (connectionToWriteStream.containsKey(connectionWorker)) {
-          connectionToWriteStream.get(connectionWorker).remove(streamWriter);
-          if (connectionToWriteStream.get(connectionWorker).isEmpty()) {
-            connectionWorker.close();
-            connectionWorkerPool.remove(connectionWorker);
-            connectionToRemove.add(connectionWorker);
-          }
+      int numClosed = 0;
+      for (Iterator<ConnectionWorker> it = connectionWorkerPool.iterator(); it.hasNext(); ) {
+        ConnectionWorker connectionWorker = it.next();
+        connectionWorker.getCurrentStreamWriters().remove(streamWriter);
+        if (connectionWorker.getCurrentStreamWriters().isEmpty()) {
+          connectionWorker.close();
+          it.remove();
+          ++numClosed;
         }
       }
+
       log.info(
           String.format(
               "During closing of writeStream for %s with writer id %s, we decided to close %s "
                   + "connections",
-              streamWriter.getStreamName(), streamWriter.getWriterId(), connectionToRemove.size()));
-      connectionToWriteStream.keySet().removeAll(connectionToRemove);
+              streamWriter.getStreamName(), streamWriter.getWriterId(), numClosed));
     } finally {
       lock.unlock();
     }
@@ -414,7 +422,7 @@ public class ConnectionWorkerPool {
   public long getInflightWaitSeconds(StreamWriter streamWriter) {
     lock.lock();
     try {
-      ConnectionWorker connectionWorker = streamWriterToConnection.get(streamWriter);
+      ConnectionWorker connectionWorker = streamWriter.getCurrentConnectionPoolConnection();
       if (connectionWorker == null) {
         return 0;
       } else {
@@ -425,8 +433,8 @@ public class ConnectionWorkerPool {
     }
   }
 
-  TableSchemaAndTimestamp getUpdatedSchema(StreamWriter streamWriter) {
-    return tableNameToUpdatedSchema.getOrDefault(streamWriter.getStreamName(), null);
+  TableSchema getUpdatedSchema(StreamWriter streamWriter) {
+    return streamWriterToUpdatedSchema.getOrDefault(streamWriter, null);
   }
 
   /** Enable Test related logic. */

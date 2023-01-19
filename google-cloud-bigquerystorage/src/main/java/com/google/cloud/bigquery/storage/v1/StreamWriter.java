@@ -22,7 +22,6 @@ import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auto.value.AutoOneOf;
 import com.google.auto.value.AutoValue;
-import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import io.grpc.Status;
@@ -112,6 +111,21 @@ public class StreamWriter implements AutoCloseable {
     }
   }
 
+  private ConnectionWorker currentConnectionPoolConnection;
+
+  /**
+   * If using a single connection, this returns null. Always accessed under the ConnectionWorkerPool
+   * lock.
+   */
+  ConnectionWorker getCurrentConnectionPoolConnection() {
+    return currentConnectionPoolConnection;
+  }
+
+  /** Always accessed under the ConnectionWorkerPool lock. */
+  void setCurrentConnectionPoolConnection(ConnectionWorker currentConnectionPoolConnection) {
+    this.currentConnectionPoolConnection = currentConnectionPoolConnection;
+  }
+
   /**
    * When in single table mode, append directly to connectionWorker. Otherwise append to connection
    * pool in multiplexing mode.
@@ -155,12 +169,12 @@ public class StreamWriter implements AutoCloseable {
       return connectionWorker().getInflightWaitSeconds();
     }
 
-    TableSchemaAndTimestamp getUpdatedSchema(StreamWriter streamWriter) {
-      if (getKind() == Kind.CONNECTION_WORKER_POOL) {
+    TableSchema getUpdatedSchema(StreamWriter streamWriter) {
+      if (getKind() == Kind.CONNECTION_WORKER) {
+        return connectionWorker().getUpdatedSchema();
+      } else {
         return connectionWorkerPool().getUpdatedSchema(streamWriter);
       }
-      // Always populate MIN timestamp to w
-      return connectionWorker().getUpdatedSchema();
     }
 
     String getWriterId(String streamWriterId) {
@@ -168,6 +182,11 @@ public class StreamWriter implements AutoCloseable {
         return streamWriterId;
       }
       return connectionWorker().getWriterId();
+    }
+
+    public void register(StreamWriter streamWriter) {
+      Preconditions.checkState(getKind() == Kind.CONNECTION_WORKER_POOL);
+      connectionWorkerPool().registerStreamWriter(streamWriter);
     }
 
     public static SingleConnectionOrConnectionPool ofSingleConnection(ConnectionWorker connection) {
@@ -259,6 +278,7 @@ public class StreamWriter implements AutoCloseable {
                         client,
                         ownsBigQueryWriteClient);
                   }));
+      this.singleConnectionOrConnectionPool.register(this);
       validateFetchedConnectonPool(builder);
       // Shut down the passed in client. Internally we will create another client inside connection
       // pool for every new connection worker.
@@ -429,14 +449,7 @@ public class StreamWriter implements AutoCloseable {
    * than the updated schema.
    */
   public synchronized TableSchema getUpdatedSchema() {
-    TableSchemaAndTimestamp tableSchemaAndTimestamp =
-        singleConnectionOrConnectionPool.getUpdatedSchema(this);
-    if (tableSchemaAndTimestamp == null) {
-      return null;
-    }
-    return creationTimestamp < tableSchemaAndTimestamp.updateTimeStamp()
-        ? tableSchemaAndTimestamp.updatedSchema()
-        : null;
+    return singleConnectionOrConnectionPool.getUpdatedSchema(this);
   }
 
   long getCreationTimestamp() {
