@@ -41,7 +41,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -322,15 +321,15 @@ public class ConnectionWorkerPoolTest {
   }
 
   @Test
-  public void testBlocking() throws Exception {
+  public void testCloseWhileAppending_noDeadlockHappen() throws Exception {
     ConnectionWorkerPool.setOptions(
         Settings.builder().setMaxConnectionsPerRegion(10).setMinConnectionsPerRegion(5).build());
     ConnectionWorkerPool connectionWorkerPool =
         createConnectionWorkerPool(
-            /*maxRequests=*/ 3, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
+            /*maxRequests=*/ 1500, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
 
     // Sets the sleep time to simulate requests stuck in connection.
-    testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
+    testBigQueryWrite.setResponseSleep(Duration.ofMillis(20L));
     StreamWriter writeStream1 = getTestStreamWriter(TEST_STREAM_1);
 
     ListeningExecutorService threadPool =
@@ -341,47 +340,25 @@ public class ConnectionWorkerPoolTest {
                     .setNameFormat("AsyncStreamReadThread")
                     .build()));
 
-
-    StreamWriter writeStream2 = getTestStreamWriter(TEST_STREAM_2);
-
-    // Try append 10 requests, at the end we should have 2 requests per connection, and 5
-    // connections created.
     long appendCount = 10;
     for (long i = 0; i < appendCount; i++) {
       testBigQueryWrite.addResponse(createAppendResponse(i));
     }
     List<Future<?>> futures = new ArrayList<>();
 
-
-    // for (int i = 0; i < 1000; i++) {
-      futures.add(threadPool.submit(() -> {
-        // log.warning("before get inflithg seconds");
-        // writeStream1.getInflightWaitSeconds();
-        // log.warning("after get inflithg seconds");
-
-        sendFooStringTestMessage(
-            writeStream1, connectionWorkerPool, new String[] {String.valueOf(0)}, 0);
-      }));
-    // }
-
-    Thread.sleep(100);
+    for (int i = 0; i < 500; i++) {
+      futures.add(
+          threadPool.submit(
+              () -> {
+                sendFooStringTestMessage(
+                    writeStream1, connectionWorkerPool, new String[] {String.valueOf(0)}, 0);
+              }));
+    }
     connectionWorkerPool.close(writeStream1);
-
-    // sendFooStringTestMessage(
-    //     writeStream1, connectionWorkerPool, new String[] {String.valueOf(0)}, 0);
-    //
-    // log.warning("The stream is " + futures.size());
-    // for (int i = 0; i < 1000; i++) {
-    //   futures.add(threadPool.submit(() -> writeStream1.getInflightWaitSeconds()));
-    // }
-    // log.warning("The stream is " + futures.size());
-    //
-
-    for(int i = 0; i < 1; i++) {
+    for (int i = 0; i < 500; i++) {
       futures.get(i).get();
     }
   }
-
 
   @Test
   public void testToTableName() {

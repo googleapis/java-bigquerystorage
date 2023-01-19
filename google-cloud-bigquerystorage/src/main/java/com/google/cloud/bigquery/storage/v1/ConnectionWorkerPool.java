@@ -69,12 +69,10 @@ public class ConnectionWorkerPool {
   private final FlowController.LimitExceededBehavior limitExceededBehavior;
 
   /** Map from write stream to corresponding connection. */
-  private final Map<StreamWriter, ConnectionWorker> streamWriterToConnection =
-      new HashMap<>();
+  private final Map<StreamWriter, ConnectionWorker> streamWriterToConnection = new HashMap<>();
 
   /** Map from a connection to a set of write stream that have sent requests onto it. */
-  private final Map<ConnectionWorker, Set<StreamWriter>> connectionToWriteStream =
-      new HashMap<>();
+  private final Map<ConnectionWorker, Set<StreamWriter>> connectionToWriteStream = new HashMap<>();
 
   /** Collection of all the created connections. */
   private final Set<ConnectionWorker> connectionWorkerPool =
@@ -242,23 +240,23 @@ public class ConnectionWorkerPool {
           streamWriterToConnection.compute(
               streamWriter,
               (key, existingStream) -> {
-                  // Stick to the existing stream if it's not overwhelmed.
-                  if (existingStream != null && !existingStream.getLoad().isOverwhelmed()) {
-                    return existingStream;
-                  }
-                  // Try to create or find another existing stream to reuse.
-                  ConnectionWorker createdOrExistingConnection = null;
-                  try {
-                    createdOrExistingConnection =
-                        createOrReuseConnectionWorker(streamWriter, existingStream);
-                  } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                  }
-                  // Update connection to write stream relationship.
-                  connectionToWriteStream.computeIfAbsent(
-                      createdOrExistingConnection, (ConnectionWorker k) -> new HashSet<>());
-                  connectionToWriteStream.get(createdOrExistingConnection).add(streamWriter);
-                  return createdOrExistingConnection;
+                // Stick to the existing stream if it's not overwhelmed.
+                if (existingStream != null && !existingStream.getLoad().isOverwhelmed()) {
+                  return existingStream;
+                }
+                // Try to create or find another existing stream to reuse.
+                ConnectionWorker createdOrExistingConnection = null;
+                try {
+                  createdOrExistingConnection =
+                      createOrReuseConnectionWorker(streamWriter, existingStream);
+                } catch (IOException e) {
+                  throw new IllegalStateException(e);
+                }
+                // Update connection to write stream relationship.
+                connectionToWriteStream.computeIfAbsent(
+                    createdOrExistingConnection, (ConnectionWorker k) -> new HashSet<>());
+                connectionToWriteStream.get(createdOrExistingConnection).add(streamWriter);
+                return createdOrExistingConnection;
               });
     } finally {
       lock.unlock();
