@@ -167,11 +167,6 @@ public class ConnectionWorker implements AutoCloseable {
   private BigQueryWriteClient client;
 
   /*
-   * If true, the client above is created by this writer and should be closed.
-   */
-  private boolean ownsBigQueryWriteClient = false;
-
-  /*
    * Wraps the underlying bi-directional stream connection with server.
    */
   private StreamConnection streamConnection;
@@ -203,8 +198,7 @@ public class ConnectionWorker implements AutoCloseable {
       long maxInflightBytes,
       FlowController.LimitExceededBehavior limitExceededBehavior,
       String traceId,
-      BigQueryWriteClient client,
-      boolean ownsBigQueryWriteClient)
+      BigQueryWriteSettings clientSettings)
       throws IOException {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
@@ -222,8 +216,8 @@ public class ConnectionWorker implements AutoCloseable {
     this.traceId = traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
-    this.client = client;
-    this.ownsBigQueryWriteClient = ownsBigQueryWriteClient;
+    // Always recreate a client for connection worker.
+    this.client = BigQueryWriteClient.create(clientSettings);
 
     this.appendThread =
         new Thread(
@@ -374,13 +368,12 @@ public class ConnectionWorker implements AutoCloseable {
       log.warning(
           "Append handler join is interrupted. Stream: " + streamName + " Error: " + e.toString());
     }
-    if (this.ownsBigQueryWriteClient) {
-      this.client.close();
-      try {
-        // Backend request has a 2 minute timeout, so wait a little longer than that.
-        this.client.awaitTermination(150, TimeUnit.SECONDS);
-      } catch (InterruptedException ignored) {
-      }
+    this.client.close();
+    try {
+      // Backend request has a 2 minute timeout, so wait a little longer than that.
+      this.client.awaitTermination(150, TimeUnit.SECONDS);
+    } catch (InterruptedException ignored) {
+
     }
   }
 
@@ -638,6 +631,7 @@ public class ConnectionWorker implements AutoCloseable {
     if (response.hasError()) {
       Exceptions.StorageException storageException =
           Exceptions.toStorageException(response.getError(), null);
+      log.fine(String.format("Got error message: %s", response.toString()));
       if (storageException != null) {
         requestWrapper.appendResult.setException(storageException);
       } else if (response.getRowErrorsCount() > 0) {

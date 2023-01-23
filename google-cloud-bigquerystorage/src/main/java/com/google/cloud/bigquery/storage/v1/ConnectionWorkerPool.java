@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +40,7 @@ import javax.annotation.concurrent.GuardedBy;
 public class ConnectionWorkerPool {
   private static final Logger log = Logger.getLogger(ConnectionWorkerPool.class.getName());
   /*
-   * Max allowed inflight requests in the stream. Method append is blocked at this.
+   * Max allowed inflight requests in the stream.getInflightWaitSeconds Method append is blocked at this.
    */
   private final long maxInflightRequests;
 
@@ -54,12 +55,10 @@ public class ConnectionWorkerPool {
   private final FlowController.LimitExceededBehavior limitExceededBehavior;
 
   /** Map from write stream to corresponding connection. */
-  private final Map<StreamWriter, ConnectionWorker> streamWriterToConnection =
-      new ConcurrentHashMap<>();
+  private final Map<StreamWriter, ConnectionWorker> streamWriterToConnection = new HashMap<>();
 
   /** Map from a connection to a set of write stream that have sent requests onto it. */
-  private final Map<ConnectionWorker, Set<StreamWriter>> connectionToWriteStream =
-      new ConcurrentHashMap<>();
+  private final Map<ConnectionWorker, Set<StreamWriter>> connectionToWriteStream = new HashMap<>();
 
   /** Collection of all the created connections. */
   private final Set<ConnectionWorker> connectionWorkerPool =
@@ -130,12 +129,7 @@ public class ConnectionWorkerPool {
   /*
    * A client used to interact with BigQuery.
    */
-  private BigQueryWriteClient client;
-
-  /*
-   * If true, the client above is created by this writer and should be closed.
-   */
-  private boolean ownsBigQueryWriteClient = false;
+  private BigQueryWriteSettings clientSettings;
 
   /**
    * The current maximum connection count. This value is gradually increased till the user defined
@@ -184,14 +178,12 @@ public class ConnectionWorkerPool {
       long maxInflightBytes,
       FlowController.LimitExceededBehavior limitExceededBehavior,
       String traceId,
-      BigQueryWriteClient client,
-      boolean ownsBigQueryWriteClient) {
+      BigQueryWriteSettings clientSettings) {
     this.maxInflightRequests = maxInflightRequests;
     this.maxInflightBytes = maxInflightBytes;
     this.limitExceededBehavior = limitExceededBehavior;
     this.traceId = traceId;
-    this.client = client;
-    this.ownsBigQueryWriteClient = ownsBigQueryWriteClient;
+    this.clientSettings = clientSettings;
     this.currentMaxConnectionCount = settings.minConnectionsPerRegion();
   }
 
@@ -213,14 +205,13 @@ public class ConnectionWorkerPool {
   public ApiFuture<AppendRowsResponse> append(
       StreamWriter streamWriter, ProtoRows rows, long offset) {
     // We are in multiplexing mode after entering the following logic.
-    ConnectionWorker connectionWorker =
-        streamWriterToConnection.compute(
-            streamWriter,
-            (key, existingStream) -> {
-              // Though compute on concurrent map is atomic, we still do explicit locking as we
-              // may have concurrent close(...) triggered.
-              lock.lock();
-              try {
+    ConnectionWorker connectionWorker;
+    lock.lock();
+    try {
+      connectionWorker =
+          streamWriterToConnection.compute(
+              streamWriter,
+              (key, existingStream) -> {
                 // Stick to the existing stream if it's not overwhelmed.
                 if (existingStream != null && !existingStream.getLoad().isOverwhelmed()) {
                   return existingStream;
@@ -238,10 +229,10 @@ public class ConnectionWorkerPool {
                     createdOrExistingConnection, (ConnectionWorker k) -> new HashSet<>());
                 connectionToWriteStream.get(createdOrExistingConnection).add(streamWriter);
                 return createdOrExistingConnection;
-              } finally {
-                lock.unlock();
-              }
-            });
+              });
+    } finally {
+      lock.unlock();
+    }
     Stopwatch stopwatch = Stopwatch.createStarted();
     ApiFuture<AppendRowsResponse> responseFuture =
         connectionWorker.append(
@@ -323,8 +314,6 @@ public class ConnectionWorkerPool {
       // Though atomic integer is super lightweight, add extra if check in case adding future logic.
       testValueCreateConnectionCount.getAndIncrement();
     }
-    // currently we use different header for the client in each connection worker to be different
-    // as the backend require the header to have the same write_stream field as request body.
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             streamName,
@@ -333,8 +322,7 @@ public class ConnectionWorkerPool {
             maxInflightBytes,
             limitExceededBehavior,
             traceId,
-            client,
-            ownsBigQueryWriteClient);
+            clientSettings);
     connectionWorkerPool.add(connectionWorker);
     log.info(
         String.format(
@@ -369,8 +357,11 @@ public class ConnectionWorkerPool {
       log.info(
           String.format(
               "During closing of writeStream for %s with writer id %s, we decided to close %s "
-                  + "connections",
-              streamWriter.getStreamName(), streamWriter.getWriterId(), connectionToRemove.size()));
+                  + "connections, pool size after removal $s",
+              streamWriter.getStreamName(),
+              streamWriter.getWriterId(),
+              connectionToRemove.size(),
+              connectionToWriteStream.size() - 1));
       connectionToWriteStream.keySet().removeAll(connectionToRemove);
     } finally {
       lock.unlock();
@@ -410,15 +401,11 @@ public class ConnectionWorkerPool {
     return traceId;
   }
 
-  boolean ownsBigQueryWriteClient() {
-    return ownsBigQueryWriteClient;
-  }
-
   FlowController.LimitExceededBehavior limitExceededBehavior() {
     return limitExceededBehavior;
   }
 
-  BigQueryWriteClient bigQueryWriteClient() {
-    return client;
+  BigQueryWriteSettings bigQueryWriteSettings() {
+    return clientSettings;
   }
 }
