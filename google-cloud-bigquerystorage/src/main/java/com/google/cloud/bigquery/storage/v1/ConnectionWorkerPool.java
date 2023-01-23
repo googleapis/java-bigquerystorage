@@ -227,8 +227,7 @@ public class ConnectionWorkerPool {
 
   /** Distributes the writing of a message to an underlying connection. */
   @VisibleForTesting
-  ApiFuture<AppendRowsResponse> append(
-      StreamWriter streamWriter, ProtoRows rows, long offset) {
+  ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
     // We are in multiplexing mode after entering the following logic.
     ConnectionWorker connectionWorker;
     lock.lock();
