@@ -267,7 +267,7 @@ public class ITBigQueryWriteManualClientTest {
                             .build())))
             .build();
     bigquery.create(tableInfo);
-    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName + "1");
     WriteStream writeStream =
         client.createWriteStream(
             CreateWriteStreamRequest.newBuilder()

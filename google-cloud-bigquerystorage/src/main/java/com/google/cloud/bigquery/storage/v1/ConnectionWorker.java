@@ -634,6 +634,7 @@ public class ConnectionWorker implements AutoCloseable {
       this.lock.unlock();
     }
     if (response.hasError()) {
+      log.log(Level.WARNING, "Got error in request callback " + response.getError());
       Exceptions.StorageException storageException =
           Exceptions.toStorageException(response.getError(), null);
       if (storageException != null) {
