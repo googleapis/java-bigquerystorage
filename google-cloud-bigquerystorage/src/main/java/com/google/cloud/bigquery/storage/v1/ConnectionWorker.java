@@ -56,7 +56,8 @@ import javax.annotation.concurrent.GuardedBy;
  *
  * <p>TODO: support updated schema
  */
-public class ConnectionWorker implements AutoCloseable {
+@VisibleForTesting
+class ConnectionWorker implements AutoCloseable {
   private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
 
   private Lock lock;
