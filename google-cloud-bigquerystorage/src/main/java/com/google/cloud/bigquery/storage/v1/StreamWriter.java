@@ -190,7 +190,8 @@ public class StreamWriter implements AutoCloseable {
                   builder.traceId,
                   clientSettings));
     } else {
-      BigQueryWriteClient client = builder.client != null ? builder.client : new BigQueryWriteClient(clientSettings);
+      BigQueryWriteClient client =
+          builder.client != null ? builder.client : new BigQueryWriteClient(clientSettings);
       String location = builder.location;
       if (location == null || location.isEmpty()) {
         // Location is not passed in, try to fetch from RPC
