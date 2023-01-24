@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
@@ -61,6 +63,8 @@ public class ConnectionWorker implements AutoCloseable {
   private Lock lock;
   private Condition hasMessageInWaitingQueue;
   private Condition inflightReduced;
+
+  private static ExecutorService threadPool = Executors.newFixedThreadPool(20);
 
   /*
    * The identifier of the current stream to write to. This stream name can change during
@@ -633,35 +637,43 @@ public class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
-    if (response.hasError()) {
-      log.log(Level.WARNING, "Got error in request callback " + response.getError());
-      Exceptions.StorageException storageException =
-          Exceptions.toStorageException(response.getError(), null);
-      if (storageException != null) {
-        requestWrapper.appendResult.setException(storageException);
-      } else if (response.getRowErrorsCount() > 0) {
-        Map<Integer, String> rowIndexToErrorMessage = new HashMap<>();
-        for (int i = 0; i < response.getRowErrorsCount(); i++) {
-          RowError rowError = response.getRowErrors(i);
-          rowIndexToErrorMessage.put(Math.toIntExact(rowError.getIndex()), rowError.getMessage());
-        }
-        AppendSerializtionError exception =
-            new AppendSerializtionError(
-                response.getError().getCode(),
-                response.getError().getMessage(),
-                streamName,
-                rowIndexToErrorMessage);
-        requestWrapper.appendResult.setException(exception);
-      } else {
-        StatusRuntimeException exception =
-            new StatusRuntimeException(
-                Status.fromCodeValue(response.getError().getCode())
-                    .withDescription(response.getError().getMessage()));
-        requestWrapper.appendResult.setException(exception);
-      }
-    } else {
-      requestWrapper.appendResult.set(response);
-    }
+    // We need a separte thread pool to unblock the next request callback.
+    // Otherwise user may call append inside request callback, which may be blocked on waiting
+    // on in flight quota, causing deadlock as requests can't be popped out of queue until
+    // the current request callback finishes.
+    threadPool.submit(
+        () -> {
+          if (response.hasError()) {
+            Exceptions.StorageException storageException =
+                Exceptions.toStorageException(response.getError(), null);
+            log.fine(String.format("Got error message: %s", response.toString()));
+            if (storageException != null) {
+              requestWrapper.appendResult.setException(storageException);
+            } else if (response.getRowErrorsCount() > 0) {
+              Map<Integer, String> rowIndexToErrorMessage = new HashMap<>();
+              for (int i = 0; i < response.getRowErrorsCount(); i++) {
+                RowError rowError = response.getRowErrors(i);
+                rowIndexToErrorMessage.put(
+                    Math.toIntExact(rowError.getIndex()), rowError.getMessage());
+              }
+              AppendSerializtionError exception =
+                  new AppendSerializtionError(
+                      response.getError().getCode(),
+                      response.getError().getMessage(),
+                      streamName,
+                      rowIndexToErrorMessage);
+              requestWrapper.appendResult.setException(exception);
+            } else {
+              StatusRuntimeException exception =
+                  new StatusRuntimeException(
+                      Status.fromCodeValue(response.getError().getCode())
+                          .withDescription(response.getError().getMessage()));
+              requestWrapper.appendResult.setException(exception);
+            }
+          } else {
+            requestWrapper.appendResult.set(response);
+          }
+        });
   }
 
   private boolean isRetriableError(Throwable t) {
