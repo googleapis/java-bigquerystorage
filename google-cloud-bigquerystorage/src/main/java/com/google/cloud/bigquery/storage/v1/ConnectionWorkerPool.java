@@ -193,7 +193,6 @@ public class ConnectionWorkerPool {
   /** Static setting for connection pool. */
   private static Settings settings = Settings.builder().build();
 
-  @VisibleForTesting
   ConnectionWorkerPool(
       long maxInflightRequests,
       long maxInflightBytes,
@@ -220,13 +219,11 @@ public class ConnectionWorkerPool {
   }
 
   /** Distributes the writing of a message to an underlying connection. */
-  @VisibleForTesting
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows) {
     return append(streamWriter, rows, -1);
   }
 
   /** Distributes the writing of a message to an underlying connection. */
-  @VisibleForTesting
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
     // We are in multiplexing mode after entering the following logic.
     ConnectionWorker connectionWorker;
@@ -374,7 +371,6 @@ public class ConnectionWorkerPool {
    * <p>The corresponding worker is not closed until there is no stream reference is targeting to
    * that worker.
    */
-  @VisibleForTesting
   void close(StreamWriter streamWriter) {
     lock.lock();
     try {
