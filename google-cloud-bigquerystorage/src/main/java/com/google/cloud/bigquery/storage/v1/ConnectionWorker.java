@@ -264,7 +264,11 @@ class ConnectionWorker implements AutoCloseable {
 
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(
-      String streamName, ProtoSchema writerSchema, ProtoRows rows, long offset) {
+      String streamName,
+      ProtoSchema writerSchema,
+      ProtoRows rows,
+      long offset,
+      Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueMap) {
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(
         ProtoData.newBuilder().setWriterSchema(writerSchema).setRows(rows).build());
@@ -272,6 +276,7 @@ class ConnectionWorker implements AutoCloseable {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
     requestBuilder.setWriteStream(streamName);
+    requestBuilder.putAllMissingValueInterpretations(missingValueMap);
     return appendInternal(requestBuilder.build());
   }
 

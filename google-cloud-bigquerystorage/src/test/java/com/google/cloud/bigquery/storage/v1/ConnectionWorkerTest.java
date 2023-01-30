@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import org.junit.Before;
@@ -396,7 +397,7 @@ public class ConnectionWorkerTest {
       ProtoSchema protoSchema,
       ProtoRows protoRows,
       long offset) {
-    return connectionWorker.append(streamName, protoSchema, protoRows, offset);
+    return connectionWorker.append(streamName, protoSchema, protoRows, offset, new HashMap());
   }
 
   private ProtoRows createFooProtoRows(String[] messages) {

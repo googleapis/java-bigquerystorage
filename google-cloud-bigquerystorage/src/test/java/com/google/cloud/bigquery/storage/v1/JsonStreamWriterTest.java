@@ -44,6 +44,7 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -1144,5 +1145,44 @@ public class JsonStreamWriterTest {
         .setAppendResult(
             AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(offset)).build())
         .build();
+  }
+
+  @Test
+  public void testAppendWithMissingValueMap() throws Exception {
+    TableFieldSchema field =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.STRING)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test-列")
+            .build();
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(0, field).build();
+    FlexibleType expectedProto = FlexibleType.newBuilder().setColDGVzdC3LiJc("allen").build();
+    JSONObject flexible = new JSONObject();
+    flexible.put("test-列", "allen");
+    JSONArray jsonArr = new JSONArray();
+    jsonArr.put(flexible);
+
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, tableSchema).setTraceId("test:empty").build()) {
+
+      Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueMap = new HashMap();
+      missingValueMap.put("col1", AppendRowsRequest.MissingValueInterpretation.NULL_VALUE);
+      missingValueMap.put("col3", AppendRowsRequest.MissingValueInterpretation.DEFAULT_VALUE);
+      writer.setMissingValueInterpretationMap(missingValueMap);
+      assertEquals(missingValueMap, writer.getMissingValueInterpretationMap());
+
+      testBigQueryWrite.addResponse(
+          AppendRowsResponse.newBuilder()
+              .setAppendResult(
+                  AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
+              .build());
+
+      ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
+      assertEquals(0L, appendFuture.get().getAppendResult().getOffset().getValue());
+      appendFuture.get();
+      assertEquals(
+          testBigQueryWrite.getAppendRequests().get(0).getMissingValueInterpretations(),
+          missingValueMap);
+    }
   }
 }

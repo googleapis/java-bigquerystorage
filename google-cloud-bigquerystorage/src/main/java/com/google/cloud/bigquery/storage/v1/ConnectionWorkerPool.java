@@ -257,7 +257,11 @@ public class ConnectionWorkerPool {
     Stopwatch stopwatch = Stopwatch.createStarted();
     ApiFuture<AppendRowsResponse> responseFuture =
         connectionWorker.append(
-            streamWriter.getStreamName(), streamWriter.getProtoSchema(), rows, offset);
+            streamWriter.getStreamName(),
+            streamWriter.getProtoSchema(),
+            rows,
+            offset,
+            streamWriter.getMissingValueInterpretationMap());
     return ApiFutures.transform(
         responseFuture,
         // Add callback for update schema
