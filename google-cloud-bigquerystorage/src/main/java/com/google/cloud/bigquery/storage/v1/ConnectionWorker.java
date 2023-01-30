@@ -19,7 +19,6 @@ import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.auto.value.AutoValue;
-import com.google.cloud.bigquery.storage.util.Errors;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
@@ -716,14 +715,12 @@ class ConnectionWorker implements AutoCloseable {
         });
   }
 
-  private boolean isRetriableError(Throwable t) {
+  private boolean isConnectionErrorRetriable(Throwable t) {
     Status status = Status.fromThrowable(t);
-    if (Errors.isRetryableInternalStatus(status)) {
-      return true;
-    }
     return status.getCode() == Code.ABORTED
         || status.getCode() == Code.UNAVAILABLE
-        || status.getCode() == Code.CANCELLED;
+        || status.getCode() == Code.CANCELLED
+        || status.getCode() == Code.INTERNAL;
   }
 
   private void doneCallback(Throwable finalStatus) {
@@ -740,7 +737,7 @@ class ConnectionWorker implements AutoCloseable {
           connectionRetryStartTime = System.currentTimeMillis();
         }
         // If the error can be retried, don't set it here, let it try to retry later on.
-        if (isRetriableError(finalStatus)
+        if (isConnectionErrorRetriable(finalStatus)
             && !userClosed
             && (maxRetryDuration.toMillis() == 0f
                 || System.currentTimeMillis() - connectionRetryStartTime
