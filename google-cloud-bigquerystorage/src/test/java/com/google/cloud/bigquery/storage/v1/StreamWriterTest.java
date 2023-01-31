@@ -463,14 +463,14 @@ public class StreamWriterTest {
   public void testAppendSuccessAndConnectionError() throws Exception {
     StreamWriter writer = getTestStreamWriter();
     testBigQueryWrite.addResponse(createAppendResponse(0));
-    testBigQueryWrite.addException(Status.INTERNAL.asException());
+    testBigQueryWrite.addException(Status.INVALID_ARGUMENT.asException());
 
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     ApiException actualError = assertFutureException(ApiException.class, appendFuture2);
-    assertEquals(Code.INTERNAL, actualError.getStatusCode().getCode());
+    assertEquals(Code.INVALID_ARGUMENT, actualError.getStatusCode().getCode());
 
     writer.close();
   }
@@ -581,11 +581,11 @@ public class StreamWriterTest {
   @Test
   public void testAppendAfterServerClose() throws Exception {
     StreamWriter writer = getTestStreamWriter();
-    testBigQueryWrite.addException(Status.INTERNAL.asException());
+    testBigQueryWrite.addException(Status.INVALID_ARGUMENT.asException());
 
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     ApiException error1 = assertFutureException(ApiException.class, appendFuture1);
-    assertEquals(Code.INTERNAL, error1.getStatusCode().getCode());
+    assertEquals(Code.INVALID_ARGUMENT, error1.getStatusCode().getCode());
 
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
     assertTrue(appendFuture2.isDone());
