@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -234,9 +235,17 @@ public class ConnectionWorkerPool {
               streamWriter,
               (key, existingStream) -> {
                 // Stick to the existing stream if it's not overwhelmed.
-                if (existingStream != null && !existingStream.getLoad().isOverwhelmed()) {
+                if (existingStream != null
+                    && !existingStream.getLoad().isOverwhelmed()
+                    && !existingStream.isConnectionInUnrecoverableState()) {
                   return existingStream;
                 }
+                if (existingStream != null && existingStream.isConnectionInUnrecoverableState()) {
+                  existingStream = null;
+                }
+                // Before search for the next connection to attach, clear the finalized connections
+                // first so that they will not be selected.
+                clearFinalizedConnectionWorker();
                 // Try to create or find another existing stream to reuse.
                 ConnectionWorker createdOrExistingConnection = null;
                 try {
@@ -299,7 +308,6 @@ public class ConnectionWorkerPool {
         }
         return createConnectionWorker(streamWriter.getStreamName(), streamWriter.getProtoSchema());
       } else {
-
         // Stick to the original connection if all the connections are overwhelmed.
         if (existingConnectionWorker != null) {
           return existingConnectionWorker;
@@ -307,6 +315,19 @@ public class ConnectionWorkerPool {
         // If we are at this branch, it means we reached the maximum connections.
         return existingBestConnection;
       }
+    }
+  }
+
+  private void clearFinalizedConnectionWorker() {
+    Set<ConnectionWorker> connectionWorkerSet = new HashSet<>();
+    for (ConnectionWorker existingWorker : connectionWorkerPool) {
+      if (existingWorker.isConnectionInUnrecoverableState()) {
+        connectionWorkerSet.add(existingWorker);
+      }
+    }
+    for (ConnectionWorker workerToRemove : connectionWorkerSet) {
+      workerToRemove.close();
+      connectionWorkerPool.remove(workerToRemove);
     }
   }
 
