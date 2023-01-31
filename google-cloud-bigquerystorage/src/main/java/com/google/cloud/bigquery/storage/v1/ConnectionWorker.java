@@ -722,8 +722,7 @@ class ConnectionWorker implements AutoCloseable {
         || status.getCode() == Code.CANCELLED
         || status.getCode() == Code.INTERNAL
         || status.getCode() == Code.FAILED_PRECONDITION
-        || status.getCode() == Code.DEADLINE_EXCEEDED
-        || status.getCode() == Code.RESOURCE_EXHAUSTED;
+        || status.getCode() == Code.DEADLINE_EXCEEDED;
   }
 
   private void doneCallback(Throwable finalStatus) {
