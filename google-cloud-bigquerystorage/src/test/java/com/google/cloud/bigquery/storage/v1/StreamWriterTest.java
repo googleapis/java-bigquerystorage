@@ -1091,14 +1091,10 @@ public class StreamWriterTest {
     Assert.assertTrue(ex.getMessage().contains("The passed in stream name does not match"));
   }
 
-
-
   @Test
-  public void testRetryInUnrecoverableStatus_MultiplexingCase () throws Exception {
+  public void testRetryInUnrecoverableStatus_MultiplexingCase() throws Exception {
     ConnectionWorkerPool.setOptions(
-        Settings.builder()
-            .setMinConnectionsPerRegion(1)
-            .setMaxConnectionsPerRegion(4).build());
+        Settings.builder().setMinConnectionsPerRegion(1).setMaxConnectionsPerRegion(4).build());
     ConnectionWorkerPool.enableTestingLogic();
 
     // Setup: create three stream writers, two of them are writing to the same stream.
@@ -1123,9 +1119,11 @@ public class StreamWriterTest {
     TimeUnit.SECONDS.sleep(1);
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
-    assertThrows(ExecutionException.class, () -> {
-      assertEquals(2, appendFuture3.get().getAppendResult().getOffset().getValue());
-    });
+    assertThrows(
+        ExecutionException.class,
+        () -> {
+          assertEquals(2, appendFuture3.get().getAppendResult().getOffset().getValue());
+        });
     assertEquals(writer1.getTestOnlyConnectionWorkerPool().getTotalConnectionCount(), 1);
     assertEquals(writer1.getTestOnlyConnectionWorkerPool().getCreateConnectionCount(), 1);
 
@@ -1155,9 +1153,7 @@ public class StreamWriterTest {
   @Test
   public void testCloseWhileInUnrecoverableState() throws Exception {
     ConnectionWorkerPool.setOptions(
-        Settings.builder()
-            .setMinConnectionsPerRegion(1)
-            .setMaxConnectionsPerRegion(4).build());
+        Settings.builder().setMinConnectionsPerRegion(1).setMaxConnectionsPerRegion(4).build());
     ConnectionWorkerPool.enableTestingLogic();
 
     // Setup: create three stream writers
@@ -1180,9 +1176,11 @@ public class StreamWriterTest {
     TimeUnit.SECONDS.sleep(1);
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
-    assertThrows(ExecutionException.class, () -> {
-      assertEquals(2, appendFuture3.get().getAppendResult().getOffset().getValue());
-    });
+    assertThrows(
+        ExecutionException.class,
+        () -> {
+          assertEquals(2, appendFuture3.get().getAppendResult().getOffset().getValue());
+        });
     assertEquals(writer1.getTestOnlyConnectionWorkerPool().getTotalConnectionCount(), 1);
     assertEquals(writer1.getTestOnlyConnectionWorkerPool().getCreateConnectionCount(), 1);
 

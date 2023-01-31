@@ -222,7 +222,6 @@ class ConnectionWorker implements AutoCloseable {
           Status.fromCode(Code.INVALID_ARGUMENT)
               .withDescription("Writer schema must be provided when building this writer."));
     }
-    this.writerSchema = writerSchema;
     this.maxInflightRequests = maxInflightRequests;
     this.maxInflightBytes = maxInflightBytes;
     this.limitExceededBehavior = limitExceededBehavior;
@@ -379,6 +378,11 @@ class ConnectionWorker implements AutoCloseable {
     return writerId;
   }
 
+  boolean isConnectionInUnrecoverableState() {
+    // If final status is set, there's no
+    return connectionFinalStatus != null;
+  }
+
   /** Close the stream writer. Shut down all resources. */
   @Override
   public void close() {
@@ -488,7 +492,10 @@ class ConnectionWorker implements AutoCloseable {
       while (!localQueue.isEmpty()) {
         AppendRowsRequest originalRequest = localQueue.pollFirst().message;
         AppendRowsRequest.Builder originalRequestBuilder = originalRequest.toBuilder();
-
+        // Always respect the first writer schema seen by the loop.
+        if (writerSchema == null) {
+          writerSchema = originalRequest.getProtoRows().getWriterSchema();
+        }
         // Consider we enter multiplexing if we met a different non empty stream name or we meet
         // a new schema for the same stream name.
         // For the schema comparision we don't use message differencer to speed up the comparing
@@ -496,9 +503,10 @@ class ConnectionWorker implements AutoCloseable {
         // considered the same but is not considered equals(). However as long as it's never provide
         // false negative we will always correctly pass writer schema to backend.
         if ((!originalRequest.getWriteStream().isEmpty()
-            && !streamName.isEmpty()
-            && !originalRequest.getWriteStream().equals(streamName))
-            || !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema)) {
+                && !streamName.isEmpty()
+                && !originalRequest.getWriteStream().equals(streamName))
+            || (originalRequest.getProtoRows().hasWriterSchema()
+                && !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema))) {
           streamName = originalRequest.getWriteStream();
           writerSchema = originalRequest.getProtoRows().getWriterSchema();
           isMultiplexing = true;
@@ -727,7 +735,7 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void doneCallback(Throwable finalStatus) {
-    log.warning(
+    log.fine(
         "Received done callback. Stream: "
             + streamName
             + " Final status: "
@@ -743,8 +751,8 @@ class ConnectionWorker implements AutoCloseable {
         if (isRetriableError(finalStatus)
             && !userClosed
             && (maxRetryDuration.toMillis() == 0f
-            || System.currentTimeMillis() - connectionRetryStartTime
-            <= maxRetryDuration.toMillis())) {
+                || System.currentTimeMillis() - connectionRetryStartTime
+                    <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
           log.info(
               "Retriable error "
@@ -753,7 +761,7 @@ class ConnectionWorker implements AutoCloseable {
                   + conectionRetryCountWithoutCallback
                   + ", millis left to retry "
                   + (maxRetryDuration.toMillis()
-                  - (System.currentTimeMillis() - connectionRetryStartTime))
+                      - (System.currentTimeMillis() - connectionRetryStartTime))
                   + ", for stream "
                   + streamName);
         } else {
@@ -806,11 +814,6 @@ class ConnectionWorker implements AutoCloseable {
         destinationSet.size(),
         maxInflightBytes,
         maxInflightRequests);
-  }
-
-  boolean isConnectionInUnrecoverableState() {
-    // If final status is set, there's no
-    return connectionFinalStatus != null;
   }
 
   /**
