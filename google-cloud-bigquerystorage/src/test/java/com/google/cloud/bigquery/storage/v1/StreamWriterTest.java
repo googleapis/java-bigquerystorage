@@ -637,7 +637,7 @@ public class StreamWriterTest {
     StreamWriter writer = getTestStreamWriter();
     // Server will sleep 2 seconds before closing the connection.
     testBigQueryWrite.setResponseSleep(Duration.ofSeconds(2));
-    testBigQueryWrite.addException(Status.INTERNAL.asException());
+    testBigQueryWrite.addException(Status.INVALID_ARGUMENT.asException());
 
     // Send 10 requests, so that there are 10 inflight requests.
     int appendCount = 10;
@@ -649,7 +649,7 @@ public class StreamWriterTest {
     // Server close should properly handle all inflight requests.
     for (int i = 0; i < appendCount; i++) {
       ApiException actualError = assertFutureException(ApiException.class, futures.get(i));
-      assertEquals(Code.INTERNAL, actualError.getStatusCode().getCode());
+      assertEquals(Code.INVALID_ARGUMENT, actualError.getStatusCode().getCode());
     }
 
     writer.close();
