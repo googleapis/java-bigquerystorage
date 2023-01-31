@@ -461,12 +461,13 @@ public class StreamWriterTest {
 
   @Test
   public void testAppendSuccessAndConnectionError() throws Exception {
-    StreamWriter writer = StreamWriter.newBuilder(TEST_STREAM_1, client)
-        .setWriterSchema(createProtoSchema())
-        .setTraceId(TEST_TRACE_ID)
-        // Retry expire immediately.
-        .setMaxRetryDuration(java.time.Duration.ofMillis(1L))
-        .build();
+    StreamWriter writer =
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setWriterSchema(createProtoSchema())
+            .setTraceId(TEST_TRACE_ID)
+            // Retry expire immediately.
+            .setMaxRetryDuration(java.time.Duration.ofMillis(1L))
+            .build();
     testBigQueryWrite.addResponse(createAppendResponse(0));
     testBigQueryWrite.addException(Status.INTERNAL.asException());
     testBigQueryWrite.addException(Status.INTERNAL.asException());
