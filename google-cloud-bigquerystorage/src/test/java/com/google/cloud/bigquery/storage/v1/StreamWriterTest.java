@@ -461,16 +461,23 @@ public class StreamWriterTest {
 
   @Test
   public void testAppendSuccessAndConnectionError() throws Exception {
-    StreamWriter writer = getTestStreamWriter();
+    StreamWriter writer = StreamWriter.newBuilder(TEST_STREAM_1, client)
+        .setWriterSchema(createProtoSchema())
+        .setTraceId(TEST_TRACE_ID)
+        // Retry expire immediately.
+        .setMaxRetryDuration(java.time.Duration.ofMillis(1L))
+        .build();
     testBigQueryWrite.addResponse(createAppendResponse(0));
-    testBigQueryWrite.addException(Status.INVALID_ARGUMENT.asException());
+    testBigQueryWrite.addException(Status.INTERNAL.asException());
+    testBigQueryWrite.addException(Status.INTERNAL.asException());
+    testBigQueryWrite.addException(Status.INTERNAL.asException());
 
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     ApiException actualError = assertFutureException(ApiException.class, appendFuture2);
-    assertEquals(Code.INVALID_ARGUMENT, actualError.getStatusCode().getCode());
+    assertEquals(Code.INTERNAL, actualError.getStatusCode().getCode());
 
     writer.close();
   }
