@@ -1038,7 +1038,7 @@ public class StreamWriterTest {
     // The basic StatusRuntimeException API is not changed.
     assertTrue(actualError instanceof StatusRuntimeException);
     assertEquals(Status.Code.FAILED_PRECONDITION, actualError.getStatus().getCode());
-    assertTrue(actualError.getStatus().getDescription().contains("Connection is already closed"));
+    assertTrue(actualError.getStatus().getDescription().contains("User closed StreamWriter"));
     assertEquals(actualError.getWriterId(), writer.getWriterId());
     assertEquals(actualError.getStreamName(), writer.getStreamName());
   }

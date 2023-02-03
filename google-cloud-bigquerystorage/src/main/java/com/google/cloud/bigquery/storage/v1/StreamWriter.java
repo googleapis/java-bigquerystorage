@@ -24,6 +24,7 @@ import com.google.auto.value.AutoOneOf;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.AppendRequestAndResponse;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
+import com.google.cloud.bigquery.storage.v1.Exceptions.StreamWriterClosedException;
 import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -378,9 +379,11 @@ public class StreamWriter implements AutoCloseable {
       AppendRequestAndResponse requestWrapper =
           new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build());
       requestWrapper.appendResult.setException(
-          new StatusRuntimeException(
-              Status.fromCode(Code.FAILED_PRECONDITION)
-                  .withDescription("User slosed StreamWriter")));
+          new Exceptions.StreamWriterClosedException(
+              Status.fromCode(Status.Code.FAILED_PRECONDITION)
+                  .withDescription("User closed StreamWriter"),
+              streamName,
+              getWriterId()));
       return requestWrapper.appendResult;
     }
     return this.singleConnectionOrConnectionPool.append(this, rows, offset);
