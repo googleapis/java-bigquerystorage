@@ -380,7 +380,7 @@ public class StreamWriter implements AutoCloseable {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
               Status.fromCode(Code.FAILED_PRECONDITION)
-                  .withDescription("User Closed streamWriter")));
+                  .withDescription("User slosed StreamWriter")));
       return requestWrapper.appendResult;
     }
     return this.singleConnectionOrConnectionPool.append(this, rows, offset);
