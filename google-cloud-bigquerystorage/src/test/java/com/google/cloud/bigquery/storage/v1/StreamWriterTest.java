@@ -1284,11 +1284,12 @@ public class StreamWriterTest {
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     appendFuture1.get();
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"A"});
-    ExecutionException ex = assertThrows(
-        ExecutionException.class,
-        () -> {
-          appendFuture2.get();
-        });
+    ExecutionException ex =
+        assertThrows(
+            ExecutionException.class,
+            () -> {
+              appendFuture2.get();
+            });
     assertTrue(ex.getCause() instanceof InvalidArgumentException);
     assertFalse(writer.isDone());
   }
@@ -1304,11 +1305,12 @@ public class StreamWriterTest {
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     appendFuture1.get();
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"A"});
-    ExecutionException ex = assertThrows(
-        ExecutionException.class,
-        () -> {
-          appendFuture2.get();
-        });
+    ExecutionException ex =
+        assertThrows(
+            ExecutionException.class,
+            () -> {
+              appendFuture2.get();
+            });
     assertTrue(writer.isDone());
     assertTrue(ex.getCause() instanceof InvalidArgumentException);
   }
