@@ -30,6 +30,7 @@ import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
 import com.google.api.gax.rpc.AbortedException;
 import com.google.api.gax.rpc.ApiException;
+import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.rpc.StatusCode.Code;
 import com.google.api.gax.rpc.UnknownException;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
@@ -1283,11 +1284,12 @@ public class StreamWriterTest {
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     appendFuture1.get();
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"A"});
-    assertThrows(
+    ExecutionException ex = assertThrows(
         ExecutionException.class,
         () -> {
           appendFuture2.get();
         });
+    assertTrue(ex.getCause() instanceof InvalidArgumentException);
     assertFalse(writer.isDone());
   }
 
@@ -1302,11 +1304,12 @@ public class StreamWriterTest {
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     appendFuture1.get();
     ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"A"});
-    assertThrows(
+    ExecutionException ex = assertThrows(
         ExecutionException.class,
         () -> {
           appendFuture2.get();
         });
     assertTrue(writer.isDone());
+    assertTrue(ex.getCause() instanceof InvalidArgumentException);
   }
 }
