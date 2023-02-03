@@ -54,6 +54,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.Lock;
 import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Assert;
@@ -100,6 +101,7 @@ public class StreamWriterTest {
       ProtoSchemaConverter.convert(
           BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(
               UPDATED_TABLE_SCHEMA));
+  private Lock lock;
 
   public StreamWriterTest() throws DescriptorValidationException {}
 

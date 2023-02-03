@@ -23,6 +23,7 @@ import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auto.value.AutoOneOf;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
+import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import io.grpc.Status;
@@ -36,6 +37,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,6 +73,11 @@ public class StreamWriter implements AutoCloseable {
   private final String location;
 
   /*
+   * If user has closed the StreamWriter.
+   */
+  private boolean userClose;
+
+  /*
    * A String that uniquely identifies this writer.
    */
   private final String writerId = UUID.randomUUID().toString();
@@ -93,6 +100,8 @@ public class StreamWriter implements AutoCloseable {
 
   /** Creation timestamp of this streamwriter */
   private final long creationTimestamp;
+
+  private Lock lock;
 
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
@@ -142,6 +151,12 @@ public class StreamWriter implements AutoCloseable {
     }
 
     public void close(StreamWriter streamWriter) {
+      this.lock.lock();
+      try {
+        this.userClosed = true;
+      } finally {
+        this.lock.unlock();
+      }
       if (getKind() == Kind.CONNECTION_WORKER) {
         connectionWorker().close();
       } else {
@@ -363,6 +378,7 @@ public class StreamWriter implements AutoCloseable {
    * @return the append response wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
+    this.
     return this.singleConnectionOrConnectionPool.append(this, rows, offset);
   }
 
@@ -396,6 +412,25 @@ public class StreamWriter implements AutoCloseable {
   /** @return the location of the destination. */
   public String getLocation() {
     return location;
+  }
+
+  /** @return if a stream writer can no longer be used for writing. It is due to either the
+   * StreamWriter is explicitly closed or the underlying connection is broken when connection pool
+   * is not used. Client should recreate StreamWriter in this case.
+   */
+  public Boolean isDone() {
+    this.lock.lock();
+    try {
+      if (singleConnectionOrConnectionPool.getKind() == Kind.CONNECTION_WORKER) {
+        return userClose || singleConnectionOrConnectionPool.connectionWorker()
+            .isConnectionInUnrecoverableState();
+      } else {
+        // With ConnectionPool, we will replace the bad connection automatically.
+        return userClose;
+      }
+    } finally {
+      this.lock.unlock();
+    }
   }
 
   /** Close the stream writer. Shut down all resources. */

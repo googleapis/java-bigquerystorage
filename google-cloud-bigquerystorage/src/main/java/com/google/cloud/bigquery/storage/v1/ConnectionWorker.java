@@ -273,6 +273,15 @@ class ConnectionWorker implements AutoCloseable {
     return appendInternal(requestBuilder.build());
   }
 
+  Boolean isClosed() {
+    this.lock.lock();
+    try {
+      return userClosed;
+    } finally {
+      this.lock.unlock();
+    }
+  }
+
   private ApiFuture<AppendRowsResponse> appendInternal(AppendRowsRequest message) {
     AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
