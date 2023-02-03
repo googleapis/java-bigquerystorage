@@ -22,6 +22,7 @@ import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auto.value.AutoOneOf;
 import com.google.auto.value.AutoValue;
+import com.google.cloud.bigquery.storage.v1.ConnectionWorker.AppendRequestAndResponse;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
 import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
 import com.google.common.annotations.VisibleForTesting;
@@ -37,6 +38,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -75,7 +77,7 @@ public class StreamWriter implements AutoCloseable {
   /*
    * If user has closed the StreamWriter.
    */
-  private boolean userClose;
+  private AtomicBoolean userClosed;
 
   /*
    * A String that uniquely identifies this writer.
@@ -151,12 +153,7 @@ public class StreamWriter implements AutoCloseable {
     }
 
     public void close(StreamWriter streamWriter) {
-      this.lock.lock();
-      try {
-        this.userClosed = true;
-      } finally {
-        this.lock.unlock();
-      }
+      this.userClosed.set(true);
       if (getKind() == Kind.CONNECTION_WORKER) {
         connectionWorker().close();
       } else {
@@ -378,7 +375,15 @@ public class StreamWriter implements AutoCloseable {
    * @return the append response wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
-    this.
+    if (userClosed.get()) {
+      AppendRequestAndResponse requestWrapper =
+          new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build());
+      requestWrapper.appendResult.setException(
+          new StatusRuntimeException(
+              Status.fromCode(Code.FAILED_PRECONDITION)
+                  .withDescription("User Closed streamWriter")));
+      return requestWrapper.appendResult;
+    }
     return this.singleConnectionOrConnectionPool.append(this, rows, offset);
   }
 
@@ -414,22 +419,18 @@ public class StreamWriter implements AutoCloseable {
     return location;
   }
 
-  /** @return if a stream writer can no longer be used for writing. It is due to either the
-   * StreamWriter is explicitly closed or the underlying connection is broken when connection pool
-   * is not used. Client should recreate StreamWriter in this case.
+  /**
+   * @return if a stream writer can no longer be used for writing. It is due to either the
+   *     StreamWriter is explicitly closed or the underlying connection is broken when connection
+   *     pool is not used. Client should recreate StreamWriter in this case.
    */
   public Boolean isDone() {
-    this.lock.lock();
-    try {
-      if (singleConnectionOrConnectionPool.getKind() == Kind.CONNECTION_WORKER) {
-        return userClose || singleConnectionOrConnectionPool.connectionWorker()
-            .isConnectionInUnrecoverableState();
-      } else {
-        // With ConnectionPool, we will replace the bad connection automatically.
-        return userClose;
-      }
-    } finally {
-      this.lock.unlock();
+    if (singleConnectionOrConnectionPool.getKind() == Kind.CONNECTION_WORKER) {
+      return userClosed.get()
+          || singleConnectionOrConnectionPool.connectionWorker().isConnectionInUnrecoverableState();
+    } else {
+      // With ConnectionPool, we will replace the bad connection automatically.
+      return userClosed.get();
     }
   }
 
