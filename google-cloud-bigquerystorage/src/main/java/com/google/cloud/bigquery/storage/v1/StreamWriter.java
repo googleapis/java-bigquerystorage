@@ -77,7 +77,7 @@ public class StreamWriter implements AutoCloseable {
   /*
    * If user has closed the StreamWriter.
    */
-  private AtomicBoolean userClosed;
+  private AtomicBoolean userClosed = new AtomicBoolean(false);
 
   /*
    * A String that uniquely identifies this writer.
@@ -153,7 +153,6 @@ public class StreamWriter implements AutoCloseable {
     }
 
     public void close(StreamWriter streamWriter) {
-      this.userClosed.set(true);
       if (getKind() == Kind.CONNECTION_WORKER) {
         connectionWorker().close();
       } else {
@@ -424,7 +423,7 @@ public class StreamWriter implements AutoCloseable {
    *     StreamWriter is explicitly closed or the underlying connection is broken when connection
    *     pool is not used. Client should recreate StreamWriter in this case.
    */
-  public Boolean isDone() {
+  public boolean isDone() {
     if (singleConnectionOrConnectionPool.getKind() == Kind.CONNECTION_WORKER) {
       return userClosed.get()
           || singleConnectionOrConnectionPool.connectionWorker().isConnectionInUnrecoverableState();
@@ -437,6 +436,7 @@ public class StreamWriter implements AutoCloseable {
   /** Close the stream writer. Shut down all resources. */
   @Override
   public void close() {
+    userClosed.set(true);
     singleConnectionOrConnectionPool.close(this);
   }
 
