@@ -19,7 +19,6 @@ import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.auto.value.AutoValue;
-import com.google.cloud.bigquery.storage.util.Errors;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
@@ -243,7 +242,7 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void resetConnection() {
-    log.info("Reconnecting for stream:" + streamName);
+    log.info("Reconnecting for stream:" + streamName + " id: " + writerId);
     this.streamConnection =
         new StreamConnection(
             this.client,
@@ -259,6 +258,7 @@ class ConnectionWorker implements AutoCloseable {
                 doneCallback(finalStatus);
               }
             });
+    log.info("Reconnect done for stream:" + streamName + " id: " + writerId);
   }
 
   /** Schedules the writing of rows at given offset. */
@@ -393,13 +393,18 @@ class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
-    log.fine("Waiting for append thread to finish. Stream: " + streamName);
+    log.fine("Waiting for append thread to finish. Stream: " + streamName + " id: " + writerId);
     try {
       appendThread.join();
     } catch (InterruptedException e) {
       // Unexpected. Just swallow the exception with logging.
       log.warning(
-          "Append handler join is interrupted. Stream: " + streamName + " Error: " + e.toString());
+          "Append handler join is interrupted. Stream: "
+              + streamName
+              + " id: "
+              + writerId
+              + " Error: "
+              + e.toString());
     }
     this.client.close();
     try {
@@ -409,7 +414,11 @@ class ConnectionWorker implements AutoCloseable {
     }
 
     try {
-      log.fine("Begin shutting down user callback thread pool for stream " + streamName);
+      log.fine(
+          "Begin shutting down user callback thread pool for stream "
+              + streamName
+              + " id: "
+              + writerId);
       threadPool.shutdown();
       threadPool.awaitTermination(3, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
@@ -417,6 +426,8 @@ class ConnectionWorker implements AutoCloseable {
       log.warning(
           "Close on thread pool for "
               + streamName
+              + " id: "
+              + writerId
               + " is interrupted with exception: "
               + e.toString());
       throw new IllegalStateException(
@@ -465,6 +476,8 @@ class ConnectionWorker implements AutoCloseable {
         log.warning(
             "Interrupted while waiting for message. Stream: "
                 + streamName
+                + " id: "
+                + writerId
                 + " Error: "
                 + e.toString());
       } finally {
@@ -540,17 +553,11 @@ class ConnectionWorker implements AutoCloseable {
         // TODO: Handle NOT_ENOUGH_QUOTA.
         // In the close case, the request is in the inflight queue, and will either be returned
         // to the user with an error, or will be resent.
-        log.fine(
-            "Sending "
-                + originalRequestBuilder.getProtoRows().getRows().getSerializedRowsCount()
-                + " rows to stream '"
-                + originalRequestBuilder.getWriteStream()
-                + "'");
         this.streamConnection.send(originalRequestBuilder.build());
       }
     }
 
-    log.fine("Cleanup starts. Stream: " + streamName);
+    log.fine("Cleanup starts. Stream: " + streamName + " id: " + writerId);
     // At this point, the waiting queue is drained, so no more requests.
     // We can close the stream connection and handle the remaining inflight requests.
     if (streamConnection != null) {
@@ -560,9 +567,12 @@ class ConnectionWorker implements AutoCloseable {
 
     // At this point, there cannot be more callback. It is safe to clean up all inflight requests.
     log.fine(
-        "Stream connection is fully closed. Cleaning up inflight requests. Stream: " + streamName);
+        "Stream connection is fully closed. Cleaning up inflight requests. Stream: "
+            + streamName
+            + " id: "
+            + writerId);
     cleanupInflightRequests();
-    log.fine("Append thread is done. Stream: " + streamName);
+    log.fine("Append thread is done. Stream: " + streamName + " id: " + writerId);
   }
 
   /*
@@ -582,7 +592,11 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void waitForDoneCallback(long duration, TimeUnit timeUnit) {
-    log.fine("Waiting for done callback from stream connection. Stream: " + streamName);
+    log.fine(
+        "Waiting for done callback from stream connection. Stream: "
+            + streamName
+            + " id: "
+            + writerId);
     long deadline = System.nanoTime() + timeUnit.toNanos(duration);
     while (System.nanoTime() <= deadline) {
       this.lock.lock();
@@ -631,23 +645,29 @@ class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
-    log.fine("Cleaning " + localQueue.size() + " inflight requests with error: " + finalStatus);
+    log.fine(
+        "Cleaning "
+            + localQueue.size()
+            + " inflight requests with error: "
+            + finalStatus
+            + " for Stream "
+            + streamName
+            + " id: "
+            + writerId);
     while (!localQueue.isEmpty()) {
       localQueue.pollFirst().appendResult.setException(finalStatus);
     }
   }
 
   private void requestCallback(AppendRowsResponse response) {
-    if (!response.hasUpdatedSchema()) {
-      log.fine(String.format("Got response on stream %s", response.toString()));
-    } else {
+    if (response.hasUpdatedSchema()) {
       AppendRowsResponse responseWithUpdatedSchemaRemoved =
           response.toBuilder().clearUpdatedSchema().build();
 
       log.fine(
           String.format(
-              "Got response with schema updated (omitting updated schema in response here): %s",
-              responseWithUpdatedSchemaRemoved.toString()));
+              "Got response with schema updated (omitting updated schema in response here): %s writer id %s",
+              responseWithUpdatedSchemaRemoved.toString(), writerId));
     }
 
     AppendRequestAndResponse requestWrapper;
@@ -724,20 +744,22 @@ class ConnectionWorker implements AutoCloseable {
         });
   }
 
-  private boolean isRetriableError(Throwable t) {
+  private boolean isConnectionErrorRetriable(Throwable t) {
     Status status = Status.fromThrowable(t);
-    if (Errors.isRetryableInternalStatus(status)) {
-      return true;
-    }
     return status.getCode() == Code.ABORTED
         || status.getCode() == Code.UNAVAILABLE
-        || status.getCode() == Code.CANCELLED;
+        || status.getCode() == Code.CANCELLED
+        || status.getCode() == Code.INTERNAL
+        || status.getCode() == Code.FAILED_PRECONDITION
+        || status.getCode() == Code.DEADLINE_EXCEEDED;
   }
 
   private void doneCallback(Throwable finalStatus) {
     log.fine(
         "Received done callback. Stream: "
             + streamName
+            + " worker id: "
+            + writerId
             + " Final status: "
             + finalStatus.toString());
     this.lock.lock();
@@ -748,7 +770,7 @@ class ConnectionWorker implements AutoCloseable {
           connectionRetryStartTime = System.currentTimeMillis();
         }
         // If the error can be retried, don't set it here, let it try to retry later on.
-        if (isRetriableError(finalStatus)
+        if (isConnectionErrorRetriable(finalStatus)
             && !userClosed
             && (maxRetryDuration.toMillis() == 0f
                 || System.currentTimeMillis() - connectionRetryStartTime
