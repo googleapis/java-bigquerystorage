@@ -1230,7 +1230,7 @@ public class StreamWriterTest {
   @Test(timeout = 10000)
   public void testStreamWriterUserCloseMultiplexing() throws Exception {
     StreamWriter writer =
-        StreamWriter.newBuilder(TEST_STREAM_1)
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
             .setWriterSchema(createProtoSchema())
             .setEnableConnectionPool(true)
             .setLocation("us")
@@ -1253,7 +1253,7 @@ public class StreamWriterTest {
   @Test(timeout = 10000)
   public void testStreamWriterUserCloseNoMultiplexing() throws Exception {
     StreamWriter writer =
-        StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(createProtoSchema()).build();
+        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(createProtoSchema()).build();
 
     writer.close();
     assertTrue(writer.isDone());

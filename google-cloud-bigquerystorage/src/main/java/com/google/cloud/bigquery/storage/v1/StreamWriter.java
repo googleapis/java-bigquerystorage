@@ -24,7 +24,6 @@ import com.google.auto.value.AutoOneOf;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.AppendRequestAndResponse;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
-import com.google.cloud.bigquery.storage.v1.Exceptions.StreamWriterClosedException;
 import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
