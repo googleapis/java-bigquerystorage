@@ -196,6 +196,12 @@ class ConnectionWorker implements AutoCloseable {
    */
   private final String writerId = UUID.randomUUID().toString();
 
+  /*
+   * Test only exception behavior testing params.
+   */
+  private RuntimeException testOnlyRunTimeExceptionInAppendLoop;
+  private long testOnlyAppendLoopSleepTime = 0;
+
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
@@ -238,6 +244,25 @@ class ConnectionWorker implements AutoCloseable {
                 appendLoop();
               }
             });
+    appendThread.setUncaughtExceptionHandler(
+        (Thread t, Throwable e) -> {
+          log.warning(
+              "Exception thrown from append loop, thus stream writer is shutdown due to exception: "
+                  + e.toString());
+          e.printStackTrace();
+          lock.lock();
+          try {
+            connectionFinalStatus = e;
+            // Move all current waiting requests to in flight queue.
+            while (!this.waitingRequestQueue.isEmpty()) {
+              AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
+              this.inflightRequestQueue.addLast(requestWrapper);
+            }
+          } finally {
+            lock.unlock();
+          }
+          cleanupInflightRequests();
+        });
     this.appendThread.start();
   }
 
@@ -247,6 +272,8 @@ class ConnectionWorker implements AutoCloseable {
       // It's safe to directly close the previous connection as the in flight messages
       // will be picked up by the next connection.
       this.streamConnection.close();
+      Uninterruptibles.sleepUninterruptibly(calculateSleepTime(
+          conectionRetryCountWithoutCallback), TimeUnit.MILLISECONDS);
     }
     this.streamConnection =
         new StreamConnection(
@@ -277,6 +304,15 @@ class ConnectionWorker implements AutoCloseable {
     }
     requestBuilder.setWriteStream(streamName);
     return appendInternal(requestBuilder.build());
+  }
+
+  Boolean isUserClosed() {
+    this.lock.lock();
+    try {
+      return userClosed;
+    } finally {
+      this.lock.unlock();
+    }
   }
 
   private ApiFuture<AppendRowsResponse> appendInternal(AppendRowsRequest message) {
@@ -374,6 +410,22 @@ class ConnectionWorker implements AutoCloseable {
     inflightWaitSec.set((System.currentTimeMillis() - start_time) / 1000);
   }
 
+  @VisibleForTesting
+  static long calculateSleepTime(long retryCount) {
+    return (long) Math.pow(5, retryCount);
+  }
+
+  @VisibleForTesting
+  void setTestOnlyAppendLoopSleepTime(long testOnlyAppendLoopSleepTime) {
+    this.testOnlyAppendLoopSleepTime = testOnlyAppendLoopSleepTime;
+  }
+
+  @VisibleForTesting
+  void setTestOnlyRunTimeExceptionInAppendLoop(
+      RuntimeException testOnlyRunTimeExceptionInAppendLoop) {
+    this.testOnlyRunTimeExceptionInAppendLoop = testOnlyRunTimeExceptionInAppendLoop;
+  }
+
   public long getInflightWaitSeconds() {
     return inflightWaitSec.longValue();
   }
@@ -384,8 +436,13 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   boolean isConnectionInUnrecoverableState() {
-    // If final status is set, there's no
-    return connectionFinalStatus != null;
+    this.lock.lock();
+    try {
+      // If final status is set, there's no
+      return connectionFinalStatus != null;
+    } finally {
+      this.lock.unlock();
+    }
   }
 
   /** Close the stream writer. Shut down all resources. */
@@ -501,6 +558,11 @@ class ConnectionWorker implements AutoCloseable {
           this.streamConnectionIsConnected = true;
         } finally {
           lock.unlock();
+        }
+        if (testOnlyRunTimeExceptionInAppendLoop != null) {
+          Uninterruptibles.sleepUninterruptibly(
+              testOnlyAppendLoopSleepTime, TimeUnit.MILLISECONDS);
+          throw testOnlyRunTimeExceptionInAppendLoop;
         }
         resetConnection();
         // Set firstRequestInConnection to indicate the next request to be sent should include
@@ -821,7 +883,7 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   // Class that wraps AppendRowsRequest and its corresponding Response future.
-  private static final class AppendRequestAndResponse {
+  static final class AppendRequestAndResponse {
     final SettableApiFuture<AppendRowsResponse> appendResult;
     final AppendRowsRequest message;
     final long messageSize;
