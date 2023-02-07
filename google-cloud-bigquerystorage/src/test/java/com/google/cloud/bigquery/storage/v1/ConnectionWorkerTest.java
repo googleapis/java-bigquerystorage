@@ -81,9 +81,11 @@ public class ConnectionWorkerTest {
       }
       List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
       StreamWriter sw1 =
-          StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(createProtoSchema("foo")).build();
+          StreamWriter.newBuilder(TEST_STREAM_1, client)
+              .setWriterSchema(createProtoSchema("foo"))
+              .build();
       StreamWriter sw2 =
-          StreamWriter.newBuilder(TEST_STREAM_2)
+          StreamWriter.newBuilder(TEST_STREAM_2, client)
               .setWriterSchema(createProtoSchema("complicate"))
               .build();
       // We do a pattern of:
@@ -201,9 +203,12 @@ public class ConnectionWorkerTest {
       // send to stream1, schema3
       // send to stream1, schema1
       // ...
-      StreamWriter sw1 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(schema1).build();
-      StreamWriter sw2 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(schema2).build();
-      StreamWriter sw3 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(schema3).build();
+      StreamWriter sw1 =
+          StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+      StreamWriter sw2 =
+          StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema2).build();
+      StreamWriter sw3 =
+          StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema3).build();
       for (long i = 0; i < appendCount; i++) {
         switch ((int) i % 4) {
           case 0:
@@ -298,7 +303,8 @@ public class ConnectionWorkerTest {
   @Test
   public void testAppendButInflightQueueFull() throws Exception {
     ProtoSchema schema1 = createProtoSchema("foo");
-    StreamWriter sw1 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(schema1).build();
+    StreamWriter sw1 =
+        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
