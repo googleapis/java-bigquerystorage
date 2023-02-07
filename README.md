@@ -19,7 +19,7 @@ If you are using Maven with [BOM][libraries-bom], add this to your pom.xml file:
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>libraries-bom</artifactId>
-      <version>26.4.0</version>
+      <version>26.6.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -56,13 +56,13 @@ implementation 'com.google.cloud:google-cloud-bigquerystorage'
 If you are using Gradle without BOM, add this to your dependencies:
 
 ```Groovy
-implementation 'com.google.cloud:google-cloud-bigquerystorage:2.29.0'
+implementation 'com.google.cloud:google-cloud-bigquerystorage:2.30.0'
 ```
 
 If you are using SBT, add this to your dependencies:
 
 ```Scala
-libraryDependencies += "com.google.cloud" % "google-cloud-bigquerystorage" % "2.29.0"
+libraryDependencies += "com.google.cloud" % "google-cloud-bigquerystorage" % "2.30.0"
 ```
 
 ## Authentication
