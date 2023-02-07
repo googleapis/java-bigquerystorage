@@ -80,6 +80,8 @@ public class ConnectionWorkerTest {
         testBigQueryWrite.addResponse(createAppendResponse(i));
       }
       List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+      StreamWriter sw1 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(createProtoSchema("foo")).build();
+      StreamWriter sw2 = StreamWriter.newBuilder(TEST_STREAM_2).setWriterSchema(createProtoSchema("complicate")).build();
       // We do a pattern of:
       // send to stream1, string1
       // send to stream1, string2
@@ -95,8 +97,7 @@ public class ConnectionWorkerTest {
             futures.add(
                 sendTestMessage(
                     connectionWorker,
-                    TEST_STREAM_1,
-                    createProtoSchema("foo"),
+                    sw1,
                     createFooProtoRows(new String[] {String.valueOf(i)}),
                     i));
             break;
@@ -105,8 +106,7 @@ public class ConnectionWorkerTest {
             futures.add(
                 sendTestMessage(
                     connectionWorker,
-                    TEST_STREAM_2,
-                    createProtoSchema("complicate"),
+                    sw2,
                     createComplicateTypeProtoRows(new String[] {String.valueOf(i)}),
                     i));
             break;
@@ -197,14 +197,16 @@ public class ConnectionWorkerTest {
       // send to stream1, schema3
       // send to stream1, schema1
       // ...
+      StreamWriter sw1 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(schema1).build();
+      StreamWriter sw2 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(schema2).build();
+      StreamWriter sw3 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(schema3).build();
       for (long i = 0; i < appendCount; i++) {
         switch ((int) i % 4) {
           case 0:
             futures.add(
                 sendTestMessage(
                     connectionWorker,
-                    TEST_STREAM_1,
-                    schema1,
+                    sw1,
                     createFooProtoRows(new String[] {String.valueOf(i)}),
                     i));
             break;
@@ -212,8 +214,7 @@ public class ConnectionWorkerTest {
             futures.add(
                 sendTestMessage(
                     connectionWorker,
-                    TEST_STREAM_1,
-                    schema2,
+                    sw2,
                     createFooProtoRows(new String[] {String.valueOf(i)}),
                     i));
             break;
@@ -222,8 +223,7 @@ public class ConnectionWorkerTest {
             futures.add(
                 sendTestMessage(
                     connectionWorker,
-                    TEST_STREAM_1,
-                    schema3,
+                    sw3,
                     createFooProtoRows(new String[] {String.valueOf(i)}),
                     i));
             break;
@@ -293,6 +293,8 @@ public class ConnectionWorkerTest {
 
   @Test
   public void testAppendButInflightQueueFull() throws Exception {
+    ProtoSchema schema1 = createProtoSchema("foo");
+    StreamWriter sw1 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(schema1).build();
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
@@ -305,7 +307,6 @@ public class ConnectionWorkerTest {
             client.getSettings());
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
-    ProtoSchema schema1 = createProtoSchema("foo");
 
     long appendCount = 6;
     for (int i = 0; i < appendCount; i++) {
@@ -323,8 +324,7 @@ public class ConnectionWorkerTest {
             () -> {
               sendTestMessage(
                   connectionWorker,
-                  TEST_STREAM_1,
-                  schema1,
+                  sw1,
                   createFooProtoRows(new String[] {String.valueOf(5)}),
                   5);
             });
@@ -335,8 +335,7 @@ public class ConnectionWorkerTest {
         futures.add(
             sendTestMessage(
                 connectionWorker,
-                TEST_STREAM_1,
-                schema1,
+                sw1,
                 createFooProtoRows(new String[] {String.valueOf(i)}),
                 i));
         assertEquals(connectionWorker.getLoad().inFlightRequestsCount(), i + 1);
@@ -396,11 +395,10 @@ public class ConnectionWorkerTest {
 
   private ApiFuture<AppendRowsResponse> sendTestMessage(
       ConnectionWorker connectionWorker,
-      String streamName,
-      ProtoSchema protoSchema,
+      StreamWriter streamWriter,
       ProtoRows protoRows,
       long offset) {
-    return connectionWorker.append(streamName, protoSchema, protoRows, offset);
+    return connectionWorker.append(streamWriter, protoRows, offset);
   }
 
   private ProtoRows createFooProtoRows(String[] messages) {

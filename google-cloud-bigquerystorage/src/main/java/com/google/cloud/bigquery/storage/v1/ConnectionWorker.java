@@ -268,15 +268,15 @@ class ConnectionWorker implements AutoCloseable {
 
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(
-      String streamName, ProtoSchema writerSchema, ProtoRows rows, long offset) {
+     StreamWriter streamWriter, ProtoRows rows, long offset) {
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(
-        ProtoData.newBuilder().setWriterSchema(writerSchema).setRows(rows).build());
+        ProtoData.newBuilder().setWriterSchema(streamWriter.getProtoSchema()).setRows(rows).build());
     if (offset >= 0) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
-    requestBuilder.setWriteStream(streamName);
-    return appendInternal(requestBuilder.build());
+    requestBuilder.setWriteStream(streamWriter.getStreamName());
+    return appendInternal(streamWriter, requestBuilder.build());
   }
 
   Boolean isUserClosed() {
@@ -288,8 +288,9 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  private ApiFuture<AppendRowsResponse> appendInternal(AppendRowsRequest message) {
-    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message);
+  private ApiFuture<AppendRowsResponse> appendInternal(StreamWriter streamWriter,
+      AppendRowsRequest message) {
+    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message, streamWriter);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
@@ -840,10 +841,14 @@ class ConnectionWorker implements AutoCloseable {
     final AppendRowsRequest message;
     final long messageSize;
 
-    AppendRequestAndResponse(AppendRowsRequest message) {
+    // The writer that issues the call of the request.
+    final StreamWriter streamWriter;
+
+    AppendRequestAndResponse(AppendRowsRequest message, StreamWriter streamWriter) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
       this.messageSize = message.getProtoRows().getSerializedSize();
+      this.streamWriter = streamWriter;
     }
   }
 
