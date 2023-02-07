@@ -145,8 +145,7 @@ public class StreamWriter implements AutoCloseable {
     public ApiFuture<AppendRowsResponse> append(
         StreamWriter streamWriter, ProtoRows protoRows, long offset) {
       if (getKind() == Kind.CONNECTION_WORKER) {
-        return connectionWorker()
-            .append(streamWriter, protoRows, offset);
+        return connectionWorker().append(streamWriter, protoRows, offset);
       } else {
         return connectionWorkerPool().append(streamWriter, protoRows, offset);
       }

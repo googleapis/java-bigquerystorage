@@ -267,11 +267,13 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   /** Schedules the writing of rows at given offset. */
-  ApiFuture<AppendRowsResponse> append(
-     StreamWriter streamWriter, ProtoRows rows, long offset) {
+  ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(
-        ProtoData.newBuilder().setWriterSchema(streamWriter.getProtoSchema()).setRows(rows).build());
+        ProtoData.newBuilder()
+            .setWriterSchema(streamWriter.getProtoSchema())
+            .setRows(rows)
+            .build());
     if (offset >= 0) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
@@ -288,8 +290,8 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  private ApiFuture<AppendRowsResponse> appendInternal(StreamWriter streamWriter,
-      AppendRowsRequest message) {
+  private ApiFuture<AppendRowsResponse> appendInternal(
+      StreamWriter streamWriter, AppendRowsRequest message) {
     AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message, streamWriter);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(

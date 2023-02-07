@@ -80,8 +80,12 @@ public class ConnectionWorkerTest {
         testBigQueryWrite.addResponse(createAppendResponse(i));
       }
       List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
-      StreamWriter sw1 = StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(createProtoSchema("foo")).build();
-      StreamWriter sw2 = StreamWriter.newBuilder(TEST_STREAM_2).setWriterSchema(createProtoSchema("complicate")).build();
+      StreamWriter sw1 =
+          StreamWriter.newBuilder(TEST_STREAM_1).setWriterSchema(createProtoSchema("foo")).build();
+      StreamWriter sw2 =
+          StreamWriter.newBuilder(TEST_STREAM_2)
+              .setWriterSchema(createProtoSchema("complicate"))
+              .build();
       // We do a pattern of:
       // send to stream1, string1
       // send to stream1, string2
@@ -323,10 +327,7 @@ public class ConnectionWorkerTest {
             StatusRuntimeException.class,
             () -> {
               sendTestMessage(
-                  connectionWorker,
-                  sw1,
-                  createFooProtoRows(new String[] {String.valueOf(5)}),
-                  5);
+                  connectionWorker, sw1, createFooProtoRows(new String[] {String.valueOf(5)}), 5);
             });
         long timeDiff = System.currentTimeMillis() - startTime;
         assertEquals(connectionWorker.getLoad().inFlightRequestsCount(), 5);
@@ -334,10 +335,7 @@ public class ConnectionWorkerTest {
       } else {
         futures.add(
             sendTestMessage(
-                connectionWorker,
-                sw1,
-                createFooProtoRows(new String[] {String.valueOf(i)}),
-                i));
+                connectionWorker, sw1, createFooProtoRows(new String[] {String.valueOf(i)}), i));
         assertEquals(connectionWorker.getLoad().inFlightRequestsCount(), i + 1);
       }
     }
