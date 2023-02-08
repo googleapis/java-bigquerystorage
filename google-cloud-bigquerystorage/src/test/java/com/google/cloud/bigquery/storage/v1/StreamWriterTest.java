@@ -1248,6 +1248,7 @@ public class StreamWriterTest {
     assertEquals(
         Status.Code.FAILED_PRECONDITION,
         ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+    assertTrue(writer.isUserClosed());
   }
 
   @Test(timeout = 10000)
@@ -1267,6 +1268,7 @@ public class StreamWriterTest {
     assertEquals(
         Status.Code.FAILED_PRECONDITION,
         ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+    assertTrue(writer.isUserClosed());
   }
 
   @Test(timeout = 10000)
@@ -1292,6 +1294,7 @@ public class StreamWriterTest {
             });
     assertTrue(ex.getCause() instanceof InvalidArgumentException);
     assertFalse(writer.isDone());
+    assertFalse(writer.isUserClosed());
   }
 
   @Test(timeout = 10000)
@@ -1313,5 +1316,6 @@ public class StreamWriterTest {
             });
     assertTrue(writer.isDone());
     assertTrue(ex.getCause() instanceof InvalidArgumentException);
+    assertFalse(writer.isUserClosed());
   }
 }

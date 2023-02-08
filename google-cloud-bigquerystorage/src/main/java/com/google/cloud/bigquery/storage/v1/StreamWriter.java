@@ -435,6 +435,11 @@ public class StreamWriter implements AutoCloseable {
     }
   }
 
+  /** @return if user explicitly closed the writer. */
+  public boolean isUserClosed() {
+    return userClosed.get();
+  }
+
   /** Close the stream writer. Shut down all resources. */
   @Override
   public void close() {
