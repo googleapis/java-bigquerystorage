@@ -164,6 +164,7 @@ public class JsonStreamWriter implements AutoCloseable {
         // TODO(yiru): We should let TableSchema return a timestamp so that we can simply
         //     compare the timestamp to see if the table schema is the same. If it is the
         //     same, we don't need to go refresh the writer again.
+        LOG.warning("The schema gotten is " + this.tableSchema.toString());
         refreshWriter(writeStream.getTableSchema());
         return JsonToProtoMessage.convertJsonToProtoMessage(
             this.descriptor, this.tableSchema, json, ignoreUnknownFields);
@@ -202,11 +203,13 @@ public class JsonStreamWriter implements AutoCloseable {
         JSONObject json = jsonArr.getJSONObject(i);
         try {
           Message protoMessage = buildMessage(json);
+          // LOG.warning("The proto messgae is " + protoMessage.toString());
           rowsBuilder.addSerializedRows(protoMessage.toByteString());
           currentRequestSize += protoMessage.getSerializedSize();
         } catch (IllegalArgumentException exception) {
           if (exception instanceof Exceptions.FieldParseError) {
             Exceptions.FieldParseError ex = (Exceptions.FieldParseError) exception;
+            LOG.warning("Get field pares error " + i + " " + exception.getMessage());
             rowIndexToErrorMessage.put(
                 i,
                 "Field "
@@ -216,6 +219,7 @@ public class JsonStreamWriter implements AutoCloseable {
                     + ". Error: "
                     + ex.getCause().getMessage());
           } else {
+            LOG.warning("Get else error " + i + " " + exception.getMessage());
             rowIndexToErrorMessage.put(i, exception.getMessage());
           }
         } catch (InterruptedException ex) {
@@ -380,6 +384,15 @@ public class JsonStreamWriter implements AutoCloseable {
   @Override
   public void close() {
     this.streamWriter.close();
+  }
+
+  /**
+   * @return if a Json writer can no longer be used for writing. It is due to either the
+   *     JsonStreamWriter is explicitly closed or the underlying connection is broken when
+   *     connection pool is not used. Client should recreate JsonStreamWriter in this case.
+   */
+  public boolean isDone() {
+    return this.streamWriter.isDone();
   }
 
   public static final class Builder {

@@ -199,7 +199,7 @@ class ConnectionWorker implements AutoCloseable {
   /*
    * Test only exception behavior testing params.
    */
-  private RuntimeException testOnlyRunTimeExceptionInAppendLoop;
+  private RuntimeException testOnlyRunTimeExceptionInAppendLoop = null;
   private long testOnlyAppendLoopSleepTime = 0;
 
   /** The maximum size of one request. Defined by the API. */
@@ -272,8 +272,8 @@ class ConnectionWorker implements AutoCloseable {
       // It's safe to directly close the previous connection as the in flight messages
       // will be picked up by the next connection.
       this.streamConnection.close();
-      Uninterruptibles.sleepUninterruptibly(calculateSleepTime(
-          conectionRetryCountWithoutCallback), TimeUnit.MILLISECONDS);
+      Uninterruptibles.sleepUninterruptibly(
+          calculateSleepTimeMilli(conectionRetryCountWithoutCallback), TimeUnit.MILLISECONDS);
     }
     this.streamConnection =
         new StreamConnection(
@@ -411,8 +411,8 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   @VisibleForTesting
-  static long calculateSleepTime(long retryCount) {
-    return (long) Math.pow(5, retryCount);
+  static long calculateSleepTimeMilli(long retryCount) {
+    return Math.min((long) Math.pow(2, retryCount), 60000);
   }
 
   @VisibleForTesting
@@ -560,8 +560,7 @@ class ConnectionWorker implements AutoCloseable {
           lock.unlock();
         }
         if (testOnlyRunTimeExceptionInAppendLoop != null) {
-          Uninterruptibles.sleepUninterruptibly(
-              testOnlyAppendLoopSleepTime, TimeUnit.MILLISECONDS);
+          Uninterruptibles.sleepUninterruptibly(testOnlyAppendLoopSleepTime, TimeUnit.MILLISECONDS);
           throw testOnlyRunTimeExceptionInAppendLoop;
         }
         resetConnection();

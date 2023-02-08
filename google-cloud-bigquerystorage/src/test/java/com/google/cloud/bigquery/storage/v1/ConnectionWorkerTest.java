@@ -389,26 +389,33 @@ public class ConnectionWorkerTest {
 
     for (int i = 0; i < appendCount; i++) {
       int finalI = i;
-      ExecutionException ex = assertThrows(ExecutionException.class,
-          () -> futures.get(finalI).get().getAppendResult().getOffset().getValue());
+      ExecutionException ex =
+          assertThrows(
+              ExecutionException.class,
+              () -> futures.get(finalI).get().getAppendResult().getOffset().getValue());
       assertThat(ex.getCause()).hasMessageThat().contains("Any exception can happen.");
     }
 
     // The future append will directly fail.
-    ExecutionException ex = assertThrows(ExecutionException.class,
-        () -> sendTestMessage(
-            connectionWorker,
-            TEST_STREAM_1,
-            schema1,
-            createFooProtoRows(new String[] {String.valueOf(100)}),
-            100).get());
+    ExecutionException ex =
+        assertThrows(
+            ExecutionException.class,
+            () ->
+                sendTestMessage(
+                        connectionWorker,
+                        TEST_STREAM_1,
+                        schema1,
+                        createFooProtoRows(new String[] {String.valueOf(100)}),
+                        100)
+                    .get());
     assertThat(ex.getCause()).hasMessageThat().contains("Any exception can happen.");
   }
 
   @Test
   public void testExponentialBackoff() throws Exception {
-    assertThat(ConnectionWorker.calculateSleepTime(0)).isEqualTo(1);
-    assertThat(ConnectionWorker.calculateSleepTime(5)).isEqualTo(3125);
+    assertThat(ConnectionWorker.calculateSleepTimeMilli(0)).isEqualTo(1);
+    assertThat(ConnectionWorker.calculateSleepTimeMilli(5)).isEqualTo(32);
+    assertThat(ConnectionWorker.calculateSleepTimeMilli(100)).isEqualTo(60000);
   }
 
   private AppendRowsResponse createAppendResponse(long offset) {
