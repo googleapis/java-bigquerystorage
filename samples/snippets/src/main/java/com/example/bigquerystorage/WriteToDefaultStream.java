@@ -146,7 +146,8 @@ public class WriteToDefaultStream {
       initialize(parentTable.toString());
     }
 
-    private void initialize(String streamOrTableName) throws DescriptorValidationException, IOException, InterruptedException {
+    private void initialize(String streamOrTableName)
+        throws DescriptorValidationException, IOException, InterruptedException {
       // Use the JSON stream writer to send records in JSON format. Specify the table name to write
       // to the default stream.
       // For more information about JsonStreamWriter, see:
