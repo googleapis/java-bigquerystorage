@@ -167,6 +167,7 @@ public class WriteToDefaultStream {
       }
       // Append asynchronously for increased throughput.
       if (streamWriter.isDone() && !streamWriter.isUserClosed()) {
+        streamWriter.close();
         initialize(streamWriter.getStreamName());
       }
       ApiFuture<AppendRowsResponse> future = streamWriter.append(appendContext.data);
