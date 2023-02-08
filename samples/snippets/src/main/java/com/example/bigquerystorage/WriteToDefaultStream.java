@@ -198,6 +198,7 @@ public class WriteToDefaultStream {
       }
 
       public void onFailure(Throwable throwable) {
+        if (this.parent.streamWriter.isDone()) {
         // If the wrapped exception is a StatusRuntimeException, check the state of the operation.
         // If the state is INTERNAL, CANCELLED, or ABORTED, you can retry. For more information,
         // see: https://grpc.github.io/grpc-java/javadoc/io/grpc/StatusRuntimeException.html
