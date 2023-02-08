@@ -135,7 +135,6 @@ public class WriteToDefaultStream {
     // Track the number of in-flight requests to wait for all responses before shutting down.
     private final Phaser inflightRequestCount = new Phaser(1);
     private final Object lock = new Object();
-
     private JsonStreamWriter streamWriter;
 
     @GuardedBy("lock")
@@ -143,21 +142,15 @@ public class WriteToDefaultStream {
 
     public void initialize(TableName parentTable)
         throws DescriptorValidationException, IOException, InterruptedException {
-      initialize(parentTable.toString());
-    }
-
-    private void initialize(String streamOrTableName)
-        throws DescriptorValidationException, IOException, InterruptedException {
       // Use the JSON stream writer to send records in JSON format. Specify the table name to write
       // to the default stream.
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
       streamWriter =
-          JsonStreamWriter.newBuilder(streamOrTableName, BigQueryWriteClient.create())
-              .build();
+          JsonStreamWriter.newBuilder(parentTable.toString(), BigQueryWriteClient.create()).build();
     }
 
-    public synchronized void append(AppendContext appendContext)
+    public void append(AppendContext appendContext)
         throws DescriptorValidationException, IOException {
       synchronized (this.lock) {
         // If earlier appends have failed, we need to reset before continuing.
@@ -166,9 +159,6 @@ public class WriteToDefaultStream {
         }
       }
       // Append asynchronously for increased throughput.
-      if (streamWriter.isDone() && !streamWriter.isUserClosed()) {
-        initialize(streamWriter.getStreamName());
-      }
       ApiFuture<AppendRowsResponse> future = streamWriter.append(appendContext.data);
       ApiFutures.addCallback(
           future, new AppendCompleteCallback(this, appendContext), MoreExecutors.directExecutor());
