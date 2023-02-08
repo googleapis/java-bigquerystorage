@@ -143,14 +143,10 @@ public class WriteToDefaultStream {
 
     public void initialize(TableName parentTable)
         throws DescriptorValidationException, IOException, InterruptedException {
-      initialize(parentTable.);
+      initialize(parentTable.toString());
     }
 
-    public void reInitialize() {
-      initialize(streamWriter.getStreamName());
-    }
-
-    private void initialize(String streamOrTableName) {
+    private void initialize(String streamOrTableName) throws DescriptorValidationException, IOException, InterruptedException {
       // Use the JSON stream writer to send records in JSON format. Specify the table name to write
       // to the default stream.
       // For more information about JsonStreamWriter, see:
@@ -170,7 +166,7 @@ public class WriteToDefaultStream {
       }
       // Append asynchronously for increased throughput.
       if (streamWriter.isDone() && !streamWriter.isUserClosed()) {
-        reInitialize();
+        initialize(streamWriter.getStreamName());
       }
       ApiFuture<AppendRowsResponse> future = streamWriter.append(appendContext.data);
       ApiFutures.addCallback(
