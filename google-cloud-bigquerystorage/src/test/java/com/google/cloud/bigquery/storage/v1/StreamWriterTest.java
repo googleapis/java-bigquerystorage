@@ -1237,7 +1237,7 @@ public class StreamWriterTest {
             .build();
 
     writer.close();
-    assertTrue(writer.isDone());
+    assertTrue(writer.isClosed());
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     ExecutionException ex =
         assertThrows(
