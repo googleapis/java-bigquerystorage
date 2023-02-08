@@ -396,6 +396,11 @@ public class JsonStreamWriter implements AutoCloseable {
     return this.streamWriter.isUserClosed();
   }
 
+  /** @return if user explicitly closed the writer. */
+  public boolean isUserClosed() {
+    return this.streamWriter.isUserClosed();
+  }
+
   public static final class Builder {
     private String streamName;
     private BigQueryWriteClient client;
