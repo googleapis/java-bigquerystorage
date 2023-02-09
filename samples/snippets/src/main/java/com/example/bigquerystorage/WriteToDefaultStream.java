@@ -166,7 +166,7 @@ public class WriteToDefaultStream {
         }
       }
       // Append asynchronously for increased throughput.
-      if (streamWriter.isDone() && !streamWriter.isUserClosed()) {
+      if (streamWriter.isClosed() && !streamWriter.isUserClosed()) {
         streamWriter.close();
         initialize(streamWriter.getStreamName());
       }
