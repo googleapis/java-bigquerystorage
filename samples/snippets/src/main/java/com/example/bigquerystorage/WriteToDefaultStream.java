@@ -157,7 +157,7 @@ public class WriteToDefaultStream {
               .build();
     }
 
-    public synchronized void append(AppendContext appendContext)
+    public void append(AppendContext appendContext)
         throws DescriptorValidationException, IOException, InterruptedException {
       synchronized (this.lock) {
         // If earlier appends have failed, we need to reset before continuing.
@@ -165,10 +165,13 @@ public class WriteToDefaultStream {
           throw this.error;
         }
       }
-      if (streamWriter.isClosed() && !streamWriter.isUserClosed()) {
-        streamWriter.close();
-        initialize(streamWriter.getStreamName());
-      }
+      // All the retraible errors should have been retried within StreamWriter, when user saw the
+      // writer becomes bad, most likely it is not recoverable error. The sample code here shows
+      // a possibility of recreate the writer but most likely your program wouldn't want it.
+      // if (streamWriter.isClosed() && !streamWriter.isUserClosed()) {
+        // streamWriter.close();
+        // initialize(streamWriter.getStreamName());
+      // }
       // Append asynchronously for increased throughput.
       ApiFuture<AppendRowsResponse> future = streamWriter.append(appendContext.data);
       ApiFutures.addCallback(
