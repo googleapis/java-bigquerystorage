@@ -158,7 +158,7 @@ public class WriteToDefaultStream {
     }
 
     public void append(AppendContext appendContext)
-        throws DescriptorValidationException, IOException, InterruptedException {
+        throws DescriptorValidationException, IOException {
       synchronized (this.lock) {
         // If earlier appends have failed, we need to reset before continuing.
         if (this.error != null) {
