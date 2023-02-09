@@ -158,18 +158,18 @@ public class WriteToDefaultStream {
     }
 
     public synchronized void append(AppendContext appendContext)
-        throws DescriptorValidationException, IOException {
+        throws DescriptorValidationException, IOException, InterruptedException {
       synchronized (this.lock) {
         // If earlier appends have failed, we need to reset before continuing.
         if (this.error != null) {
           throw this.error;
         }
       }
-      // Append asynchronously for increased throughput.
       if (streamWriter.isClosed() && !streamWriter.isUserClosed()) {
         streamWriter.close();
         initialize(streamWriter.getStreamName());
       }
+      // Append asynchronously for increased throughput.
       ApiFuture<AppendRowsResponse> future = streamWriter.append(appendContext.data);
       ApiFutures.addCallback(
           future, new AppendCompleteCallback(this, appendContext), MoreExecutors.directExecutor());
