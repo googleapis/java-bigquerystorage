@@ -487,6 +487,10 @@ public class JsonStreamWriter implements AutoCloseable {
     /**
      * Setter for the underlying StreamWriter's ExecutorProvider.
      *
+     * <p>Note that if a BigQueryWriteClient object is provided when calling newBuilder, the
+     * provider passed in to setExecutorProvider will not be used by streamWriter; the
+     * ExecutorProvider provided to the BigQueryWriteClient object will be used instead.
+     *
      * @param executorProvider
      * @return
      */
