@@ -1139,6 +1139,15 @@ public class JsonStreamWriterTest {
     Assert.assertNotEquals(writer1.getWriterId(), writer2.getWriterId());
   }
 
+  @Test
+  public void testIsDone() throws DescriptorValidationException, IOException, InterruptedException {
+    JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
+    Assert.assertFalse(writer.isClosed());
+    writer.close();
+    Assert.assertTrue(writer.isClosed());
+    Assert.assertTrue(writer.isUserClosed());
+  }
+
   private AppendRowsResponse createAppendResponse(long offset) {
     return AppendRowsResponse.newBuilder()
         .setAppendResult(
