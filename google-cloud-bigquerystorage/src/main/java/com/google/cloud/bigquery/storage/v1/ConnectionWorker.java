@@ -581,7 +581,15 @@ class ConnectionWorker implements AutoCloseable {
       }
     }
 
-    log.info("Cleanup starts. Stream: " + streamName + " id: " + writerId);
+    log.info(
+        "Cleanup starts. Stream: "
+            + streamName
+            + " id: "
+            + writerId
+            + " userClose: "
+            + userClosed
+            + " final exception: "
+            + this.connectionFinalStatus.toString());
     // At this point, the waiting queue is drained, so no more requests.
     // We can close the stream connection and handle the remaining inflight requests.
     if (streamConnection != null) {
