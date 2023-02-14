@@ -487,6 +487,7 @@ class ConnectionWorker implements AutoCloseable {
           // to be resent, as the new connection has no knowledge of the requests. Copy the requests
           // from inflightRequestQueue and prepent them onto the waitinRequestQueue. They need to be
           // prepended as they need to be sent before new requests.
+          log.info("Trying to reconnect with a inflight queue of " + inflightRequestQueue.size());
           while (!inflightRequestQueue.isEmpty()) {
             waitingRequestQueue.addFirst(inflightRequestQueue.pollLast());
           }
