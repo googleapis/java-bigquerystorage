@@ -307,8 +307,13 @@ public class StreamWriter implements AutoCloseable {
     if (builder.client != null) {
       settingsBuilder = builder.client.getSettings().toBuilder();
     } else {
-      settingsBuilder = new BigQueryWriteSettings.Builder()
-          .setTransportChannelProvider(BigQueryWriteSettings.defaultGrpcTransportProviderBuilder().setChannelsPerCpu(1).build()).build();
+      settingsBuilder =
+          new BigQueryWriteSettings.Builder()
+              .setTransportChannelProvider(
+                  BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
+                      .setChannelsPerCpu(1)
+                      .build())
+              .build();
     }
     if (builder.channelProvider != null) {
       settingsBuilder.setTransportChannelProvider(builder.channelProvider);
@@ -617,7 +622,8 @@ public class StreamWriter implements AutoCloseable {
 
     /** {@code ExecutorProvider} to use to create Executor to run background jobs. */
     public Builder setExecutorProvider(ExecutorProvider executorProvider) {
-      this.executorProvider = Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null.");
+      this.executorProvider =
+          Preconditions.checkNotNull(executorProvider, "ExecutorProvider is null.");
       return this;
     }
 
