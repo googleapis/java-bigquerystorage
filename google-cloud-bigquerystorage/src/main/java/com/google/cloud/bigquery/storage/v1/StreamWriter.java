@@ -302,7 +302,7 @@ public class StreamWriter implements AutoCloseable {
     return streamMatcher.find();
   }
 
-  private BigQueryWriteSettings getBigQueryWriteSettings(Builder builder) throws IOException {
+  static BigQueryWriteSettings getBigQueryWriteSettings(Builder builder) throws IOException {
     BigQueryWriteSettings.Builder settingsBuilder = null;
     if (builder.client != null) {
       settingsBuilder = builder.client.getSettings().toBuilder();
@@ -313,7 +313,11 @@ public class StreamWriter implements AutoCloseable {
                   BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
                       .setChannelsPerCpu(1)
                       .build())
-              .build();
+              .setCredentialsProvider(
+                  BigQueryWriteSettings.defaultCredentialsProviderBuilder().build())
+              .setBackgroundExecutorProvider(
+                  BigQueryWriteSettings.defaultExecutorProviderBuilder().build())
+              .setEndpoint(BigQueryWriteSettings.getDefaultEndpoint());
     }
     if (builder.channelProvider != null) {
       settingsBuilder.setTransportChannelProvider(builder.channelProvider);
