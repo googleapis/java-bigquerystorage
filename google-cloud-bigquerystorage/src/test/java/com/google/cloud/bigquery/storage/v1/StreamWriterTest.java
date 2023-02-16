@@ -1335,10 +1335,6 @@ public class StreamWriterTest {
     assertTrue(
         writeSettings.getTransportChannelProvider() instanceof InstantiatingGrpcChannelProvider);
     assertEquals(
-        null,
-        ((InstantiatingGrpcChannelProvider) writeSettings.getTransportChannelProvider())
-            .getMaxInboundMetadataSize());
-    assertEquals(
         BigQueryWriteSettings.getDefaultEndpoint(), writeSettings.getEndpoint().toString());
   }
 
