@@ -234,9 +234,17 @@ public class ConnectionWorkerPool {
               streamWriter,
               (key, existingStream) -> {
                 // Stick to the existing stream if it's not overwhelmed.
-                if (existingStream != null && !existingStream.getLoad().isOverwhelmed()) {
+                if (existingStream != null
+                    && !existingStream.getLoad().isOverwhelmed()
+                    && !existingStream.isConnectionInUnrecoverableState()) {
                   return existingStream;
                 }
+                if (existingStream != null && existingStream.isConnectionInUnrecoverableState()) {
+                  existingStream = null;
+                }
+                // Before search for the next connection to attach, clear the finalized connections
+                // first so that they will not be selected.
+                clearFinalizedConnectionWorker();
                 // Try to create or find another existing stream to reuse.
                 ConnectionWorker createdOrExistingConnection = null;
                 try {
@@ -256,12 +264,7 @@ public class ConnectionWorkerPool {
     }
     Stopwatch stopwatch = Stopwatch.createStarted();
     ApiFuture<AppendRowsResponse> responseFuture =
-        connectionWorker.append(
-            streamWriter.getStreamName(),
-            streamWriter.getProtoSchema(),
-            rows,
-            offset,
-            streamWriter.getMissingValueInterpretationMap());
+        connectionWorker.append(streamWriter, rows, offset);
     return ApiFutures.transform(
         responseFuture,
         // Add callback for update schema
@@ -303,7 +306,6 @@ public class ConnectionWorkerPool {
         }
         return createConnectionWorker(streamWriter.getStreamName(), streamWriter.getProtoSchema());
       } else {
-
         // Stick to the original connection if all the connections are overwhelmed.
         if (existingConnectionWorker != null) {
           return existingConnectionWorker;
@@ -311,6 +313,18 @@ public class ConnectionWorkerPool {
         // If we are at this branch, it means we reached the maximum connections.
         return existingBestConnection;
       }
+    }
+  }
+
+  private void clearFinalizedConnectionWorker() {
+    Set<ConnectionWorker> connectionWorkerSet = new HashSet<>();
+    for (ConnectionWorker existingWorker : connectionWorkerPool) {
+      if (existingWorker.isConnectionInUnrecoverableState()) {
+        connectionWorkerSet.add(existingWorker);
+      }
+    }
+    for (ConnectionWorker workerToRemove : connectionWorkerSet) {
+      connectionWorkerPool.remove(workerToRemove);
     }
   }
 
@@ -364,7 +378,7 @@ public class ConnectionWorkerPool {
     connectionWorkerPool.add(connectionWorker);
     log.info(
         String.format(
-            "Scaling up new connection for stream name: %s, pool size after scaling up %s",
+            "Scaling up new connection for stream name: %s, pool size after scaling up %d",
             streamName, connectionWorkerPool.size()));
     return connectionWorker;
   }

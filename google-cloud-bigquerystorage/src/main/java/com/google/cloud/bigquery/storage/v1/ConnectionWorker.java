@@ -19,12 +19,12 @@ import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.auto.value.AutoValue;
-import com.google.cloud.bigquery.storage.util.Errors;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.RequestCallback;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.Int64Value;
 import io.grpc.Status;
@@ -59,6 +59,7 @@ import javax.annotation.concurrent.GuardedBy;
  * <p>TODO: support updated schema
  */
 class ConnectionWorker implements AutoCloseable {
+
   private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
 
   // Maximum wait time on inflight quota before error out.
@@ -197,7 +198,9 @@ class ConnectionWorker implements AutoCloseable {
    */
   private final String writerId = UUID.randomUUID().toString();
 
-  /** The maximum size of one request. Defined by the API. */
+  /**
+   * The maximum size of one request. Defined by the API.
+   */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
   }
@@ -222,7 +225,6 @@ class ConnectionWorker implements AutoCloseable {
           Status.fromCode(Code.INVALID_ARGUMENT)
               .withDescription("Writer schema must be provided when building this writer."));
     }
-    this.writerSchema = writerSchema;
     this.maxInflightRequests = maxInflightRequests;
     this.maxInflightBytes = maxInflightBytes;
     this.limitExceededBehavior = limitExceededBehavior;
@@ -244,7 +246,12 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void resetConnection() {
-    log.info("Reconnecting for stream:" + streamName);
+    log.info("Reconnecting for stream:" + streamName + " id: " + writerId);
+    if (this.streamConnection != null) {
+      // It's safe to directly close the previous connection as the in flight messages
+      // will be picked up by the next connection.
+      this.streamConnection.close();
+    }
     this.streamConnection =
         new StreamConnection(
             this.client,
@@ -260,28 +267,41 @@ class ConnectionWorker implements AutoCloseable {
                 doneCallback(finalStatus);
               }
             });
+    log.info("Reconnect done for stream:" + streamName + " id: " + writerId);
   }
 
-  /** Schedules the writing of rows at given offset. */
-  ApiFuture<AppendRowsResponse> append(
-      String streamName,
-      ProtoSchema writerSchema,
-      ProtoRows rows,
-      long offset,
-      Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueMap) {
+  /**
+   * Schedules the writing of rows at given offset.
+   */
+  ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
+    Preconditions.checkNotNull(streamWriter);
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(
-        ProtoData.newBuilder().setWriterSchema(writerSchema).setRows(rows).build());
+        ProtoData.newBuilder()
+            .setWriterSchema(streamWriter.getProtoSchema())
+            .setRows(rows)
+            .build());
     if (offset >= 0) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
-    requestBuilder.setWriteStream(streamName);
-    requestBuilder.putAllMissingValueInterpretations(missingValueMap);
-    return appendInternal(requestBuilder.build());
+    requestBuilder.setWriteStream(streamWriter.getStreamName());
+    requestBuilder.putAllMissingValueInterpretations(
+        streamWriter.getMissingValueInterpretationMap());
+    return appendInternal(streamWriter, requestBuilder.build());
   }
 
-  private ApiFuture<AppendRowsResponse> appendInternal(AppendRowsRequest message) {
-    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message);
+  Boolean isUserClosed() {
+    this.lock.lock();
+    try {
+      return userClosed;
+    } finally {
+      this.lock.unlock();
+    }
+  }
+
+  private ApiFuture<AppendRowsResponse> appendInternal(
+      StreamWriter streamWriter, AppendRowsRequest message) {
+    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message, streamWriter);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
@@ -379,12 +399,26 @@ class ConnectionWorker implements AutoCloseable {
     return inflightWaitSec.longValue();
   }
 
-  /** @return a unique Id for the writer. */
+  /**
+   * @return a unique Id for the writer.
+   */
   public String getWriterId() {
     return writerId;
   }
 
-  /** Close the stream writer. Shut down all resources. */
+  boolean isConnectionInUnrecoverableState() {
+    this.lock.lock();
+    try {
+      // If final status is set, there's no
+      return connectionFinalStatus != null;
+    } finally {
+      this.lock.unlock();
+    }
+  }
+
+  /**
+   * Close the stream writer. Shut down all resources.
+   */
   @Override
   public void close() {
     log.info("User closing stream: " + streamName);
@@ -394,13 +428,18 @@ class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
-    log.fine("Waiting for append thread to finish. Stream: " + streamName);
+    log.fine("Waiting for append thread to finish. Stream: " + streamName + " id: " + writerId);
     try {
       appendThread.join();
     } catch (InterruptedException e) {
       // Unexpected. Just swallow the exception with logging.
       log.warning(
-          "Append handler join is interrupted. Stream: " + streamName + " Error: " + e.toString());
+          "Append handler join is interrupted. Stream: "
+              + streamName
+              + " id: "
+              + writerId
+              + " Error: "
+              + e.toString());
     }
     this.client.close();
     try {
@@ -410,7 +449,11 @@ class ConnectionWorker implements AutoCloseable {
     }
 
     try {
-      log.fine("Begin shutting down user callback thread pool for stream " + streamName);
+      log.fine(
+          "Begin shutting down user callback thread pool for stream "
+              + streamName
+              + " id: "
+              + writerId);
       threadPool.shutdown();
       threadPool.awaitTermination(3, TimeUnit.MINUTES);
     } catch (InterruptedException e) {
@@ -418,6 +461,8 @@ class ConnectionWorker implements AutoCloseable {
       log.warning(
           "Close on thread pool for "
               + streamName
+              + " id: "
+              + writerId
               + " is interrupted with exception: "
               + e.toString());
       throw new IllegalStateException(
@@ -437,7 +482,7 @@ class ConnectionWorker implements AutoCloseable {
 
     // Indicate whether we are at the first request after switching destination.
     // True means the schema and other metadata are needed.
-    boolean firstRequestForDestinationSwitch = true;
+    boolean firstRequestForTableOrSchemaSwitch = true;
     // Represent whether we have entered multiplexing.
     boolean isMultiplexing = false;
 
@@ -466,6 +511,8 @@ class ConnectionWorker implements AutoCloseable {
         log.warning(
             "Interrupted while waiting for message. Stream: "
                 + streamName
+                + " id: "
+                + writerId
                 + " Error: "
                 + e.toString());
       } finally {
@@ -488,25 +535,35 @@ class ConnectionWorker implements AutoCloseable {
         resetConnection();
         // Set firstRequestInConnection to indicate the next request to be sent should include
         // metedata. Reset everytime after reconnection.
-        firstRequestForDestinationSwitch = true;
+        firstRequestForTableOrSchemaSwitch = true;
       }
       while (!localQueue.isEmpty()) {
         AppendRowsRequest originalRequest = localQueue.pollFirst().message;
         AppendRowsRequest.Builder originalRequestBuilder = originalRequest.toBuilder();
-
-        // Consider we enter multiplexing if we met a different non empty stream name.
-        if (!originalRequest.getWriteStream().isEmpty()
+        // Always respect the first writer schema seen by the loop.
+        if (writerSchema == null) {
+          writerSchema = originalRequest.getProtoRows().getWriterSchema();
+        }
+        // Consider we enter multiplexing if we met a different non empty stream name or we meet
+        // a new schema for the same stream name.
+        // For the schema comparision we don't use message differencer to speed up the comparing
+        // process. `equals(...)` can bring us false positive, e.g. two repeated field can be
+        // considered the same but is not considered equals(). However as long as it's never provide
+        // false negative we will always correctly pass writer schema to backend.
+        if ((!originalRequest.getWriteStream().isEmpty()
             && !streamName.isEmpty()
-            && !originalRequest.getWriteStream().equals(streamName)) {
+            && !originalRequest.getWriteStream().equals(streamName))
+            || (originalRequest.getProtoRows().hasWriterSchema()
+            && !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema))) {
           streamName = originalRequest.getWriteStream();
+          writerSchema = originalRequest.getProtoRows().getWriterSchema();
           isMultiplexing = true;
-          firstRequestForDestinationSwitch = true;
+          firstRequestForTableOrSchemaSwitch = true;
         }
 
-        if (firstRequestForDestinationSwitch) {
+        if (firstRequestForTableOrSchemaSwitch) {
           // If we are at the first request for every table switch, including the first request in
           // the connection, we will attach both stream name and table schema to the request.
-          // We don't support change of schema change during multiplexing for the saeme stream name.
           destinationSet.add(streamName);
           if (this.traceId != null) {
             originalRequestBuilder.setTraceId(this.traceId);
@@ -516,17 +573,11 @@ class ConnectionWorker implements AutoCloseable {
           originalRequestBuilder.clearWriteStream();
         }
 
-        // We don't use message differencer to speed up the comparing process.
-        // `equals(...)` can bring us false positive, e.g. two repeated field can be considered the
-        // same but is not considered equals(). However as long as it's never provide false negative
-        // we will always correctly pass writer schema to backend.
-        if (firstRequestForDestinationSwitch
-            || !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema)) {
-          writerSchema = originalRequest.getProtoRows().getWriterSchema();
-        } else {
+        // During non table/schema switch requests, clear writer schema.
+        if (!firstRequestForTableOrSchemaSwitch) {
           originalRequestBuilder.getProtoRowsBuilder().clearWriterSchema();
         }
-        firstRequestForDestinationSwitch = false;
+        firstRequestForTableOrSchemaSwitch = false;
 
         // Send should only throw an exception if there is a problem with the request. The catch
         // block will handle this case, and return the exception with the result.
@@ -537,17 +588,11 @@ class ConnectionWorker implements AutoCloseable {
         // TODO: Handle NOT_ENOUGH_QUOTA.
         // In the close case, the request is in the inflight queue, and will either be returned
         // to the user with an error, or will be resent.
-        log.fine(
-            "Sending "
-                + originalRequestBuilder.getProtoRows().getRows().getSerializedRowsCount()
-                + " rows to stream '"
-                + originalRequestBuilder.getWriteStream()
-                + "'");
         this.streamConnection.send(originalRequestBuilder.build());
       }
     }
 
-    log.fine("Cleanup starts. Stream: " + streamName);
+    log.fine("Cleanup starts. Stream: " + streamName + " id: " + writerId);
     // At this point, the waiting queue is drained, so no more requests.
     // We can close the stream connection and handle the remaining inflight requests.
     if (streamConnection != null) {
@@ -557,9 +602,12 @@ class ConnectionWorker implements AutoCloseable {
 
     // At this point, there cannot be more callback. It is safe to clean up all inflight requests.
     log.fine(
-        "Stream connection is fully closed. Cleaning up inflight requests. Stream: " + streamName);
+        "Stream connection is fully closed. Cleaning up inflight requests. Stream: "
+            + streamName
+            + " id: "
+            + writerId);
     cleanupInflightRequests();
-    log.fine("Append thread is done. Stream: " + streamName);
+    log.fine("Append thread is done. Stream: " + streamName + " id: " + writerId);
   }
 
   /*
@@ -579,7 +627,11 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void waitForDoneCallback(long duration, TimeUnit timeUnit) {
-    log.fine("Waiting for done callback from stream connection. Stream: " + streamName);
+    log.fine(
+        "Waiting for done callback from stream connection. Stream: "
+            + streamName
+            + " id: "
+            + writerId);
     long deadline = System.nanoTime() + timeUnit.toNanos(duration);
     while (System.nanoTime() <= deadline) {
       this.lock.lock();
@@ -628,23 +680,29 @@ class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
-    log.fine("Cleaning " + localQueue.size() + " inflight requests with error: " + finalStatus);
+    log.fine(
+        "Cleaning "
+            + localQueue.size()
+            + " inflight requests with error: "
+            + finalStatus
+            + " for Stream "
+            + streamName
+            + " id: "
+            + writerId);
     while (!localQueue.isEmpty()) {
       localQueue.pollFirst().appendResult.setException(finalStatus);
     }
   }
 
   private void requestCallback(AppendRowsResponse response) {
-    if (!response.hasUpdatedSchema()) {
-      log.fine(String.format("Got response on stream %s", response.toString()));
-    } else {
+    if (response.hasUpdatedSchema()) {
       AppendRowsResponse responseWithUpdatedSchemaRemoved =
           response.toBuilder().clearUpdatedSchema().build();
 
       log.fine(
           String.format(
-              "Got response with schema updated (omitting updated schema in response here): %s",
-              responseWithUpdatedSchemaRemoved.toString()));
+              "Got response with schema updated (omitting updated schema in response here): %s writer id %s",
+              responseWithUpdatedSchemaRemoved.toString(), writerId));
     }
 
     AppendRequestAndResponse requestWrapper;
@@ -721,20 +779,22 @@ class ConnectionWorker implements AutoCloseable {
         });
   }
 
-  private boolean isRetriableError(Throwable t) {
+  private boolean isConnectionErrorRetriable(Throwable t) {
     Status status = Status.fromThrowable(t);
-    if (Errors.isRetryableInternalStatus(status)) {
-      return true;
-    }
     return status.getCode() == Code.ABORTED
         || status.getCode() == Code.UNAVAILABLE
-        || status.getCode() == Code.CANCELLED;
+        || status.getCode() == Code.CANCELLED
+        || status.getCode() == Code.INTERNAL
+        || status.getCode() == Code.FAILED_PRECONDITION
+        || status.getCode() == Code.DEADLINE_EXCEEDED;
   }
 
   private void doneCallback(Throwable finalStatus) {
     log.fine(
         "Received done callback. Stream: "
             + streamName
+            + " worker id: "
+            + writerId
             + " Final status: "
             + finalStatus.toString());
     this.lock.lock();
@@ -745,11 +805,11 @@ class ConnectionWorker implements AutoCloseable {
           connectionRetryStartTime = System.currentTimeMillis();
         }
         // If the error can be retried, don't set it here, let it try to retry later on.
-        if (isRetriableError(finalStatus)
+        if (isConnectionErrorRetriable(finalStatus)
             && !userClosed
             && (maxRetryDuration.toMillis() == 0f
-                || System.currentTimeMillis() - connectionRetryStartTime
-                    <= maxRetryDuration.toMillis())) {
+            || System.currentTimeMillis() - connectionRetryStartTime
+            <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
           log.info(
               "Retriable error "
@@ -758,7 +818,7 @@ class ConnectionWorker implements AutoCloseable {
                   + conectionRetryCountWithoutCallback
                   + ", millis left to retry "
                   + (maxRetryDuration.toMillis()
-                      - (System.currentTimeMillis() - connectionRetryStartTime))
+                  - (System.currentTimeMillis() - connectionRetryStartTime))
                   + ", for stream "
                   + streamName);
         } else {
@@ -785,25 +845,34 @@ class ConnectionWorker implements AutoCloseable {
     return requestWrapper;
   }
 
-  /** Thread-safe getter of updated TableSchema */
+  /**
+   * Thread-safe getter of updated TableSchema
+   */
   synchronized TableSchemaAndTimestamp getUpdatedSchema() {
     return this.updatedSchema;
   }
 
   // Class that wraps AppendRowsRequest and its corresponding Response future.
-  private static final class AppendRequestAndResponse {
+  static final class AppendRequestAndResponse {
+
     final SettableApiFuture<AppendRowsResponse> appendResult;
     final AppendRowsRequest message;
     final long messageSize;
 
-    AppendRequestAndResponse(AppendRowsRequest message) {
+    // The writer that issues the call of the request.
+    final StreamWriter streamWriter;
+
+    AppendRequestAndResponse(AppendRowsRequest message, StreamWriter streamWriter) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
       this.messageSize = message.getProtoRows().getSerializedSize();
+      this.streamWriter = streamWriter;
     }
   }
 
-  /** Returns the current workload of this worker. */
+  /**
+   * Returns the current workload of this worker.
+   */
   public Load getLoad() {
     return Load.create(
         inflightBytes,
@@ -819,6 +888,7 @@ class ConnectionWorker implements AutoCloseable {
    */
   @AutoValue
   public abstract static class Load {
+
     // Consider the load on this worker to be overwhelmed when above some percentage of
     // in-flight bytes or in-flight requests count.
     private static double overwhelmedInflightCount = 0.2;
@@ -892,6 +962,7 @@ class ConnectionWorker implements AutoCloseable {
 
   @AutoValue
   abstract static class TableSchemaAndTimestamp {
+
     // Shows the timestamp updated schema is reported from response
     abstract long updateTimeStamp();
 

@@ -1,5 +1,58 @@
 # Changelog
 
+## [2.31.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.31.0...v2.31.1) (2023-02-14)
+
+
+### Bug Fixes
+
+* Refactor only, add StreamWriter to AppendRowsRequestResponse ([#1981](https://github.com/googleapis/java-bigquerystorage/issues/1981)) ([da06a46](https://github.com/googleapis/java-bigquerystorage/commit/da06a4623e89b5f3caf90f85dd87d8538fc7d312))
+* Support ByteString values on repeated fields ([#1996](https://github.com/googleapis/java-bigquerystorage/issues/1996)) ([0263b00](https://github.com/googleapis/java-bigquerystorage/commit/0263b0054fbb7d9f49157f507cfe11c5b5816b07))
+
+## [2.31.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.30.0...v2.31.0) (2023-02-08)
+
+
+### Features
+
+* Add isDone to JsonWriter to indicate a JsonWriter is no longer usable and needs to be recreated. ([#1978](https://github.com/googleapis/java-bigquerystorage/issues/1978)) ([dc07ed8](https://github.com/googleapis/java-bigquerystorage/commit/dc07ed84778028f149cab3883af9bb9a7929efd1))
+* Add isUserClosed to indicate that user explicitly closed the StreamWriter ([#1983](https://github.com/googleapis/java-bigquerystorage/issues/1983)) ([abd6627](https://github.com/googleapis/java-bigquerystorage/commit/abd66274abca2315739c1b388dd363e107baad85))
+
+
+### Dependencies
+
+* Update arrow.version to v11 (major) ([#1961](https://github.com/googleapis/java-bigquerystorage/issues/1961)) ([c13ab23](https://github.com/googleapis/java-bigquerystorage/commit/c13ab23a96d72d5087653ebaf0a0635863a526a9))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.21.0 ([#1956](https://github.com/googleapis/java-bigquerystorage/issues/1956)) ([6a1d783](https://github.com/googleapis/java-bigquerystorage/commit/6a1d783b80bdd0e1846ee667e2a15d41e3f6980f))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.2.0 ([#1974](https://github.com/googleapis/java-bigquerystorage/issues/1974)) ([8e2c1e3](https://github.com/googleapis/java-bigquerystorage/commit/8e2c1e326d6a65ba814ef826cfcb98c58395f01f))
+* Update dependency org.apache.arrow:arrow-memory-netty to v11 ([#1962](https://github.com/googleapis/java-bigquerystorage/issues/1962)) ([48abc75](https://github.com/googleapis/java-bigquerystorage/commit/48abc75cdd2c372751790c197b83cf3aa59f1055))
+* Update dependency org.apache.arrow:arrow-vector to v11 ([#1963](https://github.com/googleapis/java-bigquerystorage/issues/1963)) ([e872723](https://github.com/googleapis/java-bigquerystorage/commit/e87272323a0267771f3ffbc857fbaf06c6656f90))
+
+## [2.30.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.29.0...v2.30.0) (2023-02-06)
+
+
+### Features
+
+* Add userClose flag back to StreamWriter ([#1973](https://github.com/googleapis/java-bigquerystorage/issues/1973)) ([4b51acd](https://github.com/googleapis/java-bigquerystorage/commit/4b51acd49292d99e1c3cd670bec695b8bcd3b5c4))
+
+
+### Bug Fixes
+
+* Close stream connection before each retry ([#1975](https://github.com/googleapis/java-bigquerystorage/issues/1975)) ([54e9bb9](https://github.com/googleapis/java-bigquerystorage/commit/54e9bb9116eb9781b6f2266f98de4d3853a469b8))
+* Improve ConnectionWorker fine logging ([#1972](https://github.com/googleapis/java-bigquerystorage/issues/1972)) ([812bcf1](https://github.com/googleapis/java-bigquerystorage/commit/812bcf16efdc7a1797435f0b87430c35f27f7245))
+
+## [2.29.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.28.4...v2.29.0) (2023-02-01)
+
+
+### Features
+
+* Add timeout to inflight queue waiting ([#1957](https://github.com/googleapis/java-bigquerystorage/issues/1957)) ([3159b12](https://github.com/googleapis/java-bigquerystorage/commit/3159b120e5cd388cf9776a1fa928a3e6ae105d9d))
+* Allow java client to handle schema change during same stream name  ([#1964](https://github.com/googleapis/java-bigquerystorage/issues/1964)) ([305f71e](https://github.com/googleapis/java-bigquerystorage/commit/305f71ee4b274df58388fc3000e9f5da9fc908e1))
+
+
+### Bug Fixes
+
+* At connection level, retry for internal errors ([#1965](https://github.com/googleapis/java-bigquerystorage/issues/1965)) ([9c01bc1](https://github.com/googleapis/java-bigquerystorage/commit/9c01bc11b51dc1e3e209e4d6b666b9ddd3212cf5))
+* Reduce visibility of the ConnectionPool and ConnectionWorker, so… ([#1954](https://github.com/googleapis/java-bigquerystorage/issues/1954)) ([dcb234b](https://github.com/googleapis/java-bigquerystorage/commit/dcb234b95d0812d4d91b0c206d0b7e0fb30ab0fa))
+* Remove unrecoverable connection from connection pool during multiplexing  ([#1967](https://github.com/googleapis/java-bigquerystorage/issues/1967)) ([091dddb](https://github.com/googleapis/java-bigquerystorage/commit/091dddb9b2baf1f4b481e8d7961d451b71a8508b))
+
 ## [2.28.4](https://github.com/googleapis/java-bigquerystorage/compare/v2.28.3...v2.28.4) (2023-01-25)
 
 
