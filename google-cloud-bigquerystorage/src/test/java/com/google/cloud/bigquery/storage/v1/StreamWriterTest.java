@@ -29,6 +29,7 @@ import com.google.api.gax.core.GoogleCredentialsProvider;
 import com.google.api.gax.core.InstantiatingExecutorProvider;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.InstantiatingGrpcChannelProvider;
+import com.google.api.gax.grpc.testing.LocalChannelProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
 import com.google.api.gax.rpc.AbortedException;
@@ -1346,10 +1347,7 @@ public class StreamWriterTest {
             .setEndpoint("xxx:345")
             .setBackgroundExecutorProvider(
                 InstantiatingExecutorProvider.newBuilder().setExecutorThreadCount(4).build())
-            .setTransportChannelProvider(
-                BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
-                    .setKeepAliveTimeout(Duration.ofSeconds(300))
-                    .build())
+            .setTransportChannelProvider(serviceHelper.createChannelProvider())
             .setCredentialsProvider(
                 BigQueryWriteSettings.defaultCredentialsProviderBuilder()
                     .setScopesToApply(Arrays.asList("A"))
@@ -1365,13 +1363,6 @@ public class StreamWriterTest {
         4,
         ((InstantiatingExecutorProvider) writerSettings.getBackgroundExecutorProvider())
             .getExecutorThreadCount());
-    assertTrue(
-        writerSettings.getTransportChannelProvider() instanceof InstantiatingGrpcChannelProvider);
-
-    assertEquals(
-        Duration.ofSeconds(300),
-        ((InstantiatingGrpcChannelProvider) writerSettings.getTransportChannelProvider())
-            .getKeepAliveTimeout());
     assertTrue(writerSettings.getCredentialsProvider() instanceof GoogleCredentialsProvider);
     assertEquals(
         1,
@@ -1385,10 +1376,6 @@ public class StreamWriterTest {
             .setEndpoint("yyy:345")
             .setExecutorProvider(
                 InstantiatingExecutorProvider.newBuilder().setExecutorThreadCount(14).build())
-            .setChannelProvider(
-                BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
-                    .setKeepAliveTimeout(Duration.ofSeconds(500))
-                    .build())
             .setCredentialsProvider(
                 BigQueryWriteSettings.defaultCredentialsProviderBuilder()
                     .setScopesToApply(Arrays.asList("A", "B"))
@@ -1402,13 +1389,10 @@ public class StreamWriterTest {
         14,
         ((InstantiatingExecutorProvider) writerSettings2.getBackgroundExecutorProvider())
             .getExecutorThreadCount());
-    assertTrue(
-        writerSettings2.getTransportChannelProvider() instanceof InstantiatingGrpcChannelProvider);
-
+    assertTrue(writerSettings2.getTransportChannelProvider() instanceof LocalChannelProvider);
     assertEquals(
-        Duration.ofSeconds(500),
-        ((InstantiatingGrpcChannelProvider) writerSettings2.getTransportChannelProvider())
-            .getKeepAliveTimeout());
+        "grpc",
+        ((LocalChannelProvider) writerSettings2.getTransportChannelProvider()).getTransportName());
     assertTrue(writerSettings2.getCredentialsProvider() instanceof GoogleCredentialsProvider);
     assertEquals(
         2,
