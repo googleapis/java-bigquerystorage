@@ -441,6 +441,7 @@ public class StreamWriter implements AutoCloseable {
   public Map<String, AppendRowsRequest.MissingValueInterpretation>
       getMissingValueInterpretationMap() {
     return missingValueInterpretationMap;
+  }
 
   /**
    * @return if a stream writer can no longer be used for writing. It is due to either the
