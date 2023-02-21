@@ -1250,14 +1250,14 @@ public class StreamWriterTest {
 
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     // The first append doesn't use a missing value map.
-    futures.add(writer.append(createProtoRows(new String[]{String.valueOf(0)}), 0));
+    futures.add(writer.append(createProtoRows(new String[] {String.valueOf(0)}), 0));
 
     // The second append uses a missing value map.
     Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueMap = new HashMap();
     missingValueMap.put("col1", AppendRowsRequest.MissingValueInterpretation.NULL_VALUE);
     missingValueMap.put("col3", AppendRowsRequest.MissingValueInterpretation.DEFAULT_VALUE);
     writer.setMissingValueInterpretationMap(missingValueMap);
-    futures.add(writer.append(createProtoRows(new String[]{String.valueOf(1)}), 1));
+    futures.add(writer.append(createProtoRows(new String[] {String.valueOf(1)}), 1));
 
     for (int i = 0; i < appendCount; i++) {
       assertEquals(i, futures.get(i).get().getAppendResult().getOffset().getValue());
