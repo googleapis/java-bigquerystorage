@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.32.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.32.0...v2.32.1) (2023-02-22)
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.22.0 ([#1991](https://github.com/googleapis/java-bigquerystorage/issues/1991)) ([0684e7c](https://github.com/googleapis/java-bigquerystorage/commit/0684e7cf0f0b4d8ff343aee29f252489fe6c1ee7))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.3.0 ([#2003](https://github.com/googleapis/java-bigquerystorage/issues/2003)) ([d146bec](https://github.com/googleapis/java-bigquerystorage/commit/d146becd5bf1022a4259c027a5e9b8db262170ea))
+
+## [2.32.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.31.1...v2.32.0) (2023-02-21)
+
+
+### Features
+
+* Add default_value_expression to TableFieldSchema ([#1988](https://github.com/googleapis/java-bigquerystorage/issues/1988)) ([89c767f](https://github.com/googleapis/java-bigquerystorage/commit/89c767f059ead3ce30842a478e395ac657f4b4ef))
+* Add functions to set missing value map in the stream writers ([#1966](https://github.com/googleapis/java-bigquerystorage/issues/1966)) ([98d7e44](https://github.com/googleapis/java-bigquerystorage/commit/98d7e446b75aba02ce27cdcb5e835c3fd0f3ad54))
+
+
+### Bug Fixes
+
+* Extra logging for investigation of the stuck case. ([#1999](https://github.com/googleapis/java-bigquerystorage/issues/1999)) ([e6ee13a](https://github.com/googleapis/java-bigquerystorage/commit/e6ee13a70304c2278d6b7a94dc19049a2b786a6e))
+
+## [2.31.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.31.0...v2.31.1) (2023-02-14)
+
+
+### Bug Fixes
+
+* Refactor only, add StreamWriter to AppendRowsRequestResponse ([#1981](https://github.com/googleapis/java-bigquerystorage/issues/1981)) ([da06a46](https://github.com/googleapis/java-bigquerystorage/commit/da06a4623e89b5f3caf90f85dd87d8538fc7d312))
+* Support ByteString values on repeated fields ([#1996](https://github.com/googleapis/java-bigquerystorage/issues/1996)) ([0263b00](https://github.com/googleapis/java-bigquerystorage/commit/0263b0054fbb7d9f49157f507cfe11c5b5816b07))
+
 ## [2.31.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.30.0...v2.31.0) (2023-02-08)
 
 

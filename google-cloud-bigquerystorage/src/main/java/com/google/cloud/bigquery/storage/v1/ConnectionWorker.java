@@ -59,6 +59,7 @@ import javax.annotation.concurrent.GuardedBy;
  * <p>TODO: support updated schema
  */
 class ConnectionWorker implements AutoCloseable {
+
   private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
 
   // Maximum wait time on inflight quota before error out.
@@ -280,6 +281,8 @@ class ConnectionWorker implements AutoCloseable {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
     requestBuilder.setWriteStream(streamWriter.getStreamName());
+    requestBuilder.putAllMissingValueInterpretations(
+        streamWriter.getMissingValueInterpretationMap());
     return appendInternal(streamWriter, requestBuilder.build());
   }
 
@@ -581,7 +584,17 @@ class ConnectionWorker implements AutoCloseable {
       }
     }
 
-    log.fine("Cleanup starts. Stream: " + streamName + " id: " + writerId);
+    log.info(
+        "Cleanup starts. Stream: "
+            + streamName
+            + " id: "
+            + writerId
+            + " userClose: "
+            + userClosed
+            + " final exception: "
+            + (this.connectionFinalStatus == null
+                ? "null"
+                : this.connectionFinalStatus.toString()));
     // At this point, the waiting queue is drained, so no more requests.
     // We can close the stream connection and handle the remaining inflight requests.
     if (streamConnection != null) {
@@ -590,13 +603,13 @@ class ConnectionWorker implements AutoCloseable {
     }
 
     // At this point, there cannot be more callback. It is safe to clean up all inflight requests.
-    log.fine(
+    log.info(
         "Stream connection is fully closed. Cleaning up inflight requests. Stream: "
             + streamName
             + " id: "
             + writerId);
     cleanupInflightRequests();
-    log.fine("Append thread is done. Stream: " + streamName + " id: " + writerId);
+    log.info("Append thread is done. Stream: " + streamName + " id: " + writerId);
   }
 
   /*
@@ -809,7 +822,9 @@ class ConnectionWorker implements AutoCloseable {
                   + (maxRetryDuration.toMillis()
                       - (System.currentTimeMillis() - connectionRetryStartTime))
                   + ", for stream "
-                  + streamName);
+                  + streamName
+                  + " id:"
+                  + writerId);
         } else {
           Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
           this.connectionFinalStatus = storageException != null ? storageException : finalStatus;
@@ -841,6 +856,7 @@ class ConnectionWorker implements AutoCloseable {
 
   // Class that wraps AppendRowsRequest and its corresponding Response future.
   static final class AppendRequestAndResponse {
+
     final SettableApiFuture<AppendRowsResponse> appendResult;
     final AppendRowsRequest message;
     final long messageSize;
@@ -872,6 +888,7 @@ class ConnectionWorker implements AutoCloseable {
    */
   @AutoValue
   public abstract static class Load {
+
     // Consider the load on this worker to be overwhelmed when above some percentage of
     // in-flight bytes or in-flight requests count.
     private static double overwhelmedInflightCount = 0.2;
@@ -945,6 +962,7 @@ class ConnectionWorker implements AutoCloseable {
 
   @AutoValue
   abstract static class TableSchemaAndTimestamp {
+
     // Shows the timestamp updated schema is reported from response
     abstract long updateTimeStamp();
 
