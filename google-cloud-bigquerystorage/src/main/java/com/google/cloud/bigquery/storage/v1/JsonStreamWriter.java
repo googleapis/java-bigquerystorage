@@ -164,7 +164,6 @@ public class JsonStreamWriter implements AutoCloseable {
         // TODO(yiru): We should let TableSchema return a timestamp so that we can simply
         //     compare the timestamp to see if the table schema is the same. If it is the
         //     same, we don't need to go refresh the writer again.
-        LOG.warning("The schema gotten is " + this.tableSchema.toString());
         refreshWriter(writeStream.getTableSchema());
         return JsonToProtoMessage.convertJsonToProtoMessage(
             this.descriptor, this.tableSchema, json, ignoreUnknownFields);
@@ -203,13 +202,11 @@ public class JsonStreamWriter implements AutoCloseable {
         JSONObject json = jsonArr.getJSONObject(i);
         try {
           Message protoMessage = buildMessage(json);
-          // LOG.warning("The proto messgae is " + protoMessage.toString());
           rowsBuilder.addSerializedRows(protoMessage.toByteString());
           currentRequestSize += protoMessage.getSerializedSize();
         } catch (IllegalArgumentException exception) {
           if (exception instanceof Exceptions.FieldParseError) {
             Exceptions.FieldParseError ex = (Exceptions.FieldParseError) exception;
-            LOG.warning("Get field pares error " + i + " " + exception.getMessage());
             rowIndexToErrorMessage.put(
                 i,
                 "Field "
@@ -219,7 +216,6 @@ public class JsonStreamWriter implements AutoCloseable {
                     + ". Error: "
                     + ex.getCause().getMessage());
           } else {
-            LOG.warning("Get else error " + i + " " + exception.getMessage());
             rowIndexToErrorMessage.put(i, exception.getMessage());
           }
         } catch (InterruptedException ex) {
@@ -277,6 +273,24 @@ public class JsonStreamWriter implements AutoCloseable {
    */
   public long getInflightWaitSeconds() {
     return streamWriter.getInflightWaitSeconds();
+  }
+
+  /**
+   * Sets the missing value interpretation map for the JsonStreamWriter. The input
+   * missingValueInterpretationMap is used for all append requests unless otherwise changed.
+   *
+   * @param missingValueInterpretationMap the missing value interpretation map used by the
+   *     JsonStreamWriter.
+   */
+  public void setMissingValueInterpretationMap(
+      Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap) {
+    streamWriter.setMissingValueInterpretationMap(missingValueInterpretationMap);
+  }
+
+  /** @return the missing value interpretation map used for the writer. */
+  public Map<String, AppendRowsRequest.MissingValueInterpretation>
+      getMissingValueInterpretationMap() {
+    return streamWriter.getMissingValueInterpretationMap();
   }
 
   /** Sets all StreamWriter settings. */
@@ -391,8 +405,13 @@ public class JsonStreamWriter implements AutoCloseable {
    *     JsonStreamWriter is explicitly closed or the underlying connection is broken when
    *     connection pool is not used. Client should recreate JsonStreamWriter in this case.
    */
-  public boolean isDone() {
-    return this.streamWriter.isDone();
+  public boolean isClosed() {
+    return this.streamWriter.isClosed();
+  }
+
+  /** @return if user explicitly closed the writer. */
+  public boolean isUserClosed() {
+    return this.streamWriter.isUserClosed();
   }
 
   public static final class Builder {

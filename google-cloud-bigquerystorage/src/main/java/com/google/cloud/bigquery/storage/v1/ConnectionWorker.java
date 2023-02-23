@@ -24,6 +24,7 @@ import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.RequestCallback;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.Int64Value;
 import io.grpc.Status;
@@ -58,6 +59,7 @@ import javax.annotation.concurrent.GuardedBy;
  * <p>TODO: support updated schema
  */
 class ConnectionWorker implements AutoCloseable {
+
   private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
 
   // Maximum wait time on inflight quota before error out.
@@ -294,16 +296,21 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   /** Schedules the writing of rows at given offset. */
-  ApiFuture<AppendRowsResponse> append(
-      String streamName, ProtoSchema writerSchema, ProtoRows rows, long offset) {
+  ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
+    Preconditions.checkNotNull(streamWriter);
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(
-        ProtoData.newBuilder().setWriterSchema(writerSchema).setRows(rows).build());
+        ProtoData.newBuilder()
+            .setWriterSchema(streamWriter.getProtoSchema())
+            .setRows(rows)
+            .build());
     if (offset >= 0) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
-    requestBuilder.setWriteStream(streamName);
-    return appendInternal(requestBuilder.build());
+    requestBuilder.setWriteStream(streamWriter.getStreamName());
+    requestBuilder.putAllMissingValueInterpretations(
+        streamWriter.getMissingValueInterpretationMap());
+    return appendInternal(streamWriter, requestBuilder.build());
   }
 
   Boolean isUserClosed() {
@@ -315,8 +322,9 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  private ApiFuture<AppendRowsResponse> appendInternal(AppendRowsRequest message) {
-    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message);
+  private ApiFuture<AppendRowsResponse> appendInternal(
+      StreamWriter streamWriter, AppendRowsRequest message) {
+    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message, streamWriter);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
@@ -623,7 +631,17 @@ class ConnectionWorker implements AutoCloseable {
       }
     }
 
-    log.fine("Cleanup starts. Stream: " + streamName + " id: " + writerId);
+    log.info(
+        "Cleanup starts. Stream: "
+            + streamName
+            + " id: "
+            + writerId
+            + " userClose: "
+            + userClosed
+            + " final exception: "
+            + (this.connectionFinalStatus == null
+                ? "null"
+                : this.connectionFinalStatus.toString()));
     // At this point, the waiting queue is drained, so no more requests.
     // We can close the stream connection and handle the remaining inflight requests.
     if (streamConnection != null) {
@@ -632,13 +650,13 @@ class ConnectionWorker implements AutoCloseable {
     }
 
     // At this point, there cannot be more callback. It is safe to clean up all inflight requests.
-    log.fine(
+    log.info(
         "Stream connection is fully closed. Cleaning up inflight requests. Stream: "
             + streamName
             + " id: "
             + writerId);
     cleanupInflightRequests();
-    log.fine("Append thread is done. Stream: " + streamName + " id: " + writerId);
+    log.info("Append thread is done. Stream: " + streamName + " id: " + writerId);
   }
 
   /*
@@ -851,7 +869,9 @@ class ConnectionWorker implements AutoCloseable {
                   + (maxRetryDuration.toMillis()
                       - (System.currentTimeMillis() - connectionRetryStartTime))
                   + ", for stream "
-                  + streamName);
+                  + streamName
+                  + " id:"
+                  + writerId);
         } else {
           Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
           this.connectionFinalStatus = storageException != null ? storageException : finalStatus;
@@ -883,14 +903,19 @@ class ConnectionWorker implements AutoCloseable {
 
   // Class that wraps AppendRowsRequest and its corresponding Response future.
   static final class AppendRequestAndResponse {
+
     final SettableApiFuture<AppendRowsResponse> appendResult;
     final AppendRowsRequest message;
     final long messageSize;
 
-    AppendRequestAndResponse(AppendRowsRequest message) {
+    // The writer that issues the call of the request.
+    final StreamWriter streamWriter;
+
+    AppendRequestAndResponse(AppendRowsRequest message, StreamWriter streamWriter) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
       this.messageSize = message.getProtoRows().getSerializedSize();
+      this.streamWriter = streamWriter;
     }
   }
 
@@ -910,6 +935,7 @@ class ConnectionWorker implements AutoCloseable {
    */
   @AutoValue
   public abstract static class Load {
+
     // Consider the load on this worker to be overwhelmed when above some percentage of
     // in-flight bytes or in-flight requests count.
     private static double overwhelmedInflightCount = 0.2;
@@ -983,6 +1009,7 @@ class ConnectionWorker implements AutoCloseable {
 
   @AutoValue
   abstract static class TableSchemaAndTimestamp {
+
     // Shows the timestamp updated schema is reported from response
     abstract long updateTimeStamp();
 

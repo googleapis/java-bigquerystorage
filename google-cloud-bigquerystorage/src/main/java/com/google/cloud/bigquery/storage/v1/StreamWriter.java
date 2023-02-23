@@ -32,6 +32,7 @@ import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -60,6 +61,11 @@ public class StreamWriter implements AutoCloseable {
 
   // Cache of location info for a given dataset.
   private static Map<String, String> projectAndDatasetToLocation = new ConcurrentHashMap<>();
+
+  // Map of fields to their MissingValueInterpretation, which dictates how a field should be
+  // populated when it is missing from an input user row.
+  private Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap =
+      new HashMap();
 
   /*
    * The identifier of stream to write to.
@@ -145,8 +151,7 @@ public class StreamWriter implements AutoCloseable {
     public ApiFuture<AppendRowsResponse> append(
         StreamWriter streamWriter, ProtoRows protoRows, long offset) {
       if (getKind() == Kind.CONNECTION_WORKER) {
-        return connectionWorker()
-            .append(streamWriter.getStreamName(), streamWriter.getProtoSchema(), protoRows, offset);
+        return connectionWorker().append(streamWriter, protoRows, offset);
       } else {
         return connectionWorkerPool().append(streamWriter, protoRows, offset);
       }
@@ -338,6 +343,18 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
+   * Sets the missing value interpretation map for the stream writer. The input
+   * missingValueInterpretationMap is used for all write requests unless otherwise changed.
+   *
+   * @param missingValueInterpretationMap the missing value interpretation map used by stream
+   *     writer.
+   */
+  public void setMissingValueInterpretationMap(
+      Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap) {
+    this.missingValueInterpretationMap = missingValueInterpretationMap;
+  }
+
+  /**
    * Schedules the writing of rows at the end of current stream.
    *
    * @param rows the rows in serialized format to write to BigQuery.
@@ -376,7 +393,7 @@ public class StreamWriter implements AutoCloseable {
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
     if (userClosed.get()) {
       AppendRequestAndResponse requestWrapper =
-          new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build());
+          new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build(), this);
       requestWrapper.appendResult.setException(
           new Exceptions.StreamWriterClosedException(
               Status.fromCode(Status.Code.FAILED_PRECONDITION)
@@ -420,12 +437,18 @@ public class StreamWriter implements AutoCloseable {
     return location;
   }
 
+  /** @return the missing value interpretation map used for the writer. */
+  public Map<String, AppendRowsRequest.MissingValueInterpretation>
+      getMissingValueInterpretationMap() {
+    return missingValueInterpretationMap;
+  }
+
   /**
    * @return if a stream writer can no longer be used for writing. It is due to either the
    *     StreamWriter is explicitly closed or the underlying connection is broken when connection
    *     pool is not used. Client should recreate StreamWriter in this case.
    */
-  public boolean isDone() {
+  public boolean isClosed() {
     if (singleConnectionOrConnectionPool.getKind() == Kind.CONNECTION_WORKER) {
       return userClosed.get()
           || singleConnectionOrConnectionPool.connectionWorker().isConnectionInUnrecoverableState();
@@ -433,6 +456,11 @@ public class StreamWriter implements AutoCloseable {
       // With ConnectionPool, we will replace the bad connection automatically.
       return userClosed.get();
     }
+  }
+
+  /** @return if user explicitly closed the writer. */
+  public boolean isUserClosed() {
+    return userClosed.get();
   }
 
   /** Close the stream writer. Shut down all resources. */

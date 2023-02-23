@@ -49,7 +49,9 @@ import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -67,6 +69,7 @@ import org.threeten.bp.Duration;
 
 @RunWith(JUnit4.class)
 public class StreamWriterTest {
+
   private static final Logger log = Logger.getLogger(StreamWriterTest.class.getName());
   private static final String TEST_STREAM_1 = "projects/p/datasets/d1/tables/t1/streams/_default";
   private static final String TEST_STREAM_2 = "projects/p/datasets/d2/tables/t2/streams/_default";
@@ -1227,6 +1230,51 @@ public class StreamWriterTest {
     writer.close();
   }
 
+  @Test
+  public void testSetAndGetMissingValueInterpretationMap() throws Exception {
+    StreamWriter writer = getTestStreamWriter();
+    Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueMap = new HashMap();
+    missingValueMap.put("col1", AppendRowsRequest.MissingValueInterpretation.NULL_VALUE);
+    missingValueMap.put("col3", AppendRowsRequest.MissingValueInterpretation.DEFAULT_VALUE);
+    writer.setMissingValueInterpretationMap(missingValueMap);
+    assertEquals(missingValueMap, writer.getMissingValueInterpretationMap());
+  }
+
+  @Test
+  public void testAppendWithMissingValueMap() throws Exception {
+    StreamWriter writer = getTestStreamWriter();
+
+    long appendCount = 2;
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addResponse(createAppendResponse(1));
+
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    // The first append doesn't use a missing value map.
+    futures.add(writer.append(createProtoRows(new String[] {String.valueOf(0)}), 0));
+
+    // The second append uses a missing value map.
+    Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueMap = new HashMap();
+    missingValueMap.put("col1", AppendRowsRequest.MissingValueInterpretation.NULL_VALUE);
+    missingValueMap.put("col3", AppendRowsRequest.MissingValueInterpretation.DEFAULT_VALUE);
+    writer.setMissingValueInterpretationMap(missingValueMap);
+    futures.add(writer.append(createProtoRows(new String[] {String.valueOf(1)}), 1));
+
+    for (int i = 0; i < appendCount; i++) {
+      assertEquals(i, futures.get(i).get().getAppendResult().getOffset().getValue());
+    }
+
+    // Ensure that the AppendRowsRequest for the first append operation does not have a missing
+    // value map, and that the second AppendRowsRequest has the missing value map provided in the
+    // second append.
+    verifyAppendRequests(appendCount);
+    AppendRowsRequest request1 = testBigQueryWrite.getAppendRequests().get(0);
+    AppendRowsRequest request2 = testBigQueryWrite.getAppendRequests().get(1);
+    assertTrue(request1.getMissingValueInterpretations().isEmpty());
+    assertEquals(request2.getMissingValueInterpretations(), missingValueMap);
+
+    writer.close();
+  }
+
   @Test(timeout = 10000)
   public void testStreamWriterUserCloseMultiplexing() throws Exception {
     StreamWriter writer =
@@ -1237,7 +1285,7 @@ public class StreamWriterTest {
             .build();
 
     writer.close();
-    assertTrue(writer.isDone());
+    assertTrue(writer.isClosed());
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     ExecutionException ex =
         assertThrows(
@@ -1248,6 +1296,7 @@ public class StreamWriterTest {
     assertEquals(
         Status.Code.FAILED_PRECONDITION,
         ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+    assertTrue(writer.isUserClosed());
   }
 
   @Test(timeout = 10000)
@@ -1256,7 +1305,7 @@ public class StreamWriterTest {
         StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(createProtoSchema()).build();
 
     writer.close();
-    assertTrue(writer.isDone());
+    assertTrue(writer.isClosed());
     ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
     ExecutionException ex =
         assertThrows(
@@ -1267,6 +1316,7 @@ public class StreamWriterTest {
     assertEquals(
         Status.Code.FAILED_PRECONDITION,
         ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+    assertTrue(writer.isUserClosed());
   }
 
   @Test(timeout = 10000)
@@ -1291,7 +1341,8 @@ public class StreamWriterTest {
               appendFuture2.get();
             });
     assertTrue(ex.getCause() instanceof InvalidArgumentException);
-    assertFalse(writer.isDone());
+    assertFalse(writer.isClosed());
+    assertFalse(writer.isUserClosed());
   }
 
   @Test(timeout = 10000)
@@ -1311,7 +1362,8 @@ public class StreamWriterTest {
             () -> {
               appendFuture2.get();
             });
-    assertTrue(writer.isDone());
+    assertTrue(writer.isClosed());
     assertTrue(ex.getCause() instanceof InvalidArgumentException);
+    assertFalse(writer.isUserClosed());
   }
 }
