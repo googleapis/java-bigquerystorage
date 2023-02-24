@@ -18,6 +18,7 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
+import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
@@ -236,7 +237,12 @@ class ConnectionWorker implements AutoCloseable {
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     // Always recreate a client for connection worker.
-    this.client = BigQueryWriteClient.create(clientSettings);
+    HashMap<String, String> newHeaders = new HashMap<>();
+    newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
+    newHeaders.put("x-goog-request-params", "write_stream=" + streamName);
+    BigQueryWriteSettings stubSettings =
+        clientSettings.toBuilder().setHeaderProvider(FixedHeaderProvider.create(newHeaders)).build();
+    this.client = BigQueryWriteClient.create(stubSettings);
 
     this.appendThread =
         new Thread(
