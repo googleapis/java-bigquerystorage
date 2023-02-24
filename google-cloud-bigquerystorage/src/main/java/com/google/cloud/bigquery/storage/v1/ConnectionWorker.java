@@ -513,7 +513,7 @@ class ConnectionWorker implements AutoCloseable {
    *
    * It takes requests from waiting queue and sends them to server.
    */
-  private void appendLoop() {
+  private void appendLoop() throws IOException {
     Deque<AppendRequestAndResponse> localQueue = new LinkedList<AppendRequestAndResponse>();
     boolean streamNeedsConnecting = false;
 
@@ -570,7 +570,7 @@ class ConnectionWorker implements AutoCloseable {
           newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
           newHeaders.put(
               "x-goog-request-params",
-              "write_stream=" + localQueue.pollFirst().message.getWriteStream());
+              "write_stream=" + localQueue.peekFirst().message.getWriteStream());
           BigQueryWriteSettings stubSettings =
               clientSettings
                   .toBuilder()
