@@ -513,7 +513,7 @@ class ConnectionWorker implements AutoCloseable {
    *
    * It takes requests from waiting queue and sends them to server.
    */
-  private void appendLoop() throws IOException {
+  private void appendLoop() {
     Deque<AppendRequestAndResponse> localQueue = new LinkedList<AppendRequestAndResponse>();
     boolean streamNeedsConnecting = false;
 
@@ -565,18 +565,31 @@ class ConnectionWorker implements AutoCloseable {
         // could be closed and the doneCallback called, and thus clearing the flag.
         lock.lock();
         if (this.client == null) {
-          // Always recreate a client for connection worker.
-          HashMap<String, String> newHeaders = new HashMap<>();
-          newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
-          newHeaders.put(
-              "x-goog-request-params",
-              "write_stream=" + localQueue.peekFirst().message.getWriteStream());
-          BigQueryWriteSettings stubSettings =
-              clientSettings
-                  .toBuilder()
-                  .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
-                  .build();
-          this.client = BigQueryWriteClient.create(stubSettings);
+          try {
+            // Always recreate a client for connection worker.
+            HashMap<String, String> newHeaders = new HashMap<>();
+            newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
+            newHeaders.put(
+                "x-goog-request-params",
+                "write_stream=" + localQueue.peekFirst().message.getWriteStream());
+            BigQueryWriteSettings stubSettings =
+                clientSettings
+                    .toBuilder()
+                    .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
+                    .build();
+            this.client = BigQueryWriteClient.create(stubSettings);
+          } catch (IOException e) {
+            connectionFinalStatus = e;
+            while (!localQueue.isEmpty()) {
+              AppendRequestAndResponse requestWrapper = localQueue.pollFirst();
+              requestWrapper.appendResult.setException(e);
+            }
+            while (!this.waitingRequestQueue.isEmpty()) {
+              AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
+              requestWrapper.appendResult.setException(e);
+            }
+            return;
+          }
         }
         try {
           this.streamConnectionIsConnected = true;
