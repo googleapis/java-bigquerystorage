@@ -241,7 +241,10 @@ class ConnectionWorker implements AutoCloseable {
     newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
     newHeaders.put("x-goog-request-params", "write_stream=" + streamName);
     BigQueryWriteSettings stubSettings =
-        clientSettings.toBuilder().setHeaderProvider(FixedHeaderProvider.create(newHeaders)).build();
+        clientSettings
+            .toBuilder()
+            .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
+            .build();
     this.client = BigQueryWriteClient.create(stubSettings);
 
     this.appendThread =
