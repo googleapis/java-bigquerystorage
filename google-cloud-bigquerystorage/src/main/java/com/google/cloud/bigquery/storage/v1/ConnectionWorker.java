@@ -205,6 +205,8 @@ class ConnectionWorker implements AutoCloseable {
   private RuntimeException testOnlyRunTimeExceptionInAppendLoop = null;
   private long testOnlyAppendLoopSleepTime = 0;
 
+  private BigQueryWriteSettings clientSettings = null;
+
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
@@ -236,16 +238,7 @@ class ConnectionWorker implements AutoCloseable {
     this.traceId = traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
-    // Always recreate a client for connection worker.
-    HashMap<String, String> newHeaders = new HashMap<>();
-    newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
-    newHeaders.put("x-goog-request-params", "write_stream=" + streamName);
-    BigQueryWriteSettings stubSettings =
-        clientSettings
-            .toBuilder()
-            .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
-            .build();
-    this.client = BigQueryWriteClient.create(stubSettings);
+    this.clientSettings = clientSettings;
 
     this.appendThread =
         new Thread(
@@ -571,6 +564,20 @@ class ConnectionWorker implements AutoCloseable {
         // should happen before the call to resetConnection. As it is unknown when the connection
         // could be closed and the doneCallback called, and thus clearing the flag.
         lock.lock();
+        if (this.client == null) {
+          // Always recreate a client for connection worker.
+          HashMap<String, String> newHeaders = new HashMap<>();
+          newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
+          newHeaders.put(
+              "x-goog-request-params",
+              "write_stream=" + localQueue.pollFirst().message.getWriteStream());
+          BigQueryWriteSettings stubSettings =
+              clientSettings
+                  .toBuilder()
+                  .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
+                  .build();
+          this.client = BigQueryWriteClient.create(stubSettings);
+        }
         try {
           this.streamConnectionIsConnected = true;
         } finally {
