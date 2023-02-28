@@ -328,6 +328,7 @@ class ConnectionWorker implements AutoCloseable {
                       + " is scheduled to use a connection with location "
                       + this.location));
     } else if (this.location == null && streamWriter.getStreamName() != this.streamName) {
+      // Location is null implies this is non-multiplexed connection.
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
               .withDescription(
