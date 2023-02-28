@@ -81,7 +81,7 @@ class ConnectionWorker implements AutoCloseable {
   /*
    * The location of this connection.
    */
-  private String location;
+  private String location = null;
 
   /*
    * The proto schema of rows to write. This schema can change during multiplexing.
@@ -232,7 +232,9 @@ class ConnectionWorker implements AutoCloseable {
     this.hasMessageInWaitingQueue = lock.newCondition();
     this.inflightReduced = lock.newCondition();
     this.streamName = streamName;
-    this.location = location;
+    if (location != null && !location.isEmpty()) {
+      this.location = location;
+    }
     this.maxRetryDuration = maxRetryDuration;
     if (writerSchema == null) {
       throw new StatusRuntimeException(
@@ -248,7 +250,11 @@ class ConnectionWorker implements AutoCloseable {
     // Always recreate a client for connection worker.
     HashMap<String, String> newHeaders = new HashMap<>();
     newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
-    newHeaders.put("x-goog-request-params", "write_location=" + this.location);
+    if (this.location == null) {
+      newHeaders.put("x-goog-request-params", "write_stream=" + this.streamName);
+    } else {
+      newHeaders.put("x-goog-request-params", "write_location=" + this.location);
+    }
     BigQueryWriteSettings stubSettings =
         clientSettings
             .toBuilder()
@@ -315,7 +321,8 @@ class ConnectionWorker implements AutoCloseable {
 
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
-    if (streamWriter.getLocation() != this.location) {
+    if (this.location != null && this.location != streamWriter.getLocation()) {
+      log.info("111111");
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
               .withDescription(
@@ -323,6 +330,15 @@ class ConnectionWorker implements AutoCloseable {
                       + streamWriter.getLocation()
                       + " is scheduled to use a connection with location "
                       + this.location));
+    } else if (this.location == null && streamWriter.getStreamName() != this.streamName) {
+      log.info("2222222");
+      throw new StatusRuntimeException(
+          Status.fromCode(Code.INVALID_ARGUMENT)
+              .withDescription(
+                  "StreamWriter with stream name "
+                      + streamWriter.getStreamName()
+                      + " is scheduled to use a connection with stream name "
+                      + this.streamName));
     }
     Preconditions.checkNotNull(streamWriter);
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();

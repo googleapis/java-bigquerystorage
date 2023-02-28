@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +47,7 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class ConnectionWorkerTest {
+  private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
   private static final String TEST_STREAM_1 = "projects/p1/datasets/d1/tables/t1/streams/s1";
   private static final String TEST_STREAM_2 = "projects/p2/datasets/d2/tables/t2/streams/s2";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
@@ -432,16 +434,6 @@ public class ConnectionWorkerTest {
             FlowController.LimitExceededBehavior.Block,
             TEST_TRACE_ID,
             client.getSettings());
-    testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
-    ConnectionWorker.setMaxInflightQueueWaitTime(500);
-
-    connectionWorker.setTestOnlyRunTimeExceptionInAppendLoop(
-        new RuntimeException("Any exception can happen."));
-    // Sleep 1 second before erroring out.
-    connectionWorker.setTestOnlyAppendLoopSleepTime(1000L);
-
-    // In total insert 5 requests,
-    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -451,10 +443,39 @@ public class ConnectionWorkerTest {
                     sw1,
                     createFooProtoRows(new String[] {String.valueOf(0)}),
                     0));
-    assertThat(
-        ex.getMessage()
-            .contains(
-                "StreamWriter with location eu is scheduled to use a connection with location us"));
+    assertEquals(
+        "INVALID_ARGUMENT: StreamWriter with location eu is scheduled to use a connection with location us",
+        ex.getMessage());
+  }
+
+  @Test
+  public void testStreamNameMismatch() throws Exception {
+    ProtoSchema schema1 = createProtoSchema("foo");
+    StreamWriter sw1 =
+        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+    ConnectionWorker connectionWorker =
+        new ConnectionWorker(
+            TEST_STREAM_2,
+            null,
+            createProtoSchema("foo"),
+            100000,
+            100000,
+            Duration.ofSeconds(100),
+            FlowController.LimitExceededBehavior.Block,
+            TEST_TRACE_ID,
+            client.getSettings());
+    StatusRuntimeException ex =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                sendTestMessage(
+                    connectionWorker,
+                    sw1,
+                    createFooProtoRows(new String[] {String.valueOf(0)}),
+                    0));
+    assertEquals(
+        "INVALID_ARGUMENT: StreamWriter with stream name projects/p1/datasets/d1/tables/t1/streams/s1 is scheduled to use a connection with stream name projects/p2/datasets/d2/tables/t2/streams/s2",
+        ex.getMessage());
   }
 
   @Test
