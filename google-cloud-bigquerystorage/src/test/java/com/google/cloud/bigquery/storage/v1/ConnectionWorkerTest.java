@@ -86,10 +86,12 @@ public class ConnectionWorkerTest {
       StreamWriter sw1 =
           StreamWriter.newBuilder(TEST_STREAM_1, client)
               .setWriterSchema(createProtoSchema("foo"))
+              .setLocation("us")
               .build();
       StreamWriter sw2 =
           StreamWriter.newBuilder(TEST_STREAM_2, client)
               .setWriterSchema(createProtoSchema("complicate"))
+              .setLocation("us")
               .build();
       // We do a pattern of:
       // send to stream1, string1
@@ -207,11 +209,20 @@ public class ConnectionWorkerTest {
       // send to stream1, schema1
       // ...
       StreamWriter sw1 =
-          StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+          StreamWriter.newBuilder(TEST_STREAM_1, client)
+              .setLocation("us")
+              .setWriterSchema(schema1)
+              .build();
       StreamWriter sw2 =
-          StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema2).build();
+          StreamWriter.newBuilder(TEST_STREAM_1, client)
+              .setLocation("us")
+              .setWriterSchema(schema2)
+              .build();
       StreamWriter sw3 =
-          StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema3).build();
+          StreamWriter.newBuilder(TEST_STREAM_1, client)
+              .setLocation("us")
+              .setWriterSchema(schema3)
+              .build();
       for (long i = 0; i < appendCount; i++) {
         switch ((int) i % 4) {
           case 0:
@@ -307,7 +318,10 @@ public class ConnectionWorkerTest {
   public void testAppendButInflightQueueFull() throws Exception {
     ProtoSchema schema1 = createProtoSchema("foo");
     StreamWriter sw1 =
-        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setLocation("us")
+            .setWriterSchema(schema1)
+            .build();
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
@@ -359,7 +373,10 @@ public class ConnectionWorkerTest {
   public void testThrowExceptionWhileWithinAppendLoop() throws Exception {
     ProtoSchema schema1 = createProtoSchema("foo");
     StreamWriter sw1 =
-        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setLocation("us")
+            .setWriterSchema(schema1)
+            .build();
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
