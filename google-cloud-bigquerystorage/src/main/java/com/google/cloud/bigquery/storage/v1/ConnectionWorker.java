@@ -79,6 +79,11 @@ class ConnectionWorker implements AutoCloseable {
   private String streamName;
 
   /*
+   * The location of this connection.
+   */
+  private String location;
+
+  /*
    * The proto schema of rows to write. This schema can change during multiplexing.
    */
   private ProtoSchema writerSchema;
@@ -214,6 +219,7 @@ class ConnectionWorker implements AutoCloseable {
 
   public ConnectionWorker(
       String streamName,
+      String location,
       ProtoSchema writerSchema,
       long maxInflightRequests,
       long maxInflightBytes,
@@ -226,6 +232,7 @@ class ConnectionWorker implements AutoCloseable {
     this.hasMessageInWaitingQueue = lock.newCondition();
     this.inflightReduced = lock.newCondition();
     this.streamName = streamName;
+    this.location = location;
     this.maxRetryDuration = maxRetryDuration;
     if (writerSchema == null) {
       throw new StatusRuntimeException(
@@ -238,7 +245,18 @@ class ConnectionWorker implements AutoCloseable {
     this.traceId = traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
-    this.clientSettings = clientSettings;
+    // Always recreate a client for connection worker.
+    HashMap<String, String> newHeaders = new HashMap<>();
+    newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
+    newHeaders.put(
+        "x-goog-request-params",
+        "write_location=" + this.location);
+    BigQueryWriteSettings stubSettings =
+        clientSettings
+            .toBuilder()
+            .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
+            .build();
+    this.client = BigQueryWriteClient.create(clientSettings);
 
     this.appendThread =
         new Thread(
@@ -322,6 +340,10 @@ class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
+  }
+
+  String getWriteLocation() {
+    return this.location;
   }
 
   private ApiFuture<AppendRowsResponse> appendInternal(
@@ -564,33 +586,6 @@ class ConnectionWorker implements AutoCloseable {
         // should happen before the call to resetConnection. As it is unknown when the connection
         // could be closed and the doneCallback called, and thus clearing the flag.
         lock.lock();
-        if (this.client == null) {
-          try {
-            // Always recreate a client for connection worker.
-            HashMap<String, String> newHeaders = new HashMap<>();
-            newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
-            newHeaders.put(
-                "x-goog-request-params",
-                "write_stream=" + localQueue.peekFirst().message.getWriteStream());
-            BigQueryWriteSettings stubSettings =
-                clientSettings
-                    .toBuilder()
-                    .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
-                    .build();
-            this.client = BigQueryWriteClient.create(stubSettings);
-          } catch (IOException e) {
-            connectionFinalStatus = e;
-            while (!localQueue.isEmpty()) {
-              AppendRequestAndResponse requestWrapper = localQueue.pollFirst();
-              requestWrapper.appendResult.setException(e);
-            }
-            while (!this.waitingRequestQueue.isEmpty()) {
-              AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
-              requestWrapper.appendResult.setException(e);
-            }
-            return;
-          }
-        }
         try {
           this.streamConnectionIsConnected = true;
         } finally {
