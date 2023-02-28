@@ -248,9 +248,7 @@ class ConnectionWorker implements AutoCloseable {
     // Always recreate a client for connection worker.
     HashMap<String, String> newHeaders = new HashMap<>();
     newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
-    newHeaders.put(
-        "x-goog-request-params",
-        "write_location=" + this.location);
+    newHeaders.put("x-goog-request-params", "write_location=" + this.location);
     BigQueryWriteSettings stubSettings =
         clientSettings
             .toBuilder()
@@ -317,6 +315,15 @@ class ConnectionWorker implements AutoCloseable {
 
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
+    if (streamWriter.getLocation() != this.location) {
+      throw new StatusRuntimeException(
+          Status.fromCode(Code.INVALID_ARGUMENT)
+              .withDescription(
+                  "StreamWriter with location "
+                      + streamWriter.getLocation()
+                      + " is scheduled to use a connection with location "
+                      + this.location));
+    }
     Preconditions.checkNotNull(streamWriter);
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(

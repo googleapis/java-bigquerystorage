@@ -309,6 +309,7 @@ public class ConnectionWorkerTest {
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
+            "us",
             createProtoSchema("foo"),
             6,
             100000,
@@ -360,6 +361,7 @@ public class ConnectionWorkerTest {
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
+            "us",
             createProtoSchema("foo"),
             100000,
             100000,
@@ -412,6 +414,50 @@ public class ConnectionWorkerTest {
   }
 
   @Test
+  public void testLocationMismatch() throws Exception {
+    ProtoSchema schema1 = createProtoSchema("foo");
+    StreamWriter sw1 =
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setWriterSchema(schema1)
+            .setLocation("eu")
+            .build();
+    ConnectionWorker connectionWorker =
+        new ConnectionWorker(
+            TEST_STREAM_1,
+            "us",
+            createProtoSchema("foo"),
+            100000,
+            100000,
+            Duration.ofSeconds(100),
+            FlowController.LimitExceededBehavior.Block,
+            TEST_TRACE_ID,
+            client.getSettings());
+    testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
+    ConnectionWorker.setMaxInflightQueueWaitTime(500);
+
+    connectionWorker.setTestOnlyRunTimeExceptionInAppendLoop(
+        new RuntimeException("Any exception can happen."));
+    // Sleep 1 second before erroring out.
+    connectionWorker.setTestOnlyAppendLoopSleepTime(1000L);
+
+    // In total insert 5 requests,
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    StatusRuntimeException ex =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                sendTestMessage(
+                    connectionWorker,
+                    sw1,
+                    createFooProtoRows(new String[] {String.valueOf(0)}),
+                    0));
+    assertThat(
+        ex.getMessage()
+            .contains(
+                "StreamWriter with location eu is scheduled to use a connection with location us"));
+  }
+
+  @Test
   public void testExponentialBackoff() throws Exception {
     assertThat(ConnectionWorker.calculateSleepTimeMilli(0)).isEqualTo(1);
     assertThat(ConnectionWorker.calculateSleepTimeMilli(5)).isEqualTo(32);
@@ -440,6 +486,7 @@ public class ConnectionWorkerTest {
       throws IOException {
     return new ConnectionWorker(
         streamName,
+        "us",
         createProtoSchema("foo"),
         maxRequests,
         maxBytes,
