@@ -320,7 +320,6 @@ class ConnectionWorker implements AutoCloseable {
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
     if (this.location != null && this.location != streamWriter.getLocation()) {
-      log.info("111111");
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
               .withDescription(
@@ -329,7 +328,6 @@ class ConnectionWorker implements AutoCloseable {
                       + " is scheduled to use a connection with location "
                       + this.location));
     } else if (this.location == null && streamWriter.getStreamName() != this.streamName) {
-      log.info("2222222");
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
               .withDescription(
