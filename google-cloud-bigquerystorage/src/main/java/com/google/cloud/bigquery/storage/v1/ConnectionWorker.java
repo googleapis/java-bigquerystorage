@@ -18,6 +18,7 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
+import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
@@ -85,6 +86,11 @@ class ConnectionWorker implements AutoCloseable {
    * multiplexing.
    */
   private String streamName;
+
+  /*
+   * The location of this connection.
+   */
+  private String location = null;
 
   /*
    * The proto schema of rows to write. This schema can change during multiplexing.
@@ -220,6 +226,7 @@ class ConnectionWorker implements AutoCloseable {
 
   public ConnectionWorker(
       String streamName,
+      String location,
       ProtoSchema writerSchema,
       long maxInflightRequests,
       long maxInflightBytes,
@@ -232,6 +239,9 @@ class ConnectionWorker implements AutoCloseable {
     this.hasMessageInWaitingQueue = lock.newCondition();
     this.inflightReduced = lock.newCondition();
     this.streamName = streamName;
+    if (location != null && !location.isEmpty()) {
+      this.location = location;
+    }
     this.maxRetryDuration = maxRetryDuration;
     if (writerSchema == null) {
       throw new StatusRuntimeException(
@@ -245,6 +255,18 @@ class ConnectionWorker implements AutoCloseable {
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     // Always recreate a client for connection worker.
+    HashMap<String, String> newHeaders = new HashMap<>();
+    newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
+    if (this.location == null) {
+      newHeaders.put("x-goog-request-params", "write_stream=" + this.streamName);
+    } else {
+      newHeaders.put("x-goog-request-params", "write_location=" + this.location);
+    }
+    BigQueryWriteSettings stubSettings =
+        clientSettings
+            .toBuilder()
+            .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
+            .build();
     this.client = BigQueryWriteClient.create(clientSettings);
 
     this.appendThread =
@@ -305,6 +327,24 @@ class ConnectionWorker implements AutoCloseable {
 
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
+    if (this.location != null && this.location != streamWriter.getLocation()) {
+      throw new StatusRuntimeException(
+          Status.fromCode(Code.INVALID_ARGUMENT)
+              .withDescription(
+                  "StreamWriter with location "
+                      + streamWriter.getLocation()
+                      + " is scheduled to use a connection with location "
+                      + this.location));
+    } else if (this.location == null && streamWriter.getStreamName() != this.streamName) {
+      // Location is null implies this is non-multiplexed connection.
+      throw new StatusRuntimeException(
+          Status.fromCode(Code.INVALID_ARGUMENT)
+              .withDescription(
+                  "StreamWriter with stream name "
+                      + streamWriter.getStreamName()
+                      + " is scheduled to use a connection with stream name "
+                      + this.streamName));
+    }
     Preconditions.checkNotNull(streamWriter);
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(
@@ -328,6 +368,10 @@ class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
+  }
+
+  String getWriteLocation() {
+    return this.location;
   }
 
   private ApiFuture<AppendRowsResponse> appendInternal(
@@ -534,9 +578,6 @@ class ConnectionWorker implements AutoCloseable {
       this.lock.lock();
       try {
         hasMessageInWaitingQueue.await(100, TimeUnit.MILLISECONDS);
-        if (userClosed) {
-          log.warning("The info gotten is " + this.inflightRequestQueue.size() + " " + this.waitingRequestQueue.size());
-        }
         // Check whether we should error out the current append loop.
         if (inflightRequestQueue.size() > 0) {
           throwIfWaitCallbackTooLong(inflightRequestQueue.getFirst().requestCreationTimeStamp);

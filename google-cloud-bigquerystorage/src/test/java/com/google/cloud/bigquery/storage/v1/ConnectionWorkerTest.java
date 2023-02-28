@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +47,7 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class ConnectionWorkerTest {
+  private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
   private static final String TEST_STREAM_1 = "projects/p1/datasets/d1/tables/t1/streams/s1";
   private static final String TEST_STREAM_2 = "projects/p2/datasets/d2/tables/t2/streams/s2";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
@@ -85,10 +87,12 @@ public class ConnectionWorkerTest {
       StreamWriter sw1 =
           StreamWriter.newBuilder(TEST_STREAM_1, client)
               .setWriterSchema(createProtoSchema("foo"))
+              .setLocation("us")
               .build();
       StreamWriter sw2 =
           StreamWriter.newBuilder(TEST_STREAM_2, client)
               .setWriterSchema(createProtoSchema("complicate"))
+              .setLocation("us")
               .build();
       // We do a pattern of:
       // send to stream1, string1
@@ -206,11 +210,20 @@ public class ConnectionWorkerTest {
       // send to stream1, schema1
       // ...
       StreamWriter sw1 =
-          StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+          StreamWriter.newBuilder(TEST_STREAM_1, client)
+              .setLocation("us")
+              .setWriterSchema(schema1)
+              .build();
       StreamWriter sw2 =
-          StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema2).build();
+          StreamWriter.newBuilder(TEST_STREAM_1, client)
+              .setLocation("us")
+              .setWriterSchema(schema2)
+              .build();
       StreamWriter sw3 =
-          StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema3).build();
+          StreamWriter.newBuilder(TEST_STREAM_1, client)
+              .setLocation("us")
+              .setWriterSchema(schema3)
+              .build();
       for (long i = 0; i < appendCount; i++) {
         switch ((int) i % 4) {
           case 0:
@@ -306,10 +319,14 @@ public class ConnectionWorkerTest {
   public void testAppendButInflightQueueFull() throws Exception {
     ProtoSchema schema1 = createProtoSchema("foo");
     StreamWriter sw1 =
-        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setLocation("us")
+            .setWriterSchema(schema1)
+            .build();
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
+            "us",
             createProtoSchema("foo"),
             6,
             100000,
@@ -357,10 +374,14 @@ public class ConnectionWorkerTest {
   public void testThrowExceptionWhileWithinAppendLoop() throws Exception {
     ProtoSchema schema1 = createProtoSchema("foo");
     StreamWriter sw1 =
-        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setLocation("us")
+            .setWriterSchema(schema1)
+            .build();
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
+            "us",
             createProtoSchema("foo"),
             100000,
             100000,
@@ -413,14 +434,17 @@ public class ConnectionWorkerTest {
   }
 
   @Test
-  public void testThrowExceptionWhileWithinAppendLoop_MaxWaitTimeExceed() throws Exception {
+  public void testLocationMismatch() throws Exception {
     ProtoSchema schema1 = createProtoSchema("foo");
-    ConnectionWorker.setMaxInflightRequestWaitTime(Duration.ofSeconds(1));
     StreamWriter sw1 =
-        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setWriterSchema(schema1)
+            .setLocation("eu")
+            .build();
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
+            "us",
             createProtoSchema("foo"),
             100000,
             100000,
@@ -428,54 +452,29 @@ public class ConnectionWorkerTest {
             FlowController.LimitExceededBehavior.Block,
             TEST_TRACE_ID,
             client.getSettings());
-    testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(3));
-
-    long appendCount = 10;
-    for (int i = 0; i < appendCount; i++) {
-      testBigQueryWrite.addResponse(createAppendResponse(i));
-    }
-
-    // In total insert 5 requests,
-    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
-    for (int i = 0; i < appendCount; i++) {
-      futures.add(
-          sendTestMessage(
-              connectionWorker, sw1, createFooProtoRows(new String[] {String.valueOf(i)}), i));
-      assertEquals(connectionWorker.getLoad().inFlightRequestsCount(), i + 1);
-    }
-
-    for (int i = 0; i < appendCount; i++) {
-      int finalI = i;
-      ExecutionException ex =
-          assertThrows(
-              ExecutionException.class,
-              () -> futures.get(finalI).get().getAppendResult().getOffset().getValue());
-      assertThat(ex.getCause()).hasMessageThat().contains("Request has waited in inflight queue");
-    }
-
-    // The future append will directly fail.
-    ExecutionException ex =
+    StatusRuntimeException ex =
         assertThrows(
-            ExecutionException.class,
+            StatusRuntimeException.class,
             () ->
                 sendTestMessage(
-                        connectionWorker,
-                        sw1,
-                        createFooProtoRows(new String[] {String.valueOf(100)}),
-                        100)
-                    .get());
-    assertThat(ex.getCause()).hasMessageThat().contains("Request has waited in inflight queue");
+                    connectionWorker,
+                    sw1,
+                    createFooProtoRows(new String[] {String.valueOf(0)}),
+                    0));
+    assertEquals(
+        "INVALID_ARGUMENT: StreamWriter with location eu is scheduled to use a connection with location us",
+        ex.getMessage());
   }
 
   @Test
-  public void testLongTimeIdleWontFail() throws Exception {
+  public void testStreamNameMismatch() throws Exception {
     ProtoSchema schema1 = createProtoSchema("foo");
-    ConnectionWorker.setMaxInflightRequestWaitTime(Duration.ofSeconds(1));
     StreamWriter sw1 =
         StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
-            TEST_STREAM_1,
+            TEST_STREAM_2,
+            null,
             createProtoSchema("foo"),
             100000,
             100000,
@@ -483,33 +482,18 @@ public class ConnectionWorkerTest {
             FlowController.LimitExceededBehavior.Block,
             TEST_TRACE_ID,
             client.getSettings());
-
-    long appendCount = 10;
-    for (int i = 0; i < appendCount * 2; i++) {
-      testBigQueryWrite.addResponse(createAppendResponse(i));
-    }
-
-    // In total insert 5 requests,
-    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
-    for (int i = 0; i < appendCount; i++) {
-      futures.add(
-          sendTestMessage(
-              connectionWorker, sw1, createFooProtoRows(new String[] {String.valueOf(i)}), i));
-    }
-    // Sleep 2 seconds to make sure request queue is empty.
-    Thread.sleep(2000);
-    assertEquals(connectionWorker.getLoad().inFlightRequestsCount(), 0);
-    for (int i = 0; i < appendCount; i++) {
-      futures.add(
-          sendTestMessage(
-              connectionWorker,
-              sw1,
-              createFooProtoRows(new String[] {String.valueOf(i)}),
-              i + appendCount));
-    }
-    for (int i = 0; i < appendCount * 2; i++) {
-      assertEquals(i, futures.get(i).get().getAppendResult().getOffset().getValue());
-    }
+    StatusRuntimeException ex =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                sendTestMessage(
+                    connectionWorker,
+                    sw1,
+                    createFooProtoRows(new String[] {String.valueOf(0)}),
+                    0));
+    assertEquals(
+        "INVALID_ARGUMENT: StreamWriter with stream name projects/p1/datasets/d1/tables/t1/streams/s1 is scheduled to use a connection with stream name projects/p2/datasets/d2/tables/t2/streams/s2",
+        ex.getMessage());
   }
 
   @Test
@@ -541,6 +525,7 @@ public class ConnectionWorkerTest {
       throws IOException {
     return new ConnectionWorker(
         streamName,
+        "us",
         createProtoSchema("foo"),
         maxRequests,
         maxBytes,
@@ -622,5 +607,107 @@ public class ConnectionWorkerTest {
 
     Load load2 = ConnectionWorker.Load.create(1, 1, 100, 100, 100);
     assertThat(load2.isOverwhelmed()).isFalse();
+  }
+
+  @Test
+  public void testThrowExceptionWhileWithinAppendLoop_MaxWaitTimeExceed() throws Exception {
+    ProtoSchema schema1 = createProtoSchema("foo");
+    ConnectionWorker.setMaxInflightRequestWaitTime(Duration.ofSeconds(1));
+    StreamWriter sw1 =
+        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+    ConnectionWorker connectionWorker =
+        new ConnectionWorker(
+            TEST_STREAM_1,
+            null,
+            createProtoSchema("foo"),
+            100000,
+            100000,
+            Duration.ofSeconds(100),
+            FlowController.LimitExceededBehavior.Block,
+            TEST_TRACE_ID,
+            client.getSettings());
+    testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(3));
+
+    long appendCount = 10;
+    for (int i = 0; i < appendCount; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+
+    // In total insert 5 requests,
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    for (int i = 0; i < appendCount; i++) {
+      futures.add(
+          sendTestMessage(
+              connectionWorker, sw1, createFooProtoRows(new String[] {String.valueOf(i)}), i));
+      assertEquals(connectionWorker.getLoad().inFlightRequestsCount(), i + 1);
+    }
+
+    for (int i = 0; i < appendCount; i++) {
+      int finalI = i;
+      ExecutionException ex =
+          assertThrows(
+              ExecutionException.class,
+              () -> futures.get(finalI).get().getAppendResult().getOffset().getValue());
+      assertThat(ex.getCause()).hasMessageThat().contains("Request has waited in inflight queue");
+    }
+
+    // The future append will directly fail.
+    ExecutionException ex =
+        assertThrows(
+            ExecutionException.class,
+            () ->
+                sendTestMessage(
+                        connectionWorker,
+                        sw1,
+                        createFooProtoRows(new String[] {String.valueOf(100)}),
+                        100)
+                    .get());
+    assertThat(ex.getCause()).hasMessageThat().contains("Request has waited in inflight queue");
+  }
+
+  @Test
+  public void testLongTimeIdleWontFail() throws Exception {
+    ProtoSchema schema1 = createProtoSchema("foo");
+    ConnectionWorker.setMaxInflightRequestWaitTime(Duration.ofSeconds(1));
+    StreamWriter sw1 =
+        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+    ConnectionWorker connectionWorker =
+        new ConnectionWorker(
+            TEST_STREAM_1,
+            null,
+            createProtoSchema("foo"),
+            100000,
+            100000,
+            Duration.ofSeconds(100),
+            FlowController.LimitExceededBehavior.Block,
+            TEST_TRACE_ID,
+            client.getSettings());
+
+    long appendCount = 10;
+    for (int i = 0; i < appendCount * 2; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+
+    // In total insert 5 requests,
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    for (int i = 0; i < appendCount; i++) {
+      futures.add(
+          sendTestMessage(
+              connectionWorker, sw1, createFooProtoRows(new String[] {String.valueOf(i)}), i));
+    }
+    // Sleep 2 seconds to make sure request queue is empty.
+    Thread.sleep(2000);
+    assertEquals(connectionWorker.getLoad().inFlightRequestsCount(), 0);
+    for (int i = 0; i < appendCount; i++) {
+      futures.add(
+          sendTestMessage(
+              connectionWorker,
+              sw1,
+              createFooProtoRows(new String[] {String.valueOf(i)}),
+              i + appendCount));
+    }
+    for (int i = 0; i < appendCount * 2; i++) {
+      assertEquals(i, futures.get(i).get().getAppendResult().getOffset().getValue());
+    }
   }
 }
