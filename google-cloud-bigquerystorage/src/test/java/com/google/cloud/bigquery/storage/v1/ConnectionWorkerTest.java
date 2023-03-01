@@ -466,11 +466,6 @@ public class ConnectionWorkerTest {
   }
 
   @Test
-  public void testLocationName() throws Exception {
-    assertEquals("projects/p1/locations/us", ConnectionWorker.getRoutingHeader(TEST_STREAM_1, "us"));
-  }
-
-  @Test
   public void testStreamNameMismatch() throws Exception {
     ProtoSchema schema1 = createProtoSchema("foo");
     StreamWriter sw1 =

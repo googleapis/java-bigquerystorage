@@ -230,11 +230,6 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  static String getRoutingHeader(String streamName, String location) {
-    String project = extractProjectName(streamName);
-    return project + "locations/" + location;
-  }
-
   public ConnectionWorker(
       String streamName,
       String location,
@@ -270,10 +265,6 @@ class ConnectionWorker implements AutoCloseable {
     newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
     if (this.location == null) {
       newHeaders.put("x-goog-request-params", "write_stream=" + this.streamName);
-    } else {
-      newHeaders.put(
-          "x-goog-request-params",
-          "write_location=" + getRoutingHeader(this.streamName, this.location));
     }
     BigQueryWriteSettings stubSettings =
         clientSettings
