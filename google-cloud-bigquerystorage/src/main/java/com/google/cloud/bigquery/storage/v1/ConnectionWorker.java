@@ -212,22 +212,9 @@ class ConnectionWorker implements AutoCloseable {
   private RuntimeException testOnlyRunTimeExceptionInAppendLoop = null;
   private long testOnlyAppendLoopSleepTime = 0;
 
-  private static String projectMatching = "projects/[^/]+/";
-  private static Pattern streamPatternProject = Pattern.compile(projectMatching);
-
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
-  }
-
-  static String extractProjectName(String streamName) {
-    Matcher streamMatcher = streamPatternProject.matcher(streamName);
-    if (streamMatcher.find()) {
-      return streamMatcher.group();
-    } else {
-      throw new IllegalStateException(
-          String.format("The passed in stream name does not match standard format %s", streamName));
-    }
   }
 
   public ConnectionWorker(
