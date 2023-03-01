@@ -467,7 +467,7 @@ public class ConnectionWorkerTest {
 
   @Test
   public void testLocationName() throws Exception {
-    assertEquals("projects/p1/location/us", ConnectionWorker.getRoutingHeader(TEST_STREAM_1, "us"));
+    assertEquals("projects/p1/locations/us", ConnectionWorker.getRoutingHeader(TEST_STREAM_1, "us"));
   }
 
   @Test

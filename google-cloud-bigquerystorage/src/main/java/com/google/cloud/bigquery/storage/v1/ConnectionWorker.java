@@ -232,7 +232,7 @@ class ConnectionWorker implements AutoCloseable {
 
   static String getRoutingHeader(String streamName, String location) {
     String project = extractProjectName(streamName);
-    return project + "location/" + location;
+    return project + "locations/" + location;
   }
 
   public ConnectionWorker(
