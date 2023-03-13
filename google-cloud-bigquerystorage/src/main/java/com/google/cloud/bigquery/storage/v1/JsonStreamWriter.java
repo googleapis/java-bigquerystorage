@@ -194,7 +194,8 @@ public class JsonStreamWriter implements AutoCloseable {
       // Any error in convertJsonToProtoMessage will throw an
       // IllegalArgumentException/IllegalStateException/NullPointerException.
       // IllegalArgumentException will be collected into a Map of row indexes to error messages.
-      // After the conversion is finished an AppendSerializationError exception that contains all the
+      // After the conversion is finished an AppendSerializationError exception that contains all
+      // the
       // conversion errors will be thrown.
       long currentRequestSize = 0;
       Map<Integer, String> rowIndexToErrorMessage = new HashMap<>();
