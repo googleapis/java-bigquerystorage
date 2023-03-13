@@ -244,6 +244,14 @@ public final class Exceptions {
     }
   }
 
+  public static class AppendSerializationError extends AppendSerializtionError{
+
+    public AppendSerializationError(int codeValue, String description, String streamName,
+        Map<Integer, String> rowIndexToErrorMessage) {
+      super(codeValue, description, streamName, rowIndexToErrorMessage);
+    }
+  }
+
   /** This exception is used internally to handle field level parsing errors. */
   public static class FieldParseError extends IllegalArgumentException {
     private final String fieldName;
