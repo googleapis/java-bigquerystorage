@@ -244,9 +244,12 @@ public final class Exceptions {
     }
   }
 
-  public static class AppendSerializationError extends AppendSerializtionError{
+  public static class AppendSerializationError extends AppendSerializtionError {
 
-    public AppendSerializationError(int codeValue, String description, String streamName,
+    public AppendSerializationError(
+        int codeValue,
+        String description,
+        String streamName,
         Map<Integer, String> rowIndexToErrorMessage) {
       super(codeValue, description, streamName, rowIndexToErrorMessage);
     }
