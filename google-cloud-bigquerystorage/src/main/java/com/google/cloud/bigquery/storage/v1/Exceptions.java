@@ -216,8 +216,8 @@ public final class Exceptions {
   }
 
   /**
-   * This class has a typo in the name. It will be removed soon.
-   * Please use {@link AppendSerializationError}
+   * This class has a typo in the name. It will be removed soon. Please use {@link
+   * AppendSerializationError}
    */
   public static class AppendSerializtionError extends StatusRuntimeException {
     private final Map<Integer, String> rowIndexToErrorMessage;
