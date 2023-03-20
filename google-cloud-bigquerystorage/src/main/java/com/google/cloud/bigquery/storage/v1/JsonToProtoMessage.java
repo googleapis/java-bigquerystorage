@@ -45,10 +45,11 @@ import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.TemporalAccessor;
 
 /**
- * Converts Json data to protocol buffer messages given the protocol buffer descriptor. The protobuf
- * descriptor must have all fields lowercased.
+ * Converts JSON data to Protobuf messages given the Protobuf descriptor and BigQuery table schema.
+ * The Protobuf descriptor must have all fields lowercased.
  */
-public class JsonToProtoMessage {
+public final class JsonToProtoMessage implements ToProtoConverter<Object> {
+  public static final JsonToProtoMessage INSTANCE = new JsonToProtoMessage();
   private static final Logger LOG = Logger.getLogger(JsonToProtoMessage.class.getName());
   private static int NUMERIC_SCALE = 9;
   private static ImmutableMap<FieldDescriptor.Type, String> FieldTypeToDebugMessage =
@@ -102,6 +103,24 @@ public class JsonToProtoMessage {
           .toFormatter()
           .withZone(ZoneOffset.UTC);
 
+  private JsonToProtoMessage() {}
+
+  /**
+   * Converts input message to Protobuf
+   *
+   * @param protoSchema the schema of the output Protobuf schems.
+   * @param tableSchema tha underlying table schema for which Protobuf is being built.
+   * @param json the input JSON object converted to Protobuf.
+   * @param ignoreUnknownFields flag indicating that the additional fields not present in the output
+   *     schema should be accepted.
+   * @return Converted message in Protobuf format.
+   */
+  @Override
+  public DynamicMessage convertToProtoMessage(
+      Descriptor protoSchema, TableSchema tableSchema, Object json, boolean ignoreUnknownFields) {
+    return convertToProtoMessage(protoSchema, tableSchema, (JSONObject) json, ignoreUnknownFields);
+  }
+
   /**
    * Converts Json data to protocol buffer messages given the protocol buffer descriptor.
    *
@@ -109,14 +128,13 @@ public class JsonToProtoMessage {
    * @param json
    * @throws IllegalArgumentException when JSON data is not compatible with proto descriptor.
    */
-  public static DynamicMessage convertJsonToProtoMessage(Descriptor protoSchema, JSONObject json)
+  public DynamicMessage convertToProtoMessage(Descriptor protoSchema, JSONObject json)
       throws IllegalArgumentException {
     Preconditions.checkNotNull(json, "JSONObject is null.");
     Preconditions.checkNotNull(protoSchema, "Protobuf descriptor is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertJsonToProtoMessageImpl(
-        protoSchema, null, json, "root", /*topLevel=*/ true, false);
+    return convertToProtoMessage(protoSchema, null, json, "root", /*topLevel=*/ true, false);
   }
 
   /**
@@ -128,7 +146,7 @@ public class JsonToProtoMessage {
    * @param json
    * @throws IllegalArgumentException when JSON data is not compatible with proto descriptor.
    */
-  public static DynamicMessage convertJsonToProtoMessage(
+  public DynamicMessage convertToProtoMessage(
       Descriptor protoSchema, TableSchema tableSchema, JSONObject json)
       throws IllegalArgumentException {
     Preconditions.checkNotNull(json, "JSONObject is null.");
@@ -136,7 +154,7 @@ public class JsonToProtoMessage {
     Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertJsonToProtoMessageImpl(
+    return convertToProtoMessage(
         protoSchema,
         tableSchema.getFieldsList(),
         json,
@@ -155,7 +173,7 @@ public class JsonToProtoMessage {
    * @param ignoreUnknownFields allows unknown fields in JSON input to be ignored.
    * @throws IllegalArgumentException when JSON data is not compatible with proto descriptor.
    */
-  public static DynamicMessage convertJsonToProtoMessage(
+  public DynamicMessage convertToProtoMessage(
       Descriptor protoSchema, TableSchema tableSchema, JSONObject json, boolean ignoreUnknownFields)
       throws IllegalArgumentException {
     Preconditions.checkNotNull(json, "JSONObject is null.");
@@ -163,7 +181,7 @@ public class JsonToProtoMessage {
     Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertJsonToProtoMessageImpl(
+    return convertToProtoMessage(
         protoSchema,
         tableSchema.getFieldsList(),
         json,
@@ -181,7 +199,7 @@ public class JsonToProtoMessage {
    * @param topLevel checks if root level has any matching fields.
    * @throws IllegalArgumentException when JSON data is not compatible with proto descriptor.
    */
-  private static DynamicMessage convertJsonToProtoMessageImpl(
+  private DynamicMessage convertToProtoMessage(
       Descriptor protoSchema,
       List<TableFieldSchema> tableSchema,
       JSONObject json,
@@ -209,7 +227,7 @@ public class JsonToProtoMessage {
       String currentScope = jsonScope + "." + jsonName;
       FieldDescriptor field = protoSchema.findFieldByName(jsonFieldLocator);
       if (field == null && !ignoreUnknownFields) {
-        throw new Exceptions.JsonDataHasUnknownFieldException(currentScope);
+        throw new Exceptions.DataHasUnknownFieldException(currentScope);
       } else if (field == null) {
         continue;
       }
@@ -274,7 +292,7 @@ public class JsonToProtoMessage {
    * @param currentScope Debugging purposes
    * @throws IllegalArgumentException when JSON data is not compatible with proto descriptor.
    */
-  private static void fillField(
+  private void fillField(
       DynamicMessage.Builder protoMsg,
       FieldDescriptor fieldDescriptor,
       TableFieldSchema fieldSchema,
@@ -482,7 +500,7 @@ public class JsonToProtoMessage {
           Message.Builder message = protoMsg.newBuilderForField(fieldDescriptor);
           protoMsg.setField(
               fieldDescriptor,
-              convertJsonToProtoMessageImpl(
+              convertToProtoMessage(
                   fieldDescriptor.getMessageType(),
                   fieldSchema == null ? null : fieldSchema.getFieldsList(),
                   json.getJSONObject(exactJsonKeyName),
@@ -510,7 +528,7 @@ public class JsonToProtoMessage {
    * @param currentScope Debugging purposes
    * @throws IllegalArgumentException when JSON data is not compatible with proto descriptor.
    */
-  private static void fillRepeatedField(
+  private void fillRepeatedField(
       DynamicMessage.Builder protoMsg,
       FieldDescriptor fieldDescriptor,
       TableFieldSchema fieldSchema,
@@ -747,7 +765,7 @@ public class JsonToProtoMessage {
             Message.Builder message = protoMsg.newBuilderForField(fieldDescriptor);
             protoMsg.addRepeatedField(
                 fieldDescriptor,
-                convertJsonToProtoMessageImpl(
+                convertToProtoMessage(
                     fieldDescriptor.getMessageType(),
                     fieldSchema == null ? null : fieldSchema.getFieldsList(),
                     jsonArray.getJSONObject(i),
