@@ -161,7 +161,7 @@ public class WriteToDefaultStream {
           throw new RuntimeException("Writer is closed by user.");
         }
         // If stream writer is premenantly failed, try recreate a stream writer.
-        if (streamWriter.isClosed() && recreateCount.recreateCount() <= MAX_RECREATE_COUNT) {
+        if (streamWriter.isClosed() && recreateCount.getAndIncrement() < MAX_RECREATE_COUNT) {
           streamWriter =
               JsonStreamWriter.newBuilder(parentTable.toString(),
                   BigQueryWriteClient.create()).build();
