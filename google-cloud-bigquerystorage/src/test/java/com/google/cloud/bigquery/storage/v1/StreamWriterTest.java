@@ -15,6 +15,7 @@
  */
 package com.google.cloud.bigquery.storage.v1;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -610,6 +611,36 @@ public class StreamWriterTest {
     assertEquals(Status.Code.FAILED_PRECONDITION, error2.getStatus().getCode());
 
     writer.close();
+  }
+
+  @Test
+  public void testThrowExceptionWhileWithinAppendLoop_MaxWaitTimeExceed() throws Exception {
+    ProtoSchema schema1 = createProtoSchema("foo");
+    StreamWriter.setMaxInflightRequestWaitTime(java.time.Duration.ofSeconds(1));
+    StreamWriter writer =
+        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+    testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(3));
+
+    long appendCount = 10;
+    for (int i = 0; i < appendCount; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+
+    // In total insert 5 requests,
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    for (int i = 0; i < appendCount; i++) {
+      ApiFuture<AppendRowsResponse> appendFuture = sendTestMessage(writer, new String[] {"A"});
+      futures.add(appendFuture);
+    }
+
+    for (int i = 0; i < appendCount; i++) {
+      int finalI = i;
+      ExecutionException ex =
+          assertThrows(
+              ExecutionException.class,
+              () -> futures.get(finalI).get().getAppendResult().getOffset().getValue());
+      assertThat(ex.getCause()).hasMessageThat().contains("Request has waited in inflight queue");
+    }
   }
 
   @Test
