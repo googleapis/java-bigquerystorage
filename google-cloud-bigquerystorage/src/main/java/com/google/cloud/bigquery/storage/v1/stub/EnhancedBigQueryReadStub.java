@@ -75,7 +75,8 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
             .setHeaderProvider(settings.getHeaderProvider())
             .setCredentialsProvider(settings.getCredentialsProvider())
             .setStreamWatchdogCheckInterval(settings.getStreamWatchdogCheckInterval())
-            .setStreamWatchdogProvider(settings.getStreamWatchdogProvider());
+            .setStreamWatchdogProvider(settings.getStreamWatchdogProvider())
+            .setBackgroundExecutorProvider(settings.getBackgroundExecutorProvider());
 
     baseSettingsBuilder
         .createReadSessionSettings()
