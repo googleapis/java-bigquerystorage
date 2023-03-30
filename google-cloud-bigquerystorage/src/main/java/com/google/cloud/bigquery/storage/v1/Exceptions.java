@@ -216,8 +216,10 @@ public final class Exceptions {
   }
 
   /**
-   * This class has a typo in the name. It will be removed soon. Please use {@link
-   * AppendSerializationError}
+   * This exception is thrown from {@link JsonStreamWriter#append()} when the client side Json to
+   * Proto serializtion fails. It can also be thrown by the server in case rows contains invalid
+   * data. The exception contains a Map of indexes of faulty rows and the corresponding error
+   * message.
    */
   public static class AppendSerializtionError extends StatusRuntimeException {
     private final Map<Integer, String> rowIndexToErrorMessage;
@@ -239,23 +241,6 @@ public final class Exceptions {
 
     public String getStreamName() {
       return streamName;
-    }
-  }
-
-  /**
-   * This exception is thrown from {@link JsonStreamWriter#append()} when the client side Json to
-   * Proto serializtion fails. It can also be thrown by the server in case rows contains invalid
-   * data. The exception contains a Map of indexes of faulty rows and the corresponding error
-   * message.
-   */
-  public static class AppendSerializationError extends AppendSerializtionError {
-
-    public AppendSerializationError(
-        int codeValue,
-        String description,
-        String streamName,
-        Map<Integer, String> rowIndexToErrorMessage) {
-      super(codeValue, description, streamName, rowIndexToErrorMessage);
     }
   }
 
