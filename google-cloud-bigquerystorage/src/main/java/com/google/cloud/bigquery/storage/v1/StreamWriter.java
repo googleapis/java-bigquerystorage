@@ -491,16 +491,6 @@ public class StreamWriter implements AutoCloseable {
     singleConnectionOrConnectionPool.close(this);
   }
 
-  /**
-   * Sets the maximum time a request is allowed to be staying in waiting queue without receiving
-   * callback. Requests may failed to get callback triggered under rare situation, e.g. network
-   * cut is not detected by Google networking SDK thus causing message to wait for callback
-   * indefintely. The default timeout is set to be 15 minutes.
-   */
-  public static void setMaxInflightRequestWaitTime(Duration waitTime) {
-    ConnectionWorker.MAXIMUM_REQUEST_CALLBACK_WAIT_TIME = waitTime;
-  }
-
   /** Constructs a new {@link StreamWriterV2.Builder} using the given stream and client. */
   public static StreamWriter.Builder newBuilder(String streamName, BigQueryWriteClient client) {
     return new StreamWriter.Builder(streamName, client);
