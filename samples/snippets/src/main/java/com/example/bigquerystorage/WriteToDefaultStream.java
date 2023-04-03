@@ -151,7 +151,7 @@ public class WriteToDefaultStream {
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
       streamWriter =
-          JsonStreamWriter.newBuilder(parentTable, BigQueryWriteClient.create()).build();
+          JsonStreamWriter.newBuilder(parentTable.toString(), BigQueryWriteClient.create()).build();
     }
 
     public void append(AppendContext appendContext)
