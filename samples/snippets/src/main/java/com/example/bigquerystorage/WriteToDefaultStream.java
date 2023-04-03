@@ -157,11 +157,13 @@ public class WriteToDefaultStream {
     public void append(AppendContext appendContext)
         throws DescriptorValidationException, IOException, InterruptedException {
       synchronized (this.lock) {
-        if (!streamWriter.isUserClosed() && streamWriter.isClosed()
+        if (!streamWriter.isUserClosed()
+            && streamWriter.isClosed()
             && recreateCount.getAndIncrement() < MAX_RECREATE_COUNT) {
           streamWriter =
-              JsonStreamWriter.newBuilder(streamWriter.getStreamName(),
-                  BigQueryWriteClient.create()).build();
+              JsonStreamWriter.newBuilder(
+                      streamWriter.getStreamName(), BigQueryWriteClient.create())
+                  .build();
           this.error = null;
         }
         // If earlier appends have failed, we need to reset before continuing.
