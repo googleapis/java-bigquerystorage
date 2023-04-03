@@ -157,7 +157,7 @@ public class WriteToDefaultStream {
     public void append(AppendContext appendContext)
         throws DescriptorValidationException, IOException {
       synchronized (this.lock) {
-        if (streamWriter.isUserClosed() && streamWriter.isClosed() &&
+        if (!streamWriter.isUserClosed() && streamWriter.isClosed() &&
             recreateCount.getAndIncrement() < MAX_RECREATE_COUNT) {
           streamWriter =
               JsonStreamWriter.newBuilder(streamWriter.getStreamName(),
