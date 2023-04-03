@@ -155,7 +155,7 @@ public class WriteToDefaultStream {
     }
 
     public void append(AppendContext appendContext)
-        throws DescriptorValidationException, IOException {
+        throws DescriptorValidationException, IOException, InterruptedException {
       synchronized (this.lock) {
         if (!streamWriter.isUserClosed() && streamWriter.isClosed()
             && recreateCount.getAndIncrement() < MAX_RECREATE_COUNT) {
