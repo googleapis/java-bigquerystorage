@@ -253,6 +253,8 @@ public class WriteToDefaultStream {
                 throw new RuntimeException(e);
               } catch (IOException e) {
                 throw new RuntimeException(e);
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
               }
             }
             // Mark the existing attempt as done since we got a response for it
