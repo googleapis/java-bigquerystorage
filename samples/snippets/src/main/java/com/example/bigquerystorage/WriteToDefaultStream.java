@@ -151,8 +151,7 @@ public class WriteToDefaultStream {
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
       streamWriter =
-          JsonStreamWriter.newBuilder(streamWriter.getStreamName(),
-              BigQueryWriteClient.create()).build();
+          JsonStreamWriter.newBuilder(parentTable, BigQueryWriteClient.create()).build();
     }
 
     public void append(AppendContext appendContext)
@@ -164,7 +163,7 @@ public class WriteToDefaultStream {
         // If stream writer is premenantly failed, try recreate a stream writer.
         if (streamWriter.isClosed() && recreateCount.getAndIncrement() < MAX_RECREATE_COUNT) {
           streamWriter =
-              JsonStreamWriter.newBuilder(streamWriter.get,
+              JsonStreamWriter.newBuilder(streamWriter.getStreamName(),
                   BigQueryWriteClient.create()).build();
           this.error = null;
         }
