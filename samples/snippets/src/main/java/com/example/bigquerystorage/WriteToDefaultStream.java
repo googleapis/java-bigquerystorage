@@ -157,11 +157,8 @@ public class WriteToDefaultStream {
     public void append(AppendContext appendContext)
         throws DescriptorValidationException, IOException {
       synchronized (this.lock) {
-        if (streamWriter.isUserClosed()) {
-          throw new RuntimeException("Writer is closed by user.");
-        }
-        // If stream writer is premenantly failed, try recreate a stream writer.
-        if (streamWriter.isClosed() && recreateCount.getAndIncrement() < MAX_RECREATE_COUNT) {
+        if (streamWriter.isUserClosed() && streamWriter.isClosed() &&
+            recreateCount.getAndIncrement() < MAX_RECREATE_COUNT) {
           streamWriter =
               JsonStreamWriter.newBuilder(streamWriter.getStreamName(),
                   BigQueryWriteClient.create()).build();
