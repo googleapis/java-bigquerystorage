@@ -362,13 +362,23 @@ public final class Exceptions {
           currentLimit);
     }
   }
+
+  /**
+   * This class is replaced by a generic one. It will be removed soon. Please use {@link
+   * DataHasUnknownFieldException}
+   */
+  public static final class JsonDataHasUnknownFieldException extends DataHasUnknownFieldException {
+    protected JsonDataHasUnknownFieldException(String jsonFieldName) {
+      super(jsonFieldName);
+    }
+  }
   /**
    * Input data object has unknown field to the schema of the SchemaAwareStreamWriter. User can
    * either turn on IgnoreUnknownFields option on the SchemaAwareStreamWriter, or if they don't want
    * the error to be ignored, they should recreate the SchemaAwareStreamWriter with the updated
    * table schema.
    */
-  public static final class DataHasUnknownFieldException extends IllegalArgumentException {
+  public static class DataHasUnknownFieldException extends IllegalArgumentException {
     private final String jsonFieldName;
 
     public DataHasUnknownFieldException(String jsonFieldName) {

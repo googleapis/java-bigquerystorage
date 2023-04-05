@@ -306,6 +306,11 @@ public class JsonStreamWriter implements AutoCloseable {
       return this;
     }
 
+    /** This parameter is not used. It will be removed soon. */
+    public Builder setReconnectAfter10M(boolean reconnectAfter10M) {
+      return this;
+    }
+
     /**
      * Enable multiplexing for this writer. In multiplexing mode tables will share the same
      * connection if possible until the connection is overwhelmed. This feature is still under

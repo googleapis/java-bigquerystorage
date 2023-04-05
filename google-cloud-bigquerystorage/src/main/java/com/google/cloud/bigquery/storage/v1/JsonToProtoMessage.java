@@ -48,7 +48,7 @@ import org.threeten.bp.temporal.TemporalAccessor;
  * Converts JSON data to Protobuf messages given the Protobuf descriptor and BigQuery table schema.
  * The Protobuf descriptor must have all fields lowercased.
  */
-public final class JsonToProtoMessage implements ToProtoConverter<Object> {
+public class JsonToProtoMessage implements ToProtoConverter<Object> {
   public static final JsonToProtoMessage INSTANCE = new JsonToProtoMessage();
   private static final Logger LOG = Logger.getLogger(JsonToProtoMessage.class.getName());
   private static int NUMERIC_SCALE = 9;
@@ -103,7 +103,25 @@ public final class JsonToProtoMessage implements ToProtoConverter<Object> {
           .toFormatter()
           .withZone(ZoneOffset.UTC);
 
-  private JsonToProtoMessage() {}
+  /** You can use {@link JsonToProtoMessage.INSTANCE} instead */
+  public JsonToProtoMessage() {}
+
+  public static DynamicMessage convertJsonToProtoMessage(
+      Descriptor protoSchema,
+      TableSchema tableSchema,
+      JSONObject json,
+      boolean ignoreUnknownFields) {
+    return INSTANCE.convertToProtoMessage(protoSchema, tableSchema, json, ignoreUnknownFields);
+  }
+
+  public static DynamicMessage convertJsonToProtoMessage(Descriptor protoSchema, JSONObject json) {
+    return INSTANCE.convertToProtoMessage(protoSchema, json);
+  }
+
+  public static DynamicMessage convertJsonToProtoMessage(
+      Descriptor protoSchema, TableSchema tableSchema, JSONObject json) {
+    return INSTANCE.convertToProtoMessage(protoSchema, tableSchema, json);
+  }
 
   /**
    * Converts input message to Protobuf
