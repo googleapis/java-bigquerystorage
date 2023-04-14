@@ -41,12 +41,12 @@ import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
 import com.google.cloud.bigquery.TimePartitioning;
 import com.google.cloud.bigquery.storage.v1.BigQueryReadClient;
+import com.google.cloud.bigquery.storage.v1.BigQueryReadSettings;
 import com.google.cloud.bigquery.storage.v1.CreateReadSessionRequest;
 import com.google.cloud.bigquery.storage.v1.DataFormat;
 import com.google.cloud.bigquery.storage.v1.ReadRowsRequest;
 import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
 import com.google.cloud.bigquery.storage.v1.ReadSession;
-import com.google.cloud.bigquery.storage.v1.BigQueryReadSettings;
 import com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers;
 import com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions;
 import com.google.cloud.bigquery.storage.v1.ReadStream;
@@ -811,42 +811,44 @@ public class ITBigQueryStorageTest {
 
   @Test
   public void testSimpleReadWithBackgroundExecutorProvider() throws IOException {
-    BigQueryReadSettings bigQueryReadSettings = BigQueryReadSettings
-            .newBuilder()
+    BigQueryReadSettings bigQueryReadSettings =
+        BigQueryReadSettings.newBuilder()
             .setBackgroundExecutorProvider(
-                    InstantiatingExecutorProvider.newBuilder().setExecutorThreadCount(14).build())
+                InstantiatingExecutorProvider.newBuilder().setExecutorThreadCount(14).build())
             .build();
     // Overriding the default client
     client = BigQueryReadClient.create(bigQueryReadSettings);
     assertTrue(
-            client.getStub().getStubSettings().getBackgroundExecutorProvider() instanceof InstantiatingExecutorProvider);
+        client.getStub().getStubSettings().getBackgroundExecutorProvider()
+            instanceof InstantiatingExecutorProvider);
     assertEquals(
-            14,
-            ((InstantiatingExecutorProvider) client.getStub().getStubSettings().getBackgroundExecutorProvider())
-                    .getExecutorThreadCount());
+        14,
+        ((InstantiatingExecutorProvider)
+                client.getStub().getStubSettings().getBackgroundExecutorProvider())
+            .getExecutorThreadCount());
     String table =
-            BigQueryResource.FormatTableResource(
-                    /* projectId = */ "bigquery-public-data",
-                    /* datasetId = */ "samples",
-                    /* tableId = */ "shakespeare");
+        BigQueryResource.FormatTableResource(
+            /* projectId = */ "bigquery-public-data",
+            /* datasetId = */ "samples",
+            /* tableId = */ "shakespeare");
 
     ReadSession session =
-            client.createReadSession(
-                    /* parent = */ parentProjectId,
-                    /* readSession = */ ReadSession.newBuilder()
-                            .setTable(table)
-                            .setDataFormat(DataFormat.AVRO)
-                            .build(),
-                    /* maxStreamCount = */ 1);
+        client.createReadSession(
+            /* parent = */ parentProjectId,
+            /* readSession = */ ReadSession.newBuilder()
+                .setTable(table)
+                .setDataFormat(DataFormat.AVRO)
+                .build(),
+            /* maxStreamCount = */ 1);
     assertEquals(
-            String.format(
-                    "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
-                    table, session.toString()),
-            1,
-            session.getStreamsCount());
+        String.format(
+            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            table, session.toString()),
+        1,
+        session.getStreamsCount());
 
     ReadRowsRequest readRowsRequest =
-            ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
+        ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
 
     long rowCount = 0;
     ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
