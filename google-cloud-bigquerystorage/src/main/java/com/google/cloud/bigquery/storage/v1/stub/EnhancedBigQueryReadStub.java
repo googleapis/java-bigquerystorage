@@ -196,4 +196,8 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
   public boolean awaitTermination(long duration, TimeUnit unit) throws InterruptedException {
     return stub.awaitTermination(duration, unit);
   }
+
+  public BigQueryReadStubSettings getStubSettings() {
+    return stubSettings;
+  }
 }
