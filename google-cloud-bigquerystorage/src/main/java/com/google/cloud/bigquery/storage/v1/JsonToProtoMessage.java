@@ -52,7 +52,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
   public static final JsonToProtoMessage INSTANCE = new JsonToProtoMessage();
   private static final Logger LOG = Logger.getLogger(JsonToProtoMessage.class.getName());
   private static final int NUMERIC_SCALE = 9;
-  private static ImmutableMap<FieldDescriptor.Type, String> FIELD_TYPE_TO_DEBUG_MESSAGE =
+  private static final ImmutableMap<FieldDescriptor.Type, String> FIELD_TYPE_TO_DEBUG_MESSAGE =
       new ImmutableMap.Builder<FieldDescriptor.Type, String>()
           .put(FieldDescriptor.Type.BOOL, "boolean")
           .put(FieldDescriptor.Type.BYTES, "bytes")
@@ -156,7 +156,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     Preconditions.checkNotNull(protoSchema, "Protobuf descriptor is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertToProtoMessage(protoSchema, null, json, ROOT_JSON_SCOPE, MESSAGE_TOP_LEVEL, DONT_ACCEPT_UNKNOWN_FIELDS);
+    return convertToProtoMessage(protoSchema, null, json, ROOT_JSON_SCOPE, IS_TOP_LEVEL, DONT_ACCEPT_UNKNOWN_FIELDS);
   }
 
   /**
@@ -181,7 +181,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         tableSchema.getFieldsList(),
         json,
         ROOT_JSON_SCOPE,
-        MESSAGE_TOP_LEVEL,
+        IS_TOP_LEVEL,
         DONT_ACCEPT_UNKNOWN_FIELDS);
   }
 
