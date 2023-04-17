@@ -226,8 +226,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     if (jsonNames == null) {
       return protoMsg.build();
     }
-    for (int i = 0; i < jsonNames.length; i++) {
-      String jsonName = jsonNames[i];
+    for (String jsonName : jsonNames) {
       // We want lowercase here to support case-insensitive data writes.
       // The protobuf descriptor that is used is assumed to have all lowercased fields
       String jsonFieldLocator = jsonName.toLowerCase();
