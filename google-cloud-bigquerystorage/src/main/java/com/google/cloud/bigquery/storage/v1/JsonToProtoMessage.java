@@ -30,7 +30,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.logging.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -49,7 +48,6 @@ import org.threeten.bp.temporal.TemporalAccessor;
  */
 public class JsonToProtoMessage implements ToProtoConverter<Object> {
   public static final JsonToProtoMessage INSTANCE = new JsonToProtoMessage();
-  private static final Logger LOG = Logger.getLogger(JsonToProtoMessage.class.getName());
   private static final int NUMERIC_SCALE = 9;
   private static final ImmutableMap<FieldDescriptor.Type, String> FIELD_TYPE_TO_DEBUG_MESSAGE =
       new ImmutableMap.Builder<FieldDescriptor.Type, String>()
