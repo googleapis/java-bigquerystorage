@@ -28,7 +28,7 @@ import com.google.cloud.bigquery.*;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.cloud.bigquery.storage.v1.*;
-import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
+import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.OffsetAlreadyExists;
 import com.google.cloud.bigquery.storage.v1.Exceptions.OffsetOutOfRange;
 import com.google.cloud.bigquery.storage.v1.Exceptions.SchemaMismatchedException;
@@ -372,8 +372,8 @@ public class ITBigQueryWriteManualClientTest {
     } catch (Throwable t) {
       assertTrue(t instanceof ExecutionException);
       t = t.getCause();
-      assertTrue(t instanceof AppendSerializtionError);
-      AppendSerializtionError e = (AppendSerializtionError) t;
+      assertTrue(t instanceof AppendSerializationError);
+      AppendSerializationError e = (AppendSerializationError) t;
       LOG.info("Found row errors on stream: " + e.getStreamName());
       assertEquals(
           "Field foo: STRING(10) has maximum length 10 but got a value with length 12 on field foo.",
@@ -742,9 +742,7 @@ public class ITBigQueryWriteManualClientTest {
         new ArrayList<ApiFuture<AppendRowsResponse>>(totalRequest);
     // Sends a total of 30MB over the wire.
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
-            .setReconnectAfter10M(true)
-            .build()) {
+        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
       for (int k = 0; k < totalRequest; k++) {
         JSONObject row = new JSONObject();
         row.put("col1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");

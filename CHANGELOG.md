@@ -1,5 +1,49 @@
 # Changelog
 
+## [2.35.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.34.2...v2.35.0) (2023-04-13)
+
+
+### Features
+
+* Add public api to stream writer to set the maximum wait time ([#2066](https://github.com/googleapis/java-bigquerystorage/issues/2066)) ([1e9a8ca](https://github.com/googleapis/java-bigquerystorage/commit/1e9a8cac19c3748515ebff7990d02fd576c7dd23))
+* Add sample about processing permanent writer failure ([#2057](https://github.com/googleapis/java-bigquerystorage/issues/2057)) ([8eda934](https://github.com/googleapis/java-bigquerystorage/commit/8eda9347a90f59ddcf99501f8b71ba17c5f3a143))
+* Add schema aware stream writer ([#2048](https://github.com/googleapis/java-bigquerystorage/issues/2048)) ([ad136b9](https://github.com/googleapis/java-bigquerystorage/commit/ad136b9fa25e774a33d02fc3a82a76fb1152b5c5))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.24.4 ([#2070](https://github.com/googleapis/java-bigquerystorage/issues/2070)) ([ce9e962](https://github.com/googleapis/java-bigquerystorage/commit/ce9e96209cbafd5a4daa981c5e5252272dc9811a))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.7.0 ([#2077](https://github.com/googleapis/java-bigquerystorage/issues/2077)) ([b5ea788](https://github.com/googleapis/java-bigquerystorage/commit/b5ea788df26122dcdf3c7104658cc8fd35a38f72))
+
+## [2.34.2](https://github.com/googleapis/java-bigquerystorage/compare/v2.34.1...v2.34.2) (2023-03-30)
+
+
+### Bug Fixes
+
+* Correct AppendSerializtionError typo ([#2037](https://github.com/googleapis/java-bigquerystorage/issues/2037)) ([e67e913](https://github.com/googleapis/java-bigquerystorage/commit/e67e913f34fda4f4cc523c0248e5344232c0b736))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.24.0 ([#2054](https://github.com/googleapis/java-bigquerystorage/issues/2054)) ([e3156c7](https://github.com/googleapis/java-bigquerystorage/commit/e3156c7b525f7df2f3fe756f096e7fb1352fae8e))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.24.1 ([#2056](https://github.com/googleapis/java-bigquerystorage/issues/2056)) ([a989ac6](https://github.com/googleapis/java-bigquerystorage/commit/a989ac63d813cc98dcc13200a950fe3edad10bdf))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.24.3 ([#2058](https://github.com/googleapis/java-bigquerystorage/issues/2058)) ([9346667](https://github.com/googleapis/java-bigquerystorage/commit/934666737a92ec3220c6a186cc1af0f1adabb00c))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.6.0 ([#2063](https://github.com/googleapis/java-bigquerystorage/issues/2063)) ([965de7b](https://github.com/googleapis/java-bigquerystorage/commit/965de7bf78884cca30e6e6d672b74d734bda840d))
+
+## [2.34.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.34.0...v2.34.1) (2023-03-21)
+
+
+### Bug Fixes
+
+* Add service_yaml_parameters to `java_gapic_library` targets ([#2034](https://github.com/googleapis/java-bigquerystorage/issues/2034)) ([8dae87c](https://github.com/googleapis/java-bigquerystorage/commit/8dae87cff06c7d08b9d597be9c66de570739abf4))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.23.2 ([#2029](https://github.com/googleapis/java-bigquerystorage/issues/2029)) ([e9c0152](https://github.com/googleapis/java-bigquerystorage/commit/e9c0152c2b098d7fb2d1de4d535d636a3ac9f90e))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.5.0 ([#2050](https://github.com/googleapis/java-bigquerystorage/issues/2050)) ([349092f](https://github.com/googleapis/java-bigquerystorage/commit/349092f28f6017b1df5b325e9a9036c311e70546))
+* Update dependency com.google.http-client:google-http-client to v1.43.1 ([#2038](https://github.com/googleapis/java-bigquerystorage/issues/2038)) ([5e865c9](https://github.com/googleapis/java-bigquerystorage/commit/5e865c9b3779f0d20080eead241f1b5858156880))
+
 ## [2.34.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.33.1...v2.34.0) (2023-03-10)
 
 
