@@ -102,7 +102,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
   private final String ROOT_JSON_SCOPE = "root";
   private final boolean DONT_ACCEPT_UNKNOWN_FIELDS = false;
 
-  /** You can use {@link JsonToProtoMessage.INSTANCE} instead */
+  /** You can use {@link #INSTANCE} instead */
   public JsonToProtoMessage() {}
 
   public static DynamicMessage convertJsonToProtoMessage(
