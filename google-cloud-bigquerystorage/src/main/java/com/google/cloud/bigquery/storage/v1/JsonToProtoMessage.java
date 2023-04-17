@@ -25,7 +25,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.Message;
 import com.google.protobuf.UninitializedMessageException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -513,7 +512,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         break;
       case MESSAGE:
         if (val instanceof JSONObject) {
-          Message.Builder message = protoMsg.newBuilderForField(fieldDescriptor);
           protoMsg.setField(
               fieldDescriptor,
               convertToProtoMessage(
@@ -777,7 +775,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           break;
         case MESSAGE:
           if (val instanceof JSONObject) {
-            Message.Builder message = protoMsg.newBuilderForField(fieldDescriptor);
             protoMsg.addRepeatedField(
                 fieldDescriptor,
                 convertToProtoMessage(
