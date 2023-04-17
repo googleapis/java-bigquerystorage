@@ -324,7 +324,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     switch (fieldDescriptor.getType()) {
       case BOOL:
         if (val instanceof Boolean) {
-          protoMsg.setField(fieldDescriptor, (Boolean) val);
+          protoMsg.setField(fieldDescriptor, val);
           return;
         }
         if (val instanceof String
@@ -419,7 +419,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                   CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.parse((String) val)));
               return;
             } else if (val instanceof Long) {
-              protoMsg.setField(fieldDescriptor, (Long) val);
+              protoMsg.setField(fieldDescriptor, val);
               return;
             }
           } else if (fieldSchema.getType() == TableFieldSchema.Type.TIME) {
@@ -429,7 +429,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                   CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
               return;
             } else if (val instanceof Long) {
-              protoMsg.setField(fieldDescriptor, (Long) val);
+              protoMsg.setField(fieldDescriptor, val);
               return;
             }
           } else if (fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
@@ -446,19 +446,19 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                       + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
               return;
             } else if (val instanceof Long) {
-              protoMsg.setField(fieldDescriptor, (Long) val);
+              protoMsg.setField(fieldDescriptor, val);
               return;
             } else if (val instanceof Integer) {
-              protoMsg.setField(fieldDescriptor, new Long((Integer) val) * 10000000);
+              protoMsg.setField(fieldDescriptor, Long.valueOf((Integer) val) * 10000000);
               return;
             }
           }
         }
         if (val instanceof Integer) {
-          protoMsg.setField(fieldDescriptor, new Long((Integer) val));
+          protoMsg.setField(fieldDescriptor, Long.valueOf((Integer) val));
           return;
         } else if (val instanceof Long) {
-          protoMsg.setField(fieldDescriptor, (Long) val);
+          protoMsg.setField(fieldDescriptor, val);
           return;
         }
         if (val instanceof String) {
@@ -480,7 +480,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           }
         }
         if (val instanceof Integer) {
-          protoMsg.setField(fieldDescriptor, (Integer) val);
+          protoMsg.setField(fieldDescriptor, val);
           return;
         }
         if (val instanceof String) {
@@ -493,7 +493,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         break;
       case STRING:
         if (val instanceof String) {
-          protoMsg.setField(fieldDescriptor, (String) val);
+          protoMsg.setField(fieldDescriptor, val);
           return;
         }
         break;
@@ -572,7 +572,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
       switch (fieldDescriptor.getType()) {
         case BOOL:
           if (val instanceof Boolean) {
-            protoMsg.addRepeatedField(fieldDescriptor, (Boolean) val);
+            protoMsg.addRepeatedField(fieldDescriptor, val);
           } else if (val instanceof String
               && ("true".equals(((String) val).toLowerCase())
                   || "false".equals(((String) val).toLowerCase()))) {
@@ -680,7 +680,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                   fieldDescriptor,
                   CivilTimeEncoder.encodePacked64DatetimeMicros(LocalDateTime.parse((String) val)));
             } else if (val instanceof Long) {
-              protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+              protoMsg.addRepeatedField(fieldDescriptor, val);
             } else {
               fail = true;
             }
@@ -690,7 +690,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                   fieldDescriptor,
                   CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
             } else if (val instanceof Long) {
-              protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+              protoMsg.addRepeatedField(fieldDescriptor, val);
             } else {
               fail = true;
             }
@@ -708,16 +708,16 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                         + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
               }
             } else if (val instanceof Long) {
-              protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+              protoMsg.addRepeatedField(fieldDescriptor, val);
             } else if (val instanceof Integer) {
-              protoMsg.addRepeatedField(fieldDescriptor, new Long((Integer) val) * 10000000);
+              protoMsg.addRepeatedField(fieldDescriptor, ((Integer) val) * 10000000);
             } else {
               fail = true;
             }
           } else if (val instanceof Integer) {
-            protoMsg.addRepeatedField(fieldDescriptor, new Long((Integer) val));
+            protoMsg.addRepeatedField(fieldDescriptor, Long.valueOf((Integer) val));
           } else if (val instanceof Long) {
-            protoMsg.addRepeatedField(fieldDescriptor, (Long) val);
+            protoMsg.addRepeatedField(fieldDescriptor, val);
           } else if (val instanceof String) {
             Long parsed = Longs.tryParse((String) val);
             if (parsed != null) {
@@ -740,7 +740,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
               fail = true;
             }
           } else if (val instanceof Integer) {
-            protoMsg.addRepeatedField(fieldDescriptor, (Integer) val);
+            protoMsg.addRepeatedField(fieldDescriptor, val);
           } else if (val instanceof String) {
             Integer parsed = Ints.tryParse((String) val);
             if (parsed != null) {
@@ -754,7 +754,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           break;
         case STRING:
           if (val instanceof String) {
-            protoMsg.addRepeatedField(fieldDescriptor, (String) val);
+            protoMsg.addRepeatedField(fieldDescriptor, val);
           } else {
             fail = true;
           }
