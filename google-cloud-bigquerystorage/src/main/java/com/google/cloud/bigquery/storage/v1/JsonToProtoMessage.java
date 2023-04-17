@@ -51,8 +51,8 @@ import org.threeten.bp.temporal.TemporalAccessor;
 public class JsonToProtoMessage implements ToProtoConverter<Object> {
   public static final JsonToProtoMessage INSTANCE = new JsonToProtoMessage();
   private static final Logger LOG = Logger.getLogger(JsonToProtoMessage.class.getName());
-  private static int NUMERIC_SCALE = 9;
-  private static ImmutableMap<FieldDescriptor.Type, String> FieldTypeToDebugMessage =
+  private static final int NUMERIC_SCALE = 9;
+  private static ImmutableMap<FieldDescriptor.Type, String> FIELD_TYPE_TO_DEBUG_MESSAGE =
       new ImmutableMap.Builder<FieldDescriptor.Type, String>()
           .put(FieldDescriptor.Type.BOOL, "boolean")
           .put(FieldDescriptor.Type.BYTES, "bytes")
@@ -62,7 +62,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           .put(FieldDescriptor.Type.STRING, "string")
           .put(FieldDescriptor.Type.MESSAGE, "object")
           .build();
-  private static final DateTimeFormatter timestampFormatter =
+  private static final DateTimeFormatter TIMESTAMP_FORMATTER =
       new DateTimeFormatterBuilder()
           .parseLenient()
           .append(DateTimeFormatter.ofPattern("yyyy[/][-]MM[/][-]dd"))
@@ -102,8 +102,12 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           .optionalEnd()
           .toFormatter()
           .withZone(ZoneOffset.UTC);
+  private final String ROOT_JSON_SCOPE = "root";
+  private final boolean IS_TOP_LEVEL = true;
+  private final boolean NOT_TOP_LEVEL = false;
+  private final boolean DONT_ACCEPT_UNKNOWN_FIELDS = false;
 
-  /** You can use {@link JsonToProtoMessage.INSTANCE} instead */
+    /** You can use {@link JsonToProtoMessage.INSTANCE} instead */
   public JsonToProtoMessage() {}
 
   public static DynamicMessage convertJsonToProtoMessage(
@@ -152,7 +156,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     Preconditions.checkNotNull(protoSchema, "Protobuf descriptor is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertToProtoMessage(protoSchema, null, json, "root", /*topLevel=*/ true, false);
+    return convertToProtoMessage(protoSchema, null, json, ROOT_JSON_SCOPE, MESSAGE_TOP_LEVEL, DONT_ACCEPT_UNKNOWN_FIELDS);
   }
 
   /**
@@ -176,9 +180,9 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         protoSchema,
         tableSchema.getFieldsList(),
         json,
-        "root",
-        /*topLevel=*/ true,
-        /*ignoreUnknownFields*/ false);
+        ROOT_JSON_SCOPE,
+        MESSAGE_TOP_LEVEL,
+        DONT_ACCEPT_UNKNOWN_FIELDS);
   }
 
   /**
@@ -203,8 +207,8 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         protoSchema,
         tableSchema.getFieldsList(),
         json,
-        "root",
-        /*topLevel=*/ true,
+        ROOT_JSON_SCOPE,
+        IS_TOP_LEVEL,
         ignoreUnknownFields);
   }
 
@@ -442,7 +446,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                 protoMsg.setField(fieldDescriptor, parsed.longValue() * 10000000);
                 return;
               }
-              TemporalAccessor parsedTime = timestampFormatter.parse((String) val);
+              TemporalAccessor parsedTime = TIMESTAMP_FORMATTER.parse((String) val);
               protoMsg.setField(
                   fieldDescriptor,
                   parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
@@ -523,7 +527,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                   fieldSchema == null ? null : fieldSchema.getFieldsList(),
                   json.getJSONObject(exactJsonKeyName),
                   currentScope,
-                  /*topLevel =*/ false,
+                  NOT_TOP_LEVEL,
                   ignoreUnknownFields));
           return;
         }
@@ -532,7 +536,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     throw new IllegalArgumentException(
         String.format(
             "JSONObject does not have a %s field at %s.",
-            FieldTypeToDebugMessage.get(fieldDescriptor.getType()), currentScope));
+            FIELD_TYPE_TO_DEBUG_MESSAGE.get(fieldDescriptor.getType()), currentScope));
   }
 
   /**
@@ -706,7 +710,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
               if (parsed != null) {
                 protoMsg.addRepeatedField(fieldDescriptor, parsed.longValue() * 10000000);
               } else {
-                TemporalAccessor parsedTime = timestampFormatter.parse((String) val);
+                TemporalAccessor parsedTime = TIMESTAMP_FORMATTER.parse((String) val);
                 protoMsg.addRepeatedField(
                     fieldDescriptor,
                     parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
@@ -788,7 +792,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                     fieldSchema == null ? null : fieldSchema.getFieldsList(),
                     jsonArray.getJSONObject(i),
                     currentScope,
-                    /*topLevel =*/ false,
+                    NOT_TOP_LEVEL,
                     ignoreUnknownFields));
           } else {
             fail = true;
@@ -799,7 +803,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         throw new IllegalArgumentException(
             String.format(
                 "JSONObject does not have a %s field at %s[%d].",
-                FieldTypeToDebugMessage.get(fieldDescriptor.getType()), currentScope, index));
+                FIELD_TYPE_TO_DEBUG_MESSAGE.get(fieldDescriptor.getType()), currentScope, index));
       }
     }
   }
