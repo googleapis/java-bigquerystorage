@@ -103,11 +103,9 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           .toFormatter()
           .withZone(ZoneOffset.UTC);
   private final String ROOT_JSON_SCOPE = "root";
-  private final boolean IS_TOP_LEVEL = true;
-  private final boolean NOT_TOP_LEVEL = false;
   private final boolean DONT_ACCEPT_UNKNOWN_FIELDS = false;
 
-    /** You can use {@link JsonToProtoMessage.INSTANCE} instead */
+  /** You can use {@link JsonToProtoMessage.INSTANCE} instead */
   public JsonToProtoMessage() {}
 
   public static DynamicMessage convertJsonToProtoMessage(
@@ -156,7 +154,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     Preconditions.checkNotNull(protoSchema, "Protobuf descriptor is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertToProtoMessage(protoSchema, null, json, ROOT_JSON_SCOPE, IS_TOP_LEVEL, DONT_ACCEPT_UNKNOWN_FIELDS);
+    return convertToProtoMessage(protoSchema, null, json, ROOT_JSON_SCOPE, DONT_ACCEPT_UNKNOWN_FIELDS);
   }
 
   /**
@@ -181,7 +179,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         tableSchema.getFieldsList(),
         json,
         ROOT_JSON_SCOPE,
-        IS_TOP_LEVEL,
         DONT_ACCEPT_UNKNOWN_FIELDS);
   }
 
@@ -208,7 +205,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         tableSchema.getFieldsList(),
         json,
         ROOT_JSON_SCOPE,
-        IS_TOP_LEVEL,
         ignoreUnknownFields);
   }
 
@@ -218,7 +214,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
    * @param protoSchema
    * @param json
    * @param jsonScope Debugging purposes
-   * @param topLevel checks if root level has any matching fields.
    * @throws IllegalArgumentException when JSON data is not compatible with proto descriptor.
    */
   private DynamicMessage convertToProtoMessage(
@@ -226,7 +221,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
       List<TableFieldSchema> tableSchema,
       JSONObject json,
       String jsonScope,
-      boolean topLevel,
       boolean ignoreUnknownFields)
       throws IllegalArgumentException {
 
@@ -527,7 +521,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                   fieldSchema == null ? null : fieldSchema.getFieldsList(),
                   json.getJSONObject(exactJsonKeyName),
                   currentScope,
-                  NOT_TOP_LEVEL,
                   ignoreUnknownFields));
           return;
         }
@@ -792,7 +785,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                     fieldSchema == null ? null : fieldSchema.getFieldsList(),
                     jsonArray.getJSONObject(i),
                     currentScope,
-                    NOT_TOP_LEVEL,
                     ignoreUnknownFields));
           } else {
             fail = true;
