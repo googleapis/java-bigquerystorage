@@ -325,8 +325,8 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           return;
         }
         if (val instanceof String
-            && ("true".equals(((String) val).toLowerCase())
-                || "false".equals(((String) val).toLowerCase()))) {
+            && ("true".equalsIgnoreCase(((String) val))
+                || "false".equalsIgnoreCase(((String) val)))) {
           protoMsg.setField(fieldDescriptor, Boolean.parseBoolean((String) val));
           return;
         }
@@ -571,15 +571,15 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           if (val instanceof Boolean) {
             protoMsg.addRepeatedField(fieldDescriptor, val);
           } else if (val instanceof String
-              && ("true".equals(((String) val).toLowerCase())
-                  || "false".equals(((String) val).toLowerCase()))) {
+              && ("true".equalsIgnoreCase(((String) val))
+                  || "false".equalsIgnoreCase(((String) val)))) {
             protoMsg.addRepeatedField(fieldDescriptor, Boolean.parseBoolean((String) val));
           } else {
             fail = true;
           }
           break;
         case BYTES:
-          Boolean added = false;
+          boolean added = false;
           if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.NUMERIC) {
             if (val instanceof String) {
               protoMsg.addRepeatedField(
