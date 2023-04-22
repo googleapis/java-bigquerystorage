@@ -151,7 +151,8 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     Preconditions.checkNotNull(protoSchema, "Protobuf descriptor is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertToProtoMessage(protoSchema, null, json, ROOT_JSON_SCOPE, DONT_ACCEPT_UNKNOWN_FIELDS);
+    return convertToProtoMessage(
+        protoSchema, null, json, ROOT_JSON_SCOPE, DONT_ACCEPT_UNKNOWN_FIELDS);
   }
 
   /**
@@ -198,11 +199,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
     return convertToProtoMessage(
-        protoSchema,
-        tableSchema.getFieldsList(),
-        json,
-        ROOT_JSON_SCOPE,
-        ignoreUnknownFields);
+        protoSchema, tableSchema.getFieldsList(), json, ROOT_JSON_SCOPE, ignoreUnknownFields);
   }
 
   /**
@@ -562,7 +559,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     }
     java.lang.Object val;
     int index;
-    boolean fail = false;
     for (int i = 0; i < jsonArray.length(); i++) {
       val = jsonArray.get(i);
       index = i;
@@ -575,7 +571,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                   || "false".equalsIgnoreCase(((String) val)))) {
             protoMsg.addRepeatedField(fieldDescriptor, Boolean.parseBoolean((String) val));
           } else {
-            fail = true;
+            throwWrongFieldType(fieldDescriptor, currentScope, index);
           }
           break;
         case BYTES:
@@ -666,7 +662,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                             + "] could not be converted to byte[]."));
               }
             } else {
-              fail = true;
+              throwWrongFieldType(fieldDescriptor, currentScope, index);
             }
           }
           break;
@@ -679,7 +675,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             } else if (val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, val);
             } else {
-              fail = true;
+              throwWrongFieldType(fieldDescriptor, currentScope, index);
             }
           } else if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.TIME) {
             if (val instanceof String) {
@@ -689,7 +685,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             } else if (val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, val);
             } else {
-              fail = true;
+              throwWrongFieldType(fieldDescriptor, currentScope, index);
             }
           } else if (fieldSchema != null
               && fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
@@ -709,7 +705,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             } else if (val instanceof Integer) {
               protoMsg.addRepeatedField(fieldDescriptor, ((Integer) val) * 10000000);
             } else {
-              fail = true;
+              throwWrongFieldType(fieldDescriptor, currentScope, index);
             }
           } else if (val instanceof Integer) {
             protoMsg.addRepeatedField(fieldDescriptor, Long.valueOf((Integer) val));
@@ -720,10 +716,10 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (parsed != null) {
               protoMsg.addRepeatedField(fieldDescriptor, parsed);
             } else {
-              fail = true;
+              throwWrongFieldType(fieldDescriptor, currentScope, index);
             }
           } else {
-            fail = true;
+            throwWrongFieldType(fieldDescriptor, currentScope, index);
           }
           break;
         case INT32:
@@ -734,7 +730,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             } else if (val instanceof Integer || val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, ((Number) val).intValue());
             } else {
-              fail = true;
+              throwWrongFieldType(fieldDescriptor, currentScope, index);
             }
           } else if (val instanceof Integer) {
             protoMsg.addRepeatedField(fieldDescriptor, val);
@@ -743,17 +739,17 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (parsed != null) {
               protoMsg.addRepeatedField(fieldDescriptor, parsed);
             } else {
-              fail = true;
+              throwWrongFieldType(fieldDescriptor, currentScope, index);
             }
           } else {
-            fail = true;
+            throwWrongFieldType(fieldDescriptor, currentScope, index);
           }
           break;
         case STRING:
           if (val instanceof String) {
             protoMsg.addRepeatedField(fieldDescriptor, val);
           } else {
-            fail = true;
+            throwWrongFieldType(fieldDescriptor, currentScope, index);
           }
           break;
         case DOUBLE:
@@ -764,10 +760,10 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (parsed != null) {
               protoMsg.addRepeatedField(fieldDescriptor, parsed);
             } else {
-              fail = true;
+              throwWrongFieldType(fieldDescriptor, currentScope, index);
             }
           } else {
-            fail = true;
+            throwWrongFieldType(fieldDescriptor, currentScope, index);
           }
           break;
         case MESSAGE:
@@ -781,16 +777,18 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
                     currentScope,
                     ignoreUnknownFields));
           } else {
-            fail = true;
+            throwWrongFieldType(fieldDescriptor, currentScope, index);
           }
           break;
       }
-      if (fail) {
-        throw new IllegalArgumentException(
-            String.format(
-                "JSONObject does not have a %s field at %s[%d].",
-                FIELD_TYPE_TO_DEBUG_MESSAGE.get(fieldDescriptor.getType()), currentScope, index));
-      }
     }
+  }
+
+  private static void throwWrongFieldType(
+      FieldDescriptor fieldDescriptor, String currentScope, int index) {
+    throw new IllegalArgumentException(
+        String.format(
+            "JSONObject does not have a %s field at %s[%d].",
+            FIELD_TYPE_TO_DEBUG_MESSAGE.get(fieldDescriptor.getType()), currentScope, index));
   }
 }
