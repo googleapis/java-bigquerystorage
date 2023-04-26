@@ -126,9 +126,6 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
       return this.toProtoConverter.convertToProtoMessage(
           this.descriptor, this.tableSchema, item, ignoreUnknownFields);
     } catch (Exceptions.DataHasUnknownFieldException ex) {
-      // Backend cache for GetWriteStream schema staleness can be 30 seconds, wait a bit before
-      // trying to get the table schema to increase the chance of succeed. This is to avoid
-      // client's invalid datfa caused storm of GetWriteStream.
       LOG.warning(
           "Saw unknown field "
               + ex.getFieldName()
