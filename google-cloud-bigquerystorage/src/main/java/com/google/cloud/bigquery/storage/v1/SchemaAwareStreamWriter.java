@@ -44,7 +44,6 @@ import javax.annotation.Nullable;
  */
 public class SchemaAwareStreamWriter<T> implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(SchemaAwareStreamWriter.class.getName());
-  private static final long UPDATE_SCHEMA_RETRY_INTERVAL_MILLIS = 30100L;
   private final BigQueryWriteClient client;
   private final String streamName;
   private final StreamWriter.Builder streamWriterBuilder;
