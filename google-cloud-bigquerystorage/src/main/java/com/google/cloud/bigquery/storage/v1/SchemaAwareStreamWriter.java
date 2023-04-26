@@ -138,7 +138,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
       WriteStream writeStream = client.getWriteStream(writeStreamRequest);
       refreshWriter(writeStream.getTableSchema());
       return this.toProtoConverter.convertToProtoMessage(
-            this.descriptor, this.tableSchema, item, ignoreUnknownFields);
+          this.descriptor, this.tableSchema, item, ignoreUnknownFields);
     }
   }
   /**
