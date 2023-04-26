@@ -141,21 +141,8 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
               .build();
       WriteStream writeStream = client.getWriteStream(writeStreamRequest);
       refreshWriter(writeStream.getTableSchema());
-      try {
-        return this.toProtoConverter.convertToProtoMessage(
+      return this.toProtoConverter.convertToProtoMessage(
             this.descriptor, this.tableSchema, item, ignoreUnknownFields);
-      } catch (Exceptions.DataHasUnknownFieldException exex) {
-        LOG.warning(
-            "First attempt failed, waiting for 30 seconds to retry, stream: " + this.streamName);
-        Thread.sleep(UPDATE_SCHEMA_RETRY_INTERVAL_MILLIS);
-        writeStream = client.getWriteStream(writeStreamRequest);
-        // TODO(yiru): We should let TableSchema return a timestamp so that we can simply
-        //     compare the timestamp to see if the table schema is the same. If it is the
-        //     same, we don't need to go refresh the writer again.
-        refreshWriter(writeStream.getTableSchema());
-        return this.toProtoConverter.convertToProtoMessage(
-            this.descriptor, this.tableSchema, item, ignoreUnknownFields);
-      }
     }
   }
   /**
