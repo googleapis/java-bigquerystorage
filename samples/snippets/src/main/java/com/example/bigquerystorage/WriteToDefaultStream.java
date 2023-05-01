@@ -146,13 +146,6 @@ public class WriteToDefaultStream {
 
     public void initialize(TableName parentTable)
         throws DescriptorValidationException, IOException, InterruptedException {
-      TransportChannelProvider transportChannelProvider =
-          BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
-              .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))
-              .setKeepAliveTimeout(org.threeten.bp.Duration.ofMinutes(1))
-              .setKeepAliveWithoutCalls(true)
-              .setChannelsPerCpu(2)
-              .build();
       // Use the JSON stream writer to send records in JSON format. Specify the table name to write
       // to the default stream.
       // For more information about JsonStreamWriter, see:
@@ -162,7 +155,6 @@ public class WriteToDefaultStream {
               .setExecutorProvider(
                   FixedExecutorProvider.create(
                       options.as(ExecutorOptions.class).getScheduledExecutorService()))
-              .setChannelProvider(transportChannelProvider)
               .setTraceId("YourJob:")
               .build();
     }
