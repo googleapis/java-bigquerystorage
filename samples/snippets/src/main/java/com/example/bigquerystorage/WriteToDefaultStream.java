@@ -21,6 +21,7 @@ package com.example.bigquerystorage;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
+import com.google.api.gax.core.FixedExecutorProvider;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.QueryJobConfiguration;
@@ -41,6 +42,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Executors;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -153,8 +155,7 @@ public class WriteToDefaultStream {
       streamWriter =
           JsonStreamWriter.newBuilder(parentTable.toString(), BigQueryWriteClient.create())
               .setExecutorProvider(
-                  FixedExecutorProvider.create(
-                      options.as(ExecutorOptions.class).getScheduledExecutorService()))
+                  FixedExecutorProvider.create(Executors.newScheduledThreadPool(100))
               .setTraceId("YourJob:")
               .build();
     }
