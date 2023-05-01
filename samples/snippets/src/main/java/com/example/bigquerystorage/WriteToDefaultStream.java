@@ -155,7 +155,7 @@ public class WriteToDefaultStream {
       streamWriter =
           JsonStreamWriter.newBuilder(parentTable.toString(), BigQueryWriteClient.create())
               .setExecutorProvider(
-                  FixedExecutorProvider.create(Executors.newScheduledThreadPool(100))
+                  FixedExecutorProvider.create(Executors.newScheduledThreadPool(100)))
               .setTraceId("YourJob:")
               .build();
     }
