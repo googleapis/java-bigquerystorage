@@ -99,8 +99,6 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           .optionalEnd()
           .toFormatter()
           .withZone(ZoneOffset.UTC);
-  private final String ROOT_JSON_SCOPE = "root";
-  private final boolean DONT_ACCEPT_UNKNOWN_FIELDS = false;
 
   /** You can use {@link #INSTANCE} instead */
   public JsonToProtoMessage() {}
@@ -151,8 +149,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     Preconditions.checkNotNull(protoSchema, "Protobuf descriptor is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertToProtoMessage(
-        protoSchema, null, json, ROOT_JSON_SCOPE, DONT_ACCEPT_UNKNOWN_FIELDS);
+    return convertToProtoMessage(protoSchema, null, json, "root", false);
   }
 
   /**
@@ -172,12 +169,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     Preconditions.checkNotNull(tableSchema, "TableSchema is null.");
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
-    return convertToProtoMessage(
-        protoSchema,
-        tableSchema.getFieldsList(),
-        json,
-        ROOT_JSON_SCOPE,
-        DONT_ACCEPT_UNKNOWN_FIELDS);
+    return convertToProtoMessage(protoSchema, tableSchema.getFieldsList(), json, "root", false);
   }
 
   /**
@@ -199,7 +191,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     Preconditions.checkState(json.length() != 0, "JSONObject is empty.");
 
     return convertToProtoMessage(
-        protoSchema, tableSchema.getFieldsList(), json, ROOT_JSON_SCOPE, ignoreUnknownFields);
+        protoSchema, tableSchema.getFieldsList(), json, "root", ignoreUnknownFields);
   }
 
   /**
