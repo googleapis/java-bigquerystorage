@@ -156,6 +156,13 @@ public class WriteToDefaultStream {
           JsonStreamWriter.newBuilder(parentTable.toString(), BigQueryWriteClient.create())
               .setExecutorProvider(
                   FixedExecutorProvider.create(Executors.newScheduledThreadPool(100)))
+              .setTransportProvider(
+                  BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
+                      .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))
+                      .setKeepAliveTimeout(org.threeten.bp.Duration.ofMinutes(1))
+                      .setKeepAliveWithoutCalls(true)
+                      .setChannelsPerCpu(2)
+                      .build())
               .build();
     }
 
