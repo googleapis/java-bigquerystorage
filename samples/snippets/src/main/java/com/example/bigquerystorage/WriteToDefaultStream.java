@@ -28,6 +28,7 @@ import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
+import com.google.cloud.bigquery.storage.v1.BigQueryWriteSettings;
 import com.google.cloud.bigquery.storage.v1.Exceptions;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.StorageException;
@@ -46,6 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.threeten.bp.Duration;
 
 public class WriteToDefaultStream {
 
