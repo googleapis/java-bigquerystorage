@@ -420,9 +420,11 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     private static final String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
     private static final String tablePatternString = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)";
+    private static final String defaultTablePatternString = tablePatternString + "/_default";
 
     private static final Pattern streamPattern = Pattern.compile(streamPatternString);
     private static final Pattern tablePattern = Pattern.compile(tablePatternString);
+    private static final Pattern defaultTablePattern = Pattern.compile(defaultTablePatternString);
 
     /**
      * Constructor for SchemaAwareStreamWriter's Builder
@@ -442,7 +444,9 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
       Matcher streamMatcher = streamPattern.matcher(streamOrTableName);
       if (!streamMatcher.matches()) {
         Matcher tableMatcher = tablePattern.matcher(streamOrTableName);
-        if (!tableMatcher.matches()) {
+        Matcher defaultTableMatcher = defaultTablePattern.matcher(streamOrTableName);
+
+        if (!tableMatcher.matches() && !defaultTableMatcher.matches()) {
           throw new IllegalArgumentException("Invalid  name: " + streamOrTableName);
         } else {
           this.streamName = streamOrTableName + "/_default";
