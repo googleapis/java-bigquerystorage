@@ -61,7 +61,7 @@ public class WriteToDefaultStream {
   }
 
   private static ByteString buildByteString() {
-    byte[] bytes = new byte[]{1, 2, 3, 4, 5};
+    byte[] bytes = new byte[] {1, 2, 3, 4, 5};
     return ByteString.copyFrom(bytes);
   }
 
