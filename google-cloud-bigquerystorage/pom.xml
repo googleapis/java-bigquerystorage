@@ -175,6 +175,7 @@
       <artifactId>mockito-core</artifactId>
       <version>3.3.3</version>
       <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>
