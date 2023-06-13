@@ -57,14 +57,19 @@ public class ResourceHeaderTest {
 
   private static final Pattern READ_SESSION_NAME_PATTERN =
       Pattern.compile(
-          ".*" + "read_session\\.table=projects%2Fproject%2Fdatasets%2Fdataset%2Ftables%2Ftable" + ".*");
+          ".*"
+              + "read_session\\.table=projects%2Fproject%2Fdatasets%2Fdataset%2Ftables%2Ftable"
+              + ".*");
 
   private static final Pattern PARENT_PATTERN =
-      Pattern.compile(".*" + "parent=projects%2Fproject%2Fdatasets%2Fdataset%2Ftables%2Ftable" + ".*");
+      Pattern.compile(
+          ".*" + "parent=projects%2Fproject%2Fdatasets%2Fdataset%2Ftables%2Ftable" + ".*");
 
   private static final Pattern NAME_PATTERN =
       Pattern.compile(
-          ".*" + "name=projects%2Fproject%2Fdatasets%2Fdataset%2Ftables%2Ftable%2Fstreams%2Fstream" + ".*");
+          ".*"
+              + "name=projects%2Fproject%2Fdatasets%2Fdataset%2Ftables%2Ftable%2Fstreams%2Fstream"
+              + ".*");
 
   private static final Pattern WRITE_STREAM_PATTERN =
       Pattern.compile(
