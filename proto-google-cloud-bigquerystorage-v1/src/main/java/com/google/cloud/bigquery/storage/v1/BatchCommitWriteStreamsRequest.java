@@ -130,6 +130,7 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
 
   @SuppressWarnings("serial")
   private com.google.protobuf.LazyStringList writeStreams_;
+
   /**
    *
    *

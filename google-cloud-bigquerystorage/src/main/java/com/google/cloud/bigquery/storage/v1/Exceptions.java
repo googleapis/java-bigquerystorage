@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
+import org.json.JSONArray;
 
 /** Exceptions for Storage Client Libraries. */
 public final class Exceptions {
@@ -216,10 +217,10 @@ public final class Exceptions {
   }
 
   /**
-   * This exception is thrown from {@link JsonStreamWriter#append()} when the client side Json to
-   * Proto serializtion fails. It can also be thrown by the server in case rows contains invalid
-   * data. The exception contains a Map of indexes of faulty rows and the corresponding error
-   * message.
+   * This exception is thrown from {@link JsonStreamWriter#append(JSONArray)} when the client side
+   * Json to Proto serializtion fails. It can also be thrown by the server in case rows contains
+   * invalid data. The exception contains a Map of indexes of faulty rows and the corresponding
+   * error message.
    */
   public static class AppendSerializtionError extends StatusRuntimeException {
     private final Map<Integer, String> rowIndexToErrorMessage;
@@ -329,7 +330,8 @@ public final class Exceptions {
       super(
           Status.fromCode(Status.Code.RESOURCE_EXHAUSTED)
               .withDescription(
-                  "Exceeds client side inflight buffer, consider add more buffer or open more connections. Current limit: "
+                  "Exceeds client side inflight buffer, consider add more buffer or open more"
+                      + " connections. Current limit: "
                       + currentLimit),
           writerId,
           currentLimit);
@@ -341,12 +343,14 @@ public final class Exceptions {
       super(
           Status.fromCode(Status.Code.RESOURCE_EXHAUSTED)
               .withDescription(
-                  "Exceeds client side inflight buffer, consider add more buffer or open more connections. Current limit:  "
+                  "Exceeds client side inflight buffer, consider add more buffer or open more"
+                      + " connections. Current limit:  "
                       + currentLimit),
           writerId,
           currentLimit);
     }
   }
+
   /**
    * Input Json data has unknown field to the schema of the JsonStreamWriter. User can either turn
    * on IgnoreUnknownFields option on the JsonStreamWriter, or if they don't want the error to be

@@ -1025,6 +1025,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
 
     @SuppressWarnings("serial")
     private com.google.protobuf.LazyStringList selectedFields_;
+
     /**
      *
      *

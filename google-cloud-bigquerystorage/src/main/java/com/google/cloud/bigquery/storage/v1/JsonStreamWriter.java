@@ -71,7 +71,9 @@ public class JsonStreamWriter implements AutoCloseable {
    * @param builder The Builder object for the JsonStreamWriter
    */
   private JsonStreamWriter(Builder builder)
-      throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
+      throws Descriptors.DescriptorValidationException,
+          IllegalArgumentException,
+          IOException,
           InterruptedException {
     this.descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(builder.tableSchema);
@@ -108,8 +110,8 @@ public class JsonStreamWriter implements AutoCloseable {
    * is created with the updated TableSchema.
    *
    * @param jsonArr The JSON array that contains JSONObjects to be written
-   * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
-   *     ApiFuture
+   * @return {@code ApiFuture<AppendRowsResponse>} returns an AppendRowsResponse message wrapped in
+   *     an ApiFuture
    */
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr)
       throws IOException, DescriptorValidationException {
@@ -170,6 +172,7 @@ public class JsonStreamWriter implements AutoCloseable {
       }
     }
   }
+
   /**
    * Writes a JSONArray that contains JSONObjects to the BigQuery table by first converting the JSON
    * data to protobuf messages, then using StreamWriter's append() to write the data at the
@@ -178,8 +181,8 @@ public class JsonStreamWriter implements AutoCloseable {
    *
    * @param jsonArr The JSON array that contains JSONObjects to be written
    * @param offset Offset for deduplication
-   * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
-   *     ApiFuture
+   * @return {@code ApiFuture<AppendRowsResponse>} returns an AppendRowsResponse message wrapped in
+   *     an ApiFuture
    */
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, long offset)
       throws IOException, DescriptorValidationException {
@@ -236,7 +239,9 @@ public class JsonStreamWriter implements AutoCloseable {
     }
   }
 
-  /** @return The name of the write stream associated with this writer. */
+  /**
+   * @return The name of the write stream associated with this writer.
+   */
   public String getStreamName() {
     return this.streamName;
   }
@@ -570,7 +575,7 @@ public class JsonStreamWriter implements AutoCloseable {
     }
 
     /**
-     * @Deprecated Setter for a reconnectAfter10M, temporaily workaround for omg/48020. Fix for the
+     * (Deprecated) Setter for a reconnectAfter10M, temporary workaround for omg/48020. Fix for the
      * omg is supposed to roll out by 2/11/2022 Friday. If you set this to True, your write will be
      * slower (0.75MB/s per connection), but your writes will not be stuck as a sympton of
      * omg/48020.
