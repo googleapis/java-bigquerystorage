@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
-import org.json.JSONArray;
 
 /** Exceptions for Storage Client Libraries. */
 public final class Exceptions {
@@ -244,10 +243,10 @@ public final class Exceptions {
   }
 
   /**
-   * This exception is thrown from {@link SchemaAwareStreamWriter#append(Iterable)} when the client side
-   * Proto serialization fails. It can also be thrown by the server in case rows contains invalid
-   * data. The exception contains a Map of indexes of faulty rows and the corresponding error
-   * message.
+   * This exception is thrown from {@link SchemaAwareStreamWriter#append(Iterable)} when the client
+   * side Proto serialization fails. It can also be thrown by the server in case rows contains
+   * invalid data. The exception contains a Map of indexes of faulty rows and the corresponding
+   * error message.
    */
   public static class AppendSerializationError extends AppendSerializtionError {
 
