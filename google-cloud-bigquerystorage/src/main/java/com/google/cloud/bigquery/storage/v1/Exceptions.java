@@ -244,7 +244,7 @@ public final class Exceptions {
   }
 
   /**
-   * This exception is thrown from {@link SchemaAwareStreamWriter#append()} when the client side
+   * This exception is thrown from {@link SchemaAwareStreamWriter#append(Iterable)} when the client side
    * Proto serialization fails. It can also be thrown by the server in case rows contains invalid
    * data. The exception contains a Map of indexes of faulty rows and the corresponding error
    * message.
