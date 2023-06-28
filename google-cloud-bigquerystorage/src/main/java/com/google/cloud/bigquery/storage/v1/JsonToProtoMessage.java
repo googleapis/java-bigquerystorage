@@ -422,7 +422,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               Double parsed = Doubles.tryParse((String) val);
               if (parsed != null) {
-                protoMsg.setField(fieldDescriptor, parsed.longValue() * 10000000);
+                protoMsg.setField(fieldDescriptor, parsed.longValue());
                 return;
               }
               TemporalAccessor parsedTime = TIMESTAMP_FORMATTER.parse((String) val);
@@ -435,7 +435,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
               protoMsg.setField(fieldDescriptor, val);
               return;
             } else if (val instanceof Integer) {
-              protoMsg.setField(fieldDescriptor, Long.valueOf((Integer) val) * 10000000);
+              protoMsg.setField(fieldDescriptor, Long.valueOf((Integer) val));
               return;
             }
           }
@@ -684,7 +684,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               Double parsed = Doubles.tryParse((String) val);
               if (parsed != null) {
-                protoMsg.addRepeatedField(fieldDescriptor, parsed.longValue() * 10000000);
+                protoMsg.addRepeatedField(fieldDescriptor, parsed.longValue());
               } else {
                 TemporalAccessor parsedTime = TIMESTAMP_FORMATTER.parse((String) val);
                 protoMsg.addRepeatedField(
@@ -695,7 +695,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             } else if (val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, val);
             } else if (val instanceof Integer) {
-              protoMsg.addRepeatedField(fieldDescriptor, ((Integer) val) * 10000000);
+              protoMsg.addRepeatedField(fieldDescriptor, Long.valueOf((Integer) val));
             } else {
               throwWrongFieldType(fieldDescriptor, currentScope, index);
             }
