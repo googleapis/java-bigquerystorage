@@ -15,6 +15,7 @@
  */
 package com.google.cloud.bigquery.storage.v1;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -113,6 +114,7 @@ public class StreamWriterTest {
   @Before
   public void setUp() throws Exception {
     testBigQueryWrite = new FakeBigQueryWrite();
+    StreamWriter.setMaxRequestCallbackWaitTime(java.time.Duration.ofSeconds(10000));
     ConnectionWorker.setMaxInflightQueueWaitTime(300000);
     serviceHelper =
         new MockServiceHelper(
@@ -948,6 +950,35 @@ public class StreamWriterTest {
   }
 
   @Test
+  public void testThrowExceptionWhileWithinAppendLoop_MaxWaitTimeExceed() throws Exception {
+    ProtoSchema schema1 = createProtoSchema("foo");
+    StreamWriter.setMaxRequestCallbackWaitTime(java.time.Duration.ofSeconds(1));
+    StreamWriter writer =
+        StreamWriter.newBuilder(TEST_STREAM_1, client).setWriterSchema(schema1).build();
+    testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(3));
+
+    long appendCount = 10;
+    for (int i = 0; i < appendCount; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+
+    // In total insert 5 requests,
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    for (int i = 0; i < appendCount; i++) {
+      futures.add(writer.append(createProtoRows(new String[] {String.valueOf(i)}), i));
+    }
+
+    for (int i = 0; i < appendCount; i++) {
+      int finalI = i;
+      ExecutionException ex =
+          assertThrows(
+              ExecutionException.class,
+              () -> futures.get(finalI).get().getAppendResult().getOffset().getValue());
+      assertThat(ex.getCause()).hasMessageThat().contains("Request has waited in inflight queue");
+    }
+  }
+
+  @Test
   public void testAppendWithResetSuccess() throws Exception {
     try (StreamWriter writer = getTestStreamWriter()) {
       testBigQueryWrite.setCloseEveryNAppends(113);
@@ -1382,6 +1413,17 @@ public class StreamWriterTest {
         writeSettings.getCredentialsProvider().toString());
     assertTrue(
         writeSettings.getTransportChannelProvider() instanceof InstantiatingGrpcChannelProvider);
+    assertTrue(
+        ((InstantiatingGrpcChannelProvider) writeSettings.getTransportChannelProvider())
+            .getKeepAliveWithoutCalls());
+    assertEquals(
+        ((InstantiatingGrpcChannelProvider) writeSettings.getTransportChannelProvider())
+            .getKeepAliveTimeout(),
+        org.threeten.bp.Duration.ofMinutes(1));
+    assertEquals(
+        ((InstantiatingGrpcChannelProvider) writeSettings.getTransportChannelProvider())
+            .getKeepAliveTime(),
+        org.threeten.bp.Duration.ofMinutes(1));
     assertEquals(
         BigQueryWriteSettings.getDefaultEndpoint(), writeSettings.getEndpoint().toString());
   }

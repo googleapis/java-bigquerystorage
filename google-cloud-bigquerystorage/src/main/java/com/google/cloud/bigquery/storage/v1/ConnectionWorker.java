@@ -21,7 +21,7 @@ import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
-import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
+import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.RequestCallback;
 import com.google.common.annotations.VisibleForTesting;
@@ -75,7 +75,7 @@ class ConnectionWorker implements AutoCloseable {
    * We will constantly checking how much time we have been waiting for the next request callback
    * if we wait too much time we will start shutting down the connections and clean up the queues.
    */
-  private static Duration MAXIMUM_REQUEST_CALLBACK_WAIT_TIME = Duration.ofMinutes(15);
+  static Duration MAXIMUM_REQUEST_CALLBACK_WAIT_TIME = Duration.ofMinutes(5);
 
   private Lock lock;
   private Condition hasMessageInWaitingQueue;
@@ -321,7 +321,7 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void resetConnection() {
-    log.info("Reconnecting for stream:" + streamName + " id: " + writerId);
+    log.info("Start connecting stream: " + streamName + " id: " + writerId);
     if (this.streamConnection != null) {
       // It's safe to directly close the previous connection as the in flight messages
       // will be picked up by the next connection.
@@ -344,12 +344,12 @@ class ConnectionWorker implements AutoCloseable {
                 doneCallback(finalStatus);
               }
             });
-    log.info("Reconnect done for stream:" + streamName + " id: " + writerId);
+    log.info("Finish connecting stream: " + streamName + " id: " + writerId);
   }
 
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
-    if (this.location != null && this.location != streamWriter.getLocation()) {
+    if (this.location != null && !this.location.equals(streamWriter.getLocation())) {
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
               .withDescription(
@@ -357,7 +357,7 @@ class ConnectionWorker implements AutoCloseable {
                       + streamWriter.getLocation()
                       + " is scheduled to use a connection with location "
                       + this.location));
-    } else if (this.location == null && streamWriter.getStreamName() != this.streamName) {
+    } else if (this.location == null && !streamWriter.getStreamName().equals(this.streamName)) {
       // Location is null implies this is non-multiplexed connection.
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
@@ -902,8 +902,8 @@ class ConnectionWorker implements AutoCloseable {
                 rowIndexToErrorMessage.put(
                     Math.toIntExact(rowError.getIndex()), rowError.getMessage());
               }
-              AppendSerializtionError exception =
-                  new AppendSerializtionError(
+              AppendSerializationError exception =
+                  new AppendSerializationError(
                       response.getError().getCode(),
                       response.getError().getMessage(),
                       streamName,

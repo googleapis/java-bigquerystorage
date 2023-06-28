@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,11 +48,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   @SuppressWarnings({"unused"})
   protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new ReadSession();
-  }
-
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -135,11 +130,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     @SuppressWarnings({"unused"})
     protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
       return new TableModifiers();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-      return this.unknownFields;
     }
 
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -895,11 +885,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * SQL text filtering statement, similar to a WHERE clause in a query.
      * Aggregates are not supported.
+     *
      * Examples: "int_field &gt; 5"
      *           "date_field = CAST('2014-9-27' as DATE)"
      *           "nullable_field is not NULL"
      *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
      *           "numeric_field BETWEEN 1.0 AND 5.0"
+     *
      * Restricted to a maximum length for 1 MB.
      * </pre>
      *
@@ -914,11 +906,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * SQL text filtering statement, similar to a WHERE clause in a query.
      * Aggregates are not supported.
+     *
      * Examples: "int_field &gt; 5"
      *           "date_field = CAST('2014-9-27' as DATE)"
      *           "nullable_field is not NULL"
      *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
      *           "numeric_field BETWEEN 1.0 AND 5.0"
+     *
      * Restricted to a maximum length for 1 MB.
      * </pre>
      *
@@ -991,7 +985,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     }
 
     private TableReadOptions() {
-      selectedFields_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      selectedFields_ = com.google.protobuf.LazyStringArrayList.emptyList();
       rowRestriction_ = "";
     }
 
@@ -999,11 +993,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     @SuppressWarnings({"unused"})
     protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
       return new TableReadOptions();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-      return this.unknownFields;
     }
 
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -1024,8 +1013,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     public static final int SELECTED_FIELDS_FIELD_NUMBER = 1;
 
     @SuppressWarnings("serial")
-    private com.google.protobuf.LazyStringList selectedFields_;
-
+    private com.google.protobuf.LazyStringArrayList selectedFields_ =
+        com.google.protobuf.LazyStringArrayList.emptyList();
     /**
      *
      *
@@ -1107,11 +1096,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * SQL text filtering statement, similar to a WHERE clause in a query.
      * Aggregates are not supported.
+     *
      * Examples: "int_field &gt; 5"
      *           "date_field = CAST('2014-9-27' as DATE)"
      *           "nullable_field is not NULL"
      *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
      *           "numeric_field BETWEEN 1.0 AND 5.0"
+     *
      * Restricted to a maximum length for 1 MB.
      * </pre>
      *
@@ -1137,11 +1128,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * SQL text filtering statement, similar to a WHERE clause in a query.
      * Aggregates are not supported.
+     *
      * Examples: "int_field &gt; 5"
      *           "date_field = CAST('2014-9-27' as DATE)"
      *           "nullable_field is not NULL"
      *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
      *           "numeric_field BETWEEN 1.0 AND 5.0"
+     *
      * Restricted to a maximum length for 1 MB.
      * </pre>
      *
@@ -1459,8 +1452,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       public Builder clear() {
         super.clear();
         bitField0_ = 0;
-        selectedFields_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
+        selectedFields_ = com.google.protobuf.LazyStringArrayList.emptyList();
         rowRestriction_ = "";
         arrowSerializationOptions_ = null;
         if (arrowSerializationOptionsBuilder_ != null) {
@@ -1497,7 +1489,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       public com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions buildPartial() {
         com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions result =
             new com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions(this);
-        buildPartialRepeatedFields(result);
         if (bitField0_ != 0) {
           buildPartial0(result);
         }
@@ -1505,18 +1496,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         return result;
       }
 
-      private void buildPartialRepeatedFields(
-          com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions result) {
-        if (((bitField0_ & 0x00000001) != 0)) {
-          selectedFields_ = selectedFields_.getUnmodifiableView();
-          bitField0_ = (bitField0_ & ~0x00000001);
-        }
-        result.selectedFields_ = selectedFields_;
-      }
-
       private void buildPartial0(
           com.google.cloud.bigquery.storage.v1beta2.ReadSession.TableReadOptions result) {
         int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          selectedFields_.makeImmutable();
+          result.selectedFields_ = selectedFields_;
+        }
         if (((from_bitField0_ & 0x00000002) != 0)) {
           result.rowRestriction_ = rowRestriction_;
         }
@@ -1583,7 +1569,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         if (!other.selectedFields_.isEmpty()) {
           if (selectedFields_.isEmpty()) {
             selectedFields_ = other.selectedFields_;
-            bitField0_ = (bitField0_ & ~0x00000001);
+            bitField0_ |= 0x00000001;
           } else {
             ensureSelectedFieldsIsMutable();
             selectedFields_.addAll(other.selectedFields_);
@@ -1663,14 +1649,14 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
 
       private int bitField0_;
 
-      private com.google.protobuf.LazyStringList selectedFields_ =
-          com.google.protobuf.LazyStringArrayList.EMPTY;
+      private com.google.protobuf.LazyStringArrayList selectedFields_ =
+          com.google.protobuf.LazyStringArrayList.emptyList();
 
       private void ensureSelectedFieldsIsMutable() {
-        if (!((bitField0_ & 0x00000001) != 0)) {
+        if (!selectedFields_.isModifiable()) {
           selectedFields_ = new com.google.protobuf.LazyStringArrayList(selectedFields_);
-          bitField0_ |= 0x00000001;
         }
+        bitField0_ |= 0x00000001;
       }
       /**
        *
@@ -1687,7 +1673,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * @return A list containing the selectedFields.
        */
       public com.google.protobuf.ProtocolStringList getSelectedFieldsList() {
-        return selectedFields_.getUnmodifiableView();
+        selectedFields_.makeImmutable();
+        return selectedFields_;
       }
       /**
        *
@@ -1764,6 +1751,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         }
         ensureSelectedFieldsIsMutable();
         selectedFields_.set(index, value);
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -1788,6 +1776,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         }
         ensureSelectedFieldsIsMutable();
         selectedFields_.add(value);
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -1809,6 +1798,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       public Builder addAllSelectedFields(java.lang.Iterable<java.lang.String> values) {
         ensureSelectedFieldsIsMutable();
         com.google.protobuf.AbstractMessageLite.Builder.addAll(values, selectedFields_);
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -1827,8 +1817,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * @return This builder for chaining.
        */
       public Builder clearSelectedFields() {
-        selectedFields_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        selectedFields_ = com.google.protobuf.LazyStringArrayList.emptyList();
         bitField0_ = (bitField0_ & ~0x00000001);
+        ;
         onChanged();
         return this;
       }
@@ -1854,6 +1845,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         checkByteStringIsUtf8(value);
         ensureSelectedFieldsIsMutable();
         selectedFields_.add(value);
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -1865,11 +1857,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -1894,11 +1888,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -1923,11 +1919,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -1951,11 +1949,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -1975,11 +1975,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -2281,6 +2283,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   }
 
   private int schemaCase_ = 0;
+
+  @SuppressWarnings("serial")
   private java.lang.Object schema_;
 
   public enum SchemaCase
@@ -2772,6 +2776,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -2791,6 +2796,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -2811,6 +2817,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -2830,6 +2837,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -2849,6 +2857,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -4982,6 +4991,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5004,6 +5014,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5026,6 +5037,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5048,6 +5060,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5077,6 +5090,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5103,6 +5117,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5131,6 +5146,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5160,6 +5176,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5186,6 +5203,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5212,6 +5230,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5238,6 +5257,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5263,6 +5283,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5288,6 +5309,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5307,6 +5329,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5330,6 +5353,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5353,6 +5377,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5372,6 +5397,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -5393,6 +5419,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams

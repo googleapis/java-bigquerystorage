@@ -217,10 +217,8 @@ public final class Exceptions {
   }
 
   /**
-   * This exception is thrown from {@link JsonStreamWriter#append(JSONArray)} when the client side
-   * Json to Proto serializtion fails. It can also be thrown by the server in case rows contains
-   * invalid data. The exception contains a Map of indexes of faulty rows and the corresponding
-   * error message.
+   * This class has a typo in the name. It will be removed soon. Please use {@link
+   * AppendSerializationError}
    */
   public static class AppendSerializtionError extends StatusRuntimeException {
     private final Map<Integer, String> rowIndexToErrorMessage;
@@ -242,6 +240,23 @@ public final class Exceptions {
 
     public String getStreamName() {
       return streamName;
+    }
+  }
+
+  /**
+   * This exception is thrown from {@link SchemaAwareStreamWriter#append()} when the client side
+   * Proto serialization fails. It can also be thrown by the server in case rows contains invalid
+   * data. The exception contains a Map of indexes of faulty rows and the corresponding error
+   * message.
+   */
+  public static class AppendSerializationError extends AppendSerializtionError {
+
+    public AppendSerializationError(
+        int codeValue,
+        String description,
+        String streamName,
+        Map<Integer, String> rowIndexToErrorMessage) {
+      super(codeValue, description, streamName, rowIndexToErrorMessage);
     }
   }
 
@@ -352,15 +367,25 @@ public final class Exceptions {
   }
 
   /**
-   * Input Json data has unknown field to the schema of the JsonStreamWriter. User can either turn
-   * on IgnoreUnknownFields option on the JsonStreamWriter, or if they don't want the error to be
-   * ignored, they should recreate the JsonStreamWriter with the updated table schema.
+   * This class is replaced by a generic one. It will be removed soon. Please use {@link
+   * DataHasUnknownFieldException}
    */
-  public static final class JsonDataHasUnknownFieldException extends IllegalArgumentException {
+  public static final class JsonDataHasUnknownFieldException extends DataHasUnknownFieldException {
+    protected JsonDataHasUnknownFieldException(String jsonFieldName) {
+      super(jsonFieldName);
+    }
+  }
+  /**
+   * Input data object has unknown field to the schema of the SchemaAwareStreamWriter. User can
+   * either turn on IgnoreUnknownFields option on the SchemaAwareStreamWriter, or if they don't want
+   * the error to be ignored, they should recreate the SchemaAwareStreamWriter with the updated
+   * table schema.
+   */
+  public static class DataHasUnknownFieldException extends IllegalArgumentException {
     private final String jsonFieldName;
 
-    protected JsonDataHasUnknownFieldException(String jsonFieldName) {
-      super(String.format("JSONObject has fields unknown to BigQuery: %s.", jsonFieldName));
+    public DataHasUnknownFieldException(String jsonFieldName) {
+      super(String.format("The source object has fields unknown to BigQuery: %s.", jsonFieldName));
       this.jsonFieldName = jsonFieldName;
     }
 

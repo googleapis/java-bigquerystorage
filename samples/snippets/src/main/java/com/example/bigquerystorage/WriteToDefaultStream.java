@@ -21,25 +21,30 @@ package com.example.bigquerystorage;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
+import com.google.api.gax.core.FixedExecutorProvider;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableResult;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
+import com.google.cloud.bigquery.storage.v1.BigQueryWriteSettings;
 import com.google.cloud.bigquery.storage.v1.Exceptions;
-import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
+import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.StorageException;
 import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableName;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -55,6 +60,24 @@ public class WriteToDefaultStream {
     writeToDefaultStream(projectId, datasetName, tableName);
   }
 
+  private static ByteString buildByteString() {
+    byte[] bytes = new byte[] {1, 2, 3, 4, 5};
+    return ByteString.copyFrom(bytes);
+  }
+
+  // Create a JSON object that is compatible with the table schema.
+  private static JSONObject buildRecord(int i, int j) {
+    JSONObject record = new JSONObject();
+    StringBuilder sbSuffix = new StringBuilder();
+    for (int k = 0; k < j; k++) {
+      sbSuffix.append(k);
+    }
+    record.put("test_string", String.format("record %03d-%03d %s", i, j, sbSuffix.toString()));
+    ByteString byteString = buildByteString();
+    record.put("test_bytes", byteString);
+    return record;
+  }
+
   public static void writeToDefaultStream(String projectId, String datasetName, String tableName)
       throws DescriptorValidationException, InterruptedException, IOException {
     TableName parentTable = TableName.of(projectId, datasetName, tableName);
@@ -67,15 +90,9 @@ public class WriteToDefaultStream {
     // batched up to the maximum request size:
     // https://cloud.google.com/bigquery/quotas#write-api-limits
     for (int i = 0; i < 2; i++) {
-      // Create a JSON object that is compatible with the table schema.
       JSONArray jsonArr = new JSONArray();
       for (int j = 0; j < 10; j++) {
-        JSONObject record = new JSONObject();
-        StringBuilder sbSuffix = new StringBuilder();
-        for (int k = 0; k < j; k++) {
-          sbSuffix.append(k);
-        }
-        record.put("test_string", String.format("record %03d-%03d %s", i, j, sbSuffix.toString()));
+        JSONObject record = buildRecord(i, j);
         jsonArr.put(record);
       }
 
@@ -123,6 +140,7 @@ public class WriteToDefaultStream {
   private static class DataWriter {
 
     private static final int MAX_RETRY_COUNT = 3;
+    private static final int MAX_RECREATE_COUNT = 3;
     private static final ImmutableList<Code> RETRIABLE_ERROR_CODES =
         ImmutableList.of(
             Code.INTERNAL,
@@ -140,6 +158,8 @@ public class WriteToDefaultStream {
     @GuardedBy("lock")
     private RuntimeException error = null;
 
+    private AtomicInteger recreateCount = new AtomicInteger(0);
+
     public void initialize(TableName parentTable)
         throws DescriptorValidationException, IOException, InterruptedException {
       // Use the JSON stream writer to send records in JSON format. Specify the table name to write
@@ -147,12 +167,31 @@ public class WriteToDefaultStream {
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
       streamWriter =
-          JsonStreamWriter.newBuilder(parentTable.toString(), BigQueryWriteClient.create()).build();
+          JsonStreamWriter.newBuilder(parentTable.toString(), BigQueryWriteClient.create())
+              .setExecutorProvider(
+                  FixedExecutorProvider.create(Executors.newScheduledThreadPool(100)))
+              .setChannelProvider(
+                  BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
+                      .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))
+                      .setKeepAliveTimeout(org.threeten.bp.Duration.ofMinutes(1))
+                      .setKeepAliveWithoutCalls(true)
+                      .setChannelsPerCpu(2)
+                      .build())
+              .build();
     }
 
     public void append(AppendContext appendContext)
-        throws DescriptorValidationException, IOException {
+        throws DescriptorValidationException, IOException, InterruptedException {
       synchronized (this.lock) {
+        if (!streamWriter.isUserClosed()
+            && streamWriter.isClosed()
+            && recreateCount.getAndIncrement() < MAX_RECREATE_COUNT) {
+          streamWriter =
+              JsonStreamWriter.newBuilder(
+                      streamWriter.getStreamName(), BigQueryWriteClient.create())
+                  .build();
+          this.error = null;
+        }
         // If earlier appends have failed, we need to reset before continuing.
         if (this.error != null) {
           throw this.error;
@@ -194,6 +233,7 @@ public class WriteToDefaultStream {
 
       public void onSuccess(AppendRowsResponse response) {
         System.out.format("Append success\n");
+        this.parent.recreateCount.set(0);
         done();
       }
 
@@ -218,8 +258,8 @@ public class WriteToDefaultStream {
           }
         }
 
-        if (throwable instanceof AppendSerializtionError) {
-          AppendSerializtionError ase = (AppendSerializtionError) throwable;
+        if (throwable instanceof AppendSerializationError) {
+          AppendSerializationError ase = (AppendSerializationError) throwable;
           Map<Integer, String> rowIndexToErrorMessage = ase.getRowIndexToErrorMessage();
           if (rowIndexToErrorMessage.size() > 0) {
             // Omit the faulty rows
@@ -240,6 +280,8 @@ public class WriteToDefaultStream {
               } catch (DescriptorValidationException e) {
                 throw new RuntimeException(e);
               } catch (IOException e) {
+                throw new RuntimeException(e);
+              } catch (InterruptedException e) {
                 throw new RuntimeException(e);
               }
             }
