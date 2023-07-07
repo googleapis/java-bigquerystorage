@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
+import com.google.cloud.bigquery.storage.v1.Exceptions.RowIndexToErrorException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -29,6 +30,7 @@ import com.google.protobuf.Message;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import org.json.JSONArray;
@@ -598,7 +600,7 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(TestInt32.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int32 field at root.int.", e.getMessage());
+      assertTrue(e.getMessage().contains("JSONObject does not have a int32 field at root.int."));
     }
   }
 
@@ -619,7 +621,8 @@ public class JsonToProtoMessageTest {
               TestDatetime.getDescriptor(), tableSchema, json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int64 field at root.datetime.", e.getMessage());
+      assertTrue(
+          e.getMessage().contains("JSONObject does not have a int64 field at root.datetime."));
     }
   }
 
@@ -640,7 +643,8 @@ public class JsonToProtoMessageTest {
               TestTime.getDescriptor(), tableSchema, json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int64 field at root.time[0].", e.getMessage());
+      assertTrue(
+          e.getMessage().contains("JSONObject does not have a int64 field at root.time[0]."));
     }
   }
 
@@ -811,9 +815,12 @@ public class JsonToProtoMessageTest {
           assertEquals(protoMsg, AllTypesToCorrectProto.get(entry.getKey())[success]);
           success += 1;
         } catch (IllegalArgumentException e) {
-          assertEquals(
-              "JSONObject does not have a " + entry.getValue() + " field at root.test_field_type.",
-              e.getMessage());
+          assertTrue(
+              e.getMessage()
+                  .contains(
+                      "JSONObject does not have a "
+                          + entry.getValue()
+                          + " field at root.test_field_type."));
         }
       }
       if (entry.getKey() == DoubleType.getDescriptor()) {
@@ -846,12 +853,12 @@ public class JsonToProtoMessageTest {
           LOG.info(e.getMessage());
           assertTrue(
               e.getMessage()
-                      .equals(
+                      .contains(
                           "JSONObject does not have a "
                               + entry.getValue()
                               + " field at root.test_repeated[0].")
                   || e.getMessage()
-                      .equals("Error: root.test_repeated[0] could not be converted to byte[]."));
+                      .contains("Error: root.test_repeated[0] could not be converted to byte[]."));
         }
       }
       if (entry.getKey() == RepeatedDouble.getDescriptor()) {
@@ -897,8 +904,9 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(TestRequired.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have the required field root.required_double.", e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains("JSONObject does not have the required field root.required_double."));
     }
   }
 
@@ -929,9 +937,10 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(MessageType.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have a string field at root.test_field_type.test_field_type.",
-          e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "JSONObject does not have a string field at root.test_field_type.test_field_type."));
     }
   }
 
@@ -1089,8 +1098,9 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(ComplexRoot.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have a int64 field at root.complex_lvl1.test_int.", e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains("JSONObject does not have a int64 field at root.complex_lvl1.test_int."));
     }
   }
 
@@ -1103,8 +1113,9 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(RepeatedDouble.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have a double field at root.test_repeated[2].", e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains("JSONObject does not have a double field at root.test_repeated[2]."));
     }
   }
 
@@ -1165,9 +1176,10 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(NestedRepeated.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have a string field at root.repeated_string.test_repeated[0].",
-          e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "JSONObject does not have a string field at root.repeated_string.test_repeated[0]."));
     }
   }
 
@@ -1198,10 +1210,10 @@ public class JsonToProtoMessageTest {
       DynamicMessage protoMsg =
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(RepeatedInt64.getDescriptor(), json);
       Assert.fail("Should fail");
-    } catch (Exceptions.DataHasUnknownFieldException e) {
-      assertEquals(
-          "The source object has fields unknown to BigQuery: root.string.", e.getMessage());
-      assertEquals("root.string", e.getFieldName());
+    } catch (IllegalArgumentException e) {
+      assertTrue(
+          e.getMessage()
+              .contains("The source object has fields unknown to BigQuery: " + "root.string."));
     }
   }
 
@@ -1262,9 +1274,10 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(ComplexLvl1.getDescriptor(), json);
       Assert.fail("Should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "The source object has fields unknown to BigQuery: root.complex_lvl2.no_match.",
-          e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "The source object has fields unknown to BigQuery: root.complex_lvl2.no_match."));
     }
   }
 
@@ -1327,9 +1340,9 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(
               RepeatedBytes.getDescriptor(), ts, json);
       Assert.fail("Should fail");
-    } catch (Exceptions.FieldParseError ex) {
-      assertEquals(ex.getBqType(), "NUMERIC");
-      assertEquals(ex.getFieldName(), "root.test_repeated");
+    } catch (RowIndexToErrorException ex) {
+      assertTrue(ex.rowIndexToErrorMessage.size() == 1);
+      assertTrue(ex.getMessage().contains("root.test_repeated failed to convert to NUMERIC."));
     }
   }
 
@@ -1354,7 +1367,7 @@ public class JsonToProtoMessageTest {
               RepeatedInt32.getDescriptor(), ts, json);
       Assert.fail("Should fail");
     } catch (IllegalArgumentException ex) {
-      assertEquals(ex.getMessage(), "Text 'blah' could not be parsed at index 0");
+      assertTrue(ex.getMessage().contains("Text 'blah' could not be parsed at index 0"));
     }
   }
 
@@ -1419,6 +1432,51 @@ public class JsonToProtoMessageTest {
     protoMsg =
         JsonToProtoMessage.INSTANCE.convertToProtoMessage(TestNumeric.getDescriptor(), ts, json);
     assertEquals(expectedProto, protoMsg);
+  }
+
+  @Test
+  public void testDoubleAndFloatToNumericConversionWithJsonArray() {
+    TableSchema ts =
+        TableSchema.newBuilder()
+            .addFields(
+                0,
+                TableFieldSchema.newBuilder()
+                    .setName("numeric")
+                    .setType(TableFieldSchema.Type.NUMERIC)
+                    .build())
+            .build();
+    List<TestNumeric> protoList = new ArrayList<>();
+    int protoNum = 10;
+    for (int i = 0; i < protoNum; i++) {
+      protoList.add(
+          TestNumeric.newBuilder()
+              .setNumeric(
+                  BigDecimalByteStringEncoder.encodeToNumericByteString(
+                      new BigDecimal("24.678" + i)))
+              .build());
+    }
+
+    JSONArray doubleJsonArray = new JSONArray();
+    JSONArray floatJsonArray = new JSONArray();
+    for (int i = 0; i < protoNum; i++) {
+      JSONObject doubleJson = new JSONObject();
+      doubleJson.put("numeric", new Double(24.678 + (i * 0.0001)));
+      doubleJsonArray.put(doubleJson);
+
+      JSONObject floatJson = new JSONObject();
+      floatJson.put("numeric", new Float(24.678 + (i * 0.0001)));
+      floatJsonArray.put(floatJson);
+    }
+
+    List<DynamicMessage> protoMsgList =
+        JsonToProtoMessage.INSTANCE.convertToProtoMessage(
+            TestNumeric.getDescriptor(), ts, doubleJsonArray, false);
+    assertEquals(protoList, protoMsgList);
+
+    protoMsgList =
+        JsonToProtoMessage.INSTANCE.convertToProtoMessage(
+            TestNumeric.getDescriptor(), ts, floatJsonArray, false);
+    assertEquals(protoList, protoMsgList);
   }
 
   @Test
