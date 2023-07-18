@@ -74,6 +74,11 @@
     </dependency>
     <dependency>
       <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value</artifactId>
+      <version>${auto-value-annotation.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value-annotations</artifactId>
     </dependency>
     <dependency>
