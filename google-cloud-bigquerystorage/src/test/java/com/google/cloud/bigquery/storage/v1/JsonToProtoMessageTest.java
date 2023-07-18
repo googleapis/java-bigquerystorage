@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
 import com.google.cloud.bigquery.storage.test.SchemaTest.*;
+import com.google.cloud.bigquery.storage.v1.Exceptions.RowIndexToErrorException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -29,6 +30,7 @@ import com.google.protobuf.Message;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import org.json.JSONArray;
@@ -393,6 +395,12 @@ public class JsonToProtoMessageTest {
           .setMode(TableFieldSchema.Mode.NULLABLE)
           .setName("test_timestamp")
           .build();
+  private final TableFieldSchema TEST_TIMESTAMP_REPEATED =
+      TableFieldSchema.newBuilder()
+          .setType(TableFieldSchema.Type.TIMESTAMP)
+          .setMode(TableFieldSchema.Mode.REPEATED)
+          .setName("test_timestamp_repeated")
+          .build();
   private final TableFieldSchema TEST_TIME =
       TableFieldSchema.newBuilder()
           .setType(TableFieldSchema.Type.TIME)
@@ -598,7 +606,7 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(TestInt32.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int32 field at root.int.", e.getMessage());
+      assertTrue(e.getMessage().contains("JSONObject does not have a int32 field at root.int."));
     }
   }
 
@@ -608,7 +616,7 @@ public class JsonToProtoMessageTest {
         TableFieldSchema.newBuilder()
             .setName("datetime")
             .setType(TableFieldSchema.Type.DATETIME)
-            .setMode(TableFieldSchema.Mode.REPEATED)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
             .build();
     TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
     JSONObject json = new JSONObject();
@@ -619,8 +627,37 @@ public class JsonToProtoMessageTest {
               TestDatetime.getDescriptor(), tableSchema, json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int64 field at root.datetime.", e.getMessage());
+      assertTrue(
+          e.getMessage().contains("JSONObject does not have a int64 field at root.datetime."));
     }
+  }
+
+  private void dateTimeMatch_Internal(String jsonVal, Long expectedVal) throws Exception {
+    TableFieldSchema field =
+        TableFieldSchema.newBuilder()
+            .setName("datetime")
+            .setType(TableFieldSchema.Type.DATETIME)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .build();
+    TableSchema tableSchema = TableSchema.newBuilder().addFields(field).build();
+    TestDatetime expectedProto = TestDatetime.newBuilder().setDatetime(expectedVal).build();
+    JSONObject json = new JSONObject();
+    json.put("datetime", jsonVal);
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.INSTANCE.convertToProtoMessage(
+            TestDatetime.getDescriptor(), tableSchema, json);
+    assertEquals(expectedProto, protoMsg);
+  }
+
+  @Test
+  public void testDateTimeMatch() throws Exception {
+    dateTimeMatch_Internal("2021-09-27T20:51:10.752", 142258614586538368L);
+    dateTimeMatch_Internal("2021-09-27t20:51:10.752", 142258614586538368L);
+    dateTimeMatch_Internal("2021-09-27 20:51:10.752", 142258614586538368L);
+    dateTimeMatch_Internal("2021-9-27T20:51:10.752", 142258614586538368L);
+    dateTimeMatch_Internal("2021-09-27T00:00:00", 142258525253402624L);
+    dateTimeMatch_Internal("2021-09-27T00:0:00", 142258525253402624L);
+    dateTimeMatch_Internal("2021-09-27", 142258525253402624L);
   }
 
   @Test
@@ -640,7 +677,8 @@ public class JsonToProtoMessageTest {
               TestTime.getDescriptor(), tableSchema, json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals("JSONObject does not have a int64 field at root.time[0].", e.getMessage());
+      assertTrue(
+          e.getMessage().contains("JSONObject does not have a int64 field at root.time[0]."));
     }
   }
 
@@ -759,9 +797,9 @@ public class JsonToProtoMessageTest {
         TestTimestamp.newBuilder()
             .setTestString(10L)
             .setTestStringTZ(1648493279010000L)
-            .setTestLong(0L)
-            .setTestInt(1534806950000000L)
-            .setTestFloat(1534680695000000000L)
+            .setTestLong(1687984085000000L)
+            .setTestInt(153480695L)
+            .setTestFloat(153468069500L)
             .setTestOffset(1649135171000000L)
             .setTestTimezone(1649174771000000L)
             .setTestSaformat(1534680660000000L)
@@ -769,7 +807,7 @@ public class JsonToProtoMessageTest {
     JSONObject json = new JSONObject();
     json.put("test_string", "1970-01-01 00:00:00.000010");
     json.put("test_string_T_Z", "2022-03-28T18:47:59.01Z");
-    json.put("test_long", 0L);
+    json.put("test_long", 1687984085000000L);
     json.put("test_int", 153480695);
     json.put("test_float", "1.534680695e11");
     json.put("test_offset", "2022-04-05T09:06:11+04:00");
@@ -778,6 +816,69 @@ public class JsonToProtoMessageTest {
     DynamicMessage protoMsg =
         JsonToProtoMessage.INSTANCE.convertToProtoMessage(
             TestTimestamp.getDescriptor(), tableSchema, json);
+    assertEquals(expectedProto, protoMsg);
+  }
+
+  @Test
+  public void testTimestampRepeated() throws Exception {
+    TableSchema tableSchema =
+        TableSchema.newBuilder()
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
+                    .setName("test_string_repeated")
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
+                    .setName("test_string_T_Z_repeated")
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
+                    .setName("test_long_repeated")
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
+                    .setName("test_int_repeated")
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
+                    .setName("test_float_repeated")
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
+                    .setName("test_offset_repeated")
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
+                    .setName("test_timezone_repeated")
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
+                    .setName("test_saformat_repeated")
+                    .build())
+            .build();
+    TestRepeatedTimestamp expectedProto =
+        TestRepeatedTimestamp.newBuilder()
+            .addTestStringRepeated(10L)
+            .addTestStringTZRepeated(1648493279010000L)
+            .addTestLongRepeated(1687984085000000L)
+            .addTestIntRepeated(153480695L)
+            .addTestFloatRepeated(153468069500L)
+            .addTestOffsetRepeated(1649135171000000L)
+            .addTestTimezoneRepeated(1649174771000000L)
+            .addTestSaformatRepeated(1534680660000000L)
+            .build();
+    JSONObject json = new JSONObject();
+    json.put("test_string_repeated", new JSONArray(new String[] {"1970-01-01 00:00:00.000010"}));
+    json.put("test_string_T_Z_repeated", new JSONArray(new String[] {"2022-03-28T18:47:59.01Z"}));
+    json.put("test_long_repeated", new JSONArray(new Long[] {1687984085000000L}));
+    json.put("test_int_repeated", new JSONArray(new Integer[] {153480695}));
+    json.put("test_float_repeated", new JSONArray(new String[] {"1.534680695e11"}));
+    json.put("test_offset_repeated", new JSONArray(new String[] {"2022-04-05T09:06:11+04:00"}));
+    json.put("test_timezone_repeated", new JSONArray(new String[] {"2022-04-05 09:06:11 PST"}));
+    json.put("test_saformat_repeated", new JSONArray(new String[] {"2018/08/19 12:11"}));
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.INSTANCE.convertToProtoMessage(
+            TestRepeatedTimestamp.getDescriptor(), tableSchema, json);
     assertEquals(expectedProto, protoMsg);
   }
 
@@ -811,9 +912,12 @@ public class JsonToProtoMessageTest {
           assertEquals(protoMsg, AllTypesToCorrectProto.get(entry.getKey())[success]);
           success += 1;
         } catch (IllegalArgumentException e) {
-          assertEquals(
-              "JSONObject does not have a " + entry.getValue() + " field at root.test_field_type.",
-              e.getMessage());
+          assertTrue(
+              e.getMessage()
+                  .contains(
+                      "JSONObject does not have a "
+                          + entry.getValue()
+                          + " field at root.test_field_type."));
         }
       }
       if (entry.getKey() == DoubleType.getDescriptor()) {
@@ -846,12 +950,12 @@ public class JsonToProtoMessageTest {
           LOG.info(e.getMessage());
           assertTrue(
               e.getMessage()
-                      .equals(
+                      .contains(
                           "JSONObject does not have a "
                               + entry.getValue()
                               + " field at root.test_repeated[0].")
                   || e.getMessage()
-                      .equals("Error: root.test_repeated[0] could not be converted to byte[]."));
+                      .contains("Error: root.test_repeated[0] could not be converted to byte[]."));
         }
       }
       if (entry.getKey() == RepeatedDouble.getDescriptor()) {
@@ -897,8 +1001,9 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(TestRequired.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have the required field root.required_double.", e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains("JSONObject does not have the required field root.required_double."));
     }
   }
 
@@ -929,9 +1034,10 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(MessageType.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have a string field at root.test_field_type.test_field_type.",
-          e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "JSONObject does not have a string field at root.test_field_type.test_field_type."));
     }
   }
 
@@ -952,6 +1058,9 @@ public class JsonToProtoMessageTest {
             .setTestDate(1)
             .setTestDatetime(1)
             .addTestDatetimeStr(142258614586538368L)
+            .addTestDatetimeStr(142258614586538368L)
+            .addTestDatetimeStr(142258614586538368L)
+            .addTestDatetimeStr(142258525253402624L)
             .addTestDatetimeStr(142258525253402624L)
             .setComplexLvl1(
                 ComplexLvl1.newBuilder()
@@ -962,7 +1071,7 @@ public class JsonToProtoMessageTest {
             .setTestNumeric(
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.23456")))
             .setTestGeo("POINT(1,1)")
-            .setTestTimestamp(123456780000000L)
+            .setTestTimestamp(12345678L)
             .setTestTime(CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(1, 0, 1)))
             .setTestTimeStr(89332507144L)
             .addTestNumericRepeated(
@@ -1020,7 +1129,14 @@ public class JsonToProtoMessageTest {
     json.put("test_datetime", 1);
     json.put(
         "test_datetime_str",
-        new JSONArray(new String[] {"2021-09-27T20:51:10.752", "2021-09-27T00:00:00"}));
+        new JSONArray(
+            new String[] {
+              "2021-09-27T20:51:10.752",
+              "2021-09-27t20:51:10.752",
+              "2021-09-27 20:51:10.752",
+              "2021-09-27T00:00:00",
+              "2021-09-27"
+            }));
     json.put("complex_lvl1", complex_lvl1);
     json.put("complex_lvl2", complex_lvl2);
     json.put(
@@ -1089,8 +1205,9 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(ComplexRoot.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have a int64 field at root.complex_lvl1.test_int.", e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains("JSONObject does not have a int64 field at root.complex_lvl1.test_int."));
     }
   }
 
@@ -1103,8 +1220,9 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(RepeatedDouble.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have a double field at root.test_repeated[2].", e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains("JSONObject does not have a double field at root.test_repeated[2]."));
     }
   }
 
@@ -1165,9 +1283,10 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(NestedRepeated.getDescriptor(), json);
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "JSONObject does not have a string field at root.repeated_string.test_repeated[0].",
-          e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "JSONObject does not have a string field at root.repeated_string.test_repeated[0]."));
     }
   }
 
@@ -1198,10 +1317,10 @@ public class JsonToProtoMessageTest {
       DynamicMessage protoMsg =
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(RepeatedInt64.getDescriptor(), json);
       Assert.fail("Should fail");
-    } catch (Exceptions.DataHasUnknownFieldException e) {
-      assertEquals(
-          "The source object has fields unknown to BigQuery: root.string.", e.getMessage());
-      assertEquals("root.string", e.getFieldName());
+    } catch (IllegalArgumentException e) {
+      assertTrue(
+          e.getMessage()
+              .contains("The source object has fields unknown to BigQuery: " + "root.string."));
     }
   }
 
@@ -1262,9 +1381,10 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(ComplexLvl1.getDescriptor(), json);
       Assert.fail("Should fail");
     } catch (IllegalArgumentException e) {
-      assertEquals(
-          "The source object has fields unknown to BigQuery: root.complex_lvl2.no_match.",
-          e.getMessage());
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "The source object has fields unknown to BigQuery: root.complex_lvl2.no_match."));
     }
   }
 
@@ -1327,9 +1447,9 @@ public class JsonToProtoMessageTest {
           JsonToProtoMessage.INSTANCE.convertToProtoMessage(
               RepeatedBytes.getDescriptor(), ts, json);
       Assert.fail("Should fail");
-    } catch (Exceptions.FieldParseError ex) {
-      assertEquals(ex.getBqType(), "NUMERIC");
-      assertEquals(ex.getFieldName(), "root.test_repeated");
+    } catch (RowIndexToErrorException ex) {
+      assertTrue(ex.rowIndexToErrorMessage.size() == 1);
+      assertTrue(ex.getMessage().contains("root.test_repeated failed to convert to NUMERIC."));
     }
   }
 
@@ -1354,7 +1474,7 @@ public class JsonToProtoMessageTest {
               RepeatedInt32.getDescriptor(), ts, json);
       Assert.fail("Should fail");
     } catch (IllegalArgumentException ex) {
-      assertEquals(ex.getMessage(), "Text 'blah' could not be parsed at index 0");
+      assertTrue(ex.getMessage().contains("Text 'blah' could not be parsed at index 0"));
     }
   }
 
@@ -1419,6 +1539,51 @@ public class JsonToProtoMessageTest {
     protoMsg =
         JsonToProtoMessage.INSTANCE.convertToProtoMessage(TestNumeric.getDescriptor(), ts, json);
     assertEquals(expectedProto, protoMsg);
+  }
+
+  @Test
+  public void testDoubleAndFloatToNumericConversionWithJsonArray() {
+    TableSchema ts =
+        TableSchema.newBuilder()
+            .addFields(
+                0,
+                TableFieldSchema.newBuilder()
+                    .setName("numeric")
+                    .setType(TableFieldSchema.Type.NUMERIC)
+                    .build())
+            .build();
+    List<TestNumeric> protoList = new ArrayList<>();
+    int protoNum = 10;
+    for (int i = 0; i < protoNum; i++) {
+      protoList.add(
+          TestNumeric.newBuilder()
+              .setNumeric(
+                  BigDecimalByteStringEncoder.encodeToNumericByteString(
+                      new BigDecimal("24.678" + i)))
+              .build());
+    }
+
+    JSONArray doubleJsonArray = new JSONArray();
+    JSONArray floatJsonArray = new JSONArray();
+    for (int i = 0; i < protoNum; i++) {
+      JSONObject doubleJson = new JSONObject();
+      doubleJson.put("numeric", new Double(24.678 + (i * 0.0001)));
+      doubleJsonArray.put(doubleJson);
+
+      JSONObject floatJson = new JSONObject();
+      floatJson.put("numeric", new Float(24.678 + (i * 0.0001)));
+      floatJsonArray.put(floatJson);
+    }
+
+    List<DynamicMessage> protoMsgList =
+        JsonToProtoMessage.INSTANCE.convertToProtoMessage(
+            TestNumeric.getDescriptor(), ts, doubleJsonArray, false);
+    assertEquals(protoList, protoMsgList);
+
+    protoMsgList =
+        JsonToProtoMessage.INSTANCE.convertToProtoMessage(
+            TestNumeric.getDescriptor(), ts, floatJsonArray, false);
+    assertEquals(protoList, protoMsgList);
   }
 
   @Test
