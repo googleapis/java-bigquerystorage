@@ -47,9 +47,9 @@ import javax.annotation.Nullable;
  * NOTE: The schema update ability will be disabled when you pass in a table schema explicitly
  * through the writer. It is recommended that user either use JsonStreamWriter (which fully manages
  * table schema) or StreamWriter (which accepts proto format in raw and user will handle the
- * schema update event themsevles). Use this class nedes to be very cautious about possible mistmach
- * between the writer's schema and the input data, any mismatch of the two will cause data
- * corruption.
+ * schema update event themsevles). If you sse this class, you need to be very cautious about
+ * possible mistmach between the writer's schema and the input data, any mismatch of the two will
+ * cause data corruption.
  */
 public class SchemaAwareStreamWriter<T> implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(SchemaAwareStreamWriter.class.getName());
