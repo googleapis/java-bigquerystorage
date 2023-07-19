@@ -62,7 +62,7 @@ public class StreamConnection {
     if (compressorName != null) {
       apiCallContext =
           GrpcCallContext.createDefault()
-              .withCallOptions(CallOptions.DEFAULT.withCompression(compressorName /*"gzip"*/));
+              .withCallOptions(CallOptions.DEFAULT.withCompression(compressorName));
       log.info("gRPC compression is enabled with " + compressorName + " compression");
     }
 

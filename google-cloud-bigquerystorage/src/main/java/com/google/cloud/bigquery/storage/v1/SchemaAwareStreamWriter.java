@@ -622,7 +622,6 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
           "Compression of type \"%s\" isn't supported, only gzip compression is supported",
           compressorName);
       this.compressorName = compressorName;
-      LOG.info("Yifat in SchemaAwsre Builder. Compressor = " + this.compressorName);
       return this;
     }
 
