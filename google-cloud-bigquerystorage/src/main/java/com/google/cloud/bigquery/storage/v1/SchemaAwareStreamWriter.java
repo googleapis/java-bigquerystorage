@@ -43,6 +43,8 @@ import javax.annotation.Nullable;
  * StreamWriter functions, but also provides an additional feature: schema update support, where if
  * the BigQuery table schema is updated, users will be able to ingest data on the new schema after
  * some time (in order of minutes).
+ * NOTE: The schema update ability will be disabled when you pass in a table schema explicitly
+ * through the writer. 
  */
 public class SchemaAwareStreamWriter<T> implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(SchemaAwareStreamWriter.class.getName());
