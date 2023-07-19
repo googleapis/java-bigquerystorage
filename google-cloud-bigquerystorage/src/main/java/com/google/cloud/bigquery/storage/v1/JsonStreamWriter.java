@@ -20,6 +20,7 @@ import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.util.Map;
@@ -333,6 +334,22 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setLocation(String location) {
       this.schemaAwareStreamWriterBuilder.setLocation(location);
+      return this;
+    }
+
+    /**
+     * Sets the compression to use for the calls. The compressor must be of type gzip.
+     *
+     * @param compressorName
+     * @return Builder
+     */
+    public Builder setCompressorName(String compressorName) {
+      Preconditions.checkNotNull(compressorName);
+      Preconditions.checkArgument(
+          compressorName.equals("gzip"),
+          "Compression of type \"%s\" isn't supported, only \"gzip\" compression is supported.",
+          compressorName);
+      this.schemaAwareStreamWriterBuilder.setCompressorName(compressorName);
       return this;
     }
 
