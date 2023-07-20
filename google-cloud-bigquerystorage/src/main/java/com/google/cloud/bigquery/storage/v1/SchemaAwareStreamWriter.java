@@ -623,11 +623,6 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
      * @return Builder
      */
     public Builder<T> setCompressorName(String compressorName) {
-      Preconditions.checkNotNull(compressorName);
-      Preconditions.checkArgument(
-          compressorName.equals("gzip"),
-          "Compression of type \"%s\" isn't supported, only gzip compression is supported",
-          compressorName);
       this.compressorName = compressorName;
       return this;
     }
