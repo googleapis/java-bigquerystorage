@@ -41,7 +41,7 @@ import javax.annotation.Nullable;
  *
  * <p>It's user's responsibility to do the flow control and maintain the lifetime of the requests.
  */
-public class StreamConnection {
+class StreamConnection {
   private BidiStreamingCallable<AppendRowsRequest, AppendRowsResponse> bidiStreamingCallable;
   private ClientStream<AppendRowsRequest> clientStream;
 
