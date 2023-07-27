@@ -502,8 +502,8 @@ public class ConnectionWorkerTest {
 
   @Test
   public void testExponentialBackoff() throws Exception {
-    assertThat(ConnectionWorker.calculateSleepTimeMilli(0)).isEqualTo(1);
-    assertThat(ConnectionWorker.calculateSleepTimeMilli(5)).isEqualTo(32);
+    assertThat(ConnectionWorker.calculateSleepTimeMilli(0)).isEqualTo(1000);
+    assertThat(ConnectionWorker.calculateSleepTimeMilli(5)).isEqualTo(32000);
     assertThat(ConnectionWorker.calculateSleepTimeMilli(100)).isEqualTo(60000);
   }
 
