@@ -53,6 +53,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 /**
@@ -119,6 +120,10 @@ class ConnectionWorker implements AutoCloseable {
    */
   private final String traceId;
 
+  /*
+   * Enables compression on the wire.
+   */
+  private String compressorName = null;
   /*
    * Tracks current inflight requests in the stream.
    */
@@ -253,6 +258,7 @@ class ConnectionWorker implements AutoCloseable {
       Duration maxRetryDuration,
       FlowController.LimitExceededBehavior limitExceededBehavior,
       String traceId,
+      @Nullable String compressorName,
       BigQueryWriteSettings clientSettings)
       throws IOException {
     this.lock = new ReentrantLock();
@@ -274,6 +280,7 @@ class ConnectionWorker implements AutoCloseable {
     this.traceId = traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
+    this.compressorName = compressorName;
     // Always recreate a client for connection worker.
     HashMap<String, String> newHeaders = new HashMap<>();
     newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
@@ -343,13 +350,14 @@ class ConnectionWorker implements AutoCloseable {
               public void run(Throwable finalStatus) {
                 doneCallback(finalStatus);
               }
-            });
+            },
+            this.compressorName);
     log.info("Finish connecting stream: " + streamName + " id: " + writerId);
   }
 
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
-    if (this.location != null && this.location != streamWriter.getLocation()) {
+    if (this.location != null && !this.location.equals(streamWriter.getLocation())) {
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
               .withDescription(
@@ -357,7 +365,7 @@ class ConnectionWorker implements AutoCloseable {
                       + streamWriter.getLocation()
                       + " is scheduled to use a connection with location "
                       + this.location));
-    } else if (this.location == null && streamWriter.getStreamName() != this.streamName) {
+    } else if (this.location == null && !streamWriter.getStreamName().equals(this.streamName)) {
       // Location is null implies this is non-multiplexed connection.
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
@@ -843,7 +851,8 @@ class ConnectionWorker implements AutoCloseable {
 
       log.fine(
           String.format(
-              "Got response with schema updated (omitting updated schema in response here): %s writer id %s",
+              "Got response with schema updated (omitting updated schema in response here): %s"
+                  + " writer id %s",
               responseWithUpdatedSchemaRemoved.toString(), writerId));
     }
 
@@ -927,7 +936,6 @@ class ConnectionWorker implements AutoCloseable {
         || status.getCode() == Code.UNAVAILABLE
         || status.getCode() == Code.CANCELLED
         || status.getCode() == Code.INTERNAL
-        || status.getCode() == Code.FAILED_PRECONDITION
         || status.getCode() == Code.DEADLINE_EXCEEDED;
   }
 

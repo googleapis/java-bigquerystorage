@@ -215,6 +215,7 @@ public class StreamWriter implements AutoCloseable {
                   builder.maxRetryDuration,
                   builder.limitExceededBehavior,
                   builder.traceId,
+                  builder.compressorName,
                   clientSettings));
     } else {
       if (!isDefaultStream(streamName)) {
@@ -247,7 +248,8 @@ public class StreamWriter implements AutoCloseable {
                   String fetchedLocation = writeStream.getLocation();
                   log.info(
                       String.format(
-                          "Fethed location %s for stream name %s, extracted project and dataset name: %s\"",
+                          "Fethed location %s for stream name %s, extracted project and dataset"
+                              + " name: %s\"",
                           fetchedLocation, streamName, datasetAndProjectName));
                   return fetchedLocation;
                 });
@@ -275,6 +277,7 @@ public class StreamWriter implements AutoCloseable {
                         builder.maxRetryDuration,
                         builder.limitExceededBehavior,
                         builder.traceId,
+                        builder.compressorName,
                         client.getSettings());
                   }));
       validateFetchedConnectonPool(builder);
@@ -318,7 +321,10 @@ public class StreamWriter implements AutoCloseable {
           new BigQueryWriteSettings.Builder()
               .setTransportChannelProvider(
                   BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
-                      .setChannelsPerCpu(1)
+                      .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))
+                      .setKeepAliveTimeout(org.threeten.bp.Duration.ofMinutes(1))
+                      .setKeepAliveWithoutCalls(true)
+                      .setChannelsPerCpu(2)
                       .build())
               .setCredentialsProvider(
                   BigQueryWriteSettings.defaultCredentialsProviderBuilder().build())
@@ -491,12 +497,12 @@ public class StreamWriter implements AutoCloseable {
     singleConnectionOrConnectionPool.close(this);
   }
 
-  /** Constructs a new {@link StreamWriterV2.Builder} using the given stream and client. */
+  /** Constructs a new {@link StreamWriter.Builder} using the given stream and client. */
   public static StreamWriter.Builder newBuilder(String streamName, BigQueryWriteClient client) {
     return new StreamWriter.Builder(streamName, client);
   }
 
-  /** Constructs a new {@link StreamWriterV2.Builder} using the given stream. */
+  /** Constructs a new {@link StreamWriter.Builder} using the given stream. */
   public static StreamWriter.Builder newBuilder(String streamName) {
     return new StreamWriter.Builder(streamName);
   }
@@ -594,6 +600,8 @@ public class StreamWriter implements AutoCloseable {
 
     private java.time.Duration maxRetryDuration = Duration.ofMinutes(5);
 
+    private String compressorName = null;
+
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
       this.client = null;
@@ -628,8 +636,7 @@ public class StreamWriter implements AutoCloseable {
 
     /**
      * Enable multiplexing for this writer. In multiplexing mode tables will share the same
-     * connection if possible until the connection is overwhelmed. This feature is still under
-     * development, please contact write api team before using.
+     * connection if possible until the connection is overwhelmed.
      *
      * @param enableConnectionPool
      * @return Builder
@@ -709,6 +716,16 @@ public class StreamWriter implements AutoCloseable {
      */
     public Builder setMaxRetryDuration(java.time.Duration maxRetryDuration) {
       this.maxRetryDuration = maxRetryDuration;
+      return this;
+    }
+
+    public Builder setCompressorName(String compressorName) {
+      Preconditions.checkNotNull(compressorName);
+      Preconditions.checkArgument(
+          compressorName.equals("gzip"),
+          "Compression of type \"%s\" isn't supported, only \"gzip\" compression is supported.",
+          compressorName);
+      this.compressorName = compressorName;
       return this;
     }
 

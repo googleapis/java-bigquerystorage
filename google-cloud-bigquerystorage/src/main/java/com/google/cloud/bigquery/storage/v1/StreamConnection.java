@@ -15,13 +15,18 @@
  */
 package com.google.cloud.bigquery.storage.v1;
 
+import com.google.api.gax.grpc.GrpcCallContext;
+import com.google.api.gax.rpc.ApiCallContext;
 import com.google.api.gax.rpc.BidiStreamingCallable;
 import com.google.api.gax.rpc.ClientStream;
 import com.google.api.gax.rpc.ResponseObserver;
 import com.google.api.gax.rpc.StreamController;
+import io.grpc.CallOptions;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
+import java.util.logging.Logger;
+import javax.annotation.Nullable;
 
 /**
  * StreamConnection is responsible for writing requests to a GRPC bidirecional connection.
@@ -36,17 +41,30 @@ import io.grpc.StatusRuntimeException;
  *
  * <p>It's user's responsibility to do the flow control and maintain the lifetime of the requests.
  */
-public class StreamConnection {
+class StreamConnection {
   private BidiStreamingCallable<AppendRowsRequest, AppendRowsResponse> bidiStreamingCallable;
   private ClientStream<AppendRowsRequest> clientStream;
 
   private RequestCallback requestCallback;
   private DoneCallback doneCallback;
 
+  private static final Logger log = Logger.getLogger(StreamConnection.class.getName());
+
   public StreamConnection(
-      BigQueryWriteClient client, RequestCallback requestCallback, DoneCallback doneCallback) {
+      BigQueryWriteClient client,
+      RequestCallback requestCallback,
+      DoneCallback doneCallback,
+      @Nullable String compressorName) {
     this.requestCallback = requestCallback;
     this.doneCallback = doneCallback;
+
+    ApiCallContext apiCallContext = null;
+    if (compressorName != null) {
+      apiCallContext =
+          GrpcCallContext.createDefault()
+              .withCallOptions(CallOptions.DEFAULT.withCompression(compressorName));
+      log.info("gRPC compression is enabled with " + compressorName + " compression");
+    }
 
     bidiStreamingCallable = client.appendRowsCallable();
     clientStream =
@@ -75,7 +93,8 @@ public class StreamConnection {
                         Status.fromCode(Code.CANCELLED)
                             .withDescription("Stream is closed by user.")));
               }
-            });
+            },
+            apiCallContext);
   }
 
   /**

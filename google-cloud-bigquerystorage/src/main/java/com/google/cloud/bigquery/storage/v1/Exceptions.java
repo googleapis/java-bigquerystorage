@@ -243,10 +243,10 @@ public final class Exceptions {
   }
 
   /**
-   * This exception is thrown from {@link SchemaAwareStreamWriter#append()} when the client side
-   * Proto serialization fails. It can also be thrown by the server in case rows contains invalid
-   * data. The exception contains a Map of indexes of faulty rows and the corresponding error
-   * message.
+   * This exception is thrown from {@link SchemaAwareStreamWriter#append(Iterable)} when the client
+   * side Proto serialization fails. It can also be thrown by the server in case rows contains
+   * invalid data. The exception contains a Map of indexes of faulty rows and the corresponding
+   * error message.
    */
   public static class AppendSerializationError extends AppendSerializtionError {
 
@@ -256,6 +256,29 @@ public final class Exceptions {
         String streamName,
         Map<Integer, String> rowIndexToErrorMessage) {
       super(codeValue, description, streamName, rowIndexToErrorMessage);
+    }
+  }
+
+  /** This exception is thrown from proto converter to wrap the row index to error mapping. */
+  static class RowIndexToErrorException extends IllegalArgumentException {
+    Map<Integer, String> rowIndexToErrorMessage;
+
+    boolean hasDataUnknownError;
+
+    public RowIndexToErrorException(
+        Map<Integer, String> rowIndexToErrorMessage, boolean hasDataUnknownError) {
+      this.rowIndexToErrorMessage = rowIndexToErrorMessage;
+      this.hasDataUnknownError = hasDataUnknownError;
+    }
+
+    // This message should not be exposed to the user directly.
+    // Please examine individual row's error through `rowIndexToErrorMessage`.
+    public String getMessage() {
+      return "The map of row index to error message is " + rowIndexToErrorMessage.toString();
+    }
+
+    public boolean hasDataUnknownError() {
+      return hasDataUnknownError;
     }
   }
 
@@ -344,7 +367,8 @@ public final class Exceptions {
       super(
           Status.fromCode(Status.Code.RESOURCE_EXHAUSTED)
               .withDescription(
-                  "Exceeds client side inflight buffer, consider add more buffer or open more connections. Current limit: "
+                  "Exceeds client side inflight buffer, consider add more buffer or open more"
+                      + " connections. Current limit: "
                       + currentLimit),
           writerId,
           currentLimit);
@@ -356,7 +380,8 @@ public final class Exceptions {
       super(
           Status.fromCode(Status.Code.RESOURCE_EXHAUSTED)
               .withDescription(
-                  "Exceeds client side inflight buffer, consider add more buffer or open more connections. Current limit:  "
+                  "Exceeds client side inflight buffer, consider add more buffer or open more"
+                      + " connections. Current limit:  "
                       + currentLimit),
           writerId,
           currentLimit);

@@ -54,8 +54,8 @@ public class JsonStreamWriter implements AutoCloseable {
    * is created with the updated TableSchema.
    *
    * @param jsonArr The JSON array that contains JSONObjects to be written
-   * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
-   *     ApiFuture
+   * @return {@code ApiFuture<AppendRowsResponse>} returns an AppendRowsResponse message wrapped in
+   *     an ApiFuture
    */
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr)
       throws IOException, Descriptors.DescriptorValidationException {
@@ -70,8 +70,8 @@ public class JsonStreamWriter implements AutoCloseable {
    *
    * @param jsonArr The JSON array that contains JSONObjects to be written
    * @param offset Offset for deduplication
-   * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
-   *     ApiFuture
+   * @return {@code ApiFuture<AppendRowsResponse>} returns an AppendRowsResponse message wrapped in
+   *     an ApiFuture
    */
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, long offset)
       throws IOException, Descriptors.DescriptorValidationException {
@@ -313,14 +313,13 @@ public class JsonStreamWriter implements AutoCloseable {
 
     /**
      * Enable multiplexing for this writer. In multiplexing mode tables will share the same
-     * connection if possible until the connection is overwhelmed. This feature is still under
-     * development, please contact write api team before using.
+     * connection if possible until the connection is overwhelmed.
      *
      * @param enableConnectionPool
      * @return Builder
      */
     public Builder setEnableConnectionPool(boolean enableConnectionPool) {
-      this.schemaAwareStreamWriterBuilder.setEnableConnectionPool(true);
+      this.schemaAwareStreamWriterBuilder.setEnableConnectionPool(enableConnectionPool);
       return this;
     }
 
@@ -333,6 +332,17 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setLocation(String location) {
       this.schemaAwareStreamWriterBuilder.setLocation(location);
+      return this;
+    }
+
+    /**
+     * Sets the compression to use for the calls. The compressor must be of type gzip.
+     *
+     * @param compressorName
+     * @return Builder
+     */
+    public Builder setCompressorName(String compressorName) {
+      this.schemaAwareStreamWriterBuilder.setCompressorName(compressorName);
       return this;
     }
 
