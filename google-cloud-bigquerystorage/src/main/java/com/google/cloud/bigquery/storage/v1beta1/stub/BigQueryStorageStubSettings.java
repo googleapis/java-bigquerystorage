@@ -153,7 +153,7 @@ public class BigQueryStorageStubSettings extends StubSettings<BigQueryStorageStu
 
   /** Returns the default service endpoint. */
   public static String getDefaultEndpoint() {
-    return "bigquerystorage.apis-s3nscloud.io:443";
+    return "bigquerystorage.test-endpoint:443";
   }
 
   /** Returns the default mTLS service endpoint. */
