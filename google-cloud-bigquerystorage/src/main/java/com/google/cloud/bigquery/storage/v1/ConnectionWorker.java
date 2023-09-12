@@ -21,6 +21,8 @@ import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.retrying.ExponentialRetryAlgorithm;
+import com.google.api.gax.retrying.RetryingContext;
+import com.google.api.gax.retrying.TimedAttemptSettings;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
@@ -237,7 +239,7 @@ class ConnectionWorker implements AutoCloseable {
    */
   @GuardedBy("lock")
   private int responsesToIgnore = 0;
-  private final ExponentialRetryAlgorithm retryAlgorithm;
+  private final RetrySettings retrySettings;
   private final org.threeten.bp.Duration retryFirstDelay;
   private final double retryMultiplier;
 
@@ -306,7 +308,23 @@ class ConnectionWorker implements AutoCloseable {
     this.traceId = traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
+    this.retryFirstDelay = retryFirstDelay;
+    this.retryMultiplier = retryMultiplier;
+    this.maxRetryNumAttempts = maxRetryNumAttempts;
     this.compressorName = compressorName;
+    if (retryFirstDelay != null
+        && !retryFirstDelay.isZero()
+        && retryMultiplier > 0
+        && maxRetryNumAttempts > 0) {
+      this.retrySettings =
+          RetrySettings.newBuilder()
+              .setInitialRetryDelay(this.retryFirstDelay)
+              .setRetryDelayMultiplier(retryMultiplier)
+              .setMaxAttempts(this.maxRetryNumAttempts)
+              .build();
+    } else {
+      this.retrySettings = null;
+    }
     // Always recreate a client for connection worker.
     HashMap<String, String> newHeaders = new HashMap<>();
     newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
@@ -322,25 +340,6 @@ class ConnectionWorker implements AutoCloseable {
             .toBuilder()
             .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
             .build();
-
-    this.maxRetryNumAttempts = maxRetryNumAttempts;
-    this.retryFirstDelay = retryFirstDelay;
-    this.retryMultiplier = retryMultiplier;
-    if (retryFirstDelay != null
-        && !retryFirstDelay.isZero()
-        && retryMultiplier > 0
-        && maxRetryNumAttempts > 0) {
-      RetrySettings retryBackoffSettings =
-          RetrySettings.newBuilder()
-              .setInitialRetryDelay(this.retryFirstDelay)
-              .setRetryDelayMultiplier(retryMultiplier)
-              .setMaxAttempts(this.maxRetryNumAttempts)
-              .build();
-      this.retryAlgorithm = new ExponentialRetryAlgorithm(retryBackoffSettings,
-          NanoClock.getDefaultClock());
-    } else {
-      this.retryAlgorithm = null;
-    }
     this.client = BigQueryWriteClient.create(clientSettings);
 
     this.appendThread =
@@ -402,7 +401,7 @@ class ConnectionWorker implements AutoCloseable {
 
   @GuardedBy("lock")
   private boolean shouldWaitForBackoff(AppendRequestAndResponse requestWrapper) {
-    if (this.retryAlgorithm != null
+    if (this.retrySettings != null
         && Instant.now().isBefore(requestWrapper.blockMessageSendDeadline)) {
       log.info(String.format(
           "Waiting for waiting to queue to unblock at %s for retry # %s",
@@ -417,8 +416,6 @@ class ConnectionWorker implements AutoCloseable {
     lock.lock();
     try {
       Condition condition = lock.newCondition();
-      // http://go/bugpattern/WaitNotInLoop, condition.await() must be called in a loop.  We can't
-      // sleep() due to Boq requirements.
       while (shouldWaitForBackoff(requestWrapper)) {
         condition.await(100, java.util.concurrent.TimeUnit.MILLISECONDS);
       }
@@ -516,7 +513,7 @@ class ConnectionWorker implements AutoCloseable {
 
   private ApiFuture<AppendRowsResponse> appendInternal(
       StreamWriter streamWriter, AppendRowsRequest message) {
-    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message, streamWriter);
+    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message, streamWriter, this.retrySettings);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
@@ -988,9 +985,16 @@ class ConnectionWorker implements AutoCloseable {
       lock.lock();
       try {
         requestWrapper.retryCount++;
-        if (this.retryAlgorithm != null && errorCode == Code.RESOURCE_EXHAUSTED) {
+        if (this.retrySettings != null && errorCode == Code.RESOURCE_EXHAUSTED) {
           // Trigger exponential backoff in append loop when request is resent for quota errors
-          requestWrapper.blockMessageSendDeadline = Instant.now().plusMillis(this.retryFirstDelay.toMillis());
+          if (requestWrapper.attemptSettings == null) {
+            requestWrapper.attemptSettings = requestWrapper.retryAlgorithm.createFirstAttempt();
+          } else {
+            requestWrapper.attemptSettings =
+                requestWrapper.retryAlgorithm.createNextAttempt(requestWrapper.attemptSettings);
+          }
+          requestWrapper.blockMessageSendDeadline = Instant.now().plusMillis(
+              requestWrapper.attemptSettings.getRetryDelay().toMillis());
         }
 
         Long offset = requestWrapper.message.hasOffset() ? requestWrapper.message.getOffset().getValue() : -1;
@@ -1234,19 +1238,34 @@ class ConnectionWorker implements AutoCloseable {
     Instant blockMessageSendDeadline;
 
     Integer retryCount;
+    ExponentialRetryAlgorithm retryAlgorithm;
 
     // The writer that issues the call of the request.
     final StreamWriter streamWriter;
 
+    TimedAttemptSettings attemptSettings;
+
     Instant requestCreationTimeStamp;
 
-    AppendRequestAndResponse(AppendRowsRequest message, StreamWriter streamWriter) {
+    AppendRequestAndResponse(
+        AppendRowsRequest message,
+        StreamWriter streamWriter,
+        RetrySettings retrySettings) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
       this.messageSize = message.getProtoRows().getSerializedSize();
       this.streamWriter = streamWriter;
       this.blockMessageSendDeadline = Instant.now();
       this.retryCount = 0;
+      // To be set after first retry
+      this.attemptSettings = null;
+      if (retrySettings != null) {
+        this.retryAlgorithm = new ExponentialRetryAlgorithm(
+            retrySettings,
+            NanoClock.getDefaultClock());
+      } else {
+        this.retryAlgorithm = null;
+      }
     }
 
     void trySetRequestInsertQueueTime() {

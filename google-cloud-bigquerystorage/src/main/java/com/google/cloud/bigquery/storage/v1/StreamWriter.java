@@ -436,7 +436,7 @@ public class StreamWriter implements AutoCloseable {
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
     if (userClosed.get()) {
       AppendRequestAndResponse requestWrapper =
-          new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build(), this);
+          new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build(), this, null);
       requestWrapper.appendResult.setException(
           new Exceptions.StreamWriterClosedException(
               Status.fromCode(Status.Code.FAILED_PRECONDITION)
