@@ -225,7 +225,10 @@ public class StreamWriter implements AutoCloseable {
                   builder.limitExceededBehavior,
                   builder.traceId,
                   builder.compressorName,
-                  clientSettings));
+                  clientSettings,
+                  builder.maxRetryNumAttempts,
+                  builder.retryFirstDelay,
+                  builder.retryMultiplier));
     } else {
       if (!isDefaultStream(streamName)) {
         log.warning(
@@ -591,6 +594,12 @@ public class StreamWriter implements AutoCloseable {
     private long maxInflightRequest = DEFAULT_MAX_INFLIGHT_REQUESTS;
 
     private long maxInflightBytes = DEFAULT_MAX_INFLIGHT_BYTES;
+
+    private int maxRetryNumAttempts = 5;
+
+    private org.threeten.bp.Duration retryFirstDelay = org.threeten.bp.Duration.ofMillis(100);
+
+    private double retryMultiplier = 1.1;
 
     private String endpoint = null;
 

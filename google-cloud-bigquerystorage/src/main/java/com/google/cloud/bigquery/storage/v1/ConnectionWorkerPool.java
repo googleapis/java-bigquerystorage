@@ -43,6 +43,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
+import org.threeten.bp.Duration;
 
 /** Pool of connections to accept appends and distirbute to different connections. */
 public class ConnectionWorkerPool {
@@ -64,6 +65,12 @@ public class ConnectionWorkerPool {
    * Max retry duration for retryable errors.
    */
   private final java.time.Duration maxRetryDuration;
+
+  private int maxRetryNumAttempts;
+
+  private org.threeten.bp.Duration retryFirstDelay;
+
+  private double retryMultiplier;
 
   /*
    * Behavior when inflight queue is exceeded. Only supports Block or Throw, default is Block.
@@ -214,6 +221,9 @@ public class ConnectionWorkerPool {
     this.compressorName = comperssorName;
     this.clientSettings = clientSettings;
     this.currentMaxConnectionCount = settings.minConnectionsPerRegion();
+    this.retryFirstDelay = Duration.ZERO;
+    this.maxRetryNumAttempts = 0;
+    this.retryMultiplier = 0;
   }
 
   /**
@@ -387,7 +397,10 @@ public class ConnectionWorkerPool {
             limitExceededBehavior,
             traceId,
             compressorName,
-            clientSettings);
+            clientSettings,
+            maxRetryNumAttempts,
+            retryFirstDelay,
+            retryMultiplier);
     connectionWorkerPool.add(connectionWorker);
     log.info(
         String.format(
