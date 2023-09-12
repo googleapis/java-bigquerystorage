@@ -20,6 +20,7 @@ import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auto.value.AutoValue;
+import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
@@ -388,6 +389,11 @@ class ConnectionWorker implements AutoCloseable {
     requestBuilder.setWriteStream(streamWriter.getStreamName());
     requestBuilder.putAllMissingValueInterpretations(
         streamWriter.getMissingValueInterpretationMap());
+    if (streamWriter.getDefaultValueInterpretation()
+        != MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED) {
+      requestBuilder.setDefaultMissingValueInterpretation(
+          streamWriter.getDefaultValueInterpretation());
+    }
     return appendInternal(streamWriter, requestBuilder.build());
   }
 
@@ -839,8 +845,24 @@ class ConnectionWorker implements AutoCloseable {
             + streamName
             + " id: "
             + writerId);
-    while (!localQueue.isEmpty()) {
-      localQueue.pollFirst().appendResult.setException(finalStatus);
+    int sizeOfQueue = localQueue.size();
+    for (int i = 0; i < sizeOfQueue; i++) {
+      if (i == 0) {
+        localQueue.pollFirst().appendResult.setException(finalStatus);
+      } else {
+        localQueue
+            .pollFirst()
+            .appendResult
+            .setException(
+                new Exceptions.StreamWriterClosedException(
+                    Status.fromCode(Code.ABORTED)
+                        .withDescription(
+                            "Connection is aborted due to an unrecoverable failure of "
+                                + "another request sharing the connection. Please retry this "
+                                + "request."),
+                    streamName,
+                    writerId));
+      }
     }
   }
 
@@ -936,7 +958,6 @@ class ConnectionWorker implements AutoCloseable {
         || status.getCode() == Code.UNAVAILABLE
         || status.getCode() == Code.CANCELLED
         || status.getCode() == Code.INTERNAL
-        || status.getCode() == Code.FAILED_PRECONDITION
         || status.getCode() == Code.DEADLINE_EXCEEDED;
   }
 

@@ -313,8 +313,7 @@ public class JsonStreamWriter implements AutoCloseable {
 
     /**
      * Enable multiplexing for this writer. In multiplexing mode tables will share the same
-     * connection if possible until the connection is overwhelmed. This feature is still under
-     * development, please contact write api team before using.
+     * connection if possible until the connection is overwhelmed.
      *
      * @param enableConnectionPool
      * @return Builder
@@ -344,6 +343,22 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setCompressorName(String compressorName) {
       this.schemaAwareStreamWriterBuilder.setCompressorName(compressorName);
+      return this;
+    }
+
+    /**
+     * Sets the default missing value interpretation value if the column is not presented in the
+     * missing_value_interpretations map.
+     *
+     * <p>If this value is set to `DEFAULT_VALUE`, we will always populate default value if the
+     * field is missing from json and default value is defined in the column.
+     *
+     * <p>If this value is set to `NULL_VALUE`, we will always not populate default value.
+     */
+    public Builder setDefaultMissingValueInterpretation(
+        AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation) {
+      this.schemaAwareStreamWriterBuilder.setDefaultMissingValueInterpretation(
+          defaultMissingValueInterpretation);
       return this;
     }
 
