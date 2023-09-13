@@ -321,6 +321,7 @@ class ConnectionWorker implements AutoCloseable {
               .setInitialRetryDelay(this.retryFirstDelay)
               .setRetryDelayMultiplier(retryMultiplier)
               .setMaxAttempts(this.maxRetryNumAttempts)
+              .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
               .build();
     } else {
       this.retrySettings = null;
