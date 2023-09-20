@@ -55,6 +55,7 @@ import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.Supplier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,8 +82,11 @@ public class StreamWriterTest {
   private static final String TEST_STREAM_2 = "projects/p/datasets/d2/tables/t2/streams/_default";
   private static final String TEST_STREAM_3 = "projects/p/datasets/d3/tables/t3/streams/_default";
   private static final String TEST_STREAM_SHORTEN = "projects/p/datasets/d2/tables/t2/_default";
-  private static final String EXPLICIT_STEAM = "projects/p/datasets/d1/tables/t1/streams/s1";
+  private static final String EXPLICIT_STREAM = "projects/p/datasets/d1/tables/t1/streams/s1";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
+  private static final int MAX_RETRY_NUM_ATTEMPTS = 3;
+  private static final Duration RETRY_FIRST_DELAY = Duration.ofMillis(500);
+  private static final double RETRY_MULTIPLIER = 1.1;
   private FakeScheduledExecutorService fakeExecutor;
   private FakeBigQueryWrite testBigQueryWrite;
   private static MockServiceHelper serviceHelper;
@@ -111,7 +115,8 @@ public class StreamWriterTest {
           BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(
               UPDATED_TABLE_SCHEMA));
 
-  public StreamWriterTest() throws DescriptorValidationException {}
+  public StreamWriterTest() throws DescriptorValidationException {
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -156,6 +161,28 @@ public class StreamWriterTest {
         .setWriterSchema(createProtoSchema())
         .setTraceId(TEST_TRACE_ID)
         .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
+        .build();
+  }
+
+  private StreamWriter getTestStreamWriterRetryEnabled() throws IOException {
+    return StreamWriter.newBuilder(TEST_STREAM_1, client)
+        .setWriterSchema(createProtoSchema())
+        .setTraceId(TEST_TRACE_ID)
+        .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
+        .setMaxRetryNumAttempts(MAX_RETRY_NUM_ATTEMPTS)
+        .setRetryFirstDelay(RETRY_FIRST_DELAY)
+        .setRetryMultiplier(RETRY_MULTIPLIER)
+        .build();
+  }
+
+  private StreamWriter getTestStreamWriterExclusiveRetryEnabled() throws IOException {
+    return StreamWriter.newBuilder(EXPLICIT_STREAM, client)
+        .setWriterSchema(createProtoSchema())
+        .setTraceId(TEST_TRACE_ID)
+        .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
+        .setMaxRetryNumAttempts(MAX_RETRY_NUM_ATTEMPTS)
+        .setRetryFirstDelay(RETRY_FIRST_DELAY)
+        .setRetryMultiplier(RETRY_MULTIPLIER)
         .build();
   }
 
@@ -232,7 +259,7 @@ public class StreamWriterTest {
             new Runnable() {
               @Override
               public void run() {
-                sendTestMessage(writer, new String[] {"A"});
+                sendTestMessage(writer, new String[]{"A"});
               }
             });
     // Start a separate thread to append and verify that it is still alive after 2 seoncds.
@@ -271,9 +298,39 @@ public class StreamWriterTest {
             .build();
 
     testBigQueryWrite.addResponse(createAppendResponse(0));
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     writer.close();
+  }
+
+  /* DummyResponseSupplierWillFailThenSucceed is used to mock repeated failures, such as retriable
+   * in-stream errors.  This Supplier will fail up to totalFailCount with status failStatus.  Once
+   * totalFailCount is reached, then the provided Response will be returned instead.
+   */
+  private static class DummyResponseSupplierWillFailThenSucceed
+      implements Supplier<FakeBigQueryWriteImpl.Response> {
+    private final int totalFailCount;
+    private int failCount;
+    private final com.google.rpc.Status failStatus;
+    private final FakeBigQueryWriteImpl.Response response;
+
+    DummyResponseSupplierWillFailThenSucceed(
+        FakeBigQueryWriteImpl.Response response, int totalFailCount, com.google.rpc.Status failStatus) {
+      this.totalFailCount = totalFailCount;
+      this.response = response;
+      this.failStatus = failStatus;
+      this.failCount = 0;
+    }
+
+    @Override
+    public FakeBigQueryWriteImpl.Response get() {
+      if (failCount >= totalFailCount) {
+        return response;
+      }
+      failCount++;
+      return new FakeBigQueryWriteImpl.Response(
+          AppendRowsResponse.newBuilder().setError(this.failStatus).build());
+    }
   }
 
   @Test
@@ -287,7 +344,7 @@ public class StreamWriterTest {
 
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     for (int i = 0; i < appendCount; i++) {
-      futures.add(writer.append(createProtoRows(new String[] {String.valueOf(i)}), i));
+      futures.add(writer.append(createProtoRows(new String[]{String.valueOf(i)}), i));
     }
 
     for (int i = 0; i < appendCount; i++) {
@@ -323,7 +380,7 @@ public class StreamWriterTest {
     }
 
     // We will trigger 10 more requests in the request callback of the following request.
-    ProtoRows protoRows = createProtoRows(new String[] {String.valueOf(-1)});
+    ProtoRows protoRows = createProtoRows(new String[]{String.valueOf(-1)});
     ApiFuture<AppendRowsResponse> future = writer.append(protoRows, -1);
     ApiFutures.addCallback(
         future, new AppendCompleteCallback(writer, protoRows), MoreExecutors.directExecutor());
@@ -387,7 +444,7 @@ public class StreamWriterTest {
 
     assertEquals(writer.getUpdatedSchema(), null);
     AppendRowsResponse response =
-        writer.append(createProtoRows(new String[] {String.valueOf(0)}), 0).get();
+        writer.append(createProtoRows(new String[]{String.valueOf(0)}), 0).get();
     assertEquals(writer.getUpdatedSchema(), UPDATED_TABLE_SCHEMA);
 
     // Create another writer, although it's the same stream name but the time stamp is newer, thus
@@ -454,7 +511,7 @@ public class StreamWriterTest {
             new ThrowingRunnable() {
               @Override
               public void run() throws Throwable {
-                StreamWriter.newBuilder(EXPLICIT_STEAM, client)
+                StreamWriter.newBuilder(EXPLICIT_STREAM, client)
                     .setEnableConnectionPool(true)
                     .build();
               }
@@ -485,8 +542,8 @@ public class StreamWriterTest {
     testBigQueryWrite.addException(Status.INTERNAL.asException());
     testBigQueryWrite.addException(Status.INTERNAL.asException());
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"B"});
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     ApiException actualError = assertFutureException(ApiException.class, appendFuture2);
@@ -503,9 +560,9 @@ public class StreamWriterTest {
         createAppendResponseWithError(Status.INVALID_ARGUMENT.getCode(), "test message"));
     testBigQueryWrite.addResponse(createAppendResponse(1));
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
-    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[] {"C"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"B"});
+    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer, new String[]{"C"});
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     StatusRuntimeException actualError =
@@ -557,7 +614,7 @@ public class StreamWriterTest {
     IllegalArgumentException illegalArgumentException =
         new IllegalArgumentException("Illegal argument");
     testBigQueryWrite.addException(illegalArgumentException);
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     UnknownException actualError = assertFutureException(UnknownException.class, appendFuture1);
     assertEquals(Code.UNKNOWN, actualError.getStatusCode().getCode());
 
@@ -570,13 +627,13 @@ public class StreamWriterTest {
     testBigQueryWrite.addResponse(createAppendResponse(0));
     testBigQueryWrite.addResponse(createAppendResponse(1));
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
 
     // Sleep to create a long idle between appends.
     TimeUnit.SECONDS.sleep(3);
 
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"B"});
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
 
     writer.close();
@@ -587,9 +644,9 @@ public class StreamWriterTest {
     StreamWriter writer = getTestStreamWriter();
     testBigQueryWrite.addResponse(createAppendResponse(0));
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     writer.close();
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"B"});
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertTrue(appendFuture2.isDone());
@@ -603,11 +660,11 @@ public class StreamWriterTest {
     StreamWriter writer = getTestStreamWriter();
     testBigQueryWrite.addException(Status.INVALID_ARGUMENT.asException());
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     ApiException error1 = assertFutureException(ApiException.class, appendFuture1);
     assertEquals(Code.INVALID_ARGUMENT, error1.getStatusCode().getCode());
 
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"B"});
     assertTrue(appendFuture2.isDone());
     StatusRuntimeException error2 =
         assertFutureException(StatusRuntimeException.class, appendFuture2);
@@ -624,7 +681,7 @@ public class StreamWriterTest {
     testBigQueryWrite.addResponse(createAppendResponse(0));
 
     // Send a request and close the stream in separate thread while the request is inflight.
-    final ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    final ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     Thread closeThread =
         new Thread(
             new Runnable() {
@@ -663,7 +720,7 @@ public class StreamWriterTest {
     int appendCount = 10;
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     for (int i = 0; i < appendCount; i++) {
-      futures.add(sendTestMessage(writer, new String[] {String.valueOf(i)}));
+      futures.add(sendTestMessage(writer, new String[]{String.valueOf(i)}));
     }
 
     // Server close should properly handle all inflight requests.
@@ -714,7 +771,7 @@ public class StreamWriterTest {
     testBigQueryWrite.setResponseSleep(Duration.ofSeconds(1));
     testBigQueryWrite.addResponse(createAppendResponse(0));
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     assertTrue(writer.getInflightWaitSeconds() >= 1);
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     writer.close();
@@ -744,8 +801,8 @@ public class StreamWriterTest {
     testBigQueryWrite.addResponse(createAppendResponse(0));
     testBigQueryWrite.addResponse(createAppendResponse(1));
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer1, new String[] {"A"});
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer2, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer1, new String[]{"A"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer2, new String[]{"A"});
 
     assertTrue(writer1.getInflightWaitSeconds() >= 1);
     assertTrue(writer2.getInflightWaitSeconds() >= 1);
@@ -770,7 +827,7 @@ public class StreamWriterTest {
 
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     for (int i = 0; i < appendCount; i++) {
-      futures.add(writer.append(createProtoRows(new String[] {String.valueOf(i)}), i));
+      futures.add(writer.append(createProtoRows(new String[]{String.valueOf(i)}), i));
     }
 
     for (int i = 0; i < appendCount; i++) {
@@ -821,10 +878,10 @@ public class StreamWriterTest {
     // In total insert append `appendCountPerStream` * 4 requests.
     // We insert using the pattern of streamWriter1, streamWriter1, streamWriter2, streamWriter2
     for (int i = 0; i < appendCountPerStream; i++) {
-      futures.add(writer1.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4));
-      futures.add(writer1.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4 + 1));
-      futures.add(writer2.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4 + 2));
-      futures.add(writer2.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4 + 3));
+      futures.add(writer1.append(createProtoRows(new String[]{String.valueOf(i)}), i * 4));
+      futures.add(writer1.append(createProtoRows(new String[]{String.valueOf(i)}), i * 4 + 1));
+      futures.add(writer2.append(createProtoRows(new String[]{String.valueOf(i)}), i * 4 + 2));
+      futures.add(writer2.append(createProtoRows(new String[]{String.valueOf(i)}), i * 4 + 3));
     }
 
     for (int i = 0; i < appendCountPerStream * 4; i++) {
@@ -892,13 +949,13 @@ public class StreamWriterTest {
     // We insert using the pattern of streamWriter1, streamWriter1, streamWriter2, streamWriter2
     for (int i = 0; i < appendCountPerStream; i++) {
       ApiFuture<AppendRowsResponse> appendFuture1 =
-          writer1.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4);
+          writer1.append(createProtoRows(new String[]{String.valueOf(i)}), i * 4);
       ApiFuture<AppendRowsResponse> appendFuture2 =
-          writer1.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4 + 1);
+          writer1.append(createProtoRows(new String[]{String.valueOf(i)}), i * 4 + 1);
       ApiFuture<AppendRowsResponse> appendFuture3 =
-          writer2.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4 + 2);
+          writer2.append(createProtoRows(new String[]{String.valueOf(i)}), i * 4 + 2);
       ApiFuture<AppendRowsResponse> appendFuture4 =
-          writer2.append(createProtoRows(new String[] {String.valueOf(i)}), i * 4 + 3);
+          writer2.append(createProtoRows(new String[]{String.valueOf(i)}), i * 4 + 3);
       appendFuture1.get();
       appendFuture2.get();
       appendFuture3.get();
@@ -940,7 +997,7 @@ public class StreamWriterTest {
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     long appendStartTimeMs = System.currentTimeMillis();
     for (int i = 0; i < appendCount; i++) {
-      futures.add(writer.append(createProtoRows(new String[] {String.valueOf(i)}), i));
+      futures.add(writer.append(createProtoRows(new String[]{String.valueOf(i)}), i));
     }
     long appendElapsedMs = System.currentTimeMillis() - appendStartTimeMs;
     assertTrue(appendElapsedMs >= 1000);
@@ -969,7 +1026,7 @@ public class StreamWriterTest {
             new ThrowingRunnable() {
               @Override
               public void run() throws Throwable {
-                writer.append(createProtoRows(new String[] {String.valueOf(10)}), -1);
+                writer.append(createProtoRows(new String[]{String.valueOf(10)}), -1);
               }
             });
     assertEquals(ex.getStatus().getCode(), Status.RESOURCE_EXHAUSTED.getCode());
@@ -1012,7 +1069,7 @@ public class StreamWriterTest {
     StreamWriter writer = getTestStreamWriter();
 
     String oversized = Strings.repeat("a", (int) (StreamWriter.getApiMaxRequestBytes() + 1));
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {oversized});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{oversized});
     assertTrue(appendFuture1.isDone());
     StatusRuntimeException actualError =
         assertFutureException(StatusRuntimeException.class, appendFuture1);
@@ -1052,7 +1109,7 @@ public class StreamWriterTest {
     // In total insert 5 requests,
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     for (int i = 0; i < appendCount; i++) {
-      futures.add(writer.append(createProtoRows(new String[] {String.valueOf(i)}), i));
+      futures.add(writer.append(createProtoRows(new String[]{String.valueOf(i)}), i));
     }
 
     for (int i = 0; i < appendCount; i++) {
@@ -1081,7 +1138,7 @@ public class StreamWriterTest {
       }
       List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
       for (long i = 0; i < appendCount; i++) {
-        futures.add(sendTestMessage(writer, new String[] {String.valueOf(i)}, i));
+        futures.add(sendTestMessage(writer, new String[]{String.valueOf(i)}, i));
       }
       for (int i = 0; i < appendCount; i++) {
         assertEquals(futures.get(i).get().getAppendResult().getOffset().getValue(), (long) i);
@@ -1100,7 +1157,7 @@ public class StreamWriterTest {
       }
       List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
       for (long i = 0; i < appendCount; i++) {
-        futures.add(sendTestMessage(writer, new String[] {String.valueOf(i)}, i));
+        futures.add(sendTestMessage(writer, new String[]{String.valueOf(i)}, i));
       }
       // first request succeeded.
       assertEquals(futures.get(0).get().getAppendResult().getOffset().getValue(), 0);
@@ -1125,7 +1182,7 @@ public class StreamWriterTest {
       }
       List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
       for (long i = 0; i < appendCount; i++) {
-        futures.add(sendTestMessage(writer, new String[] {String.valueOf(i)}, i));
+        futures.add(sendTestMessage(writer, new String[]{String.valueOf(i)}, i));
       }
       // first request succeeded.
       assertEquals(futures.get(0).get().getAppendResult().getOffset().getValue(), 0);
@@ -1150,8 +1207,8 @@ public class StreamWriterTest {
       testBigQueryWrite.addResponse(createAppendResponse(0));
       testBigQueryWrite.addResponse(createAppendResponse(1));
 
-      ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"}, 0);
-      ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"B"}, 1);
+      ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"}, 0);
+      ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"B"}, 1);
       TimeUnit.SECONDS.sleep(1);
       assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
       assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
@@ -1170,7 +1227,7 @@ public class StreamWriterTest {
   public void testWriterAlreadyClosedException() throws Exception {
     StreamWriter writer = getTestStreamWriter();
     writer.close();
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"}, 0);
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"}, 0);
     Exceptions.StreamWriterClosedException actualError =
         assertFutureException(Exceptions.StreamWriterClosedException.class, appendFuture1);
     // The basic StatusRuntimeException API is not changed.
@@ -1185,12 +1242,12 @@ public class StreamWriterTest {
   public void testWriterClosedException() throws Exception {
     StreamWriter writer = getTestStreamWriter();
     testBigQueryWrite.addException(Status.INTERNAL.asException());
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"}, 0);
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"}, 0);
     try {
       appendFuture1.get();
     } catch (Exception e) {
     }
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"A"}, 0);
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"A"}, 0);
     Exceptions.StreamWriterClosedException actualError =
         assertFutureException(Exceptions.StreamWriterClosedException.class, appendFuture2);
     // The basic StatusRuntimeException API is not changed.
@@ -1260,9 +1317,9 @@ public class StreamWriterTest {
     testBigQueryWrite.addResponse(createAppendResponse(1));
 
     // Connection will be failed after triggering the third append.
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer1, new String[] {"A"}, 0);
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer2, new String[] {"B"}, 1);
-    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer3, new String[] {"C"}, 2);
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer1, new String[]{"A"}, 0);
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer2, new String[]{"B"}, 1);
+    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer3, new String[]{"C"}, 2);
     TimeUnit.SECONDS.sleep(1);
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
@@ -1281,9 +1338,9 @@ public class StreamWriterTest {
     testBigQueryWrite.addResponse(createAppendResponse(4));
     testBigQueryWrite.addResponse(createAppendResponse(5));
     testBigQueryWrite.addResponse(createAppendResponse(6));
-    ApiFuture<AppendRowsResponse> appendFuture4 = sendTestMessage(writer4, new String[] {"A"}, 2);
-    ApiFuture<AppendRowsResponse> appendFuture5 = sendTestMessage(writer1, new String[] {"A"}, 3);
-    ApiFuture<AppendRowsResponse> appendFuture6 = sendTestMessage(writer2, new String[] {"B"}, 4);
+    ApiFuture<AppendRowsResponse> appendFuture4 = sendTestMessage(writer4, new String[]{"A"}, 2);
+    ApiFuture<AppendRowsResponse> appendFuture5 = sendTestMessage(writer1, new String[]{"A"}, 3);
+    ApiFuture<AppendRowsResponse> appendFuture6 = sendTestMessage(writer2, new String[]{"B"}, 4);
     assertEquals(4, appendFuture4.get().getAppendResult().getOffset().getValue());
     assertEquals(5, appendFuture5.get().getAppendResult().getOffset().getValue());
     assertEquals(6, appendFuture6.get().getAppendResult().getOffset().getValue());
@@ -1317,9 +1374,9 @@ public class StreamWriterTest {
     testBigQueryWrite.addResponse(createAppendResponse(1));
 
     // Connection will be failed after triggering the third append.
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer1, new String[] {"A"}, 0);
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer2, new String[] {"B"}, 1);
-    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer3, new String[] {"C"}, 2);
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer1, new String[]{"A"}, 0);
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer2, new String[]{"B"}, 1);
+    ApiFuture<AppendRowsResponse> appendFuture3 = sendTestMessage(writer3, new String[]{"C"}, 2);
     TimeUnit.SECONDS.sleep(1);
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
@@ -1358,7 +1415,7 @@ public class StreamWriterTest {
             .build();
 
     testBigQueryWrite.addResponse(createAppendResponse(0));
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     serviceHelper.stop();
     // Ensure closing the writer after disconnect succeeds.
@@ -1385,14 +1442,14 @@ public class StreamWriterTest {
 
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     // The first append doesn't use a missing value map.
-    futures.add(writer.append(createProtoRows(new String[] {String.valueOf(0)}), 0));
+    futures.add(writer.append(createProtoRows(new String[]{String.valueOf(0)}), 0));
 
     // The second append uses a missing value map.
     Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueMap = new HashMap();
     missingValueMap.put("col1", AppendRowsRequest.MissingValueInterpretation.NULL_VALUE);
     missingValueMap.put("col3", AppendRowsRequest.MissingValueInterpretation.DEFAULT_VALUE);
     writer.setMissingValueInterpretationMap(missingValueMap);
-    futures.add(writer.append(createProtoRows(new String[] {String.valueOf(1)}), 1));
+    futures.add(writer.append(createProtoRows(new String[]{String.valueOf(1)}), 1));
 
     for (int i = 0; i < appendCount; i++) {
       assertEquals(i, futures.get(i).get().getAppendResult().getOffset().getValue());
@@ -1421,7 +1478,7 @@ public class StreamWriterTest {
 
     writer.close();
     assertTrue(writer.isClosed());
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     ExecutionException ex =
         assertThrows(
             ExecutionException.class,
@@ -1441,7 +1498,7 @@ public class StreamWriterTest {
 
     writer.close();
     assertTrue(writer.isClosed());
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     ExecutionException ex =
         assertThrows(
             ExecutionException.class,
@@ -1466,9 +1523,9 @@ public class StreamWriterTest {
     // Permenant errror.
     testBigQueryWrite.setFailedStatus(Status.INVALID_ARGUMENT);
     testBigQueryWrite.addResponse(createAppendResponse(0));
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     appendFuture1.get();
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"A"});
     ExecutionException ex =
         assertThrows(
             ExecutionException.class,
@@ -1488,9 +1545,9 @@ public class StreamWriterTest {
     // Permenant errror.
     testBigQueryWrite.setFailedStatus(Status.INVALID_ARGUMENT);
     testBigQueryWrite.addResponse(createAppendResponse(0));
-    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture1 = sendTestMessage(writer, new String[]{"A"});
     appendFuture1.get();
-    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[] {"A"});
+    ApiFuture<AppendRowsResponse> appendFuture2 = sendTestMessage(writer, new String[]{"A"});
     ExecutionException ex =
         assertThrows(
             ExecutionException.class,
@@ -1586,5 +1643,79 @@ public class StreamWriterTest {
         ((GoogleCredentialsProvider) writerSettings2.getCredentialsProvider())
             .getScopesToApply()
             .size());
+  }
+
+  @Test
+  public void testAppendSuccessAndInternalErrorRetrySuccess() throws Exception {
+    StreamWriter writer = getTestStreamWriterRetryEnabled();
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addStatusException(
+        com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL.ordinal()).build());
+    testBigQueryWrite.addResponse(createAppendResponse(1));
+
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}));
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}));
+
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
+
+    writer.close();
+  }
+
+  @Test
+  public void testAppendSuccessAndInternalQuotaErrorRetrySuccess() throws Exception {
+    StreamWriter writer = getTestStreamWriterRetryEnabled();
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addStatusException(
+        com.google.rpc.Status.newBuilder().setCode(Code.RESOURCE_EXHAUSTED.ordinal()).build());
+    testBigQueryWrite.addResponse(createAppendResponse(1));
+
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}));
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}));
+
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
+
+    writer.close();
+  }
+
+  @Test
+  public void testAppendSuccessAndInternalErrorRetrySuccessExclusive() throws Exception {
+    StreamWriter writer = getTestStreamWriterExclusiveRetryEnabled();
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addResponse(
+        new DummyResponseSupplierWillFailThenSucceed(
+            new FakeBigQueryWriteImpl.Response(
+                createAppendResponse(1)),
+            /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS,
+            com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL.ordinal()).build()));
+
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}), 0);
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}), 1);
+
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
+
+    writer.close();
+  }
+
+  @Test
+  public void testAppendSuccessAndQuotaErrorRetrySuccessExclusive() throws Exception {
+    StreamWriter writer = getTestStreamWriterExclusiveRetryEnabled();
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addResponse(
+        new DummyResponseSupplierWillFailThenSucceed(
+            new FakeBigQueryWriteImpl.Response(
+                createAppendResponse(1)),
+            /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS,
+            com.google.rpc.Status.newBuilder().setCode(Code.RESOURCE_EXHAUSTED.ordinal()).build()));
+
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}), 0);
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}), 1);
+
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
+
+    writer.close();
   }
 }

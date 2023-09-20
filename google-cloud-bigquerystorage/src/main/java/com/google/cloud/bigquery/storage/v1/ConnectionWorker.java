@@ -987,6 +987,7 @@ class ConnectionWorker implements AutoCloseable {
       try {
         requestWrapper.retryCount++;
         if (this.retrySettings != null && errorCode == Code.RESOURCE_EXHAUSTED) {
+          log.info(String.format("Retrying quota error at offset %s", requestWrapper.message.getOffset().getValue()));
           // Trigger exponential backoff in append loop when request is resent for quota errors
           if (requestWrapper.attemptSettings == null) {
             requestWrapper.attemptSettings = requestWrapper.retryAlgorithm.createFirstAttempt();
@@ -1000,13 +1001,13 @@ class ConnectionWorker implements AutoCloseable {
 
         Long offset = requestWrapper.message.hasOffset() ? requestWrapper.message.getOffset().getValue() : -1;
         if (isDefaultStreamName(streamName) || offset == -1) {
-          log.fine(String.format(
+          log.info(String.format(
               "Retrying default stream message in stream %s for in-stream error: %s, retry count:"
                   + " %s",
               streamName, errorCode, requestWrapper.retryCount));
           addMessageToFrontOfWaitingQueue(requestWrapper);
         } else {
-          log.fine(String.format(
+          log.info(String.format(
               "Retrying exclusive message in stream %s at offset %d for in-stream error: %s, retry"
                   + " count: %s",
               streamName,
@@ -1037,6 +1038,7 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void requestCallback(AppendRowsResponse response) {
+    log.info(String.format("IN  REQUEST CALLBACK WITH RESPONSE %s", response.hasError()));
     if (response.hasUpdatedSchema()) {
       AppendRowsResponse responseWithUpdatedSchemaRemoved =
           response.toBuilder().clearUpdatedSchema().build();
@@ -1084,6 +1086,7 @@ class ConnectionWorker implements AutoCloseable {
       if (!this.inflightRequestQueue.isEmpty()) {
         requestWrapper = pollFirstInflightRequestQueue();
       } else if (inflightCleanuped) {
+        log.info("inflight cleaned up");
         // It is possible when requestCallback is called, the inflight queue is already drained
         // because we timed out waiting for done.
         return;
@@ -1107,6 +1110,7 @@ class ConnectionWorker implements AutoCloseable {
     threadPool.submit(
         () -> {
           if (response.hasError()) {
+            log.info(String.format("RESPONSE HAS ERROR: %s", response.getError()));
             if (retryOnRetryableError(Code.values()[response.getError().getCode()], requestWrapper)) {
               return;
             }

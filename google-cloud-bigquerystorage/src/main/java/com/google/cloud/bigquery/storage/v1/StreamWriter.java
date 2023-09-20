@@ -116,6 +116,9 @@ public class StreamWriter implements AutoCloseable {
 
   /** Creation timestamp of this streamwriter */
   private final long creationTimestamp;
+  private static final int MAX_RETRY_NUM_ATTEMPTS = 3;
+  private static final org.threeten.bp.Duration RETRY_FIRST_DELAY = org.threeten.bp.Duration.ofMillis(500);
+  private static final double RETRY_MULTIPLIER = 1.1;
 
   private Lock lock;
 
@@ -657,6 +660,21 @@ public class StreamWriter implements AutoCloseable {
     /** Gives the ability to override the gRPC endpoint. */
     public Builder setEndpoint(String endpoint) {
       this.endpoint = Preconditions.checkNotNull(endpoint, "Endpoint is null.");
+      return this;
+    }
+
+    public Builder setMaxRetryNumAttempts(int attempts) {
+      this.maxRetryNumAttempts = attempts;
+      return this;
+    }
+
+    public Builder setRetryFirstDelay(org.threeten.bp.Duration delay) {
+      this.retryFirstDelay = delay;
+      return this;
+    }
+
+    public Builder setRetryMultiplier(double multiplier) {
+      this.retryMultiplier = multiplier;
       return this;
     }
 

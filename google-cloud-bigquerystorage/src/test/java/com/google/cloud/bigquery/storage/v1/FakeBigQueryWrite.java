@@ -19,6 +19,7 @@ import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.protobuf.AbstractMessage;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
+import java.util.function.Supplier;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -65,10 +66,20 @@ public class FakeBigQueryWrite implements MockGrpcService {
     }
   }
 
+  /**
+   * Add a response supplier to end of list. This supplier can be used to simulate retries or other
+   * forms of behavior.
+   */
+  public void addResponse(Supplier<FakeBigQueryWriteImpl.Response> response) {
+    serviceImpl.addResponse(response);
+  }
+
   @Override
   public void addException(Exception exception) {
     serviceImpl.addConnectionError(exception);
   }
+
+  public void addStatusException(com.google.rpc.Status status) { serviceImpl.addException(status);}
 
   @Override
   public ServerServiceDefinition getServiceDefinition() {

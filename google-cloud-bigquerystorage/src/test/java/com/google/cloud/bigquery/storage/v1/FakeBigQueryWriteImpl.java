@@ -74,7 +74,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   private Status failedStatus = Status.ABORTED;
 
   /** Class used to save the state of a possible response. */
-  private static class Response {
+  public static class Response {
     Optional<AppendRowsResponse> appendResponse;
     Optional<Throwable> error;
 
@@ -159,6 +159,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     Response response;
     // Retry is in progress and the offset isn't the retrying offset; return saved response
     if (returnErrorUntilRetrySuccess && offset != retryingOffset) {
+      LOG.info("returning saved response");
       response = retryResponse;
     } else {
       // We received the retryingOffset OR we aren't in retry mode; get response as
@@ -167,6 +168,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
       // stream is aborted, the last few responses may not be received, and the client will request
       // them again.
       response = responses.get(Math.toIntExact(offset)).get();
+      LOG.info(String.format("determined response %s", response));
       // If we are in retry mode and don't have an error, clear retry variables
       if (returnErrorUntilRetrySuccess && !response.getResponse().hasError()) {
         retryingOffset = -1;
@@ -231,6 +233,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
               responseObserver.onError(failedStatus.asException());
             } else {
               Response response = determineResponse(offset);
+              LOG.info(String.format("RETURNING RESPONSE %s AT OFFSET %s", response, offset));
               if (verifyOffset
                   && !response.getResponse().hasError()
                   && response.getResponse().getAppendResult().getOffset().getValue() > -1) {
@@ -318,6 +321,13 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   public FakeBigQueryWriteImpl addConnectionError(Throwable error) {
     responses.add(() -> new Response(error));
     return this;
+  }
+
+  /** Returns the given status, instead of a valid response. This should be treated as an
+   * exception on the other side. This will not stop processing. */
+  public void addException(com.google.rpc.Status status) {
+    responses.add(
+        () -> new Response(AppendRowsResponse.newBuilder().setError(status).build()));
   }
 
   /**
