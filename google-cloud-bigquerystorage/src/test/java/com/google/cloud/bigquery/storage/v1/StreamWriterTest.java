@@ -1972,4 +1972,50 @@ public class StreamWriterTest {
         Status.Code.RESOURCE_EXHAUSTED,
         ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
   }
+
+  @Test
+  public void testAppendSuccessAndNonRetryableError() throws Exception {
+    StreamWriter writer = getTestStreamWriterRetryEnabled();
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addStatusException(
+        com.google.rpc.Status.newBuilder().setCode(Code.INVALID_ARGUMENT.ordinal()).build());
+    testBigQueryWrite.addResponse(createAppendResponse(1));
+
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}));
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}));
+
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    ExecutionException ex =
+        assertThrows(
+            ExecutionException.class,
+            () -> {
+              appendFuture2.get();
+            });
+    assertEquals(
+        Status.Code.INVALID_ARGUMENT,
+        ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+  }
+
+  @Test
+  public void testExclusiveAppendSuccessAndNonRetryableError() throws Exception {
+    StreamWriter writer = getTestStreamWriterExclusiveRetryEnabled();
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addStatusException(
+        com.google.rpc.Status.newBuilder().setCode(Code.INVALID_ARGUMENT.ordinal()).build());
+    testBigQueryWrite.addResponse(createAppendResponse(1));
+
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}), 0);
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}), 1);
+
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    ExecutionException ex =
+        assertThrows(
+            ExecutionException.class,
+            () -> {
+              appendFuture2.get();
+            });
+    assertEquals(
+        Status.Code.INVALID_ARGUMENT,
+        ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+  }
 }
