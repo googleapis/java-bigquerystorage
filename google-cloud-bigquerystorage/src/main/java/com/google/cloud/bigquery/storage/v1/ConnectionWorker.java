@@ -373,7 +373,7 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void resetConnection() {
-    log.info("Start connecting stream: " + streamName + " id: " + writerId);
+    log.fine("Start connecting stream: " + streamName + " id: " + writerId);
     if (this.streamConnection != null) {
       // It's safe to directly close the previous connection as the in flight messages
       // will be picked up by the next connection.
@@ -397,14 +397,14 @@ class ConnectionWorker implements AutoCloseable {
               }
             },
             this.compressorName);
-    log.info("Finish connecting stream: " + streamName + " id: " + writerId);
+    log.fine("Finish connecting stream: " + streamName + " id: " + writerId);
   }
 
   @GuardedBy("lock")
   private boolean shouldWaitForBackoff(AppendRequestAndResponse requestWrapper) {
     if (this.retrySettings != null
         && Instant.now().isBefore(requestWrapper.blockMessageSendDeadline)) {
-      log.info(String.format(
+      log.fine(String.format(
           "Waiting for waiting to queue to unblock at %s for retry # %s",
           requestWrapper.blockMessageSendDeadline, requestWrapper.retryCount));
       return true;
@@ -646,14 +646,14 @@ class ConnectionWorker implements AutoCloseable {
   /** Close the stream writer. Shut down all resources. */
   @Override
   public void close() {
-    log.info("User closing stream: " + streamName);
+    log.fine("User closing stream: " + streamName);
     this.lock.lock();
     try {
       this.userClosed = true;
     } finally {
       this.lock.unlock();
     }
-    log.info("Waiting for append thread to finish. Stream: " + streamName + " id: " + writerId);
+    log.fine("Waiting for append thread to finish. Stream: " + streamName + " id: " + writerId);
     try {
       appendThread.join();
     } catch (InterruptedException e) {
@@ -694,7 +694,7 @@ class ConnectionWorker implements AutoCloseable {
       throw new IllegalStateException(
           "Thread pool shutdown is interrupted for stream " + streamName);
     }
-    log.info("User close finishes for stream " + streamName);
+    log.fine("User close finishes for stream " + streamName);
   }
 
   /*
@@ -833,7 +833,7 @@ class ConnectionWorker implements AutoCloseable {
       }
     }
 
-    log.info(
+    log.fine(
         "Cleanup starts. Stream: "
             + streamName
             + " id: "
@@ -852,13 +852,13 @@ class ConnectionWorker implements AutoCloseable {
     }
 
     // At this point, there cannot be more callback. It is safe to clean up all inflight requests.
-    log.info(
+    log.fine(
         "Stream connection is fully closed. Cleaning up inflight requests. Stream: "
             + streamName
             + " id: "
             + writerId);
     cleanupInflightRequests();
-    log.info("Append thread is done. Stream: " + streamName + " id: " + writerId);
+    log.fine("Append thread is done. Stream: " + streamName + " id: " + writerId);
   }
 
   private void throwIfWaitCallbackTooLong(Instant timeToCheck) {
@@ -1038,7 +1038,6 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void requestCallback(AppendRowsResponse response) {
-    log.info(String.format("IN  REQUEST CALLBACK WITH RESPONSE %s", response.hasError()));
     if (response.hasUpdatedSchema()) {
       AppendRowsResponse responseWithUpdatedSchemaRemoved =
           response.toBuilder().clearUpdatedSchema().build();
@@ -1052,12 +1051,13 @@ class ConnectionWorker implements AutoCloseable {
 
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
+    try{
     // Ignored response has arrived
     if (responsesToIgnore > 0) {
       if (response.hasError()) {
         log.fine(String.format(
             "Ignoring response in stream %s at offset %s.",
-            streamName, response.getAppendResult().getOffset()));
+            streamName, response));
       } else {
         log.warning(String.format(
             "Unexpected successful response in stream %s at offset %s.  Due to a previous"
@@ -1073,7 +1073,6 @@ class ConnectionWorker implements AutoCloseable {
       this.updatedSchema =
           TableSchemaAndTimestamp.create(System.nanoTime(), response.getUpdatedSchema());
     }
-    try {
       // Had a successful connection with at least one result, reset retries.
       // conectionRetryCountWithoutCallback is reset so that only multiple retries, without
       // successful records sent, will cause the stream to fail.
@@ -1086,7 +1085,6 @@ class ConnectionWorker implements AutoCloseable {
       if (!this.inflightRequestQueue.isEmpty()) {
         requestWrapper = pollFirstInflightRequestQueue();
       } else if (inflightCleanuped) {
-        log.info("inflight cleaned up");
         // It is possible when requestCallback is called, the inflight queue is already drained
         // because we timed out waiting for done.
         return;
@@ -1103,21 +1101,22 @@ class ConnectionWorker implements AutoCloseable {
       this.lock.unlock();
     }
 
-    // We need a separte thread pool to unblock the next request callback.
+    // Retries need to happen on the same thread as queue locking may occur
+    if (response.hasError()) {
+      if (retryOnRetryableError(Code.values()[response.getError().getCode()], requestWrapper)) {
+        return;
+      }
+    }
+
+    // We need a separate thread pool to unblock the next request callback.
     // Otherwise user may call append inside request callback, which may be blocked on waiting
     // on in flight quota, causing deadlock as requests can't be popped out of queue until
     // the current request callback finishes.
     threadPool.submit(
         () -> {
           if (response.hasError()) {
-            log.info(String.format("RESPONSE HAS ERROR: %s", response.getError()));
-            if (retryOnRetryableError(Code.values()[response.getError().getCode()], requestWrapper)) {
-              return;
-            }
-
             Exceptions.StorageException storageException =
                 Exceptions.toStorageException(response.getError(), null);
-            log.fine(String.format("Got error message: %s", response.toString()));
             if (storageException != null) {
               requestWrapper.appendResult.setException(storageException);
             } else if (response.getRowErrorsCount() > 0) {
@@ -1157,7 +1156,7 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private void doneCallback(Throwable finalStatus) {
-    log.info(
+    log.fine(
         "Received done callback. Stream: "
             + streamName
             + " worker id: "
@@ -1178,7 +1177,7 @@ class ConnectionWorker implements AutoCloseable {
                 || System.currentTimeMillis() - connectionRetryStartTime
                     <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
-          log.info(
+          log.fine(
               "Retriable error "
                   + finalStatus.toString()
                   + " received, retry count "
@@ -1193,7 +1192,7 @@ class ConnectionWorker implements AutoCloseable {
         } else {
           Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
           this.connectionFinalStatus = storageException != null ? storageException : finalStatus;
-          log.info(
+          log.fine(
               "Connection finished with error "
                   + finalStatus.toString()
                   + " for stream "

@@ -159,7 +159,6 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     Response response;
     // Retry is in progress and the offset isn't the retrying offset; return saved response
     if (returnErrorUntilRetrySuccess && offset != retryingOffset) {
-      LOG.info("returning saved response");
       response = retryResponse;
     } else {
       // We received the retryingOffset OR we aren't in retry mode; get response as
@@ -168,7 +167,6 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
       // stream is aborted, the last few responses may not be received, and the client will request
       // them again.
       response = responses.get(Math.toIntExact(offset)).get();
-      LOG.info(String.format("determined response %s", response));
       // If we are in retry mode and don't have an error, clear retry variables
       if (returnErrorUntilRetrySuccess && !response.getResponse().hasError()) {
         retryingOffset = -1;
@@ -195,16 +193,15 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
         new StreamObserver<AppendRowsRequest>() {
           @Override
           public void onNext(AppendRowsRequest value) {
-            LOG.fine("Get request:" + value.toString());
             recordCount++;
             requests.add(value);
-            int offset = (int)value.getOffset().getValue();
+            long offset = value.getOffset().getValue();
             if (offset == -1 || !value.hasOffset()) {
               offset = responseIndex;
             }
             responseIndex++;
             if (responseSleep.compareTo(Duration.ZERO) > 0) {
-              LOG.fine("Sleeping before response for " + responseSleep.toString());
+              LOG.info("Sleeping before response for " + responseSleep.toString());
               Uninterruptibles.sleepUninterruptibly(
                   responseSleep.toMillis(), TimeUnit.MILLISECONDS);
             }
@@ -233,10 +230,10 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
               responseObserver.onError(failedStatus.asException());
             } else {
               Response response = determineResponse(offset);
-              LOG.info(String.format("RETURNING RESPONSE %s AT OFFSET %s", response, offset));
               if (verifyOffset
                   && !response.getResponse().hasError()
                   && response.getResponse().getAppendResult().getOffset().getValue() > -1) {
+                LOG.info("in verify offset");
                 // No error and offset is present; verify order
                 if (response.getResponse().getAppendResult().getOffset().getValue()
                     != expectedOffset) {
@@ -244,6 +241,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
                       com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL_VALUE).build();
                   response =
                       new Response(AppendRowsResponse.newBuilder().setError(status).build());
+                  LOG.info("reset response!");
                 } else {
                   LOG.info(String.format(
                       "asserted offset: %s expected: %s",
@@ -272,7 +270,6 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
 
   private void sendResponse(
       Response response, StreamObserver<AppendRowsResponse> responseObserver) {
-    LOG.fine("Sending response: " + response.toString());
     if (response.isError()) {
       responseObserver.onError(response.getError());
     } else {
@@ -341,6 +338,10 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
 
   public void setVerifyOffset(boolean verifyOffset) {
     this.verifyOffset = verifyOffset;
+  }
+
+  public void setReturnErrorDuringExclusiveStreamRetry(boolean retryOnError) {
+    this.returnErrorDuringExclusiveStreamRetry = retryOnError;
   }
 
   public List<AppendRowsRequest> getCapturedRequests() {

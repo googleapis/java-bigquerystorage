@@ -118,4 +118,12 @@ public class FakeBigQueryWrite implements MockGrpcService {
   public void setFailedStatus(Status failedStatus) {
     serviceImpl.setFailedStatus(failedStatus);
   }
+
+  public void setReturnErrorDuringExclusiveStreamRetry(boolean retryOnError) {
+    serviceImpl.setReturnErrorDuringExclusiveStreamRetry(retryOnError);
+  }
+
+  public void setVerifyOffset(boolean verifyOffset) {
+    serviceImpl.setVerifyOffset(verifyOffset);
+  }
 }
