@@ -254,7 +254,9 @@ class ConnectionWorker implements AutoCloseable {
     return matcher.matches();
   }
 
-  /** The maximum size of one request. Defined by the API. */
+  /**
+   * The maximum size of one request. Defined by the API.
+   */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
   }
@@ -458,7 +460,9 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  /** Schedules the writing of rows at given offset. */
+  /**
+   * Schedules the writing of rows at given offset.
+   */
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
     if (this.location != null && !this.location.equals(streamWriter.getLocation())) {
       throw new StatusRuntimeException(
@@ -514,7 +518,8 @@ class ConnectionWorker implements AutoCloseable {
 
   private ApiFuture<AppendRowsResponse> appendInternal(
       StreamWriter streamWriter, AppendRowsRequest message) {
-    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message, streamWriter, this.retrySettings);
+    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message, streamWriter,
+        this.retrySettings);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
@@ -628,7 +633,9 @@ class ConnectionWorker implements AutoCloseable {
     return inflightWaitSec.longValue();
   }
 
-  /** @return a unique Id for the writer. */
+  /**
+   * @return a unique Id for the writer.
+   */
   public String getWriterId() {
     return writerId;
   }
@@ -643,7 +650,9 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  /** Close the stream writer. Shut down all resources. */
+  /**
+   * Close the stream writer. Shut down all resources.
+   */
   @Override
   public void close() {
     log.fine("User closing stream: " + streamName);
@@ -792,10 +801,10 @@ class ConnectionWorker implements AutoCloseable {
         // considered the same but is not considered equals(). However as long as it's never provide
         // false negative we will always correctly pass writer schema to backend.
         if ((!originalRequest.getWriteStream().isEmpty()
-                && !streamName.isEmpty()
-                && !originalRequest.getWriteStream().equals(streamName))
+            && !streamName.isEmpty()
+            && !originalRequest.getWriteStream().equals(streamName))
             || (originalRequest.getProtoRows().hasWriterSchema()
-                && !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema))) {
+            && !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema))) {
           streamName = originalRequest.getWriteStream();
           writerSchema = originalRequest.getProtoRows().getWriterSchema();
           isMultiplexing = true;
@@ -842,8 +851,8 @@ class ConnectionWorker implements AutoCloseable {
             + userClosed
             + " final exception: "
             + (this.connectionFinalStatus == null
-                ? "null"
-                : this.connectionFinalStatus.toString()));
+            ? "null"
+            : this.connectionFinalStatus.toString()));
     // At this point, the waiting queue is drained, so no more requests.
     // We can close the stream connection and handle the remaining inflight requests.
     if (streamConnection != null) {
@@ -987,7 +996,8 @@ class ConnectionWorker implements AutoCloseable {
       try {
         requestWrapper.retryCount++;
         if (this.retrySettings != null && errorCode == Code.RESOURCE_EXHAUSTED) {
-          log.info(String.format("Retrying quota error at offset %s", requestWrapper.message.getOffset().getValue()));
+          log.info(String.format("Retrying quota error at offset %s",
+              requestWrapper.message.getOffset().getValue()));
           // Trigger exponential backoff in append loop when request is resent for quota errors
           if (requestWrapper.attemptSettings == null) {
             requestWrapper.attemptSettings = requestWrapper.retryAlgorithm.createFirstAttempt();
@@ -999,7 +1009,8 @@ class ConnectionWorker implements AutoCloseable {
               requestWrapper.attemptSettings.getRetryDelay().toMillis());
         }
 
-        Long offset = requestWrapper.message.hasOffset() ? requestWrapper.message.getOffset().getValue() : -1;
+        Long offset =
+            requestWrapper.message.hasOffset() ? requestWrapper.message.getOffset().getValue() : -1;
         if (isDefaultStreamName(streamName) || offset == -1) {
           log.info(String.format(
               "Retrying default stream message in stream %s for in-stream error: %s, retry count:"
@@ -1051,28 +1062,28 @@ class ConnectionWorker implements AutoCloseable {
 
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
-    try{
-    // Ignored response has arrived
-    if (responsesToIgnore > 0) {
-      if (response.hasError()) {
-        log.fine(String.format(
-            "Ignoring response in stream %s at offset %s.",
-            streamName, response));
-      } else {
-        log.warning(String.format(
-            "Unexpected successful response in stream %s at offset %s.  Due to a previous"
-                + " retryable error being inflight, this message is being ignored.",
-            streamName, response.getAppendResult().getOffset()));
+    try {
+      // Ignored response has arrived
+      if (responsesToIgnore > 0) {
+        if (response.hasError()) {
+          log.fine(String.format(
+              "Ignoring response in stream %s at offset %s.",
+              streamName, response));
+        } else {
+          log.warning(String.format(
+              "Unexpected successful response in stream %s at offset %s.  Due to a previous"
+                  + " retryable error being inflight, this message is being ignored.",
+              streamName, response.getAppendResult().getOffset()));
+        }
+
+        responsesToIgnore--;
+        return;
       }
 
-      responsesToIgnore--;
-      return;
-    }
-
-    if (response.hasUpdatedSchema()) {
-      this.updatedSchema =
-          TableSchemaAndTimestamp.create(System.nanoTime(), response.getUpdatedSchema());
-    }
+      if (response.hasUpdatedSchema()) {
+        this.updatedSchema =
+            TableSchemaAndTimestamp.create(System.nanoTime(), response.getUpdatedSchema());
+      }
       // Had a successful connection with at least one result, reset retries.
       // conectionRetryCountWithoutCallback is reset so that only multiple retries, without
       // successful records sent, will cause the stream to fail.
@@ -1174,8 +1185,8 @@ class ConnectionWorker implements AutoCloseable {
         if (isConnectionErrorRetriable(finalStatus)
             && !userClosed
             && (maxRetryDuration.toMillis() == 0f
-                || System.currentTimeMillis() - connectionRetryStartTime
-                    <= maxRetryDuration.toMillis())) {
+            || System.currentTimeMillis() - connectionRetryStartTime
+            <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
           log.fine(
               "Retriable error "
@@ -1184,7 +1195,7 @@ class ConnectionWorker implements AutoCloseable {
                   + conectionRetryCountWithoutCallback
                   + ", millis left to retry "
                   + (maxRetryDuration.toMillis()
-                      - (System.currentTimeMillis() - connectionRetryStartTime))
+                  - (System.currentTimeMillis() - connectionRetryStartTime))
                   + ", for stream "
                   + streamName
                   + " id:"
@@ -1226,7 +1237,9 @@ class ConnectionWorker implements AutoCloseable {
     return pollInflightRequestQueue(false);
   }
 
-  /** Thread-safe getter of updated TableSchema */
+  /**
+   * Thread-safe getter of updated TableSchema
+   */
   synchronized TableSchemaAndTimestamp getUpdatedSchema() {
     return this.updatedSchema;
   }
@@ -1280,7 +1293,9 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  /** Returns the current workload of this worker. */
+  /**
+   * Returns the current workload of this worker.
+   */
   public Load getLoad() {
     return Load.create(
         inflightBytes,

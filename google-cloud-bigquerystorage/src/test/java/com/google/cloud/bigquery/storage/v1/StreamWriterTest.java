@@ -310,13 +310,15 @@ public class StreamWriterTest {
    */
   private static class DummyResponseSupplierWillFailThenSucceed
       implements Supplier<FakeBigQueryWriteImpl.Response> {
+
     private final int totalFailCount;
     private int failCount;
     private final com.google.rpc.Status failStatus;
     private final FakeBigQueryWriteImpl.Response response;
 
     DummyResponseSupplierWillFailThenSucceed(
-        FakeBigQueryWriteImpl.Response response, int totalFailCount, com.google.rpc.Status failStatus) {
+        FakeBigQueryWriteImpl.Response response, int totalFailCount,
+        com.google.rpc.Status failStatus) {
       this.totalFailCount = totalFailCount;
       this.response = response;
       this.failStatus = failStatus;
@@ -1702,9 +1704,12 @@ public class StreamWriterTest {
             com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL.ordinal()).build()));
     testBigQueryWrite.addResponse(createAppendResponse(2));
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}), 0);
-    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}), 1);
-    ApiFuture<AppendRowsResponse> appendFuture3 = writer.append(createProtoRows(new String[]{"C"}), 2);
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}),
+        0);
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}),
+        1);
+    ApiFuture<AppendRowsResponse> appendFuture3 = writer.append(createProtoRows(new String[]{"C"}),
+        2);
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
@@ -1755,30 +1760,30 @@ public class StreamWriterTest {
     testBigQueryWrite.setVerifyOffset(true);
     // fakeBigQueryWrite.setResponseSleep(Duration.ofSeconds(3));
     StreamWriter writer = getTestStreamWriterExclusiveRetryEnabled();
-      long appendCount = 20;
-      for (long i = 0; i < appendCount; i++) {
-        // Add a retriable error every 3 messages
-        if (i % 3 == 0) {
-          testBigQueryWrite.addResponse(
-              new DummyResponseSupplierWillFailThenSucceed(
-                  new FakeBigQueryWriteImpl.Response(
-                      createAppendResponse(i)),
-                  /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS,
-                  com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL.ordinal()).build()));
-        } else {
-          testBigQueryWrite.addResponse(createAppendResponse(i));
-        }
-      }
-
-      List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
-      for (long i = 0; i < appendCount; i++) {
-        futures.add(writer.append(createProtoRows(new String[] {String.valueOf(i)}), i));
-      }
-
-      for (int i = 0; i < appendCount; i++) {
-        assertThat(futures.get(i).get().getAppendResult().getOffset().getValue()).isEqualTo((long) i);
+    long appendCount = 20;
+    for (long i = 0; i < appendCount; i++) {
+      // Add a retriable error every 3 messages
+      if (i % 3 == 0) {
+        testBigQueryWrite.addResponse(
+            new DummyResponseSupplierWillFailThenSucceed(
+                new FakeBigQueryWriteImpl.Response(
+                    createAppendResponse(i)),
+                /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS,
+                com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL.ordinal()).build()));
+      } else {
+        testBigQueryWrite.addResponse(createAppendResponse(i));
       }
     }
+
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    for (long i = 0; i < appendCount; i++) {
+      futures.add(writer.append(createProtoRows(new String[]{String.valueOf(i)}), i));
+    }
+
+    for (int i = 0; i < appendCount; i++) {
+      assertThat(futures.get(i).get().getAppendResult().getOffset().getValue()).isEqualTo((long) i);
+    }
+  }
 
   @Test
   public void testExclusiveAppendSuccessAndQuotaErrorRetrySuccess() throws Exception {
@@ -1797,7 +1802,8 @@ public class StreamWriterTest {
                 new FakeBigQueryWriteImpl.Response(
                     createAppendResponse(i)),
                 /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS,
-                com.google.rpc.Status.newBuilder().setCode(Code.RESOURCE_EXHAUSTED.ordinal()).build()));
+                com.google.rpc.Status.newBuilder().setCode(Code.RESOURCE_EXHAUSTED.ordinal())
+                    .build()));
       } else {
         testBigQueryWrite.addResponse(createAppendResponse(i));
       }
@@ -1805,7 +1811,7 @@ public class StreamWriterTest {
 
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
     for (long i = 0; i < appendCount; i++) {
-      futures.add(writer.append(createProtoRows(new String[] {String.valueOf(i)}), i));
+      futures.add(writer.append(createProtoRows(new String[]{String.valueOf(i)}), i));
     }
 
     for (int i = 0; i < appendCount; i++) {
@@ -1824,8 +1830,10 @@ public class StreamWriterTest {
             /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS,
             com.google.rpc.Status.newBuilder().setCode(Code.RESOURCE_EXHAUSTED.ordinal()).build()));
 
-    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}), 0);
-    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}), 1);
+    ApiFuture<AppendRowsResponse> appendFuture1 = writer.append(createProtoRows(new String[]{"A"}),
+        0);
+    ApiFuture<AppendRowsResponse> appendFuture2 = writer.append(createProtoRows(new String[]{"B"}),
+        1);
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
@@ -1885,6 +1893,80 @@ public class StreamWriterTest {
             ExecutionException.class,
             () -> {
               appendFuture2.get();
+            });
+    assertEquals(
+        Status.Code.RESOURCE_EXHAUSTED,
+        ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+  }
+
+  @Test
+  public void testExclusiveAppendSuccessAndInternalErrorRetryMaxRetry() throws Exception {
+    testBigQueryWrite.setReturnErrorDuringExclusiveStreamRetry(true);
+    // Ensure messages will be in the inflight queue
+    testBigQueryWrite.setResponseSleep(Duration.ofSeconds(1));
+    StreamWriter writer = getTestStreamWriterExclusiveRetryEnabled();
+
+    int appendCount = 10;
+    for (long i = 0; i < appendCount - 1; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+
+    testBigQueryWrite.addResponse(
+        new DummyResponseSupplierWillFailThenSucceed(
+            new FakeBigQueryWriteImpl.Response(createAppendResponse(appendCount)),
+            /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS + 1,
+            com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL.ordinal()).build()));
+
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    for (long i = 0; i < appendCount; i++) {
+      futures.add(writer.append(createProtoRows(new String[]{String.valueOf(i)}), i));
+    }
+
+    for (int i = 0; i < appendCount - 1; i++) {
+      assertThat(futures.get(i).get().getAppendResult().getOffset().getValue()).isEqualTo((long) i);
+    }
+    ExecutionException ex =
+        assertThrows(
+            ExecutionException.class,
+            () -> {
+              futures.get(appendCount - 1).get();
+            });
+    assertEquals(
+        Status.Code.INTERNAL,
+        ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+  }
+
+  @Test
+  public void testExclusiveAppendSuccessAndQuotaErrorRetryMaxRetry() throws Exception {
+    testBigQueryWrite.setReturnErrorDuringExclusiveStreamRetry(true);
+    // Ensure messages will be in the inflight queue
+    testBigQueryWrite.setResponseSleep(Duration.ofSeconds(1));
+    StreamWriter writer = getTestStreamWriterExclusiveRetryEnabled();
+
+    int appendCount = 10;
+    for (long i = 0; i < appendCount - 1; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+
+    testBigQueryWrite.addResponse(
+        new DummyResponseSupplierWillFailThenSucceed(
+            new FakeBigQueryWriteImpl.Response(createAppendResponse(appendCount)),
+            /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS + 1,
+            com.google.rpc.Status.newBuilder().setCode(Code.RESOURCE_EXHAUSTED.ordinal()).build()));
+
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    for (long i = 0; i < appendCount; i++) {
+      futures.add(writer.append(createProtoRows(new String[]{String.valueOf(i)}), i));
+    }
+
+    for (int i = 0; i < appendCount - 1; i++) {
+      assertThat(futures.get(i).get().getAppendResult().getOffset().getValue()).isEqualTo((long) i);
+    }
+    ExecutionException ex =
+        assertThrows(
+            ExecutionException.class,
+            () -> {
+              futures.get(appendCount - 1).get();
             });
     assertEquals(
         Status.Code.RESOURCE_EXHAUSTED,

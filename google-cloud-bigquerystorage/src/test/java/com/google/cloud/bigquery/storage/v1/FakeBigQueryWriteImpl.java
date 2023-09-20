@@ -39,6 +39,7 @@ import org.threeten.bp.Duration;
  * unit testing.
  */
 class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
+
   private static final Logger LOG = Logger.getLogger(FakeBigQueryWriteImpl.class.getName());
   private final List<Supplier<Response>> responses =
       Collections.synchronizedList(new ArrayList<>());
@@ -73,8 +74,11 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
       new ConcurrentHashMap<>();
   private Status failedStatus = Status.ABORTED;
 
-  /** Class used to save the state of a possible response. */
+  /**
+   * Class used to save the state of a possible response.
+   */
   public static class Response {
+
     Optional<AppendRowsResponse> appendResponse;
     Optional<Throwable> error;
 
@@ -151,6 +155,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   public void setFailedStatus(Status failedStatus) {
     this.failedStatus = failedStatus;
   }
+
   private Response determineResponse(long offset) {
     // The logic here checks to see if a retry is ongoing.  The implication is that the
     // offset that is being retried (retryingOffset) should lead to returning the same error
@@ -184,6 +189,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
 
     return response;
   }
+
   @Override
   public StreamObserver<AppendRowsRequest> appendRows(
       final StreamObserver<AppendRowsResponse> responseObserver) {
@@ -277,13 +283,17 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     }
   }
 
-  /** Set an executor to use to delay publish responses. */
+  /**
+   * Set an executor to use to delay publish responses.
+   */
   public FakeBigQueryWriteImpl setExecutor(ScheduledExecutorService executor) {
     this.executor = executor;
     return this;
   }
 
-  /** Set an amount of time by which to sleep before publishing responses. */
+  /**
+   * Set an amount of time by which to sleep before publishing responses.
+   */
   public FakeBigQueryWriteImpl setResponseSleep(Duration responseSleep) {
     this.responseSleep = responseSleep;
     return this;
@@ -320,8 +330,10 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     return this;
   }
 
-  /** Returns the given status, instead of a valid response. This should be treated as an
-   * exception on the other side. This will not stop processing. */
+  /**
+   * Returns the given status, instead of a valid response. This should be treated as an exception
+   * on the other side. This will not stop processing.
+   */
   public void addException(com.google.rpc.Status status) {
     responses.add(
         () -> new Response(AppendRowsResponse.newBuilder().setError(status).build()));
@@ -369,6 +381,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   public void setCloseEveryNAppends(long closeAfter) {
     this.closeAfter = closeAfter;
   }
+
   /* If setCloseEveryNAppends is greater than 0, then the stream will be aborted every N appends.
    * setTimesToClose will limit the number of times to do the abort. If it is set to 0, it will
    * abort every N appends.
