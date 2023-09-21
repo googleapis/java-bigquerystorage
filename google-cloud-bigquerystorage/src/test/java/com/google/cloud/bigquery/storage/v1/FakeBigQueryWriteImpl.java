@@ -239,7 +239,6 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
               if (verifyOffset
                   && !response.getResponse().hasError()
                   && response.getResponse().getAppendResult().getOffset().getValue() > -1) {
-                LOG.info("in verify offset");
                 // No error and offset is present; verify order
                 if (response.getResponse().getAppendResult().getOffset().getValue()
                     != expectedOffset) {
@@ -247,7 +246,6 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
                       com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL_VALUE).build();
                   response =
                       new Response(AppendRowsResponse.newBuilder().setError(status).build());
-                  LOG.info("reset response!");
                 } else {
                   LOG.info(String.format(
                       "asserted offset: %s expected: %s",
