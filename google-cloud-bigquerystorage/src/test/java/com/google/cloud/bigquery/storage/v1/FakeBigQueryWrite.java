@@ -19,10 +19,10 @@ import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.protobuf.AbstractMessage;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.Status;
-import java.util.function.Supplier;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 import org.threeten.bp.Duration;
 
 /**
@@ -79,7 +79,9 @@ public class FakeBigQueryWrite implements MockGrpcService {
     serviceImpl.addConnectionError(exception);
   }
 
-  public void addStatusException(com.google.rpc.Status status) { serviceImpl.addException(status);}
+  public void addStatusException(com.google.rpc.Status status) {
+    serviceImpl.addException(status);
+  }
 
   @Override
   public ServerServiceDefinition getServiceDefinition() {

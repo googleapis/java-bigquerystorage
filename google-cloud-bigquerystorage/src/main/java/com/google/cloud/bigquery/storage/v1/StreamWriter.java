@@ -587,7 +587,8 @@ public class StreamWriter implements AutoCloseable {
 
     private static final int MAX_RETRY_NUM_ATTEMPTS = 10;
 
-    private static final org.threeten.bp.Duration RETRY_FIRST_DELAY = org.threeten.bp.Duration.ofMillis(500);
+    private static final org.threeten.bp.Duration RETRY_FIRST_DELAY =
+        org.threeten.bp.Duration.ofMillis(500);
 
     private static final double RETRY_MULTIPLIER = 1.1;
 

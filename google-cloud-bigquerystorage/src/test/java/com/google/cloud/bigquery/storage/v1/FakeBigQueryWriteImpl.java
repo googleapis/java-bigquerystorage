@@ -74,9 +74,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
       new ConcurrentHashMap<>();
   private Status failedStatus = Status.ABORTED;
 
-  /**
-   * Class used to save the state of a possible response.
-   */
+  /** Class used to save the state of a possible response. */
   public static class Response {
 
     Optional<AppendRowsResponse> appendResponse;
@@ -244,13 +242,13 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
                     != expectedOffset) {
                   com.google.rpc.Status status =
                       com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL_VALUE).build();
-                  response =
-                      new Response(AppendRowsResponse.newBuilder().setError(status).build());
+                  response = new Response(AppendRowsResponse.newBuilder().setError(status).build());
                 } else {
-                  LOG.info(String.format(
-                      "asserted offset: %s expected: %s",
-                      response.getResponse().getAppendResult().getOffset().getValue(),
-                      expectedOffset));
+                  LOG.info(
+                      String.format(
+                          "asserted offset: %s expected: %s",
+                          response.getResponse().getAppendResult().getOffset().getValue(),
+                          expectedOffset));
                   LOG.info(String.format("sending response: %s", response.getResponse()));
                   expectedOffset++;
                 }
@@ -281,17 +279,13 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     }
   }
 
-  /**
-   * Set an executor to use to delay publish responses.
-   */
+  /** Set an executor to use to delay publish responses. */
   public FakeBigQueryWriteImpl setExecutor(ScheduledExecutorService executor) {
     this.executor = executor;
     return this;
   }
 
-  /**
-   * Set an amount of time by which to sleep before publishing responses.
-   */
+  /** Set an amount of time by which to sleep before publishing responses. */
   public FakeBigQueryWriteImpl setResponseSleep(Duration responseSleep) {
     this.responseSleep = responseSleep;
     return this;
@@ -333,8 +327,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
    * on the other side. This will not stop processing.
    */
   public void addException(com.google.rpc.Status status) {
-    responses.add(
-        () -> new Response(AppendRowsResponse.newBuilder().setError(status).build()));
+    responses.add(() -> new Response(AppendRowsResponse.newBuilder().setError(status).build()));
   }
 
   /**
@@ -342,8 +335,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
    * a retriable error (as that will cause an infinite loop.)
    */
   public void addNonRetriableError(com.google.rpc.Status status) {
-    responses.add(
-        () -> new Response(AppendRowsResponse.newBuilder().setError(status).build()));
+    responses.add(() -> new Response(AppendRowsResponse.newBuilder().setError(status).build()));
   }
 
   public void setVerifyOffset(boolean verifyOffset) {

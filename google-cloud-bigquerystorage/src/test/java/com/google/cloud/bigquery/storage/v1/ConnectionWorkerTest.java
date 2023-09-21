@@ -54,7 +54,8 @@ public class ConnectionWorkerTest {
 
   private static final int maxRetryNumAttempts = 5;
 
-  private static final org.threeten.bp.Duration retryFirstDelay = org.threeten.bp.Duration.ofMillis(100);
+  private static final org.threeten.bp.Duration retryFirstDelay =
+      org.threeten.bp.Duration.ofMillis(100);
 
   private static final double retryMultiplier = 1.0;
 
