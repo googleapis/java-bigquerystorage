@@ -116,9 +116,6 @@ public class StreamWriter implements AutoCloseable {
 
   /** Creation timestamp of this streamwriter */
   private final long creationTimestamp;
-  private static final int MAX_RETRY_NUM_ATTEMPTS = 3;
-  private static final org.threeten.bp.Duration RETRY_FIRST_DELAY = org.threeten.bp.Duration.ofMillis(500);
-  private static final double RETRY_MULTIPLIER = 1.1;
 
   private Lock lock;
 
@@ -588,6 +585,12 @@ public class StreamWriter implements AutoCloseable {
 
     private static final long DEFAULT_MAX_INFLIGHT_BYTES = 100 * 1024 * 1024; // 100Mb.
 
+    private static final int MAX_RETRY_NUM_ATTEMPTS = 10;
+
+    private static final org.threeten.bp.Duration RETRY_FIRST_DELAY = org.threeten.bp.Duration.ofMillis(500);
+
+    private static final double RETRY_MULTIPLIER = 1.1;
+
     private String streamName;
 
     private BigQueryWriteClient client;
@@ -598,11 +601,11 @@ public class StreamWriter implements AutoCloseable {
 
     private long maxInflightBytes = DEFAULT_MAX_INFLIGHT_BYTES;
 
-    private int maxRetryNumAttempts = 5;
+    private int maxRetryNumAttempts = MAX_RETRY_NUM_ATTEMPTS;
 
-    private org.threeten.bp.Duration retryFirstDelay = org.threeten.bp.Duration.ofMillis(100);
+    private org.threeten.bp.Duration retryFirstDelay = RETRY_FIRST_DELAY;
 
-    private double retryMultiplier = 1.1;
+    private double retryMultiplier = RETRY_MULTIPLIER;
 
     private String endpoint = null;
 
