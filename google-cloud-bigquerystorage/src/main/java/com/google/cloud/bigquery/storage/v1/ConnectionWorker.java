@@ -1227,12 +1227,12 @@ class ConnectionWorker implements AutoCloseable {
 
   @GuardedBy("lock")
   private AppendRequestAndResponse pollLastInflightRequestQueue() {
-    return pollInflightRequestQueue(true);
+    return pollInflightRequestQueue(/* pollLast= */ true);
   }
 
   @GuardedBy("lock")
   private AppendRequestAndResponse pollFirstInflightRequestQueue() {
-    return pollInflightRequestQueue(false);
+    return pollInflightRequestQueue(/* pollLast= */ false);
   }
 
   /**
