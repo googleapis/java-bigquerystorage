@@ -19,6 +19,7 @@ import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auto.value.AutoOneOf;
 import com.google.auto.value.AutoValue;
@@ -226,9 +227,7 @@ public class StreamWriter implements AutoCloseable {
                   builder.traceId,
                   builder.compressorName,
                   clientSettings,
-                  builder.maxRetryNumAttempts,
-                  builder.retryFirstDelay,
-                  builder.retryMultiplier));
+                  builder.retrySettings));
     } else {
       if (!isDefaultStream(streamName)) {
         log.warning(
@@ -585,13 +584,6 @@ public class StreamWriter implements AutoCloseable {
 
     private static final long DEFAULT_MAX_INFLIGHT_BYTES = 100 * 1024 * 1024; // 100Mb.
 
-    private static final int MAX_RETRY_NUM_ATTEMPTS = 10;
-
-    private static final org.threeten.bp.Duration RETRY_FIRST_DELAY =
-        org.threeten.bp.Duration.ofMillis(500);
-
-    private static final double RETRY_MULTIPLIER = 1.1;
-
     private String streamName;
 
     private BigQueryWriteClient client;
@@ -601,12 +593,6 @@ public class StreamWriter implements AutoCloseable {
     private long maxInflightRequest = DEFAULT_MAX_INFLIGHT_REQUESTS;
 
     private long maxInflightBytes = DEFAULT_MAX_INFLIGHT_BYTES;
-
-    private int maxRetryNumAttempts = MAX_RETRY_NUM_ATTEMPTS;
-
-    private org.threeten.bp.Duration retryFirstDelay = RETRY_FIRST_DELAY;
-
-    private double retryMultiplier = RETRY_MULTIPLIER;
 
     private String endpoint = null;
 
@@ -634,6 +620,8 @@ public class StreamWriter implements AutoCloseable {
     // Default missing value interpretation value.
     private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
         MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
+
+    private RetrySettings retrySettings = null;
 
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
@@ -664,21 +652,6 @@ public class StreamWriter implements AutoCloseable {
     /** Gives the ability to override the gRPC endpoint. */
     public Builder setEndpoint(String endpoint) {
       this.endpoint = Preconditions.checkNotNull(endpoint, "Endpoint is null.");
-      return this;
-    }
-
-    public Builder setMaxRetryNumAttempts(int attempts) {
-      this.maxRetryNumAttempts = attempts;
-      return this;
-    }
-
-    public Builder setRetryFirstDelay(org.threeten.bp.Duration delay) {
-      this.retryFirstDelay = delay;
-      return this;
-    }
-
-    public Builder setRetryMultiplier(double multiplier) {
-      this.retryMultiplier = multiplier;
       return this;
     }
 
@@ -784,6 +757,11 @@ public class StreamWriter implements AutoCloseable {
     public Builder setDefaultMissingValueInterpretation(
         AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation) {
       this.defaultMissingValueInterpretation = defaultMissingValueInterpretation;
+      return this;
+    }
+
+    public Builder setRetrySettings(RetrySettings retrySettings) {
+      this.retrySettings = retrySettings;
       return this;
     }
 

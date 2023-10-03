@@ -32,6 +32,7 @@ import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.InstantiatingGrpcChannelProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.AbortedException;
 import com.google.api.gax.rpc.ApiException;
 import com.google.api.gax.rpc.InvalidArgumentException;
@@ -85,8 +86,12 @@ public class StreamWriterTest {
   private static final String EXPLICIT_STREAM = "projects/p/datasets/d1/tables/t1/streams/s1";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
   private static final int MAX_RETRY_NUM_ATTEMPTS = 3;
-  private static final Duration RETRY_FIRST_DELAY = Duration.ofMillis(500);
-  private static final double RETRY_MULTIPLIER = 1.1;
+  private static final RetrySettings retrySettings = RetrySettings.newBuilder()
+          .setInitialRetryDelay(Duration.ofMillis(500))
+          .setRetryDelayMultiplier(1.1)
+          .setMaxAttempts(MAX_RETRY_NUM_ATTEMPTS)
+          .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
+          .build();
   private FakeScheduledExecutorService fakeExecutor;
   private FakeBigQueryWrite testBigQueryWrite;
   private static MockServiceHelper serviceHelper;
@@ -168,9 +173,7 @@ public class StreamWriterTest {
         .setWriterSchema(createProtoSchema())
         .setTraceId(TEST_TRACE_ID)
         .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
-        .setMaxRetryNumAttempts(MAX_RETRY_NUM_ATTEMPTS)
-        .setRetryFirstDelay(RETRY_FIRST_DELAY)
-        .setRetryMultiplier(RETRY_MULTIPLIER)
+        .setRetrySettings(retrySettings)
         .build();
   }
 
@@ -179,9 +182,7 @@ public class StreamWriterTest {
         .setWriterSchema(createProtoSchema())
         .setTraceId(TEST_TRACE_ID)
         .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
-        .setMaxRetryNumAttempts(MAX_RETRY_NUM_ATTEMPTS)
-        .setRetryFirstDelay(RETRY_FIRST_DELAY)
-        .setRetryMultiplier(RETRY_MULTIPLIER)
+        .setRetrySettings(retrySettings)
         .build();
   }
 

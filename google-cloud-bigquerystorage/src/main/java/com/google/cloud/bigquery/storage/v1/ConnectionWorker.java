@@ -237,7 +237,7 @@ class ConnectionWorker implements AutoCloseable {
   @GuardedBy("lock")
   private int responsesToIgnore = 0;
 
-  private final RetrySettings retrySettings;
+  private static RetrySettings retrySettings = null;
 
   private static String projectMatching = "projects/[^/]+/";
   private static Pattern streamPatternProject = Pattern.compile(projectMatching);
@@ -283,9 +283,7 @@ class ConnectionWorker implements AutoCloseable {
       String traceId,
       @Nullable String compressorName,
       BigQueryWriteSettings clientSettings,
-      int maxRetryNumAttempts,
-      org.threeten.bp.Duration retryFirstDelay,
-      double retryMultiplier)
+      RetrySettings retrySettings)
       throws IOException {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
@@ -307,20 +305,7 @@ class ConnectionWorker implements AutoCloseable {
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.compressorName = compressorName;
-    if (retryFirstDelay != null
-        && !retryFirstDelay.isZero()
-        && retryMultiplier > 0
-        && maxRetryNumAttempts > 0) {
-      this.retrySettings =
-          RetrySettings.newBuilder()
-              .setInitialRetryDelay(retryFirstDelay)
-              .setRetryDelayMultiplier(retryMultiplier)
-              .setMaxAttempts(maxRetryNumAttempts)
-              .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
-              .build();
-    } else {
-      this.retrySettings = null;
-    }
+    this.retrySettings = retrySettings;
     // Always recreate a client for connection worker.
     HashMap<String, String> newHeaders = new HashMap<>();
     newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());

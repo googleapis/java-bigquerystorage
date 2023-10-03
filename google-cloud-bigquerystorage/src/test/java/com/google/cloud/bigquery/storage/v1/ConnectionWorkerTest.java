@@ -25,6 +25,7 @@ import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigquery.storage.test.Test.ComplicateType;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.test.Test.InnerType;
@@ -51,13 +52,12 @@ public class ConnectionWorkerTest {
   private static final String TEST_STREAM_1 = "projects/p1/datasets/d1/tables/t1/streams/s1";
   private static final String TEST_STREAM_2 = "projects/p2/datasets/d2/tables/t2/streams/s2";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
-
-  private static final int maxRetryNumAttempts = 5;
-
-  private static final org.threeten.bp.Duration retryFirstDelay =
-      org.threeten.bp.Duration.ofMillis(100);
-
-  private static final double retryMultiplier = 1.0;
+  private static final RetrySettings retrySettings = RetrySettings.newBuilder()
+      .setInitialRetryDelay(org.threeten.bp.Duration.ofMillis(500))
+      .setRetryDelayMultiplier(1.1)
+      .setMaxAttempts(3)
+      .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
+      .build();
 
   private FakeBigQueryWrite testBigQueryWrite;
   private FakeScheduledExecutorService fakeExecutor;
@@ -342,9 +342,7 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            maxRetryNumAttempts,
-            retryFirstDelay,
-            retryMultiplier);
+            retrySettings);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -401,9 +399,7 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            maxRetryNumAttempts,
-            retryFirstDelay,
-            retryMultiplier);
+            retrySettings);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -472,9 +468,7 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            maxRetryNumAttempts,
-            retryFirstDelay,
-            retryMultiplier);
+            retrySettings);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -506,9 +500,7 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            maxRetryNumAttempts,
-            retryFirstDelay,
-            retryMultiplier);
+            retrySettings);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -561,9 +553,7 @@ public class ConnectionWorkerTest {
         TEST_TRACE_ID,
         null,
         client.getSettings(),
-        maxRetryNumAttempts,
-        retryFirstDelay,
-        retryMultiplier);
+        retrySettings);
   }
 
   private ProtoSchema createProtoSchema(String protoName) {
@@ -658,9 +648,7 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            maxRetryNumAttempts,
-            retryFirstDelay,
-            retryMultiplier);
+            retrySettings);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(3));
 
     long appendCount = 10;
@@ -722,9 +710,7 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            maxRetryNumAttempts,
-            retryFirstDelay,
-            retryMultiplier);
+            retrySettings);
 
     long appendCount = 10;
     for (int i = 0; i < appendCount * 2; i++) {
