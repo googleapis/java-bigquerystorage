@@ -231,8 +231,6 @@ class ConnectionWorker implements AutoCloseable {
   private RuntimeException testOnlyRunTimeExceptionInAppendLoop = null;
   private long testOnlyAppendLoopSleepTime = 0;
 
-  private final int maxRetryNumAttempts;
-
   /*
    * Tracks the number of responses to ignore in the case of exclusive stream retry
    */
@@ -240,8 +238,6 @@ class ConnectionWorker implements AutoCloseable {
   private int responsesToIgnore = 0;
 
   private final RetrySettings retrySettings;
-  private final org.threeten.bp.Duration retryFirstDelay;
-  private final double retryMultiplier;
 
   private static String projectMatching = "projects/[^/]+/";
   private static Pattern streamPatternProject = Pattern.compile(projectMatching);
@@ -254,7 +250,9 @@ class ConnectionWorker implements AutoCloseable {
     return matcher.matches();
   }
 
-  /** The maximum size of one request. Defined by the API. */
+  /**
+   * The maximum size of one request. Defined by the API.
+   */
   public static long getApiMaxRequestBytes() {
     return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
   }
@@ -308,9 +306,6 @@ class ConnectionWorker implements AutoCloseable {
     this.traceId = traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
-    this.retryFirstDelay = retryFirstDelay;
-    this.retryMultiplier = retryMultiplier;
-    this.maxRetryNumAttempts = maxRetryNumAttempts;
     this.compressorName = compressorName;
     if (retryFirstDelay != null
         && !retryFirstDelay.isZero()
@@ -318,9 +313,9 @@ class ConnectionWorker implements AutoCloseable {
         && maxRetryNumAttempts > 0) {
       this.retrySettings =
           RetrySettings.newBuilder()
-              .setInitialRetryDelay(this.retryFirstDelay)
+              .setInitialRetryDelay(retryFirstDelay)
               .setRetryDelayMultiplier(retryMultiplier)
-              .setMaxAttempts(this.maxRetryNumAttempts)
+              .setMaxAttempts(maxRetryNumAttempts)
               .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
               .build();
     } else {
@@ -406,7 +401,7 @@ class ConnectionWorker implements AutoCloseable {
         && Instant.now().isBefore(requestWrapper.blockMessageSendDeadline)) {
       log.fine(
           String.format(
-              "Waiting for waiting to queue to unblock at %s for retry # %s",
+              "Waiting for wait queue to unblock at %s for retry # %s",
               requestWrapper.blockMessageSendDeadline, requestWrapper.retryCount));
       return true;
     }
@@ -459,7 +454,9 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  /** Schedules the writing of rows at given offset. */
+  /**
+   * Schedules the writing of rows at given offset.
+   */
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
     if (this.location != null && !this.location.equals(streamWriter.getLocation())) {
       throw new StatusRuntimeException(
@@ -630,7 +627,9 @@ class ConnectionWorker implements AutoCloseable {
     return inflightWaitSec.longValue();
   }
 
-  /** @return a unique Id for the writer. */
+  /**
+   * @return a unique Id for the writer.
+   */
   public String getWriterId() {
     return writerId;
   }
@@ -645,7 +644,9 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  /** Close the stream writer. Shut down all resources. */
+  /**
+   * Close the stream writer. Shut down all resources.
+   */
   @Override
   public void close() {
     log.info("User closing stream: " + streamName);
@@ -794,10 +795,10 @@ class ConnectionWorker implements AutoCloseable {
         // considered the same but is not considered equals(). However as long as it's never provide
         // false negative we will always correctly pass writer schema to backend.
         if ((!originalRequest.getWriteStream().isEmpty()
-                && !streamName.isEmpty()
-                && !originalRequest.getWriteStream().equals(streamName))
+            && !streamName.isEmpty()
+            && !originalRequest.getWriteStream().equals(streamName))
             || (originalRequest.getProtoRows().hasWriterSchema()
-                && !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema))) {
+            && !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema))) {
           streamName = originalRequest.getWriteStream();
           writerSchema = originalRequest.getProtoRows().getWriterSchema();
           isMultiplexing = true;
@@ -844,8 +845,8 @@ class ConnectionWorker implements AutoCloseable {
             + userClosed
             + " final exception: "
             + (this.connectionFinalStatus == null
-                ? "null"
-                : this.connectionFinalStatus.toString()));
+            ? "null"
+            : this.connectionFinalStatus.toString()));
     // At this point, the waiting queue is drained, so no more requests.
     // We can close the stream connection and handle the remaining inflight requests.
     if (streamConnection != null) {
@@ -976,7 +977,11 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private Boolean retryOnRetryableError(Code errorCode, AppendRequestAndResponse requestWrapper) {
-    if (this.maxRetryNumAttempts == 0) {
+    if (this.retrySettings == null) {
+      return false;
+    }
+
+    if (this.retrySettings.getMaxAttempts() == 0) {
       return false;
     }
 
@@ -984,7 +989,7 @@ class ConnectionWorker implements AutoCloseable {
       return false;
     }
 
-    if (requestWrapper.retryCount < this.maxRetryNumAttempts) {
+    if (requestWrapper.retryCount < this.retrySettings.getMaxAttempts()) {
       lock.lock();
       try {
         requestWrapper.retryCount++;
@@ -1178,8 +1183,8 @@ class ConnectionWorker implements AutoCloseable {
         if (isConnectionErrorRetriable(finalStatus)
             && !userClosed
             && (maxRetryDuration.toMillis() == 0f
-                || System.currentTimeMillis() - connectionRetryStartTime
-                    <= maxRetryDuration.toMillis())) {
+            || System.currentTimeMillis() - connectionRetryStartTime
+            <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
           log.info(
               "Retriable error "
@@ -1188,7 +1193,7 @@ class ConnectionWorker implements AutoCloseable {
                   + conectionRetryCountWithoutCallback
                   + ", millis left to retry "
                   + (maxRetryDuration.toMillis()
-                      - (System.currentTimeMillis() - connectionRetryStartTime))
+                  - (System.currentTimeMillis() - connectionRetryStartTime))
                   + ", for stream "
                   + streamName
                   + " id:"
@@ -1230,7 +1235,9 @@ class ConnectionWorker implements AutoCloseable {
     return pollInflightRequestQueue(false);
   }
 
-  /** Thread-safe getter of updated TableSchema */
+  /**
+   * Thread-safe getter of updated TableSchema
+   */
   synchronized TableSchemaAndTimestamp getUpdatedSchema() {
     return this.updatedSchema;
   }
@@ -1281,7 +1288,9 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  /** Returns the current workload of this worker. */
+  /**
+   * Returns the current workload of this worker.
+   */
   public Load getLoad() {
     return Load.create(
         inflightBytes,
