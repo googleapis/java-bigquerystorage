@@ -652,6 +652,17 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Sets the RetrySettings to use for in-stream error retry.
+     *
+     * @param retrySettings
+     * @return Builder
+     */
+    public Builder setRetrySettings(RetrySettings retrySettings) {
+      this.retrySettings = retrySettings;
+      return this;
+    }
+
+    /**
      * Builds SchemaAwareStreamWriter
      *
      * @return SchemaAwareStreamWriter
