@@ -237,7 +237,7 @@ class ConnectionWorker implements AutoCloseable {
   @GuardedBy("lock")
   private int responsesToIgnore = 0;
 
-  private static RetrySettings retrySettings = null;
+  private RetrySettings retrySettings = null;
 
   private static String projectMatching = "projects/[^/]+/";
   private static Pattern streamPatternProject = Pattern.compile(projectMatching);
@@ -779,6 +779,8 @@ class ConnectionWorker implements AutoCloseable {
           streamName = originalRequest.getWriteStream();
           writerSchema = originalRequest.getProtoRows().getWriterSchema();
           isMultiplexing = true;
+          // Do not allow retries when multiplexing.
+          this.retrySettings = null;
           firstRequestForTableOrSchemaSwitch = true;
         }
 
@@ -1015,7 +1017,7 @@ class ConnectionWorker implements AutoCloseable {
       }
     }
 
-    log.fine(
+    log.info(
         String.format(
             "Max retry count reached for message in stream %s at offset %d.  Retry count: %d",
             streamName, requestWrapper.message.getOffset().getValue(), requestWrapper.retryCount));
