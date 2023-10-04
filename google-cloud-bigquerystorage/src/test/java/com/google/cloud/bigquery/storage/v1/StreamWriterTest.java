@@ -546,7 +546,9 @@ public class StreamWriterTest {
                     .build();
               }
             });
-    assertTrue(ex.getMessage().contains("Trying to enable connection pool while providing retry settings."));
+    assertTrue(
+        ex.getMessage()
+            .contains("Trying to enable connection pool while providing retry settings."));
   }
 
   @Test

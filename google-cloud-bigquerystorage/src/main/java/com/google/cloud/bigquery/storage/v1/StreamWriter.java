@@ -238,8 +238,7 @@ public class StreamWriter implements AutoCloseable {
       }
 
       if (builder.retrySettings != null) {
-        log.warning(
-            "Retry settings is only allowed when connection pool is not enabled.");
+        log.warning("Retry settings is only allowed when connection pool is not enabled.");
         throw new IllegalArgumentException(
             "Trying to enable connection pool while providing retry settings.");
       }
