@@ -44,7 +44,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
-import org.threeten.bp.Duration;
 
 /** Pool of connections to accept appends and distirbute to different connections. */
 public class ConnectionWorkerPool {

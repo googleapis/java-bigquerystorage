@@ -443,7 +443,6 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     private String compressorName;
     private RetrySettings retrySettings;
 
-
     private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
         MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
 

@@ -86,7 +86,8 @@ public class StreamWriterTest {
   private static final String EXPLICIT_STREAM = "projects/p/datasets/d1/tables/t1/streams/s1";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
   private static final int MAX_RETRY_NUM_ATTEMPTS = 3;
-  private static final RetrySettings retrySettings = RetrySettings.newBuilder()
+  private static final RetrySettings retrySettings =
+      RetrySettings.newBuilder()
           .setInitialRetryDelay(Duration.ofMillis(500))
           .setRetryDelayMultiplier(1.1)
           .setMaxAttempts(MAX_RETRY_NUM_ATTEMPTS)

@@ -52,12 +52,13 @@ public class ConnectionWorkerTest {
   private static final String TEST_STREAM_1 = "projects/p1/datasets/d1/tables/t1/streams/s1";
   private static final String TEST_STREAM_2 = "projects/p2/datasets/d2/tables/t2/streams/s2";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
-  private static final RetrySettings retrySettings = RetrySettings.newBuilder()
-      .setInitialRetryDelay(org.threeten.bp.Duration.ofMillis(500))
-      .setRetryDelayMultiplier(1.1)
-      .setMaxAttempts(3)
-      .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
-      .build();
+  private static final RetrySettings retrySettings =
+      RetrySettings.newBuilder()
+          .setInitialRetryDelay(org.threeten.bp.Duration.ofMillis(500))
+          .setRetryDelayMultiplier(1.1)
+          .setMaxAttempts(3)
+          .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
+          .build();
 
   private FakeBigQueryWrite testBigQueryWrite;
   private FakeScheduledExecutorService fakeExecutor;
