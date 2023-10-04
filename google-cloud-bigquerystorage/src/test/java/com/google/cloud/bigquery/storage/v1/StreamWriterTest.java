@@ -533,6 +533,23 @@ public class StreamWriterTest {
   }
 
   @Test
+  public void testNoRetryWhenConnectionPoolEnabled() throws Exception {
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            new ThrowingRunnable() {
+              @Override
+              public void run() throws Throwable {
+                StreamWriter.newBuilder(TEST_STREAM_SHORTEN, client)
+                    .setEnableConnectionPool(true)
+                    .setRetrySettings(RetrySettings.newBuilder().build())
+                    .build();
+              }
+            });
+    assertTrue(ex.getMessage().contains("Trying to enable connection pool while providing retry settings."));
+  }
+
+  @Test
   public void testAppendSuccessAndConnectionError() throws Exception {
     StreamWriter writer =
         StreamWriter.newBuilder(TEST_STREAM_1, client)

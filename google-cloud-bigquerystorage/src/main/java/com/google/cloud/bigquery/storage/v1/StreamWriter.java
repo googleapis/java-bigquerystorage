@@ -237,6 +237,13 @@ public class StreamWriter implements AutoCloseable {
             "Trying to enable connection pool in non-default stream.");
       }
 
+      if (builder.retrySettings != null) {
+        log.warning(
+            "Retry settings is only allowed when connection pool is not enabled.");
+        throw new IllegalArgumentException(
+            "Trying to enable connection pool while providing retry settings.");
+      }
+
       // We need a client to perform some getWriteStream calls.
       BigQueryWriteClient client =
           builder.client != null ? builder.client : new BigQueryWriteClient(clientSettings);
