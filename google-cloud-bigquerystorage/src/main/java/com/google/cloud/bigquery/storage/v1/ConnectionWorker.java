@@ -86,7 +86,11 @@ class ConnectionWorker implements AutoCloseable {
   private Lock lock;
   private Condition hasMessageInWaitingQueue;
   private Condition inflightReduced;
-  private static Duration maxRetryDuration = Duration.ofMinutes(5);
+  /*
+   * Max retry duration when trying to establish a connection.  This does not
+   * apply to in-stream retries.
+   */
+  private Duration maxRetryDuration = Duration.ofMinutes(5);
   private ExecutorService threadPool = Executors.newFixedThreadPool(1);
 
   /*
@@ -237,7 +241,11 @@ class ConnectionWorker implements AutoCloseable {
   @GuardedBy("lock")
   private int responsesToIgnore = 0;
 
-  private static RetrySettings retrySettings = null;
+  /*
+   * Contains settings related to in-stream retries.  If retrySettings is null,
+   * this implies that no retries will occur on retryable in-stream errors.
+   */
+  private RetrySettings retrySettings = null;
 
   private static String projectMatching = "projects/[^/]+/";
   private static Pattern streamPatternProject = Pattern.compile(projectMatching);
