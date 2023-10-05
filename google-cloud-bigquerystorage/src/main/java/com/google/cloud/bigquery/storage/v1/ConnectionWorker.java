@@ -406,14 +406,6 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  private boolean isImmediatelyRetriableStatus(Code statusCode) {
-    return statusCode == Code.ABORTED
-        || statusCode == Code.DEADLINE_EXCEEDED
-        || statusCode == Code.CANCELLED
-        || statusCode == Code.INTERNAL
-        || statusCode == Code.UNAVAILABLE;
-  }
-
   @GuardedBy("lock")
   private void addMessageToFrontOfWaitingQueue(AppendRequestAndResponse requestWrapper) {
     addMessageToWaitingQueue(requestWrapper, /* addToFront= */ true);
@@ -962,7 +954,7 @@ class ConnectionWorker implements AutoCloseable {
       return false;
     }
 
-    if (!isImmediatelyRetriableStatus(errorCode) && errorCode != Code.RESOURCE_EXHAUSTED) {
+    if (!isConnectionErrorRetriable(errorCode) && errorCode != Code.RESOURCE_EXHAUSTED) {
       return false;
     }
 
@@ -1132,13 +1124,12 @@ class ConnectionWorker implements AutoCloseable {
         });
   }
 
-  private boolean isConnectionErrorRetriable(Throwable t) {
-    Status status = Status.fromThrowable(t);
-    return status.getCode() == Code.ABORTED
-        || status.getCode() == Code.UNAVAILABLE
-        || status.getCode() == Code.CANCELLED
-        || status.getCode() == Code.INTERNAL
-        || status.getCode() == Code.DEADLINE_EXCEEDED;
+  private boolean isConnectionErrorRetriable(Code statusCode) {
+    return statusCode == Code.ABORTED
+        || statusCode == Code.UNAVAILABLE
+        || statusCode == Code.CANCELLED
+        || statusCode == Code.INTERNAL
+        || statusCode == Code.DEADLINE_EXCEEDED;
   }
 
   private void doneCallback(Throwable finalStatus) {
@@ -1157,7 +1148,7 @@ class ConnectionWorker implements AutoCloseable {
           connectionRetryStartTime = System.currentTimeMillis();
         }
         // If the error can be retried, don't set it here, let it try to retry later on.
-        if (isConnectionErrorRetriable(finalStatus)
+        if (isConnectionErrorRetriable(Status.fromThrowable(finalStatus).getCode())
             && !userClosed
             && (maxRetryDuration.toMillis() == 0f
                 || System.currentTimeMillis() - connectionRetryStartTime
