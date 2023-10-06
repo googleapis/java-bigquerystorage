@@ -298,7 +298,7 @@ class ConnectionWorker implements AutoCloseable {
     if (location != null && !location.isEmpty()) {
       this.location = location;
     }
-    this.maxRetryDuration = maxRetryDuration != null ?  maxRetryDuration : Duration.ofMinutes(5);
+    this.maxRetryDuration = maxRetryDuration != null ? maxRetryDuration : Duration.ofMinutes(5);
     if (writerSchema == null) {
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
