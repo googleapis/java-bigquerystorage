@@ -90,7 +90,7 @@ class ConnectionWorker implements AutoCloseable {
    * Max retry duration when trying to establish a connection.  This does not
    * apply to in-stream retries.
    */
-  private Duration maxRetryDuration = Duration.ofMinutes(5);
+  private final Duration maxRetryDuration;
   private ExecutorService threadPool = Executors.newFixedThreadPool(1);
 
   /*
@@ -245,7 +245,7 @@ class ConnectionWorker implements AutoCloseable {
    * Contains settings related to in-stream retries.  If retrySettings is null,
    * this implies that no retries will occur on retryable in-stream errors.
    */
-  private RetrySettings retrySettings = null;
+  private final RetrySettings retrySettings;
 
   private static String projectMatching = "projects/[^/]+/";
   private static Pattern streamPatternProject = Pattern.compile(projectMatching);
@@ -298,7 +298,7 @@ class ConnectionWorker implements AutoCloseable {
     if (location != null && !location.isEmpty()) {
       this.location = location;
     }
-    this.maxRetryDuration = maxRetryDuration;
+    this.maxRetryDuration = maxRetryDuration != null ?  maxRetryDuration : Duration.ofMinutes(5);
     if (writerSchema == null) {
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
