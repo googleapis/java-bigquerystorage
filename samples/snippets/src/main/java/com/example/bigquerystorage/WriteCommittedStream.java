@@ -20,6 +20,7 @@ package com.example.bigquerystorage;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1.CreateWriteStreamRequest;
@@ -37,6 +38,7 @@ import java.util.concurrent.Phaser;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.threeten.bp.Duration;
 
 public class WriteCommittedStream {
 
@@ -52,12 +54,17 @@ public class WriteCommittedStream {
 
   public static void writeCommittedStream(String projectId, String datasetName, String tableName)
       throws DescriptorValidationException, InterruptedException, IOException {
+    writeCommittedStream(projectId, datasetName, tableName, null);
+  }
+
+  public static void writeCommittedStream(String projectId, String datasetName, String tableName, RetrySettings retrySettings)
+      throws DescriptorValidationException, InterruptedException, IOException {
     BigQueryWriteClient client = BigQueryWriteClient.create();
     TableName parentTable = TableName.of(projectId, datasetName, tableName);
 
     DataWriter writer = new DataWriter();
     // One time initialization.
-    writer.initialize(parentTable, client);
+    writer.initialize(parentTable, client, retrySettings);
 
     try {
       // Write two batches of fake data to the stream, each with 10 JSON records.  Data may be
@@ -67,7 +74,9 @@ public class WriteCommittedStream {
       for (int i = 0; i < 2; i++) {
         // Create a JSON object that is compatible with the table schema.
         JSONArray jsonArr = new JSONArray();
-        for (int j = 0; j < 10; j++) {
+        // Use odd record count to allow retry testing to not loop, as simulated errors can occur
+        // every 10 messages.
+        for (int j = 0; j < 11; j++) {
           JSONObject record = new JSONObject();
           record.put("col1", String.format("batch-record %03d-%03d", i, j));
           jsonArr.put(record);
@@ -99,7 +108,7 @@ public class WriteCommittedStream {
     @GuardedBy("lock")
     private RuntimeException error = null;
 
-    void initialize(TableName parentTable, BigQueryWriteClient client)
+    void initialize(TableName parentTable, BigQueryWriteClient client, RetrySettings retrySettings)
         throws IOException, DescriptorValidationException, InterruptedException {
       // Initialize a write stream for the specified table.
       // For more information on WriteStream.Type, see:
@@ -118,6 +127,7 @@ public class WriteCommittedStream {
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
       streamWriter =
           JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema(), client)
+              .setRetrySettings(retrySettings)
               .build();
     }
 

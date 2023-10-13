@@ -22,6 +22,7 @@ import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
 import com.google.api.gax.core.FixedExecutorProvider;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.QueryJobConfiguration;
@@ -49,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.threeten.bp.Duration;
 
 public class WriteToDefaultStream {
 
@@ -81,11 +83,16 @@ public class WriteToDefaultStream {
 
   public static void writeToDefaultStream(String projectId, String datasetName, String tableName)
       throws DescriptorValidationException, InterruptedException, IOException {
+    writeToDefaultStream(projectId, datasetName, tableName, null);
+  }
+
+  public static void writeToDefaultStream(String projectId, String datasetName, String tableName, RetrySettings retrySettings)
+      throws DescriptorValidationException, InterruptedException, IOException {
     TableName parentTable = TableName.of(projectId, datasetName, tableName);
 
     DataWriter writer = new DataWriter();
     // One time initialization for the worker.
-    writer.initialize(parentTable);
+    writer.initialize(parentTable, retrySettings);
 
     // Write two batches of fake data to the stream, each with 10 JSON records.  Data may be
     // batched up to the maximum request size:
@@ -161,7 +168,7 @@ public class WriteToDefaultStream {
 
     private AtomicInteger recreateCount = new AtomicInteger(0);
 
-    public void initialize(TableName parentTable)
+    public void initialize(TableName parentTable, RetrySettings retrySettings)
         throws DescriptorValidationException, IOException, InterruptedException {
       // Use the JSON stream writer to send records in JSON format. Specify the table name to write
       // to the default stream.
@@ -178,7 +185,8 @@ public class WriteToDefaultStream {
                       .setKeepAliveWithoutCalls(true)
                       .setChannelsPerCpu(2)
                       .build())
-              .setEnableConnectionPool(true)
+              .setEnableConnectionPool(false)
+              .setRetrySettings(retrySettings)
               // If value is missing in json and there is a default value configured on bigquery
               // column, apply the default value to the missing value field.
               .setDefaultMissingValueInterpretation(
