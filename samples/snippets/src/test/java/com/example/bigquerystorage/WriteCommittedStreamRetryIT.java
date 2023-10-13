@@ -99,7 +99,8 @@ public class WriteCommittedStreamRetryIT {
             .setMaxAttempts(20)
             .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
             .build();
-    WriteCommittedStream.writeCommittedStream(GOOGLE_CLOUD_PROJECT, datasetName, tableName, retrySettings);
+    WriteCommittedStream.writeCommittedStream(
+        GOOGLE_CLOUD_PROJECT, datasetName, tableName, retrySettings);
     assertThat(bout.toString()).contains("Appended records successfully.");
   }
 }

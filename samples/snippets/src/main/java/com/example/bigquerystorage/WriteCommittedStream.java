@@ -57,7 +57,8 @@ public class WriteCommittedStream {
     writeCommittedStream(projectId, datasetName, tableName, null);
   }
 
-  public static void writeCommittedStream(String projectId, String datasetName, String tableName, RetrySettings retrySettings)
+  public static void writeCommittedStream(
+      String projectId, String datasetName, String tableName, RetrySettings retrySettings)
       throws DescriptorValidationException, InterruptedException, IOException {
     BigQueryWriteClient client = BigQueryWriteClient.create();
     TableName parentTable = TableName.of(projectId, datasetName, tableName);

@@ -86,7 +86,8 @@ public class WriteToDefaultStream {
     writeToDefaultStream(projectId, datasetName, tableName, null);
   }
 
-  public static void writeToDefaultStream(String projectId, String datasetName, String tableName, RetrySettings retrySettings)
+  public static void writeToDefaultStream(
+      String projectId, String datasetName, String tableName, RetrySettings retrySettings)
       throws DescriptorValidationException, InterruptedException, IOException {
     TableName parentTable = TableName.of(projectId, datasetName, tableName);
 
