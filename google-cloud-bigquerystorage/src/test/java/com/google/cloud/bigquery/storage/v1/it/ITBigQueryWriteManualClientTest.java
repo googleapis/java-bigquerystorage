@@ -25,9 +25,11 @@ import static org.junit.Assert.assertTrue;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.*;
+import com.google.cloud.bigquery.Field.Mode;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.storage.test.Test.*;
 import com.google.cloud.bigquery.storage.v1.*;
+import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.OffsetAlreadyExists;
 import com.google.cloud.bigquery.storage.v1.Exceptions.OffsetOutOfRange;
@@ -43,6 +45,9 @@ import io.grpc.Status.Code;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,14 +68,20 @@ public class ITBigQueryWriteManualClientTest {
   private static final String DATASET_EU = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
   private static final String TABLE2 = "complicatedtable";
+
+  private static final String TABLE3 = "tableWithDefaultValueColumn";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
 
   private static BigQueryWriteClient client;
   private static TableInfo tableInfo;
   private static TableInfo tableInfo2;
+
+  private static TableInfo tableInfo3;
   private static TableInfo tableInfoEU;
   private static String tableId;
   private static String tableId2;
+
+  private static String tableId3;
   private static String tableIdEU;
   private static BigQuery bigquery;
 
@@ -126,8 +137,26 @@ public class ITBigQueryWriteManualClientTest {
                             .build(),
                         innerTypeFieldBuilder.setMode(Field.Mode.NULLABLE).build())))
             .build();
+    tableInfo3 =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, TABLE3),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        com.google.cloud.bigquery.Field.newBuilder("foo_with_default", LegacySQLTypeName.STRING)
+                            .setDefaultValueExpression("'default_value_for_test'")
+                            .setMode(Field.Mode.NULLABLE)
+                            .build(),
+                        com.google.cloud.bigquery.Field.newBuilder("bar_without_default", LegacySQLTypeName.STRING)
+                            .setMode(Mode.NULLABLE)
+                            .build(),
+                        com.google.cloud.bigquery.Field.newBuilder("date_with_default_to_current", LegacySQLTypeName.DATETIME)
+                            .setDefaultValueExpression("CURRENT_DATE()")
+                            .setMode(Mode.NULLABLE)
+                            .build())))
+            .build();
     bigquery.create(tableInfo);
     bigquery.create(tableInfo2);
+    bigquery.create(tableInfo3);
     tableId =
         String.format(
             "projects/%s/datasets/%s/tables/%s",
@@ -136,6 +165,10 @@ public class ITBigQueryWriteManualClientTest {
         String.format(
             "projects/%s/datasets/%s/tables/%s",
             ServiceOptions.getDefaultProjectId(), DATASET, TABLE2);
+    tableId3 =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s",
+            ServiceOptions.getDefaultProjectId(), DATASET, TABLE3);
     DatasetInfo datasetInfoEU =
         DatasetInfo.newBuilder(/* datasetId = */ DATASET_EU)
             .setLocation("EU")
@@ -656,7 +689,7 @@ public class ITBigQueryWriteManualClientTest {
                 ByteString.copyFromUtf8("a").toByteArray(),
                 ByteString.copyFromUtf8("b").toByteArray()
               }));
-      row1.put("test_timestamp", "2022-02-06 07:24:47.84");
+      row1.put("test_timestamp", "2022-02-06 07:24:47.84 PDT");
       JSONArray jsonArr1 = new JSONArray(new JSONObject[] {row1});
 
       ApiFuture<AppendRowsResponse> response1 = jsonStreamWriter.append(jsonArr1, -1);
@@ -714,6 +747,53 @@ public class ITBigQueryWriteManualClientTest {
       FieldValueList currentRow2 = iter.next();
       assertEquals("YQ==", currentRow2.get(3).getRepeatedValue().get(0).getStringValue());
       assertEquals("Yg==", currentRow2.get(3).getRepeatedValue().get(1).getStringValue());
+      assertEquals(false, iter.hasNext());
+    }
+  }
+
+  @Test
+  public void testJsonDefaultStreamOnTableWithDefaultValue_SchemaNotGiven()
+      throws IOException, InterruptedException, ExecutionException,
+      Descriptors.DescriptorValidationException {
+    try (JsonStreamWriter jsonStreamWriter =
+        JsonStreamWriter.newBuilder(tableId3, client)
+            .setDefaultMissingValueInterpretation(MissingValueInterpretation.DEFAULT_VALUE)
+            .build()) {
+      // 1. row has both fields set.
+      JSONArray jsonArr1 = new JSONArray();
+      JSONObject row1 = new JSONObject();
+      row1.put("foo_with_default", "aaa");
+      row1.put("bar_without_default", "a");
+      row1.put("date_with_default_to_current", "2022-02-02");
+      jsonArr1.put(row1);
+      // 2. row with the column with default value unset
+      JSONObject row2 = new JSONObject();
+      row2.put("bar_without_default", "a");
+      jsonArr1.put(row2);
+      // 2. both value not set
+      JSONObject row3 = new JSONObject();
+      jsonArr1.put(row3);
+      ApiFuture<AppendRowsResponse> response1 = jsonStreamWriter.append(jsonArr1, -1);
+      response1.get();
+      TableResult result =
+          bigquery.listTableData(
+              tableInfo3.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+      Iterator<FieldValueList> iter = result.getValues().iterator();
+      FieldValueList currentRow = iter.next();
+      assertEquals("aaa", currentRow.get(0).getStringValue());
+      assertEquals("a", currentRow.get(1).getStringValue());
+      assertEquals("2022-02-02T00:00:00", currentRow.get(2).getStringValue());
+
+      currentRow = iter.next();
+      assertEquals("default_value_for_test", currentRow.get(0).getStringValue());
+      assertEquals("a", currentRow.get(1).getStringValue());
+      LOG.warning("The string value is " + currentRow.get(2).getStringValue());
+      assertFalse(currentRow.get(2).getStringValue().isEmpty());
+
+      currentRow = iter.next();
+      assertEquals("default_value_for_test", currentRow.get(0).getStringValue());
+      assertFalse(currentRow.get(2).getStringValue().isEmpty());
+      assertEquals(null, currentRow.get(1).getValue());
       assertEquals(false, iter.hasNext());
     }
   }

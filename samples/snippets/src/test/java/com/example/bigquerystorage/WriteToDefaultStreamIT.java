@@ -67,6 +67,7 @@ public class WriteToDefaultStreamIT {
     out = new PrintStream(bout);
     System.setOut(out);
 
+
     bigquery = BigQueryOptions.getDefaultInstance().getService();
 
     // Create a new dataset and table for each test.
