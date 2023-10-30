@@ -20,7 +20,6 @@ import static org.junit.Assert.assertFalse;
 
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.retrying.RetrySettings;
-import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.Field;
@@ -58,13 +57,9 @@ public class ITBigQueryWriteQuotaRetryTest {
       Logger.getLogger(ITBigQueryWriteQuotaRetryTest.class.getName());
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
-  private static final String TABLE2 = "complicatedtable";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
   private static final String QUOTA_RETRY_PROJECT_ID = "bq-writeapi-java-quota-retry";
-
   private static BigQueryWriteClient client;
-  private static TableInfo tableInfo;
-  private static String tableId;
   private static BigQuery bigquery;
 
   @BeforeClass
@@ -77,27 +72,15 @@ public class ITBigQueryWriteQuotaRetryTest {
         DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
     bigquery.create(datasetInfo);
     LOG.info("Created test dataset: " + DATASET);
-    tableInfo =
-        TableInfo.newBuilder(
-                TableId.of(DATASET, TABLE),
-                StandardTableDefinition.of(
-                    Schema.of(
-                        Field.newBuilder("foo", LegacySQLTypeName.STRING)
-                            .setMode(Field.Mode.NULLABLE)
-                            .build())))
-            .build();
-    Field.Builder innerTypeFieldBuilder =
-        Field.newBuilder(
-            "inner_type",
-            LegacySQLTypeName.RECORD,
-            Field.newBuilder("value", LegacySQLTypeName.STRING)
-                .setMode(Field.Mode.REPEATED)
-                .build());
+    TableInfo tableInfo = TableInfo.newBuilder(
+            TableId.of(DATASET, TABLE),
+            StandardTableDefinition.of(
+                Schema.of(
+                    Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                        .setMode(Field.Mode.NULLABLE)
+                        .build())))
+        .build();
     bigquery.create(tableInfo);
-    tableId =
-        String.format(
-            "projects/%s/datasets/%s/tables/%s",
-            ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
   }
 
   @AfterClass
@@ -114,8 +97,8 @@ public class ITBigQueryWriteQuotaRetryTest {
 
   @Test
   public void testJsonStreamWriterCommittedStreamWithNonQuotaRetry()
-      throws IOException, InterruptedException, ExecutionException,
-          DescriptorValidationException {
+      throws IOException, InterruptedException,
+      DescriptorValidationException {
     RetrySettings retrySettings =
         RetrySettings.newBuilder()
             .setInitialRetryDelay(Duration.ofMillis(500))
@@ -141,7 +124,7 @@ public class ITBigQueryWriteQuotaRetryTest {
     int totalRequest = 901;
     int rowBatch = 1;
     ArrayList<ApiFuture<AppendRowsResponse>> allResponses =
-        new ArrayList<ApiFuture<AppendRowsResponse>>(totalRequest);
+        new ArrayList<>(totalRequest);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
             .setRetrySettings(retrySettings)
@@ -172,8 +155,8 @@ public class ITBigQueryWriteQuotaRetryTest {
 
   @Test
   public void testJsonStreamWriterDefaultStreamWithNonQuotaRetry()
-      throws IOException, InterruptedException, ExecutionException,
-          DescriptorValidationException {
+      throws IOException, InterruptedException,
+      DescriptorValidationException {
     RetrySettings retrySettings =
         RetrySettings.newBuilder()
             .setInitialRetryDelay(Duration.ofMillis(500))
@@ -205,7 +188,7 @@ public class ITBigQueryWriteQuotaRetryTest {
     int totalRequest = 901;
     int rowBatch = 1;
     ArrayList<ApiFuture<AppendRowsResponse>> allResponses =
-        new ArrayList<ApiFuture<AppendRowsResponse>>(totalRequest);
+        new ArrayList<>(totalRequest);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableSchema)
             .setIgnoreUnknownFields(true)
