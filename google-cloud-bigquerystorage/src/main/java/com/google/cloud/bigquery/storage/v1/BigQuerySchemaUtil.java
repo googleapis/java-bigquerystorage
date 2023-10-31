@@ -18,7 +18,6 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.regex.Pattern;
 
 public class BigQuerySchemaUtil {
 
@@ -43,9 +42,9 @@ public class BigQuerySchemaUtil {
     for (int i = 1; i < length; i++) {
       ch = fieldName.charAt(i);
       if (!((ch >= 'a' && ch <= 'z')
-              || (ch >= 'A' && ch <= 'Z')
-              || ch == '_'
-              || (ch >= '0' && ch <= '9'))) {
+          || (ch >= 'A' && ch <= 'Z')
+          || ch == '_'
+          || (ch >= '0' && ch <= '9'))) {
         return false;
       }
     }
