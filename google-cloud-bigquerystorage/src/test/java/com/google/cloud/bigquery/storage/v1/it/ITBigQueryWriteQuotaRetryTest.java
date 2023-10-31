@@ -53,8 +53,7 @@ import org.threeten.bp.Duration;
 
 /** Integration tests for BigQuery Write API. */
 public class ITBigQueryWriteQuotaRetryTest {
-  private static final Logger LOG =
-      Logger.getLogger(ITBigQueryWriteQuotaRetryTest.class.getName());
+  private static final Logger LOG = Logger.getLogger(ITBigQueryWriteQuotaRetryTest.class.getName());
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
@@ -74,14 +73,15 @@ public class ITBigQueryWriteQuotaRetryTest {
         DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
     bigquery.create(datasetInfo);
     LOG.info("Created test dataset: " + DATASET);
-    TableInfo tableInfo = TableInfo.newBuilder(
-            TableId.of(DATASET, TABLE),
-            StandardTableDefinition.of(
-                Schema.of(
-                    Field.newBuilder("foo", LegacySQLTypeName.STRING)
-                        .setMode(Field.Mode.NULLABLE)
-                        .build())))
-        .build();
+    TableInfo tableInfo =
+        TableInfo.newBuilder(
+                TableId.of(DATASET, TABLE),
+                StandardTableDefinition.of(
+                    Schema.of(
+                        Field.newBuilder("foo", LegacySQLTypeName.STRING)
+                            .setMode(Field.Mode.NULLABLE)
+                            .build())))
+            .build();
     bigquery.create(tableInfo);
   }
 
@@ -99,8 +99,7 @@ public class ITBigQueryWriteQuotaRetryTest {
 
   @Test
   public void testJsonStreamWriterCommittedStreamWithNonQuotaRetry()
-      throws IOException, InterruptedException,
-      DescriptorValidationException {
+      throws IOException, InterruptedException, DescriptorValidationException {
     RetrySettings retrySettings =
         RetrySettings.newBuilder()
             .setInitialRetryDelay(Duration.ofMillis(500))
@@ -125,8 +124,7 @@ public class ITBigQueryWriteQuotaRetryTest {
                 .build());
     int totalRequest = 901;
     int rowBatch = 1;
-    ArrayList<ApiFuture<AppendRowsResponse>> allResponses =
-        new ArrayList<>(totalRequest);
+    ArrayList<ApiFuture<AppendRowsResponse>> allResponses = new ArrayList<>(totalRequest);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
             .setRetrySettings(retrySettings)
@@ -157,8 +155,7 @@ public class ITBigQueryWriteQuotaRetryTest {
 
   @Test
   public void testJsonStreamWriterDefaultStreamWithNonQuotaRetry()
-      throws IOException, InterruptedException,
-      DescriptorValidationException {
+      throws IOException, InterruptedException, DescriptorValidationException {
     RetrySettings retrySettings =
         RetrySettings.newBuilder()
             .setInitialRetryDelay(Duration.ofMillis(500))
@@ -178,10 +175,7 @@ public class ITBigQueryWriteQuotaRetryTest {
         TableInfo.newBuilder(
                 TableId.of(DATASET, tableName),
                 StandardTableDefinition.of(
-                    Schema.of(
-                        Field.newBuilder(
-                                "test_str", StandardSQLTypeName.STRING)
-                            .build())))
+                    Schema.of(Field.newBuilder("test_str", StandardSQLTypeName.STRING).build())))
             .build();
 
     bigquery.create(tableInfo);
@@ -189,8 +183,7 @@ public class ITBigQueryWriteQuotaRetryTest {
 
     int totalRequest = 901;
     int rowBatch = 1;
-    ArrayList<ApiFuture<AppendRowsResponse>> allResponses =
-        new ArrayList<>(totalRequest);
+    ArrayList<ApiFuture<AppendRowsResponse>> allResponses = new ArrayList<>(totalRequest);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableSchema)
             .setIgnoreUnknownFields(true)
