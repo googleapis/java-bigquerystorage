@@ -58,6 +58,8 @@ public class ITBigQueryWriteQuotaRetryTest {
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
+  // This project is configured on the server to inject RESOURCE_EXHAUSTED in-stream errors every
+  // 10 messages.  This is done to verify in-stream message retries.
   private static final String QUOTA_RETRY_PROJECT_ID = "bq-writeapi-java-quota-retry";
   private static BigQueryWriteClient client;
   private static BigQuery bigquery;

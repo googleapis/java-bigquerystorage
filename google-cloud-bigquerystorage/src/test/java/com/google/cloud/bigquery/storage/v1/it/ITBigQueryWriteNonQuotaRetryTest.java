@@ -58,6 +58,8 @@ public class ITBigQueryWriteNonQuotaRetryTest {
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
+  // This project is configured on the server to inject INTERNAL in-stream errors every 10 messages.
+  // This is done to verify in-stream message retries.
   private static final String NON_QUOTA_RETRY_PROJECT_ID = "bq-write-api-java-retry-test";
 
   private static BigQueryWriteClient client;
