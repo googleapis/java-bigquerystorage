@@ -102,10 +102,7 @@ public class ITBigQueryWriteNonQuotaRetryTest {
       DescriptorValidationException {
     RetrySettings retrySettings =
         RetrySettings.newBuilder()
-            .setInitialRetryDelay(Duration.ofMillis(500))
-            .setRetryDelayMultiplier(1.1)
             .setMaxAttempts(5)
-            .setMaxRetryDelay(Duration.ofMinutes(1))
             .build();
     String tableName = "CommittedRetry";
     TableId tableId = TableId.of(DATASET, tableName);
