@@ -63,6 +63,7 @@ import org.junit.Test;
 import org.threeten.bp.LocalDateTime;
 
 /** Integration tests for BigQuery Write API. */
+//Testing
 public class ITBigQueryWriteManualClientTest {
   private static final Logger LOG =
       Logger.getLogger(ITBigQueryWriteManualClientTest.class.getName());
