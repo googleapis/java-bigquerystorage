@@ -67,7 +67,7 @@ public class JsonWriterStreamCdc {
             Schema.of(
                     Field.of("Customer_ID", StandardSQLTypeName.NUMERIC),
                     Field.of("Customer_Enrollment_Date", StandardSQLTypeName.NUMERIC),
-                    Field.of("Customer_Name", StandardSQLTypeName.STRING)
+                    Field.of("Customer_Name", StandardSQLTypeName.STRING),
                     Field.of("Customer_Address", StandardSQLTypeName.STRING),
                     Field.of("Customer_Tier", StandardSQLTypeName.STRING),
                     Field.of("Active_Subscriptions", StandardSQLTypeName.STRUCT),
