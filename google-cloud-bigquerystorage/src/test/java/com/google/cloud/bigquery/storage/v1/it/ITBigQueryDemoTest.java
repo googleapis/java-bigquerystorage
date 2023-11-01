@@ -24,5 +24,4 @@ public class ITBigQueryDemoTest {
   public void testFail() {
     Assert.assertTrue(false);
   }
-
 }
