@@ -49,7 +49,6 @@ public class JsonWriterStreamCdc {
   public static void main(String[] args) throws Exception {
     if (args.length < 4) {
       System.out.println("Arguments: project, dataset, table, source_file");
-      return;
     }
 
     String projectId = args[0];
