@@ -70,8 +70,7 @@ public class JsonWriterStreamCdc {
                     Field.of("Customer_Name", StandardSQLTypeName.STRING),
                     Field.of("Customer_Address", StandardSQLTypeName.STRING),
                     Field.of("Customer_Tier", StandardSQLTypeName.STRING),
-                    Field.of("Active_Subscriptions", StandardSQLTypeName.JSON),
-                    Field.of("_CHANGE_TYPE", StandardSQLTypeName.STRING));
+                    Field.of("Active_Subscriptions", StandardSQLTypeName.JSON));
 
     // Create a table that uses this schema.
     TableId tableId = TableId.of(projectId, datasetName, tableName);
