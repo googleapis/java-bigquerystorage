@@ -61,7 +61,7 @@ javadoc)
     ;;
 integration)
     mvn -B ${INTEGRATION_TEST_ARGS} \
-      -Penable-integration-tests \
+      -ntp \
       -Dtest=ITBigQuery*Test \
       -DtrimStackTrace=false \
       -Dclirr.skip=true \
