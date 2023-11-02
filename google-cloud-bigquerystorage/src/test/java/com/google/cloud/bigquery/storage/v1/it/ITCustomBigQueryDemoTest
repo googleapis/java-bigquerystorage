@@ -19,7 +19,7 @@ package com.google.cloud.bigquery.storage.v1.it;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ITBigQueryDemoTest {
+public class ITCustomBigQueryDemoTest {
   @Test
   public void testFail() {
     Assert.assertTrue(false);

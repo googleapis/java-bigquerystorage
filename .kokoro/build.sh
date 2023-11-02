@@ -61,8 +61,8 @@ javadoc)
     ;;
 integration)
     mvn -B ${INTEGRATION_TEST_ARGS} \
-      -ntp \
-      -Dtest=ITBigQuery*Test \
+      -Penable-integration-tests \
+      -Dtest=!ITCustomBigQueryDemoTest \
       -DtrimStackTrace=false \
       -Dclirr.skip=true \
       -Denforcer.skip=true \
