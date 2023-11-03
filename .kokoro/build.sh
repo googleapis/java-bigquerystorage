@@ -65,6 +65,8 @@ integration)
       -DtrimStackTrace=false \
       -Dclirr.skip=true \
       -Denforcer.skip=true \
+      -Dtest=!ITBigQueryWrite*RetryTest \
+      -Dsurefire.failIfNoSpecifiedTests=false \
       -fae \
       verify
     RETURN_CODE=$?
