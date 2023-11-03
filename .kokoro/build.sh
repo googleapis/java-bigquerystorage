@@ -65,7 +65,7 @@ integration)
       -DtrimStackTrace=false \
       -Dclirr.skip=true \
       -Denforcer.skip=true \
-      -Dtest=!ITBigQueryWrite*RetryTest \
+      -Dtest=!ITBigQueryWriteQuotaRetryTest,!ITBigQueryWriteNoneQuotaRetryTest \
       -Dsurefire.failIfNoSpecifiedTests=false \
       -fae \
       verify
