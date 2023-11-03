@@ -63,6 +63,7 @@ public class JsonWriterStreamCdcIT {
 
   @Test
   public void testJsonWriterStreamCdc() throws Exception {
+    FileSystems.getDefault().getPath("samples/snippets/src/test/resources", "TestData.json");
     Path dataFilePath = FileSystems.getDefault().getPath("src/test/resources", "NewCustomers.json");
 
     System.out.println(dataFilePath.toString());
