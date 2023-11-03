@@ -64,7 +64,7 @@ public class JsonWriterStreamCdcIT {
   @Test
   public void testJsonWriterStreamCdc() throws Exception {
     Path dataFilePath = FileSystems.getDefault().getPath(
-        "/java-bigquerystorage/samples/snippets/src/test/resources/NewCustomers.json",
+        "/java-bigquerystorage/samples/snippets/src/test/resources",
         "NewCustomers.json");
 
     System.out.println(dataFilePath.toString());
