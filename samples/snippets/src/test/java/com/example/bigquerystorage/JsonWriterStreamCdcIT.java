@@ -63,13 +63,13 @@ public class JsonWriterStreamCdcIT {
 
   @Test
   public void testJsonWriterStreamCdc() throws Exception {
-    Path dataFilePath = System.getProperty("user.dir");
+    String dataFilePath = System.getProperty("user.dir");
     // FileSystems.getDefault().getPath(
     // "/java-bigquerystorage/samples/snippets/src/test/resources",
     // "NewCustomers.json");
 
-    System.out.println(dataFilePath.toString());
-    String[] args = {GOOGLE_CLOUD_PROJECT, datasetName, "customers", dataFilePath.toString()};
+    // System.out.println(dataFilePath.toString());
+    String[] args = {GOOGLE_CLOUD_PROJECT, datasetName, "customers", dataFilePath;
     JsonWriterStreamCdc.main(args);
     assertThat(bout.toString()).contains("Wrote batch");
   }
