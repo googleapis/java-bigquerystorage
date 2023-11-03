@@ -63,7 +63,8 @@ public class JsonWriterStreamCdcIT {
 
   @Test
   public void testJsonWriterStreamCdc() throws Exception {
-    Path dataFilePath = FileSystems.getDefault().getPath("samples/snippets/src/test/resources", "NewCustomers.json");
+    Path dataFilePath = FileSystems.getDefault().getPath("samples/snippets/src/test/resources",
+        "NewCustomers.json");
 
     System.out.println(dataFilePath.toString());
     String[] args = {GOOGLE_CLOUD_PROJECT, datasetName, "customers", dataFilePath.toString()};
