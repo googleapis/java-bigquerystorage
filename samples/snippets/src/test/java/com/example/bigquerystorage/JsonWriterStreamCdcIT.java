@@ -69,7 +69,7 @@ public class JsonWriterStreamCdcIT {
     // "NewCustomers.json");
 
     // System.out.println(dataFilePath.toString());
-    String[] args = {GOOGLE_CLOUD_PROJECT, datasetName, "customers", dataFilePath;
+    String[] args = {GOOGLE_CLOUD_PROJECT, datasetName, "customers", dataFilePath};
     JsonWriterStreamCdc.main(args);
     assertThat(bout.toString()).contains("Wrote batch");
   }
