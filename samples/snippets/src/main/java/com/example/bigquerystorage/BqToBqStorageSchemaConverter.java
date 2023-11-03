@@ -63,6 +63,8 @@ public class BqToBqStorageSchemaConverter {
    */
   public static TableSchema convertTableSchema(Schema schema) {
     TableSchema.Builder result = TableSchema.newBuilder();
+    System.out.println("Horses");
+    System.out.println(schema.getFields());
     for (int i = 0; i < schema.getFields().size(); i++) {
       result.addFields(i, convertFieldSchema(schema.getFields().get(i)));
     }
