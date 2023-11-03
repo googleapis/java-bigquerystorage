@@ -62,7 +62,7 @@ javadoc)
 integration)
     mvn -B ${INTEGRATION_TEST_ARGS} \
       -Penable-integration-tests \
-      -Dtest=\!ITCustomBigQueryDemoTest \
+      -Dtest=!ITCustomBigQueryDemoTest \
       -Dsurefire.failIfNoSpecifiedTests=false \
       -DtrimStackTrace=false \
       -Dclirr.skip=true \
