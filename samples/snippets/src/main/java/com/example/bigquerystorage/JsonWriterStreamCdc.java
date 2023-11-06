@@ -112,7 +112,7 @@ public class JsonWriterStreamCdc {
           if (line == null) {
             break;
           }
-        } // batch
+        }
         ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
         // The append method is asynchronous. Rather than waiting for the method to complete,
         // which can hurt performance, register a completion callback and continue streaming.
