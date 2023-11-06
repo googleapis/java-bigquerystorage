@@ -791,10 +791,6 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
-    public Builder enableLargerRequesLimit() {
-      this.enableLargeRequestLimit = true;
-    }
-
     /** Builds the {@code StreamWriterV2}. */
     public StreamWriter build() throws IOException {
       return new StreamWriter(this);
