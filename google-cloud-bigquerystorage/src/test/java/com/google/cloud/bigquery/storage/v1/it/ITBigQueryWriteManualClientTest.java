@@ -210,6 +210,21 @@ public class ITBigQueryWriteManualClientTest {
     return rows.build();
   }
 
+  ProtoSchema CreateProtoSchemaWithColField() {
+    return ProtoSchema.newBuilder()
+        .setProtoDescriptor(
+            DescriptorProto.newBuilder()
+                .setName("testProto")
+                .addField(
+                    FieldDescriptorProto.newBuilder()
+                        .setName("col1")
+                        .setNumber(1)
+                        .setType(FieldDescriptorProto.Type.TYPE_STRING)
+                        .build())
+                .build())
+        .build();
+  }
+
   ProtoRows CreateProtoOptionalRows(String[] messages) {
     ProtoRows.Builder rows = ProtoRows.newBuilder();
     for (String message : messages) {
@@ -1556,32 +1571,20 @@ public class ITBigQueryWriteManualClientTest {
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (StreamWriter streamWriter =
         StreamWriter.newBuilder(parent.toString() + "/_default")
-            .setWriterSchema(
-                ProtoSchema.newBuilder()
-                    .setProtoDescriptor(
-                        DescriptorProto.newBuilder()
-                            .setName("testProto")
-                            .addField(
-                                FieldDescriptorProto.newBuilder()
-                                    .setName("col1")
-                                    .setNumber(1)
-                                    .setType(FieldDescriptorProto.Type.TYPE_STRING)
-                                    .build())
-                            .build())
-                    .build())
+            .setWriterSchema(CreateProtoSchemaWithColField())
             .enableLargerRequest()
             .build()) {
       List<Integer> sizeSet = Arrays.asList(200, 10 * 1024 * 1024, 19 * 1024 * 1024);
       List<ApiFuture<AppendRowsResponse>> responseList =
           new ArrayList<ApiFuture<AppendRowsResponse>>();
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < 20; i++) {
         int size = sizeSet.get(new Random().nextInt(3));
         LOG.info("Sending request of size: " + size);
         responseList.add(
             streamWriter.append(
                 CreateProtoRows(new String[] {new String(new char[size]).replace("\0", "a")})));
       }
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < 20; i++) {
         assertFalse(responseList.get(i).get().hasError());
       }
       TableResult queryResult =
@@ -1590,8 +1593,75 @@ public class ITBigQueryWriteManualClientTest {
                   .build());
       Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
       assertTrue(queryIter.hasNext());
-      assertEquals("10", queryIter.next().get(0).getStringValue());
+      assertEquals("20", queryIter.next().get(0).getStringValue());
     }
+  }
+
+  @Test
+  public void testLargeRequestMultiplexing()
+      throws IOException, InterruptedException, ExecutionException {
+    Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
+    Schema tableSchema = Schema.of(col1);
+
+    String tableName1 = "table1";
+    TableId tableId1 = TableId.of(DATASET, tableName1);
+    TableInfo tableInfo1 =
+        TableInfo.newBuilder(tableId1, StandardTableDefinition.of(tableSchema)).build();
+    bigquery.create(tableInfo1);
+    TableName parent1 = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName1);
+    ConnectionWorkerPool.setOptions(
+        ConnectionWorkerPool.Settings.builder()
+            .setMinConnectionsPerRegion(1)
+            .setMaxConnectionsPerRegion(2)
+            .build());
+    StreamWriter streamWriter1 =
+        StreamWriter.newBuilder(parent1.toString() + "/_default")
+            .setWriterSchema(CreateProtoSchemaWithColField())
+            .enableLargerRequest()
+            .setEnableConnectionPool(true)
+            .build();
+
+    String tableName2 = "table2";
+    TableId tableId2 = TableId.of(DATASET, tableName2);
+    TableInfo tableInfo2 =
+        TableInfo.newBuilder(tableId2, StandardTableDefinition.of(tableSchema)).build();
+    bigquery.create(tableInfo2);
+    TableName parent2 = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName2);
+    StreamWriter streamWriter2 =
+        StreamWriter.newBuilder(parent2.toString() + "/_default")
+            .setWriterSchema(CreateProtoSchemaWithColField())
+            .setEnableConnectionPool(true)
+            .build();
+
+    List<ApiFuture<AppendRowsResponse>> responseList =
+        new ArrayList<ApiFuture<AppendRowsResponse>>();
+    for (int i = 0; i < 10; i++) {
+      responseList.add(
+          streamWriter2.append(
+              CreateProtoRows(new String[] {new String(new char[15 * 1024]).replace("\0", "a")})));
+      responseList.add(
+          streamWriter1.append(
+              CreateProtoRows(
+                  new String[] {new String(new char[15 * 1024 * 1024]).replace("\0", "a")})));
+    }
+    for (int i = 0; i < 20; i++) {
+      assertFalse(responseList.get(i).get().hasError());
+    }
+    TableResult queryResult =
+        bigquery.query(
+            QueryJobConfiguration.newBuilder("SELECT count(*) from " + DATASET + '.' + tableName1)
+                .build());
+    Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
+    assertTrue(queryIter.hasNext());
+    assertEquals("10", queryIter.next().get(0).getStringValue());
+
+    queryResult =
+        bigquery.query(
+            QueryJobConfiguration.newBuilder("SELECT count(*) from " + DATASET + '.' + tableName2)
+                .build());
+    queryIter = queryResult.getValues().iterator();
+    assertTrue(queryIter.hasNext());
+    assertEquals("10", queryIter.next().get(0).getStringValue());
   }
 
   @Test
@@ -1607,19 +1677,7 @@ public class ITBigQueryWriteManualClientTest {
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (StreamWriter streamWriter =
         StreamWriter.newBuilder(parent.toString() + "/_default")
-            .setWriterSchema(
-                ProtoSchema.newBuilder()
-                    .setProtoDescriptor(
-                        DescriptorProto.newBuilder()
-                            .setName("testProto")
-                            .addField(
-                                FieldDescriptorProto.newBuilder()
-                                    .setName("col1")
-                                    .setNumber(1)
-                                    .setType(FieldDescriptorProto.Type.TYPE_STRING)
-                                    .build())
-                            .build())
-                    .build())
+            .setWriterSchema(CreateProtoSchemaWithColField())
             .build()) {
       ApiFuture<AppendRowsResponse> response =
           streamWriter.append(
