@@ -63,7 +63,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.threeten.bp.LocalDateTime;
-import org.apache.commons.lang.StringUtils;
 
 /** Integration tests for BigQuery Write API. */
 public class ITBigQueryWriteManualClientTest {
@@ -1546,7 +1545,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testLarge() throws IOException, InterruptedException, ExecutionException {
+  public void testLargeRequest() throws IOException, InterruptedException, ExecutionException {
     String tableName = "largeRequestTable";
     TableId tableId = TableId.of(DATASET, tableName);
     Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
@@ -1557,25 +1556,87 @@ public class ITBigQueryWriteManualClientTest {
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (StreamWriter streamWriter =
         StreamWriter.newBuilder(parent.toString() + "/_default")
-            .setWriterSchema(ProtoSchema.newBuilder().setProtoDescriptor(
-                DescriptorProto.newBuilder().addField(FieldDescriptorProto.newBuilder().setName("col1").setType(
-                    FieldDescriptorProto.Type.TYPE_STRING).build()).build()).build()).build()) {
+            .setWriterSchema(
+                ProtoSchema.newBuilder()
+                    .setProtoDescriptor(
+                        DescriptorProto.newBuilder()
+                            .setName("testProto")
+                            .addField(
+                                FieldDescriptorProto.newBuilder()
+                                    .setName("col1")
+                                    .setNumber(1)
+                                    .setType(FieldDescriptorProto.Type.TYPE_STRING)
+                                    .build())
+                            .build())
+                    .build())
+            .enableLargerRequest()
+            .build()) {
       List<Integer> sizeSet = Arrays.asList(200, 10 * 1024 * 1024, 19 * 1024 * 1024);
+      List<ApiFuture<AppendRowsResponse>> responseList =
+          new ArrayList<ApiFuture<AppendRowsResponse>>();
       for (int i = 0; i < 10; i++) {
         int size = sizeSet.get(new Random().nextInt(3));
-        streamWriter.append(CreateProtoRows(new String[] {StringUtils.repeat("*", 10)}));
+        LOG.info("Sending request of size: " + size);
+        responseList.add(
+            streamWriter.append(
+                CreateProtoRows(new String[] {new String(new char[size]).replace("\0", "a")})));
       }
+      for (int i = 0; i < 10; i++) {
+        assertFalse(responseList.get(i).get().hasError());
+      }
+      TableResult queryResult =
+          bigquery.query(
+              QueryJobConfiguration.newBuilder("SELECT count(*) from " + DATASET + '.' + tableName)
+                  .build());
+      Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
+      assertTrue(queryIter.hasNext());
+      assertEquals("10", queryIter.next().get(0).getStringValue());
     }
+  }
 
+  @Test
+  public void testDefaultRequestLimit()
+      throws IOException, InterruptedException, ExecutionException {
+    String tableName = "requestTable";
+    TableId tableId = TableId.of(DATASET, tableName);
+    Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
+    Schema originalSchema = Schema.of(col1);
+    TableInfo tableInfo =
+        TableInfo.newBuilder(tableId, StandardTableDefinition.of(originalSchema)).build();
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (StreamWriter streamWriter =
-        StreamWriter.newBuilder(writeStream.getName())
-            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+        StreamWriter.newBuilder(parent.toString() + "/_default")
+            .setWriterSchema(
+                ProtoSchema.newBuilder()
+                    .setProtoDescriptor(
+                        DescriptorProto.newBuilder()
+                            .setName("testProto")
+                            .addField(
+                                FieldDescriptorProto.newBuilder()
+                                    .setName("col1")
+                                    .setNumber(1)
+                                    .setType(FieldDescriptorProto.Type.TYPE_STRING)
+                                    .build())
+                            .build())
+                    .build())
             .build()) {
-      // Currently there is a bug that reconnection must wait 5 seconds to get the real row count.
-      Thread.sleep(5000L);
       ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(CreateProtoRows(new String[] {"bbb"}), 1L);
-      assertEquals(1L, response.get().getAppendResult().getOffset().getValue());
+          streamWriter.append(
+              CreateProtoRows(
+                  new String[] {new String(new char[19 * 1024 * 1024]).replace("\0", "a")}));
+      try {
+        response.get();
+        Assert.fail("Large request should fail with InvalidArgumentError");
+      } catch (ExecutionException ex) {
+        assertEquals(io.grpc.StatusRuntimeException.class, ex.getCause().getClass());
+        io.grpc.StatusRuntimeException actualError = (io.grpc.StatusRuntimeException) ex.getCause();
+        // This verifies that the Beam connector can consume this custom exception's grpc StatusCode
+        assertEquals(Code.INVALID_ARGUMENT, actualError.getStatus().getCode());
+        assertEquals(
+            "MessageSize is too large. Max allow: 10000000 Actual: 19922986",
+            actualError.getStatus().getDescription());
+      }
     }
   }
 }

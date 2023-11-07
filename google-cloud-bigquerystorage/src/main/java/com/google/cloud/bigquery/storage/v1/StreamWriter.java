@@ -83,6 +83,11 @@ public class StreamWriter implements AutoCloseable {
   private final String location;
 
   /*
+   *  If larger request is enabled.
+   */
+  private final Boolean enableLargerRequest;
+
+  /*
    * If user has closed the StreamWriter.
    */
   private AtomicBoolean userClosed = new AtomicBoolean(false);
@@ -211,6 +216,7 @@ public class StreamWriter implements AutoCloseable {
     this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
     this.defaultMissingValueInterpretation = builder.defaultMissingValueInterpretation;
+    this.enableLargerRequest = builder.enableLargerRequest;
     BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
     if (!builder.enableConnectionPool) {
       this.location = builder.location;
@@ -484,6 +490,11 @@ public class StreamWriter implements AutoCloseable {
   /** @return the location of the destination. */
   public String getLocation() {
     return location;
+  }
+
+  /** @return if larger request limit is enabled. */
+  public boolean getEnableLargerRequest() {
+    return enableLargerRequest;
   }
 
   /** @return the missing value interpretation map used for the writer. */
@@ -795,8 +806,8 @@ public class StreamWriter implements AutoCloseable {
     }
 
     /**
-     * Enables 20MB request size.
-     * Project has to be explicitly enabled for the feature to work.
+     * Enables 20MB request size. Project has to be explicitly enabled for the feature to work.
+     *
      * @return
      */
     public Builder enableLargerRequest() {

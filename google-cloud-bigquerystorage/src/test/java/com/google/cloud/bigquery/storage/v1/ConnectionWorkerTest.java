@@ -343,7 +343,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            false);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -400,7 +401,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            false);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -469,7 +471,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            false);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -501,7 +504,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            false);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -554,7 +558,8 @@ public class ConnectionWorkerTest {
         TEST_TRACE_ID,
         null,
         client.getSettings(),
-        retrySettings);
+        retrySettings,
+        false);
   }
 
   private ProtoSchema createProtoSchema(String protoName) {
@@ -649,7 +654,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            false);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(3));
 
     long appendCount = 10;
@@ -711,7 +717,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            false);
 
     long appendCount = 10;
     for (int i = 0; i < appendCount * 2; i++) {
