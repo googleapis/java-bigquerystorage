@@ -106,7 +106,7 @@ public class JsonWriterStreamCdc {
         // As a best practice, send batches of records, instead of single records at a time.
         JSONArray jsonArr = new JSONArray();
         for (int i = 0; i < 100; i++) {
-          JSONObject record = new JSONObject(line);
+          JSONObject record = new JSONArray(line);
           jsonArr.put(record);
           line = reader.readLine();
           if (line == null) {
