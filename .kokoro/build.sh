@@ -62,8 +62,9 @@ javadoc)
 integration)
     mvn -B ${INTEGRATION_TEST_ARGS} \
       -Penable-integration-tests \
-      -Dit.test=!ITBigQueryWriteNonQuotaRetryTest \
+      -Dit.test=!ITBigQueryWrite*RetryTest \
       -Dsurefire.failIfNoSpecifiedTests=false \
+      -Dfailsafe.failIfNoSpecifiedTests=false \
       -DtrimStackTrace=false \
       -Dclirr.skip=true \
       -Denforcer.skip=true \

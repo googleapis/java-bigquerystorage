@@ -71,7 +71,6 @@ import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.avro.util.Utf8;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.threeten.bp.Duration;
 import org.threeten.bp.Instant;
@@ -82,7 +81,6 @@ import org.threeten.bp.ZonedDateTime;
 import org.threeten.bp.format.DateTimeFormatter;
 
 /** Integration tests for BigQuery Storage API. */
-@Ignore
 public class ITBigQueryStorageTest {
 
   private static final Logger LOG = Logger.getLogger(ITBigQueryStorageTest.class.getName());
