@@ -227,7 +227,8 @@ public class StreamWriter implements AutoCloseable {
                   builder.traceId,
                   builder.compressorName,
                   clientSettings,
-                  builder.retrySettings));
+                  builder.retrySettings,
+                  builder.enableLargerRequest));
     } else {
       if (!isDefaultStream(streamName)) {
         log.warning(
@@ -629,6 +630,8 @@ public class StreamWriter implements AutoCloseable {
 
     private RetrySettings retrySettings = null;
 
+    private boolean enableLargerRequest = false;
+
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
       this.client = null;
@@ -788,6 +791,16 @@ public class StreamWriter implements AutoCloseable {
      */
     public Builder setRetrySettings(RetrySettings retrySettings) {
       this.retrySettings = retrySettings;
+      return this;
+    }
+
+    /**
+     * Enables 20MB request size.
+     * Project has to be explicitly enabled for the feature to work.
+     * @return
+     */
+    public Builder enableLargerRequest() {
+      this.enableLargerRequest = true;
       return this;
     }
 
