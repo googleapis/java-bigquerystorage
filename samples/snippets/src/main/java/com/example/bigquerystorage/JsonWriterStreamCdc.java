@@ -104,15 +104,15 @@ public class JsonWriterStreamCdc {
       String line = reader.readLine();
       while (line != null) {
         // As a best practice, send batches of records, instead of single records at a time.
-        JSONArray jsonArr = new JSONArray(line);
-        // for (int i = 0; i < 100; i++) {
-        //   JSONArray record = new JSONArray(line);
-        //   jsonArr.put(record);
-        //   line = reader.readLine();
-        //   if (line == null) {
-        //     break;
-        //   }
-        // }
+        JSONArray jsonArr = new JSONArray();
+        for (int i = 0; i < 100; i++) {
+          JSONObject record = new JSONObject(line);
+          jsonArr.put(record);
+          line = reader.readLine();
+          if (line == null) {
+            break;
+          }
+        }
         ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
         // The append method is asynchronous. Rather than waiting for the method to complete,
         // which can hurt performance, register a completion callback and continue streaming.
