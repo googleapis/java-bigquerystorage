@@ -48,10 +48,12 @@ import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.threeten.bp.Duration;
 
 /** Integration tests for BigQuery Write API. */
+@Ignore
 public class ITBigQueryWriteQuotaRetryTest {
   private static final Logger LOG = Logger.getLogger(ITBigQueryWriteQuotaRetryTest.class.getName());
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();

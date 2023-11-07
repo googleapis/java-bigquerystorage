@@ -263,21 +263,24 @@
     </profile>
     <profile>
       <id>custom-tests</id>
-      <build>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.2.1</version>
-          <configuration>
-            <excludes>
-              <exclude>**/ITBigQueryWriteQuotaRetryTest.java</exclude>
-              <exclude>**/ITBigQueryWriteNonQuotaRetryTest.java</exclude>
-            </excludes>
-          </configuration>
-        </plugin>
-      </plugins>
-      </build>
+      <properties>
+        <exclude.tests>**/ITBigQueryWrite*RetryTest.java</exclude.tests>
+      </properties>
+<!--      <build>-->
+<!--      <plugins>-->
+<!--        <plugin>-->
+<!--          <groupId>org.apache.maven.plugins</groupId>-->
+<!--          <artifactId>maven-surefire-plugin</artifactId>-->
+<!--          <version>3.2.1</version>-->
+<!--          <configuration>-->
+<!--            <excludes>-->
+<!--              <exclude>**/ITBigQueryWriteQuotaRetryTest.java</exclude>-->
+<!--              <exclude>**/ITBigQueryWriteNonQuotaRetryTest.java</exclude>-->
+<!--            </excludes>-->
+<!--          </configuration>-->
+<!--        </plugin>-->
+<!--      </plugins>-->
+<!--      </build>-->
     </profile>
   </profiles>
 
