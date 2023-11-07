@@ -39,6 +39,8 @@ import com.google.cloud.bigquery.storage.v1.Exceptions.StreamFinalizedException;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.DescriptorProtos.DescriptorProto;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import io.grpc.Status;
@@ -61,6 +63,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.threeten.bp.LocalDateTime;
+import org.apache.commons.lang.StringUtils;
 
 /** Integration tests for BigQuery Write API. */
 public class ITBigQueryWriteManualClientTest {
@@ -1540,5 +1543,39 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals("us", streamWriter1.getLocation());
     assertEquals("us", streamWriter2.getLocation());
     assertEquals("eu", streamWriter3.getLocation());
+  }
+
+  @Test
+  public void testLarge() throws IOException, InterruptedException, ExecutionException {
+    String tableName = "largeRequestTable";
+    TableId tableId = TableId.of(DATASET, tableName);
+    Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
+    Schema originalSchema = Schema.of(col1);
+    TableInfo tableInfo =
+        TableInfo.newBuilder(tableId, StandardTableDefinition.of(originalSchema)).build();
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    try (StreamWriter streamWriter =
+        StreamWriter.newBuilder(parent.toString() + "/_default")
+            .setWriterSchema(ProtoSchema.newBuilder().setProtoDescriptor(
+                DescriptorProto.newBuilder().addField(FieldDescriptorProto.newBuilder().setName("col1").setType(
+                    FieldDescriptorProto.Type.TYPE_STRING).build()).build()).build()).build()) {
+      List<Integer> sizeSet = Arrays.asList(200, 10 * 1024 * 1024, 19 * 1024 * 1024);
+      for (int i = 0; i < 10; i++) {
+        int size = sizeSet.get(new Random().nextInt(3));
+        streamWriter.append(CreateProtoRows(new String[] {StringUtils.repeat("*", 10)}));
+      }
+    }
+
+    try (StreamWriter streamWriter =
+        StreamWriter.newBuilder(writeStream.getName())
+            .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
+            .build()) {
+      // Currently there is a bug that reconnection must wait 5 seconds to get the real row count.
+      Thread.sleep(5000L);
+      ApiFuture<AppendRowsResponse> response =
+          streamWriter.append(CreateProtoRows(new String[] {"bbb"}), 1L);
+      assertEquals(1L, response.get().getAppendResult().getOffset().getValue());
+    }
   }
 }
