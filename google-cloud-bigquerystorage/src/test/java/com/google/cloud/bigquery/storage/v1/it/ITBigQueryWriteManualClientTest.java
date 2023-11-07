@@ -1574,15 +1574,16 @@ public class ITBigQueryWriteManualClientTest {
             .setWriterSchema(CreateProtoSchemaWithColField())
             .enableLargerRequest()
             .build()) {
-      List<Integer> sizeSet = Arrays.asList(200, 10 * 1024 * 1024, 19 * 1024 * 1024);
+      List<Integer> sizeSet = Arrays.asList(7 * 1024 * 1024, 19 * 1024 * 1024);
       List<ApiFuture<AppendRowsResponse>> responseList =
           new ArrayList<ApiFuture<AppendRowsResponse>>();
-      for (int i = 0; i < 20; i++) {
-        int size = sizeSet.get(new Random().nextInt(3));
-        LOG.info("Sending request of size: " + size);
+      for (int i = 0; i < 10; i++) {
         responseList.add(
             streamWriter.append(
-                CreateProtoRows(new String[] {new String(new char[size]).replace("\0", "a")})));
+                CreateProtoRows(new String[] {new String(new char[sizeSet.get(0)]).replace("\0", "a")})));
+        responseList.add(
+            streamWriter.append(
+                CreateProtoRows(new String[] {new String(new char[sizeSet.get(1)]).replace("\0", "a")})));
       }
       for (int i = 0; i < 20; i++) {
         assertFalse(responseList.get(i).get().hasError());
