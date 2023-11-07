@@ -779,7 +779,7 @@ public class StreamWriter implements AutoCloseable {
      * RetrySettings retrySettings = RetrySettings.newBuilder()
      *      .setInitialRetryDelay(Duration.ofMillis(500)) // applies to backoff retry
      *      .setRetryDelayMultiplier(1.1) // applies to backoff retry
-     *      .setMaxAttempts(5) // applies to both retrys
+     *      .setMaxAttempts(5) // applies to both retries
      *      .setMaxRetryDelay(Duration.ofMinutes(1)) // applies to backoff retry .build();
      * </pre>
      *
