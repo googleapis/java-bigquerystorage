@@ -375,11 +375,6 @@ public class StreamWriter implements AutoCloseable {
     if (!Objects.equals(
         this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId(),
         builder.traceId)) {
-      log.info(
-          String.format(
-              "first: %s, second: %s",
-              this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId(),
-              builder.traceId));
       paramsValidatedFailed = "Trace id";
     } else if (!Objects.equals(
         this.singleConnectionOrConnectionPool.connectionWorkerPool().limitExceededBehavior(),
