@@ -394,9 +394,10 @@ public class ConnectionWorkerPoolTest {
                   String.format("projects/p1/datasets/d1/tables/t%s/streams/_default", i),
                   externalClient)
               .setWriterSchema(createProtoSchema())
-              .setTraceId(TEST_TRACE_ID)
               .setEnableConnectionPool(true)
+              .setTraceId(TEST_TRACE_ID)
               .build();
+
       streamWriterList.add(sw);
     }
 
