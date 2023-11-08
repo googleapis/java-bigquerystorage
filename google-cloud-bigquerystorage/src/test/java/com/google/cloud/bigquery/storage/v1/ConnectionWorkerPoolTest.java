@@ -389,7 +389,7 @@ public class ConnectionWorkerPoolTest {
     // Create some stream writers.
     List<StreamWriter> streamWriterList = new ArrayList<>();
     for (int i = 0; i < 4; i++) {
-      StreamWriter sw =
+      streamWriterList.add(
           StreamWriter.newBuilder(
                   String.format("projects/p1/datasets/d1/tables/t%s/streams/_default", i),
                   externalClient)
@@ -397,8 +397,7 @@ public class ConnectionWorkerPoolTest {
               .setWriterSchema(createProtoSchema())
               .setTraceId(TEST_TRACE_ID)
               .setLocation("us")
-              .build();
-      streamWriterList.add(sw);
+              .build());
     }
 
     for (long i = 0; i < appendCount; i++) {
