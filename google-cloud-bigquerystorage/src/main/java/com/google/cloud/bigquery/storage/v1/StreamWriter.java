@@ -372,6 +372,11 @@ public class StreamWriter implements AutoCloseable {
   // Validate whether the fetched connection pool matched certain properties.
   private void validateFetchedConnectonPool(StreamWriter.Builder builder) {
     String paramsValidatedFailed = "";
+    log.info(
+        String.format(
+            "before first: %s, second: %s",
+            this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId(),
+            builder.traceId));
     if (!Objects.equals(
         this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId(),
         builder.traceId)) {
