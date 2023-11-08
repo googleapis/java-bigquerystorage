@@ -261,12 +261,6 @@
         <module>tutorials</module>
       </modules>
     </profile>
-    <profile>
-      <id>custom-tests</id>
-      <properties>
-        <exclude.tests>**/ITBigQueryWrite*RetryTest.java</exclude.tests>
-      </properties>
-    </profile>
   </profiles>
 
 </project>
