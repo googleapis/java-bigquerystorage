@@ -395,6 +395,7 @@ public class ConnectionWorkerPoolTest {
                   externalClient)
               .setWriterSchema(createProtoSchema())
               .setTraceId(TEST_TRACE_ID)
+              .setLocation("us")
               .setEnableConnectionPool(true)
               .build();
       streamWriterList.add(sw);
