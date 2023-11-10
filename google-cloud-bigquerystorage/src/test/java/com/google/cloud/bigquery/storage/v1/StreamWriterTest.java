@@ -54,6 +54,8 @@ import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -74,6 +76,7 @@ import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.threeten.bp.Duration;
+import org.threeten.bp.temporal.TemporalUnit;
 
 @RunWith(JUnit4.class)
 public class StreamWriterTest {
@@ -86,9 +89,10 @@ public class StreamWriterTest {
   private static final String EXPLICIT_STREAM = "projects/p/datasets/d1/tables/t1/streams/s1";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
   private static final int MAX_RETRY_NUM_ATTEMPTS = 3;
+  private static final long INITIAL_RETRY_MILLIS = 500;
   private static final RetrySettings retrySettings =
       RetrySettings.newBuilder()
-          .setInitialRetryDelay(Duration.ofMillis(500))
+          .setInitialRetryDelay(Duration.ofMillis(INITIAL_RETRY_MILLIS))
           .setRetryDelayMultiplier(1.1)
           .setMaxAttempts(MAX_RETRY_NUM_ATTEMPTS)
           .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
@@ -2000,6 +2004,39 @@ public class StreamWriterTest {
     assertEquals(
         Status.Code.RESOURCE_EXHAUSTED,
         ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+  }
+
+  @Test
+  public void testExclusiveAppendQuotaErrorRetryExponentialBackoff() throws Exception {
+    testBigQueryWrite.setReturnErrorDuringExclusiveStreamRetry(true);
+    StreamWriter writer = getTestStreamWriterExclusiveRetryEnabled();
+
+    testBigQueryWrite.addResponse(
+        new DummyResponseSupplierWillFailThenSucceed(
+            new FakeBigQueryWriteImpl.Response(createAppendResponse(0)),
+            /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS + 1,
+            com.google.rpc.Status.newBuilder().setCode(Code.RESOURCE_EXHAUSTED.ordinal()).build()));
+
+    ApiFuture<AppendRowsResponse> future = writer.append(createProtoRows(new String[] {String.valueOf(0)}), 0);
+
+    ExecutionException ex =
+        assertThrows(
+            ExecutionException.class,
+            () -> {
+              future.get();
+            });
+    assertEquals(
+        Status.Code.RESOURCE_EXHAUSTED,
+        ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+
+    ArrayList<Instant> instants = testBigQueryWrite.getLatestRequestReceivedInstants();
+    Instant previousInstant = instants.get(0);
+    for (int i = 1; i < instants.size(); i++) {
+      Instant currentInstant = instants.get(i);
+      assertThat(previousInstant.plus(INITIAL_RETRY_MILLIS, ChronoUnit.MILLIS)).isLessThan(currentInstant);
+      previousInstant = currentInstant;
+    }
+
   }
 
   @Test
