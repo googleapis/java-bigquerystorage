@@ -76,7 +76,6 @@ import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.threeten.bp.Duration;
-import org.threeten.bp.temporal.TemporalUnit;
 
 @RunWith(JUnit4.class)
 public class StreamWriterTest {
@@ -2017,7 +2016,8 @@ public class StreamWriterTest {
             /* totalFailCount= */ MAX_RETRY_NUM_ATTEMPTS + 1,
             com.google.rpc.Status.newBuilder().setCode(Code.RESOURCE_EXHAUSTED.ordinal()).build()));
 
-    ApiFuture<AppendRowsResponse> future = writer.append(createProtoRows(new String[] {String.valueOf(0)}), 0);
+    ApiFuture<AppendRowsResponse> future =
+        writer.append(createProtoRows(new String[] {String.valueOf(0)}), 0);
 
     ExecutionException ex =
         assertThrows(
@@ -2035,10 +2035,10 @@ public class StreamWriterTest {
     assertEquals(instants.size(), MAX_RETRY_NUM_ATTEMPTS + 1);
     for (int i = 1; i < instants.size(); i++) {
       Instant currentInstant = instants.get(i);
-      assertThat(previousInstant.plus(INITIAL_RETRY_MILLIS, ChronoUnit.MILLIS)).isLessThan(currentInstant);
+      assertThat(previousInstant.plus(INITIAL_RETRY_MILLIS, ChronoUnit.MILLIS))
+          .isLessThan(currentInstant);
       previousInstant = currentInstant;
     }
-
   }
 
   @Test
