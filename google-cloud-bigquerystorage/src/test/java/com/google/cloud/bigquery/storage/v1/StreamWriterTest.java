@@ -55,7 +55,6 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -2038,10 +2037,10 @@ public class StreamWriterTest {
     double minExpectedDelay = INITIAL_RETRY_MILLIS;
     for (int i = 1; i < instants.size(); i++) {
       Instant currentInstant = instants.get(i);
-      double differenceInMillis = java.time.Duration.between(previousInstant, currentInstant).toMillis();
+      double differenceInMillis =
+          java.time.Duration.between(previousInstant, currentInstant).toMillis();
       minExpectedDelay = minExpectedDelay * RETRY_MULTIPLIER * .9;
-      assertThat(differenceInMillis)
-          .isGreaterThan(minExpectedDelay);
+      assertThat(differenceInMillis).isGreaterThan(minExpectedDelay);
       previousInstant = currentInstant;
     }
   }

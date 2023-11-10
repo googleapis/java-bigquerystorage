@@ -974,9 +974,10 @@ class ConnectionWorker implements AutoCloseable {
           // Trigger exponential backoff in append loop when request is resent for quota errors.
           // createNextAttempt correctly initiales the retry delay; createfirstAttempt does not
           // include a positive delay, just 0.
-          requestWrapper.attemptSettings = requestWrapper.attemptSettings == null ?
-              requestWrapper.retryAlgorithm.createFirstAttempt() :
-              requestWrapper.attemptSettings;
+          requestWrapper.attemptSettings =
+              requestWrapper.attemptSettings == null
+                  ? requestWrapper.retryAlgorithm.createFirstAttempt()
+                  : requestWrapper.attemptSettings;
           requestWrapper.attemptSettings =
               requestWrapper.retryAlgorithm.createNextAttempt(requestWrapper.attemptSettings);
           requestWrapper.blockMessageSendDeadline =
