@@ -1573,17 +1573,18 @@ public class ITBigQueryWriteManualClientTest {
         StreamWriter.newBuilder(parent.toString() + "/_default")
             .setWriterSchema(CreateProtoSchemaWithColField())
             .build()) {
-      List<Integer> sizeSet = Arrays.asList(15 * 1024 * 1024);
+      List<Integer> sizeSet = Arrays.asList(15 * 1024 * 1024, 1024);
       List<ApiFuture<AppendRowsResponse>> responseList =
           new ArrayList<ApiFuture<AppendRowsResponse>>();
       Random r = new Random();
       for (int i = 0; i < 50; i++) {
+        int size = sizeSet.get(r.nextInt(2));
+        LOG.info("Sending size: " + size);
         responseList.add(
             streamWriter.append(
                 CreateProtoRows(
                     new String[] {
-                      new String(new char[sizeSet.get(0)])
-                          .replace('\u0000', (char) (r.nextInt(26) + 'a'))
+                      new String(new char[size]).replace('\u0000', (char) (r.nextInt(26) + 'a'))
                     })));
       }
       for (int i = 0; i < 50; i++) {
