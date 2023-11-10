@@ -89,12 +89,14 @@ public class StreamWriterTest {
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
   private static final int MAX_RETRY_NUM_ATTEMPTS = 3;
   private static final long INITIAL_RETRY_MILLIS = 500;
+  private static final double RETRY_MULTIPLIER = 1.1;
+  private static final int MAX_RETRY_DELAY_MINUTES = 5;
   private static final RetrySettings retrySettings =
       RetrySettings.newBuilder()
           .setInitialRetryDelay(Duration.ofMillis(INITIAL_RETRY_MILLIS))
-          .setRetryDelayMultiplier(1.1)
+          .setRetryDelayMultiplier(RETRY_MULTIPLIER)
           .setMaxAttempts(MAX_RETRY_NUM_ATTEMPTS)
-          .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
+          .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(MAX_RETRY_DELAY_MINUTES))
           .build();
   private FakeScheduledExecutorService fakeExecutor;
   private FakeBigQueryWrite testBigQueryWrite;
@@ -2033,10 +2035,13 @@ public class StreamWriterTest {
     Instant previousInstant = instants.get(0);
     // Include initial attempt
     assertEquals(instants.size(), MAX_RETRY_NUM_ATTEMPTS + 1);
+    double minExpectedDelay = INITIAL_RETRY_MILLIS;
     for (int i = 1; i < instants.size(); i++) {
       Instant currentInstant = instants.get(i);
-      assertThat(previousInstant.plus(INITIAL_RETRY_MILLIS, ChronoUnit.MILLIS))
-          .isLessThan(currentInstant);
+      double differenceInMillis = java.time.Duration.between(previousInstant, currentInstant).toMillis();
+      minExpectedDelay = minExpectedDelay * RETRY_MULTIPLIER * .9;
+      assertThat(differenceInMillis)
+          .isGreaterThan(minExpectedDelay);
       previousInstant = currentInstant;
     }
   }
