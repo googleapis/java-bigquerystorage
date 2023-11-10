@@ -2031,6 +2031,8 @@ public class StreamWriterTest {
 
     ArrayList<Instant> instants = testBigQueryWrite.getLatestRequestReceivedInstants();
     Instant previousInstant = instants.get(0);
+    // Include initial attempt
+    assertEquals(instants.size(), MAX_RETRY_NUM_ATTEMPTS + 1);
     for (int i = 1; i < instants.size(); i++) {
       Instant currentInstant = instants.get(i);
       assertThat(previousInstant.plus(INITIAL_RETRY_MILLIS, ChronoUnit.MILLIS)).isLessThan(currentInstant);
