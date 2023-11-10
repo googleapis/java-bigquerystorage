@@ -1614,8 +1614,7 @@ public class ITBigQueryWriteManualClientTest {
       TableInfo tableInfo =
           TableInfo.newBuilder(tableId, StandardTableDefinition.of(originalSchema)).build();
       bigquery.create(tableInfo);
-      TableName parent =
-          TableName.of(ServiceOptions.getDefaultProjectId(), datasetId.getDataset(), tableName);
+      TableName parent = TableName.of(datasetId.getProject(), datasetId.getDataset(), tableName);
       try (StreamWriter streamWriter =
           StreamWriter.newBuilder(parent.toString() + "/_default")
               .setWriterSchema(CreateProtoSchemaWithColField())
@@ -1634,9 +1633,11 @@ public class ITBigQueryWriteManualClientTest {
           // This verifies that the Beam connector can consume this custom exception's grpc
           // StatusCode
           assertEquals(Code.INVALID_ARGUMENT, actualError.getStatus().getCode());
-          assertEquals(
-              "MessageSize is too large. Max allow: 10000000 Actual: 19922986",
-              actualError.getStatus().getDescription());
+          assertThat(
+              actualError
+                  .getStatus()
+                  .getDescription()
+                  .contains("AppendRows request too large: 19923131 limit 10485760"));
         }
       }
     } finally {

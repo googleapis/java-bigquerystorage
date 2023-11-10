@@ -235,8 +235,6 @@ class ConnectionWorker implements AutoCloseable {
   private RuntimeException testOnlyRunTimeExceptionInAppendLoop = null;
   private long testOnlyAppendLoopSleepTime = 0;
 
-  private boolean enableLargerRequest = false;
-
   /*
    * Tracks the number of responses to ignore in the case of exclusive stream retry
    */
@@ -262,10 +260,7 @@ class ConnectionWorker implements AutoCloseable {
 
   /** The maximum size of one request. Defined by the API. */
   public long getApiMaxRequestBytes() {
-    if (enableLargerRequest) {
-      return 20L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
-    }
-    return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
+    return 20L * 1000L * 1000L; // 20 megabytes (https://en.wikipedia.org/wiki/Megabyte)
   }
 
   static String extractProjectName(String streamName) {
@@ -294,8 +289,7 @@ class ConnectionWorker implements AutoCloseable {
       String traceId,
       @Nullable String compressorName,
       BigQueryWriteSettings clientSettings,
-      RetrySettings retrySettings,
-      boolean enableLargerRequest)
+      RetrySettings retrySettings)
       throws IOException {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
@@ -318,7 +312,6 @@ class ConnectionWorker implements AutoCloseable {
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.compressorName = compressorName;
     this.retrySettings = retrySettings;
-    this.enableLargerRequest = enableLargerRequest;
     // Always recreate a client for connection worker.
     HashMap<String, String> newHeaders = new HashMap<>();
     newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());

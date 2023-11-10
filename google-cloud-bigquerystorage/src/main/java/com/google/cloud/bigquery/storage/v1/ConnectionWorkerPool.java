@@ -301,10 +301,7 @@ public class ConnectionWorkerPool {
     if (connectionWorkerPool.size() < currentMaxConnectionCount) {
       // Always create a new connection if we haven't reached current maximum.
       return createConnectionWorker(
-          streamWriter.getStreamName(),
-          streamWriter.getLocation(),
-          streamWriter.getProtoSchema(),
-          streamWriter.getEnableLargerRequest());
+          streamWriter.getStreamName(), streamWriter.getLocation(), streamWriter.getProtoSchema());
     } else {
       ConnectionWorker existingBestConnection =
           pickBestLoadConnection(
@@ -323,8 +320,7 @@ public class ConnectionWorkerPool {
         return createConnectionWorker(
             streamWriter.getStreamName(),
             streamWriter.getLocation(),
-            streamWriter.getProtoSchema(),
-            streamWriter.getEnableLargerRequest());
+            streamWriter.getProtoSchema());
       } else {
         // Stick to the original connection if all the connections are overwhelmed.
         if (existingConnectionWorker != null) {
@@ -380,8 +376,7 @@ public class ConnectionWorkerPool {
    * computeIfAbsent(...) which is at most once per key.
    */
   private ConnectionWorker createConnectionWorker(
-      String streamName, String location, ProtoSchema writeSchema, boolean enableLargeRequest)
-      throws IOException {
+      String streamName, String location, ProtoSchema writeSchema) throws IOException {
     if (enableTesting) {
       // Though atomic integer is super lightweight, add extra if check in case adding future logic.
       testValueCreateConnectionCount.getAndIncrement();
@@ -398,8 +393,7 @@ public class ConnectionWorkerPool {
             traceId,
             compressorName,
             clientSettings,
-            retrySettings,
-            enableLargeRequest);
+            retrySettings);
     connectionWorkerPool.add(connectionWorker);
     log.info(
         String.format(
