@@ -1572,13 +1572,12 @@ public class ITBigQueryWriteManualClientTest {
     try (StreamWriter streamWriter =
         StreamWriter.newBuilder(parent.toString() + "/_default")
             .setWriterSchema(CreateProtoSchemaWithColField())
-            .enableLargerRequest()
             .build()) {
-      List<Integer> sizeSet = Arrays.asList(7 * 1024 * 1024, 19 * 1024 * 1024);
+      List<Integer> sizeSet = Arrays.asList(15 * 1024 * 1024);
       List<ApiFuture<AppendRowsResponse>> responseList =
           new ArrayList<ApiFuture<AppendRowsResponse>>();
       Random r = new Random();
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < 50; i++) {
         responseList.add(
             streamWriter.append(
                 CreateProtoRows(
@@ -1586,15 +1585,8 @@ public class ITBigQueryWriteManualClientTest {
                       new String(new char[sizeSet.get(0)])
                           .replace('\u0000', (char) (r.nextInt(26) + 'a'))
                     })));
-        responseList.add(
-            streamWriter.append(
-                CreateProtoRows(
-                    new String[] {
-                      new String(new char[sizeSet.get(1)])
-                          .replace('\u0000', (char) (r.nextInt(26) + 'a'))
-                    })));
       }
-      for (int i = 0; i < 20; i++) {
+      for (int i = 0; i < 50; i++) {
         assertFalse(responseList.get(i).get().hasError());
       }
       TableResult queryResult =
@@ -1603,108 +1595,52 @@ public class ITBigQueryWriteManualClientTest {
                   .build());
       Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
       assertTrue(queryIter.hasNext());
-      assertEquals("20", queryIter.next().get(0).getStringValue());
+      assertEquals("50", queryIter.next().get(0).getStringValue());
     }
-  }
-
-  @Test
-  public void testLargeRequestMultiplexing()
-      throws IOException, InterruptedException, ExecutionException {
-    Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
-    Schema tableSchema = Schema.of(col1);
-
-    String tableName1 = "table1";
-    TableId tableId1 = TableId.of(DATASET, tableName1);
-    TableInfo tableInfo1 =
-        TableInfo.newBuilder(tableId1, StandardTableDefinition.of(tableSchema)).build();
-    bigquery.create(tableInfo1);
-    TableName parent1 = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName1);
-    ConnectionWorkerPool.setOptions(
-        ConnectionWorkerPool.Settings.builder()
-            .setMinConnectionsPerRegion(1)
-            .setMaxConnectionsPerRegion(2)
-            .build());
-    StreamWriter streamWriter1 =
-        StreamWriter.newBuilder(parent1.toString() + "/_default")
-            .setWriterSchema(CreateProtoSchemaWithColField())
-            .enableLargerRequest()
-            .setEnableConnectionPool(true)
-            .build();
-
-    String tableName2 = "table2";
-    TableId tableId2 = TableId.of(DATASET, tableName2);
-    TableInfo tableInfo2 =
-        TableInfo.newBuilder(tableId2, StandardTableDefinition.of(tableSchema)).build();
-    bigquery.create(tableInfo2);
-    TableName parent2 = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName2);
-    StreamWriter streamWriter2 =
-        StreamWriter.newBuilder(parent2.toString() + "/_default")
-            .setWriterSchema(CreateProtoSchemaWithColField())
-            .setEnableConnectionPool(true)
-            .build();
-
-    List<ApiFuture<AppendRowsResponse>> responseList =
-        new ArrayList<ApiFuture<AppendRowsResponse>>();
-    for (int i = 0; i < 10; i++) {
-      responseList.add(
-          streamWriter2.append(
-              CreateProtoRows(new String[] {new String(new char[15 * 1024]).replace("\0", "a")})));
-      responseList.add(
-          streamWriter1.append(
-              CreateProtoRows(
-                  new String[] {new String(new char[15 * 1024 * 1024]).replace("\0", "a")})));
-    }
-    for (int i = 0; i < 20; i++) {
-      assertFalse(responseList.get(i).get().hasError());
-    }
-    TableResult queryResult =
-        bigquery.query(
-            QueryJobConfiguration.newBuilder("SELECT count(*) from " + DATASET + '.' + tableName1)
-                .build());
-    Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
-    assertTrue(queryIter.hasNext());
-    assertEquals("10", queryIter.next().get(0).getStringValue());
-
-    queryResult =
-        bigquery.query(
-            QueryJobConfiguration.newBuilder("SELECT count(*) from " + DATASET + '.' + tableName2)
-                .build());
-    queryIter = queryResult.getValues().iterator();
-    assertTrue(queryIter.hasNext());
-    assertEquals("10", queryIter.next().get(0).getStringValue());
   }
 
   @Test
   public void testDefaultRequestLimit()
       throws IOException, InterruptedException, ExecutionException {
-    String tableName = "requestTable";
-    TableId tableId = TableId.of(DATASET, tableName);
-    Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
-    Schema originalSchema = Schema.of(col1);
-    TableInfo tableInfo =
-        TableInfo.newBuilder(tableId, StandardTableDefinition.of(originalSchema)).build();
-    bigquery.create(tableInfo);
-    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
-    try (StreamWriter streamWriter =
-        StreamWriter.newBuilder(parent.toString() + "/_default")
-            .setWriterSchema(CreateProtoSchemaWithColField())
-            .build()) {
-      ApiFuture<AppendRowsResponse> response =
-          streamWriter.append(
-              CreateProtoRows(
-                  new String[] {new String(new char[19 * 1024 * 1024]).replace("\0", "a")}));
-      try {
-        response.get();
-        Assert.fail("Large request should fail with InvalidArgumentError");
-      } catch (ExecutionException ex) {
-        assertEquals(io.grpc.StatusRuntimeException.class, ex.getCause().getClass());
-        io.grpc.StatusRuntimeException actualError = (io.grpc.StatusRuntimeException) ex.getCause();
-        // This verifies that the Beam connector can consume this custom exception's grpc StatusCode
-        assertEquals(Code.INVALID_ARGUMENT, actualError.getStatus().getCode());
-        assertEquals(
-            "MessageSize is too large. Max allow: 10000000 Actual: 19922986",
-            actualError.getStatus().getDescription());
+    DatasetId datasetId =
+        DatasetId.of("bq-write-api-java-retry-test", RemoteBigQueryHelper.generateDatasetName());
+    DatasetInfo datasetInfo = DatasetInfo.newBuilder(datasetId).build();
+    bigquery.create(datasetInfo);
+    try {
+      String tableName = "requestTable";
+      TableId tableId = TableId.of(datasetId.getProject(), datasetId.getDataset(), tableName);
+      Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
+      Schema originalSchema = Schema.of(col1);
+      TableInfo tableInfo =
+          TableInfo.newBuilder(tableId, StandardTableDefinition.of(originalSchema)).build();
+      bigquery.create(tableInfo);
+      TableName parent =
+          TableName.of(ServiceOptions.getDefaultProjectId(), datasetId.getDataset(), tableName);
+      try (StreamWriter streamWriter =
+          StreamWriter.newBuilder(parent.toString() + "/_default")
+              .setWriterSchema(CreateProtoSchemaWithColField())
+              .build()) {
+        ApiFuture<AppendRowsResponse> response =
+            streamWriter.append(
+                CreateProtoRows(
+                    new String[] {new String(new char[19 * 1024 * 1024]).replace("\0", "a")}));
+        try {
+          response.get();
+          Assert.fail("Large request should fail with InvalidArgumentError");
+        } catch (ExecutionException ex) {
+          assertEquals(io.grpc.StatusRuntimeException.class, ex.getCause().getClass());
+          io.grpc.StatusRuntimeException actualError =
+              (io.grpc.StatusRuntimeException) ex.getCause();
+          // This verifies that the Beam connector can consume this custom exception's grpc
+          // StatusCode
+          assertEquals(Code.INVALID_ARGUMENT, actualError.getStatus().getCode());
+          assertEquals(
+              "MessageSize is too large. Max allow: 10000000 Actual: 19922986",
+              actualError.getStatus().getDescription());
+        }
       }
+    } finally {
+      RemoteBigQueryHelper.forceDelete(bigquery, datasetId.toString());
     }
   }
 }

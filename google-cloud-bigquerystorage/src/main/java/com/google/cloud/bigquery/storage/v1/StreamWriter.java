@@ -492,11 +492,6 @@ public class StreamWriter implements AutoCloseable {
     return location;
   }
 
-  /** @return if larger request limit is enabled. */
-  public boolean getEnableLargerRequest() {
-    return enableLargerRequest;
-  }
-
   /** @return the missing value interpretation map used for the writer. */
   public Map<String, AppendRowsRequest.MissingValueInterpretation>
       getMissingValueInterpretationMap() {
@@ -640,8 +635,6 @@ public class StreamWriter implements AutoCloseable {
         MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
 
     private RetrySettings retrySettings = null;
-
-    private boolean enableLargerRequest = false;
 
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
@@ -802,16 +795,6 @@ public class StreamWriter implements AutoCloseable {
      */
     public Builder setRetrySettings(RetrySettings retrySettings) {
       this.retrySettings = retrySettings;
-      return this;
-    }
-
-    /**
-     * Enables 20MB request size. Project has to be explicitly enabled for the feature to work.
-     *
-     * @return
-     */
-    public Builder enableLargerRequest() {
-      this.enableLargerRequest = true;
       return this;
     }
 
