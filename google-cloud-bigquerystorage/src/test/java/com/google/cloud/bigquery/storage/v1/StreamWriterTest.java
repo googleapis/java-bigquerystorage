@@ -88,7 +88,7 @@ public class StreamWriterTest {
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
   private static final int MAX_RETRY_NUM_ATTEMPTS = 3;
   private static final long INITIAL_RETRY_MILLIS = 500;
-  private static final double RETRY_MULTIPLIER = 1.1;
+  private static final double RETRY_MULTIPLIER = 1.3;
   private static final int MAX_RETRY_DELAY_MINUTES = 5;
   private static final RetrySettings retrySettings =
       RetrySettings.newBuilder()
@@ -2039,8 +2039,8 @@ public class StreamWriterTest {
       Instant currentInstant = instants.get(i);
       double differenceInMillis =
           java.time.Duration.between(previousInstant, currentInstant).toMillis();
-      minExpectedDelay = minExpectedDelay * RETRY_MULTIPLIER * .9;
       assertThat(differenceInMillis).isGreaterThan(minExpectedDelay);
+      minExpectedDelay = (minExpectedDelay * RETRY_MULTIPLIER);
       previousInstant = currentInstant;
     }
   }
