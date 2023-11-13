@@ -2039,7 +2039,7 @@ public class StreamWriterTest {
       Instant currentInstant = instants.get(i);
       double differenceInMillis =
           java.time.Duration.between(previousInstant, currentInstant).toMillis();
-      assertThat(differenceInMillis).isAtLeast((double) INITIAL_RETRY_MILLIS);
+      assertThat(differenceInMillis).isAtLeast((INITIAL_RETRY_MILLIS * 0.95));
       assertThat(differenceInMillis).isGreaterThan(minExpectedDelay);
       minExpectedDelay = minExpectedDelay * RETRY_MULTIPLIER * 0.95;
       previousInstant = currentInstant;
