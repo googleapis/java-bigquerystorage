@@ -981,6 +981,12 @@ class ConnectionWorker implements AutoCloseable {
                       : requestWrapper.attemptSettings);
           requestWrapper.blockMessageSendDeadline =
               Instant.now().plusMillis(requestWrapper.attemptSettings.getRetryDelay().toMillis());
+          log.info(
+              "Messages blocked for retry for "
+                  + java.time.Duration.between(
+                      java.time.Instant.now(), requestWrapper.blockMessageSendDeadline)
+                  + " until "
+                  + requestWrapper.blockMessageSendDeadline);
         }
 
         Long offset =
