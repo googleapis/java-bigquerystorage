@@ -2034,14 +2034,14 @@ public class StreamWriterTest {
     Instant previousInstant = instants.get(0);
     // Include initial attempt
     assertEquals(instants.size(), MAX_RETRY_NUM_ATTEMPTS + 1);
-    double minExpectedDelay = INITIAL_RETRY_MILLIS;
+    double minExpectedDelay = INITIAL_RETRY_MILLIS * 0.95;
     for (int i = 1; i < instants.size(); i++) {
       Instant currentInstant = instants.get(i);
       double differenceInMillis =
           java.time.Duration.between(previousInstant, currentInstant).toMillis();
-      assertThat(differenceInMillis).isAtLeast((INITIAL_RETRY_MILLIS * 0.95));
+      assertThat(differenceInMillis).isAtLeast((double) INITIAL_RETRY_MILLIS);
       assertThat(differenceInMillis).isGreaterThan(minExpectedDelay);
-      minExpectedDelay = minExpectedDelay * RETRY_MULTIPLIER * 0.95;
+      minExpectedDelay = minExpectedDelay * RETRY_MULTIPLIER;
       previousInstant = currentInstant;
     }
   }
