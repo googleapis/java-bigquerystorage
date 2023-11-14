@@ -114,13 +114,13 @@ clirr)
     ;;
 retry_quota)
     mvn -B ${INTEGRATION_TEST_ARGS} \
-      -DTest=ITBigQueryWriteQuotaRetryTest \
+      -Dtest=ITBigQueryWriteQuotaRetryTest \
       test
     RETURN_CODE=$?
     ;;
 retry_non_quota)
     mvn -B ${INTEGRATION_TEST_ARGS} \
-      -DTest=ITBigQueryWriteNonQuotaRetryTest \
+      -Dtest=ITBigQueryWriteNonQuotaRetryTest \
       test
     RETURN_CODE=$?
     ;;
