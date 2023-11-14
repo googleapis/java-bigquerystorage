@@ -114,24 +114,14 @@ clirr)
     ;;
 retry_quota)
     mvn -B ${INTEGRATION_TEST_ARGS} \
-      -Penable-integration-tests \
-      -DtrimStackTrace=false \
-      -Dclirr.skip=true \
-      -Denforcer.skip=true \
-      -Dit.test=ITBigQueryWriteQuotaRetryTest \
-      -fae \
-      verify
+      -DTest=ITBigQueryWriteQuotaRetryTest \
+      test
     RETURN_CODE=$?
     ;;
 retry_non_quota)
     mvn -B ${INTEGRATION_TEST_ARGS} \
-      -Penable-integration-tests \
-      -DtrimStackTrace=false \
-      -Dclirr.skip=true \
-      -Denforcer.skip=true \
-      -Dit.test=ITBigQueryWriteNonQuotaRetryTest \
-      -fae \
-      verify
+      -DTest=ITBigQueryWriteNonQuotaRetryTest \
+      test
     RETURN_CODE=$?
     ;;
 *)
