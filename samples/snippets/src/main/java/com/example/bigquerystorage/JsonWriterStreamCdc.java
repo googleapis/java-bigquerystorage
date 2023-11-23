@@ -28,17 +28,17 @@ import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.StandardTableDefinition;
 import com.google.cloud.bigquery.Table;
-import com.google.cloud.bigquery.TableConstraints;
 import com.google.cloud.bigquery.PrimaryKey;
 import com.google.cloud.bigquery.QueryJobConfiguration;
+import com.google.cloud.bigquery.TableConstraints;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableFieldSchema;
 import com.google.cloud.bigquery.storage.v1.TableName;
-import com.google.cloud.bigquery.storage.v1.TableSchema;
 import com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode;
+import com.google.cloud.bigquery.storage.v1.TableSchema;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
@@ -135,7 +135,7 @@ public class JsonWriterStreamCdc {
                 .setType(TableFieldSchema.Type.JSON)
                 .setMode(Mode.NULLABLE)
                 .build())
-        .addFields( // Additional _CHANGE_TYPE should be added as data write object.
+        .addFields(
             TableFieldSchema.newBuilder()
                 .setName(CHANGE_TYPE_PSEUDO_COLUMN)
                 .setType(TableFieldSchema.Type.STRING)
@@ -171,24 +171,24 @@ public class JsonWriterStreamCdc {
 
     return result;
   }
-}
 
-class AppendCompleteCallback implements ApiFutureCallback<AppendRowsResponse> {
-  private static final Object lock = new Object();
-  private static int batchCount = 0;
+  static class AppendCompleteCallback implements ApiFutureCallback<AppendRowsResponse> {
+    private static final Object lock = new Object();
+    private static int batchCount = 0;
 
-  public void onSuccess(AppendRowsResponse response) {
-    synchronized (lock) {
-      if (response.hasError()) {
-        System.out.format("Error: %s\n", response.getError());
-      } else {
-        ++batchCount;
-        System.out.format("Wrote batch %d\n", batchCount);
+    public void onSuccess(AppendRowsResponse response) {
+      synchronized (lock) {
+        if (response.hasError()) {
+          System.out.format("Error: %s\n", response.getError());
+        } else {
+          ++batchCount;
+          System.out.format("Wrote batch %d\n", batchCount);
+        }
       }
     }
-  }
 
-  public void onFailure(Throwable throwable) {
-    System.out.format("Error: %s\n", throwable.toString());
+    public void onFailure(Throwable throwable) {
+      System.out.format("Error: %s\n", throwable.toString());
+    }
   }
 }
