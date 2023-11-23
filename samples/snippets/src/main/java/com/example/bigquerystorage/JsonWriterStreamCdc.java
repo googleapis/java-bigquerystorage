@@ -27,6 +27,8 @@ import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.StandardTableDefinition;
 import com.google.cloud.bigquery.Table;
+import com.google.cloud.bigquery.TableConstraints;
+import com.google.cloud.bigquery.PrimaryKey;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
@@ -34,90 +36,158 @@ import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableFieldSchema;
 import com.google.cloud.bigquery.storage.v1.TableName;
 import com.google.cloud.bigquery.storage.v1.TableSchema;
+import com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.util.Arrays;
+import com.google.cloud.bigquery.QueryJobConfiguration;
+import com.google.cloud.bigquery.TableResult;
+import com.google.cloud.bigquery.BigQueryException;
+
 
 public class JsonWriterStreamCdc {
 
   private static final String CHANGE_TYPE_PSEUDO_COLUMN = "_change_type";
 
+  private static final String CREATE_TABLE_QUERY = "CREATE TABLE `%s.%s` (\n"
+      + " Customer_ID INT64 PRIMARY KEY NOT ENFORCED,\n"
+      + " Customer_Enrollment_Date DATE,\n"
+      + " Customer_Name STRING,\n"
+      + " Customer_Address STRING,\n"
+      + " Customer_Tier STRING,\n"
+      + " Active_Subscriptions JSON)\n"
+      + "OPTIONS(max_staleness = INTERVAL 15 MINUTE);";
+
   public static void main(String[] args) throws Exception {
-    if (args.length < 4) {
-      System.out.println("Arguments: project, dataset, table, source_file");
+    if (args.length != 4) {
+      System.out.println("Arguments: project, dataset, table, data_file");
+      return;
     }
 
     String projectId = args[0];
     String datasetName = args[1];
     String tableName = args[2];
     String dataFile = args[3];
+
     createDestinationTable(projectId, datasetName, tableName);
-    writeToDefaultStream(projectId, datasetName, tableName, dataFile);
+    JSONArray records = getRecordsFromDataFile(dataFile);
+    writeToDefaultStream(projectId, datasetName, tableName, records);
   }
 
   public static void createDestinationTable(
           String projectId, String datasetName, String tableName) {
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
-    // Create a schema that matches the source data.
-    Schema schema =
-            Schema.of(
-                    Field.of("Customer_ID", StandardSQLTypeName.NUMERIC),
-                    Field.of("Customer_Enrollment_Date", StandardSQLTypeName.NUMERIC),
-                    Field.of("Customer_Name", StandardSQLTypeName.STRING),
-                    Field.of("Customer_Address", StandardSQLTypeName.STRING),
-                    Field.of("Customer_Tier", StandardSQLTypeName.STRING));
-
-    // Create a table that uses this schema.
-    TableId tableId = TableId.of(projectId, datasetName, tableName);
-    Table table = bigquery.getTable(tableId);
-    if (table == null) {
-      TableInfo tableInfo =
-              TableInfo.newBuilder(tableId, StandardTableDefinition.of(schema)).build();
-      bigquery.create(tableInfo);
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(String.format(CREATE_TABLE_QUERY, datasetName, tableName)).build();
+    try {
+      bigquery.query(queryConfig);
+    } catch (BigQueryException | InterruptedException e) {
+      System.out.println("Query did not run \n" + e.toString());
     }
   }
 
   // writeToDefaultStream: Writes records from the source file to the destination table.
   public static void writeToDefaultStream(
-          String projectId, String datasetName, String tableName, String dataFile)
+          String projectId, String datasetName, String tableName, JSONArray data)
           throws DescriptorValidationException, InterruptedException, IOException {
-
-    BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
-
-    // Get the schema of the destination table and convert to the equivalent BigQueryStorage type.
-    Table table = bigquery.getTable(datasetName, tableName);
-    Schema schema = table.getDefinition().getSchema();
-    TableSchema tableSchema = BqToBqStorageSchemaConverter.convertTableSchema(schema);
+    // Build the table schema with an additional _change_type column.
+    TableSchema tableSchema = TableSchema.newBuilder()
+        .addFields(
+            TableFieldSchema.newBuilder()
+                .setName("Customer_ID")
+                .setType(TableFieldSchema.Type.INT64)
+                .setMode(Mode.NULLABLE)
+                .build())
+        .addFields(
+            TableFieldSchema.newBuilder()
+                .setName("Customer_Enrollment_Date")
+                .setType(TableFieldSchema.Type.DATE)
+                .setMode(Mode.NULLABLE)
+                .build())
+        .addFields(
+            TableFieldSchema.newBuilder()
+                .setName("Customer_Name")
+                .setType(TableFieldSchema.Type.STRING)
+                .setMode(Mode.NULLABLE)
+                .build())
+        .addFields(
+            TableFieldSchema.newBuilder()
+                .setName("Customer_Address")
+                .setType(TableFieldSchema.Type.STRING)
+                .setMode(Mode.NULLABLE)
+                .build())
+        .addFields(
+            TableFieldSchema.newBuilder()
+                .setName("Customer_Tier")
+                .setType(TableFieldSchema.Type.STRING)
+                .setMode(Mode.NULLABLE)
+                .build())
+        .addFields(
+            TableFieldSchema.newBuilder()
+                .setName("Active_Subscriptions")
+                .setType(TableFieldSchema.Type.JSON)
+                .setMode(Mode.NULLABLE)
+                .build())
+        .addFields( // Additional _CHANGE_TYPE should be added as data write object.
+            TableFieldSchema.newBuilder()
+                .setName(CHANGE_TYPE_PSEUDO_COLUMN)
+                .setType(TableFieldSchema.Type.STRING)
+                .setMode(Mode.NULLABLE)
+                .build())
+        .build();
 
     // Use the JSON stream writer to send records in JSON format.
     TableName parentTable = TableName.of(projectId, datasetName, tableName);
     try (JsonStreamWriter writer =
                  JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema)
                          .build()) {
-      // Read JSON data from the source file and send it to the Write API.
-      BufferedReader reader = new BufferedReader(new FileReader(dataFile));
-      String line = reader.readLine();
-      while (line != null) {
-        // As a best practice, send batches of records, instead of single records at a time.
-        JSONArray jsonArr = new JSONArray();
-        for (int i = 0; i < 100; i++) {
-          JSONObject record = new JSONObject(line);
-          jsonArr.put(record);
-          line = reader.readLine();
-          if (line == null) {
-            break;
-          }
-        }
-        ApiFuture<AppendRowsResponse> future = writer.append(jsonArr);
-        // The append method is asynchronous. Rather than waiting for the method to complete,
-        // which can hurt performance, register a completion callback and continue streaming.
-        ApiFutures.addCallback(
-                future, new AppendCompleteCallback(), MoreExecutors.directExecutor());
+
+      ApiFuture<AppendRowsResponse> future = writer.append(data);
+      // The append method is asynchronous. Rather than waiting for the method to complete,
+      // which can hurt performance, register a completion callback and continue streaming.
+      ApiFutures.addCallback(
+          future, new AppendCompleteCallback(), MoreExecutors.directExecutor());
+    }
+  }
+
+  public static JSONArray getRecordsFromDataFile(String dataFile) throws FileNotFoundException, IOException {
+    JSONArray result = new JSONArray();
+
+    BufferedReader reader = new BufferedReader(new FileReader(dataFile));
+    String line = reader.readLine();
+    while (line != null) {
+      JSONObject record = new JSONObject(line);
+      result.put(record);
+      line = reader.readLine();
+    }
+
+    return result;
+  }
+}
+
+class AppendCompleteCallback implements ApiFutureCallback<AppendRowsResponse> {
+  private static final Object lock = new Object();
+  private static int batchCount = 0;
+
+  public void onSuccess(AppendRowsResponse response) {
+    synchronized (lock) {
+      if (response.hasError()) {
+        System.out.format("Error: %s\n", response.getError());
+      } else {
+        ++batchCount;
+        System.out.format("Wrote batch %d\n", batchCount);
       }
     }
+  }
+
+  public void onFailure(Throwable throwable) {
+    System.out.format("Error: %s\n", throwable.toString());
   }
 }
