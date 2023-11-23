@@ -20,6 +20,7 @@ import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
 import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldList;
@@ -29,6 +30,7 @@ import com.google.cloud.bigquery.StandardTableDefinition;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableConstraints;
 import com.google.cloud.bigquery.PrimaryKey;
+import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
@@ -47,10 +49,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import java.util.Arrays;
-import com.google.cloud.bigquery.QueryJobConfiguration;
-import com.google.cloud.bigquery.TableResult;
-import com.google.cloud.bigquery.BigQueryException;
 
 
 public class JsonWriterStreamCdc {
@@ -85,7 +83,9 @@ public class JsonWriterStreamCdc {
   public static void createDestinationTable(
           String projectId, String datasetName, String tableName) {
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
-    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(String.format(CREATE_TABLE_QUERY, datasetName, tableName)).build();
+    QueryJobConfiguration queryConfig =
+        QueryJobConfiguration.newBuilder(
+            String.format(CREATE_TABLE_QUERY, datasetName, tableName)).build();
     try {
       bigquery.query(queryConfig);
     } catch (BigQueryException | InterruptedException e) {
@@ -157,7 +157,8 @@ public class JsonWriterStreamCdc {
     }
   }
 
-  public static JSONArray getRecordsFromDataFile(String dataFile) throws FileNotFoundException, IOException {
+  public static JSONArray getRecordsFromDataFile(String dataFile)
+      throws FileNotFoundException, IOException {
     JSONArray result = new JSONArray();
 
     BufferedReader reader = new BufferedReader(new FileReader(dataFile));
