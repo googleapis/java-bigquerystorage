@@ -22,17 +22,7 @@ import com.google.api.core.ApiFutures;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryException;
 import com.google.cloud.bigquery.BigQueryOptions;
-import com.google.cloud.bigquery.Field;
-import com.google.cloud.bigquery.FieldList;
-import com.google.cloud.bigquery.PrimaryKey;
 import com.google.cloud.bigquery.QueryJobConfiguration;
-import com.google.cloud.bigquery.Schema;
-import com.google.cloud.bigquery.StandardSQLTypeName;
-import com.google.cloud.bigquery.StandardTableDefinition;
-import com.google.cloud.bigquery.Table;
-import com.google.cloud.bigquery.TableConstraints;
-import com.google.cloud.bigquery.TableId;
-import com.google.cloud.bigquery.TableInfo;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableFieldSchema;
@@ -40,8 +30,6 @@ import com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode;
 import com.google.cloud.bigquery.storage.v1.TableName;
 import com.google.cloud.bigquery.storage.v1.TableSchema;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -50,19 +38,19 @@ import java.io.IOException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-
 public class JsonWriterStreamCdc {
 
   private static final String CHANGE_TYPE_PSEUDO_COLUMN = "_change_type";
 
-  private static final String CREATE_TABLE_QUERY = "CREATE TABLE `%s.%s` (\n"
-      + " Customer_ID INT64 PRIMARY KEY NOT ENFORCED,\n"
-      + " Customer_Enrollment_Date DATE,\n"
-      + " Customer_Name STRING,\n"
-      + " Customer_Address STRING,\n"
-      + " Customer_Tier STRING,\n"
-      + " Active_Subscriptions JSON)\n"
-      + "OPTIONS(max_staleness = INTERVAL 15 MINUTE);";
+  private static final String CREATE_TABLE_QUERY =
+      "CREATE TABLE `%s.%s` (\n"
+          + " Customer_ID INT64 PRIMARY KEY NOT ENFORCED,\n"
+          + " Customer_Enrollment_Date DATE,\n"
+          + " Customer_Name STRING,\n"
+          + " Customer_Address STRING,\n"
+          + " Customer_Tier STRING,\n"
+          + " Active_Subscriptions JSON)\n"
+          + "OPTIONS(max_staleness = INTERVAL 15 MINUTE);";
 
   public static void main(String[] args) throws Exception {
     if (args.length != 4) {
@@ -81,11 +69,11 @@ public class JsonWriterStreamCdc {
   }
 
   public static void createDestinationTable(
-          String projectId, String datasetName, String tableName) {
+      String projectId, String datasetName, String tableName) {
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
     QueryJobConfiguration queryConfig =
-        QueryJobConfiguration.newBuilder(
-            String.format(CREATE_TABLE_QUERY, datasetName, tableName)).build();
+        QueryJobConfiguration.newBuilder(String.format(CREATE_TABLE_QUERY, datasetName, tableName))
+            .build();
     try {
       bigquery.query(queryConfig);
     } catch (BigQueryException | InterruptedException e) {
@@ -95,65 +83,64 @@ public class JsonWriterStreamCdc {
 
   // writeToDefaultStream: Writes records from the source file to the destination table.
   public static void writeToDefaultStream(
-          String projectId, String datasetName, String tableName, JSONArray data)
-          throws DescriptorValidationException, InterruptedException, IOException {
+      String projectId, String datasetName, String tableName, JSONArray data)
+      throws DescriptorValidationException, InterruptedException, IOException {
     // Build the table schema with an additional _change_type column.
-    TableSchema tableSchema = TableSchema.newBuilder()
-        .addFields(
-            TableFieldSchema.newBuilder()
-                .setName("Customer_ID")
-                .setType(TableFieldSchema.Type.INT64)
-                .setMode(Mode.NULLABLE)
-                .build())
-        .addFields(
-            TableFieldSchema.newBuilder()
-                .setName("Customer_Enrollment_Date")
-                .setType(TableFieldSchema.Type.DATE)
-                .setMode(Mode.NULLABLE)
-                .build())
-        .addFields(
-            TableFieldSchema.newBuilder()
-                .setName("Customer_Name")
-                .setType(TableFieldSchema.Type.STRING)
-                .setMode(Mode.NULLABLE)
-                .build())
-        .addFields(
-            TableFieldSchema.newBuilder()
-                .setName("Customer_Address")
-                .setType(TableFieldSchema.Type.STRING)
-                .setMode(Mode.NULLABLE)
-                .build())
-        .addFields(
-            TableFieldSchema.newBuilder()
-                .setName("Customer_Tier")
-                .setType(TableFieldSchema.Type.STRING)
-                .setMode(Mode.NULLABLE)
-                .build())
-        .addFields(
-            TableFieldSchema.newBuilder()
-                .setName("Active_Subscriptions")
-                .setType(TableFieldSchema.Type.JSON)
-                .setMode(Mode.NULLABLE)
-                .build())
-        .addFields(
-            TableFieldSchema.newBuilder()
-                .setName(CHANGE_TYPE_PSEUDO_COLUMN)
-                .setType(TableFieldSchema.Type.STRING)
-                .setMode(Mode.NULLABLE)
-                .build())
-        .build();
+    TableSchema tableSchema =
+        TableSchema.newBuilder()
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("Customer_ID")
+                    .setType(TableFieldSchema.Type.INT64)
+                    .setMode(Mode.NULLABLE)
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("Customer_Enrollment_Date")
+                    .setType(TableFieldSchema.Type.DATE)
+                    .setMode(Mode.NULLABLE)
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("Customer_Name")
+                    .setType(TableFieldSchema.Type.STRING)
+                    .setMode(Mode.NULLABLE)
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("Customer_Address")
+                    .setType(TableFieldSchema.Type.STRING)
+                    .setMode(Mode.NULLABLE)
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("Customer_Tier")
+                    .setType(TableFieldSchema.Type.STRING)
+                    .setMode(Mode.NULLABLE)
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("Active_Subscriptions")
+                    .setType(TableFieldSchema.Type.JSON)
+                    .setMode(Mode.NULLABLE)
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName(CHANGE_TYPE_PSEUDO_COLUMN)
+                    .setType(TableFieldSchema.Type.STRING)
+                    .setMode(Mode.NULLABLE)
+                    .build())
+            .build();
 
     // Use the JSON stream writer to send records in JSON format.
     TableName parentTable = TableName.of(projectId, datasetName, tableName);
     try (JsonStreamWriter writer =
-                 JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema)
-                         .build()) {
+        JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema).build()) {
 
       ApiFuture<AppendRowsResponse> future = writer.append(data);
       // The append method is asynchronous. Rather than waiting for the method to complete,
       // which can hurt performance, register a completion callback and continue streaming.
-      ApiFutures.addCallback(
-          future, new AppendCompleteCallback(), MoreExecutors.directExecutor());
+      ApiFutures.addCallback(future, new AppendCompleteCallback(), MoreExecutors.directExecutor());
     }
   }
 
