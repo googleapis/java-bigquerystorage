@@ -65,8 +65,12 @@ public class JsonWriterStreamCdcIT {
   public void testJsonWriterStreamCdc() throws Exception {
     Path dataFilePath = FileSystems.getDefault().getPath(
         "../snippets/src/test/resources", "NewCustomers.json");
-    String[] args =
-        {GOOGLE_CLOUD_PROJECT, datasetName, "customers", dataFilePath.toAbsolutePath().toString()};
+    String[] args = {
+        GOOGLE_CLOUD_PROJECT,
+        datasetName,
+        "customers",
+        dataFilePath.toAbsolutePath().toString()
+    };
 
     JsonWriterStreamCdc.main(args);
     assertThat(bout.toString()).contains("Wrote batch");
