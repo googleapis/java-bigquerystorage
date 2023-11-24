@@ -52,27 +52,52 @@ public class JsonWriterStreamCdc {
           + " Active_Subscriptions JSON)\n"
           + "OPTIONS(max_staleness = INTERVAL 15 MINUTE);";
 
+  private static final String ALTER_TABLE_QUERY = "ALTER TABLE `%s.%s`\n"
+      + "SET OPTIONS (\n"
+      + " max_staleness = INTERVAL 0 MINUTE);\n";
+
   public static void main(String[] args) throws Exception {
-    if (args.length != 4) {
-      System.out.println("Arguments: project, dataset, table, data_file");
+    // This sample follows the BigQuery change data capture (CDC) blog post that can be found at:
+    // https://cloud.google.com/blog/products/data-analytics/bigquery-gains-change-data-capture-functionality
+    if (args.length != 5) {
+      System.out.println("Arguments: project, dataset, table, new_customers_data_file, " +
+          "modified_customers_data_file");
       return;
     }
 
     String projectId = args[0];
     String datasetName = args[1];
     String tableName = args[2];
-    String dataFile = args[3];
+    String newCustomersDataFile = args[3];
+    String modifiedCustomersDataFile = args[3];
 
-    createDestinationTable(projectId, datasetName, tableName);
-    JSONArray records = getRecordsFromDataFile(dataFile);
-    writeToDefaultStream(projectId, datasetName, tableName, records);
+    // Creates a destination table with (max_staleness = INTERVAL 15 MINUTE).
+    createDestinationTable(datasetName, tableName);
+
+    // Write new customer records to the destination table using UPSERT.
+    JSONArray newCustomersRecords = getRecordsFromDataFile(newCustomersDataFile);
+    writeToDefaultStream(projectId, datasetName, tableName, newCustomersRecords);
+
+    // Alter the destination table so that (max_staleness = INTERVAL 0 MINUTE).
+    alterDestinationTable(datasetName, tableName);
+
+    // Modify the customer records in the destination table using UPSERT.
+    JSONArray modifiedCustomersRecords = getRecordsFromDataFile(modifiedCustomersDataFile);
+    writeToDefaultStream(projectId, datasetName, tableName, modifiedCustomersRecords);
   }
 
-  public static void createDestinationTable(
-      String projectId, String datasetName, String tableName) {
+  public static void createDestinationTable(String datasetName, String tableName) {
+    query(String.format(CREATE_TABLE_QUERY, datasetName, tableName));
+  }
+
+  public static void alterDestinationTable(String datasetName, String tableName) {
+    query(String.format(ALTER_TABLE_QUERY, datasetName, tableName));
+  }
+
+  private static void query(String query) {
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
     QueryJobConfiguration queryConfig =
-        QueryJobConfiguration.newBuilder(String.format(CREATE_TABLE_QUERY, datasetName, tableName))
+        QueryJobConfiguration.newBuilder(query)
             .build();
     try {
       bigquery.query(queryConfig);
@@ -85,7 +110,8 @@ public class JsonWriterStreamCdc {
   public static void writeToDefaultStream(
       String projectId, String datasetName, String tableName, JSONArray data)
       throws DescriptorValidationException, InterruptedException, IOException {
-    // Build the table schema with an additional _change_type column.
+    // To use the UPSERT functionality, the table schema needs to be padded with an additional
+    // column "_change_type".
     TableSchema tableSchema =
         TableSchema.newBuilder()
             .addFields(
