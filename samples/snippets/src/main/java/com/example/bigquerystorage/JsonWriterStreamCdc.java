@@ -59,17 +59,16 @@ public class JsonWriterStreamCdc {
     // This sample follows the BigQuery change data capture (CDC) blog post that can be found at:
     // https://cloud.google.com/blog/products/data-analytics/bigquery-gains-change-data-capture-functionality
     if (args.length != 5) {
-      System.out.println(
-          "Arguments: project, dataset, table, new_customers_data_file, "
-              + "modified_customers_data_file");
+      System.out.println("Arguments: project, dataset, table, new_customers_data_file, " +
+          "modified_customers_data_file");
       return;
     }
 
-    String projectId = args[0];
-    String datasetName = args[1];
-    String tableName = args[2];
-    String newCustomersDataFile = args[3];
-    String modifiedCustomersDataFile = args[3];
+    final String projectId = args[0];
+    final String datasetName = args[1];
+    final String tableName = args[2];
+    final String newCustomersDataFile = args[3];
+    final String modifiedCustomersDataFile = args[3];
 
     // Creates a destination table with (max_staleness = INTERVAL 15 MINUTE).
     createDestinationTable(datasetName, tableName);
