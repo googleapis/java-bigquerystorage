@@ -52,16 +52,16 @@ public class JsonWriterStreamCdc {
           + " Active_Subscriptions JSON)\n"
           + "OPTIONS(max_staleness = INTERVAL 15 MINUTE);";
 
-  private static final String ALTER_TABLE_QUERY = "ALTER TABLE `%s.%s`\n"
-      + "SET OPTIONS (\n"
-      + " max_staleness = INTERVAL 0 MINUTE);\n";
+  private static final String ALTER_TABLE_QUERY =
+      "ALTER TABLE `%s.%s`\n" + "SET OPTIONS (\n" + " max_staleness = INTERVAL 0 MINUTE);\n";
 
   public static void main(String[] args) throws Exception {
     // This sample follows the BigQuery change data capture (CDC) blog post that can be found at:
     // https://cloud.google.com/blog/products/data-analytics/bigquery-gains-change-data-capture-functionality
     if (args.length != 5) {
-      System.out.println("Arguments: project, dataset, table, new_customers_data_file, " +
-          "modified_customers_data_file");
+      System.out.println(
+          "Arguments: project, dataset, table, new_customers_data_file, "
+              + "modified_customers_data_file");
       return;
     }
 
@@ -96,9 +96,7 @@ public class JsonWriterStreamCdc {
 
   private static void query(String query) {
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
-    QueryJobConfiguration queryConfig =
-        QueryJobConfiguration.newBuilder(query)
-            .build();
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     try {
       bigquery.query(queryConfig);
     } catch (BigQueryException | InterruptedException e) {
