@@ -19,6 +19,7 @@ import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.protobuf.Descriptors;
 import java.io.IOException;
@@ -343,6 +344,47 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setCompressorName(String compressorName) {
       this.schemaAwareStreamWriterBuilder.setCompressorName(compressorName);
+      return this;
+    }
+
+    /**
+     * Enable client lib automatic retries on request level errors.
+     *
+     * <pre>
+     * Immeidate Retry code:
+     * ABORTED, UNAVAILABLE, CANCELLED, INTERNAL, DEADLINE_EXCEEDED
+     * Backoff Retry code:
+     * RESOURCE_EXHAUSTED
+     *
+     * Example:
+     * RetrySettings retrySettings = RetrySettings.newBuilder()
+     *      .setInitialRetryDelay(Duration.ofMillis(500)) // applies to backoff retry
+     *      .setRetryDelayMultiplier(1.1) // applies to backoff retry
+     *      .setMaxAttempts(5) // applies to both retries
+     *      .setMaxRetryDelay(Duration.ofMinutes(1)) // applies to backoff retry .build();
+     * </pre>
+     *
+     * @param retrySettings
+     * @return
+     */
+    public Builder setRetrySettings(RetrySettings retrySettings) {
+      this.schemaAwareStreamWriterBuilder.setRetrySettings(retrySettings);
+      return this;
+    }
+
+    /**
+     * Sets the default missing value interpretation value if the column is not presented in the
+     * missing_value_interpretations map.
+     *
+     * <p>If this value is set to `DEFAULT_VALUE`, we will always populate default value if the
+     * field is missing from json and default value is defined in the column.
+     *
+     * <p>If this value is set to `NULL_VALUE`, we will always not populate default value.
+     */
+    public Builder setDefaultMissingValueInterpretation(
+        AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation) {
+      this.schemaAwareStreamWriterBuilder.setDefaultMissingValueInterpretation(
+          defaultMissingValueInterpretation);
       return this;
     }
 

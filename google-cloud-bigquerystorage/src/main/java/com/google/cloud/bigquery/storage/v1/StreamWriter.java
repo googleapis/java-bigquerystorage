@@ -19,9 +19,11 @@ import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auto.value.AutoOneOf;
 import com.google.auto.value.AutoValue;
+import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.AppendRequestAndResponse;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
 import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
@@ -89,6 +91,13 @@ public class StreamWriter implements AutoCloseable {
    * A String that uniquely identifies this writer.
    */
   private final String writerId = UUID.randomUUID().toString();
+
+  /**
+   * The default missing value interpretation if the column has default value defined but not
+   * presented in the missing value map.
+   */
+  private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
+      MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
 
   /**
    * Stream can access a single connection or a pool of connection depending on whether multiplexing
@@ -201,6 +210,7 @@ public class StreamWriter implements AutoCloseable {
   private StreamWriter(Builder builder) throws IOException {
     this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
+    this.defaultMissingValueInterpretation = builder.defaultMissingValueInterpretation;
     BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
     if (!builder.enableConnectionPool) {
       this.location = builder.location;
@@ -216,7 +226,8 @@ public class StreamWriter implements AutoCloseable {
                   builder.limitExceededBehavior,
                   builder.traceId,
                   builder.compressorName,
-                  clientSettings));
+                  clientSettings,
+                  builder.retrySettings));
     } else {
       if (!isDefaultStream(streamName)) {
         log.warning(
@@ -224,6 +235,12 @@ public class StreamWriter implements AutoCloseable {
                 + builder.streamName);
         throw new IllegalArgumentException(
             "Trying to enable connection pool in non-default stream.");
+      }
+
+      if (builder.retrySettings != null) {
+        log.warning("Retry settings is only allowed when connection pool is not enabled.");
+        throw new IllegalArgumentException(
+            "Trying to enable connection pool while providing retry settings.");
       }
 
       // We need a client to perform some getWriteStream calls.
@@ -312,6 +329,10 @@ public class StreamWriter implements AutoCloseable {
     return streamMatcher.find();
   }
 
+  AppendRowsRequest.MissingValueInterpretation getDefaultValueInterpretation() {
+    return defaultMissingValueInterpretation;
+  }
+
   static BigQueryWriteSettings getBigQueryWriteSettings(Builder builder) throws IOException {
     BigQueryWriteSettings.Builder settingsBuilder = null;
     if (builder.client != null) {
@@ -350,22 +371,24 @@ public class StreamWriter implements AutoCloseable {
 
   // Validate whether the fetched connection pool matched certain properties.
   private void validateFetchedConnectonPool(StreamWriter.Builder builder) {
-    String paramsValidatedFailed = "";
-    if (!Objects.equals(
-        this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId(),
-        builder.traceId)) {
-      paramsValidatedFailed = "Trace id";
-    } else if (!Objects.equals(
-        this.singleConnectionOrConnectionPool.connectionWorkerPool().limitExceededBehavior(),
-        builder.limitExceededBehavior)) {
-      paramsValidatedFailed = "Limit Exceeds Behavior";
-    }
-
-    if (!paramsValidatedFailed.isEmpty()) {
+    String storedTraceId =
+        this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId();
+    if (!Objects.equals(storedTraceId, builder.traceId)) {
       throw new IllegalArgumentException(
           String.format(
-              "%s used for the same connection pool for the same location must be the same!",
-              paramsValidatedFailed));
+              "Trace id used for the same connection pool for the same location must be the same, "
+                  + "however stored trace id is %s, and expected trace id is %s.",
+              storedTraceId, builder.traceId));
+    }
+    FlowController.LimitExceededBehavior storedLimitExceededBehavior =
+        singleConnectionOrConnectionPool.connectionWorkerPool().limitExceededBehavior();
+    if (!Objects.equals(storedLimitExceededBehavior, builder.limitExceededBehavior)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Limit exceeded behavior setting used for the same connection pool for the same "
+                  + "location must be the same, however stored value is %s, and expected "
+                  + "value is %s.",
+              storedLimitExceededBehavior, builder.limitExceededBehavior));
     }
   }
 
@@ -420,7 +443,7 @@ public class StreamWriter implements AutoCloseable {
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
     if (userClosed.get()) {
       AppendRequestAndResponse requestWrapper =
-          new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build(), this);
+          new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build(), this, null);
       requestWrapper.appendResult.setException(
           new Exceptions.StreamWriterClosedException(
               Status.fromCode(Status.Code.FAILED_PRECONDITION)
@@ -602,6 +625,12 @@ public class StreamWriter implements AutoCloseable {
 
     private String compressorName = null;
 
+    // Default missing value interpretation value.
+    private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
+        MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
+
+    private RetrySettings retrySettings = null;
+
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
       this.client = null;
@@ -726,6 +755,41 @@ public class StreamWriter implements AutoCloseable {
           "Compression of type \"%s\" isn't supported, only \"gzip\" compression is supported.",
           compressorName);
       this.compressorName = compressorName;
+      return this;
+    }
+
+    /**
+     * Sets the default missing value interpretation value if the column is not presented in the
+     * missing_value_interpretations map.
+     */
+    public Builder setDefaultMissingValueInterpretation(
+        AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation) {
+      this.defaultMissingValueInterpretation = defaultMissingValueInterpretation;
+      return this;
+    }
+
+    /**
+     * Enable client lib automatic retries on request level errors.
+     *
+     * <pre>
+     * Immeidate Retry code:
+     * ABORTED, UNAVAILABLE, CANCELLED, INTERNAL, DEADLINE_EXCEEDED
+     * Backoff Retry code:
+     * RESOURCE_EXHAUSTED
+     *
+     * Example:
+     * RetrySettings retrySettings = RetrySettings.newBuilder()
+     *      .setInitialRetryDelay(Duration.ofMillis(500)) // applies to backoff retry
+     *      .setRetryDelayMultiplier(1.1) // applies to backoff retry
+     *      .setMaxAttempts(5) // applies to both retries
+     *      .setMaxRetryDelay(Duration.ofMinutes(1)) // applies to backoff retry .build();
+     * </pre>
+     *
+     * @param retrySettings
+     * @return
+     */
+    public Builder setRetrySettings(RetrySettings retrySettings) {
+      this.retrySettings = retrySettings;
       return this;
     }
 

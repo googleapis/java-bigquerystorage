@@ -65,18 +65,29 @@ integration)
       -DtrimStackTrace=false \
       -Dclirr.skip=true \
       -Denforcer.skip=true \
+      -Dit.test=!ITBigQueryWrite*RetryTest \
+      -Dsurefire.failIfNoSpecifiedTests=false \
+      -Dfailsafe.failIfNoSpecifiedTests=false \
       -fae \
       verify
     RETURN_CODE=$?
     ;;
 graalvm)
     # Run Unit and Integration Tests with Native Image
-    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -Pnative -Penable-integration-tests test
+    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -Pnative -Penable-integration-tests \
+     -Dit.test=!ITBigQueryWrite*RetryTest \
+     -Dsurefire.failIfNoSpecifiedTests=false \
+     -Dfailsafe.failIfNoSpecifiedTests=false \
+     test
     RETURN_CODE=$?
     ;;
 graalvm17)
     # Run Unit and Integration Tests with Native Image
-    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -Pnative -Penable-integration-tests test
+    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -Pnative -Penable-integration-tests \
+    -Dit.test=!ITBigQueryWrite*RetryTest \
+    -Dsurefire.failIfNoSpecifiedTests=false \
+    -Dfailsafe.failIfNoSpecifiedTests=false \
+    test
     RETURN_CODE=$?
     ;;
 samples)
@@ -110,6 +121,22 @@ samples)
     ;;
 clirr)
     mvn -B -Denforcer.skip=true clirr:check
+    RETURN_CODE=$?
+    ;;
+retry_quota)
+    mvn -B ${INTEGRATION_TEST_ARGS} \
+      -Dit.test=ITBigQueryWriteQuotaRetryTest \
+      -Dsurefire.failIfNoSpecifiedTests=false \
+      -Dfailsafe.failIfNoSpecifiedTests=false \
+      test
+    RETURN_CODE=$?
+    ;;
+retry_non_quota)
+    mvn -B ${INTEGRATION_TEST_ARGS} \
+      -Dit.test=ITBigQueryWriteNonQuotaRetryTest \
+      -Dsurefire.failIfNoSpecifiedTests=false \
+      -Dfailsafe.failIfNoSpecifiedTests=false \
+      test
     RETURN_CODE=$?
     ;;
 *)
