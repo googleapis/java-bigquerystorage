@@ -69,7 +69,7 @@ public class JsonWriterStreamCdc {
     final String datasetName = args[1];
     final String tableName = args[2];
     final String newCustomersDataFile = args[3];
-    final String modifiedCustomersDataFile = args[3];
+    final String modifiedCustomersDataFile = args[4];
 
     // Creates a destination table with (max_staleness = INTERVAL 15 MINUTE).
     createDestinationTable(datasetName, tableName);
