@@ -74,14 +74,22 @@ integration)
     ;;
 graalvm)
     # Run Unit and Integration Tests with Native Image
-    mvn -B ${INTEGRATION_TEST_ARGS} \
-     -ntp -Pnative \
-     -Dtest=!ITBigQueryWrite*RetryTest \
-     -Penable-integration-tests \
-     -Dit.test=!ITBigQueryWrite*RetryTest \
-     -Dsurefire.failIfNoSpecifiedTests=false \
-     -Dfailsafe.failIfNoSpecifiedTests=false \
-     test
+      mvn -B ${INTEGRATION_TEST_ARGS} \
+          -Penable-integration-tests \
+          -Pnative \
+          -DtrimStackTrace=false \
+          -Dclirr.skip=true \
+          -Denforcer.skip=true \
+          -Dit.test=!ITBigQueryWrite*RetryTest \
+          -Dsurefire.failIfNoSpecifiedTests=false \
+          -Dfailsafe.failIfNoSpecifiedTests=false \
+          -fae \
+          test          
+#    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -Pnative -Penable-integration-tests \
+#     -Dit.test=!ITBigQueryWrite*RetryTest \
+#     -Dsurefire.failIfNoSpecifiedTests=false \
+#     -Dfailsafe.failIfNoSpecifiedTests=false \
+#     test
     RETURN_CODE=$?
     ;;
 graalvm17)
