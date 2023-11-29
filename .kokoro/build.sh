@@ -85,11 +85,6 @@ graalvm)
           -Dfailsafe.failIfNoSpecifiedTests=false \
           -fae \
           test          
-#    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -Pnative -Penable-integration-tests \
-#     -Dit.test=!ITBigQueryWrite*RetryTest \
-#     -Dsurefire.failIfNoSpecifiedTests=false \
-#     -Dfailsafe.failIfNoSpecifiedTests=false \
-#     test
     RETURN_CODE=$?
     ;;
 graalvm17)
