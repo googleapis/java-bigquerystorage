@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.38.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.38.0...v2.38.1) (2023-12-01)
+
+
+### Dependencies
+
+* Shared-dependencies 3.13.0, bigquery 2.27.1 ([#2210](https://github.com/googleapis/java-bigquerystorage/issues/2210)) ([f6ec15e](https://github.com/googleapis/java-bigquerystorage/commit/f6ec15e95941f4fd1faf647a9ec4435adf1b1f9c))
+
 ## [2.38.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.37.2...v2.38.0) (2023-06-13)
 
 
