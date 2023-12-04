@@ -28,8 +28,9 @@ java -version
 echo ${JOB_TYPE}
 
 # attempt to install 3 times with exponential backoff (starting with 10 seconds)
+# TODO(NOW): DO NOT MERGE.
 retry_with_backoff 3 10 \
-  mvn install -B -V -U \
+  mvn install -B -V -U -X \
     -DskipTests=true \
     -Dclirr.skip=true \
     -Denforcer.skip=true \
