@@ -286,7 +286,7 @@
             </dependencies>
             <configuration>
               <!-- Include all tests during native image testing. -->
-              <excludes combine.self="override" >
+              <excludes combine.self="override">
                 <exclude>**/ITBigQueryWrite*RetryTest.java</exclude>
               </excludes>
               <includes>
