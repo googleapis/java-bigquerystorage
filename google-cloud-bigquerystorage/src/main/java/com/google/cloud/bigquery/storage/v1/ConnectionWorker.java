@@ -1150,7 +1150,7 @@ class ConnectionWorker implements AutoCloseable {
 
   private boolean useBackoffForError(Code statusCode, String streamName) {
     // Default stream uses backoff for INTERNAL, as THROTTLED errors are more likely with default
-    // stream
+    // streams.  RESOURCE_EXHAUSTED streams are used for backoff for each stream type.
     if (isDefaultStreamName(streamName)) {
       if (statusCode == Code.INTERNAL) {
         return true;
