@@ -1152,7 +1152,9 @@ class ConnectionWorker implements AutoCloseable {
     // Default stream uses backoff for INTERNAL, as THROTTLED errors are more likely with default
     // stream
     if (isDefaultStreamName(streamName)) {
-      return statusCode == Code.INTERNAL;
+      if (statusCode == Code.INTERNAL) {
+        return true;
+      }
     }
     return statusCode == Code.RESOURCE_EXHAUSTED;
   }
