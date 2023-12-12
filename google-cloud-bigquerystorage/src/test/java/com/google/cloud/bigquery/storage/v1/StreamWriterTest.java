@@ -2067,8 +2067,7 @@ public class StreamWriterTest {
               future.get();
             });
     assertEquals(
-        Status.Code.INTERNAL,
-        ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
+        Status.Code.INTERNAL, ((StatusRuntimeException) ex.getCause()).getStatus().getCode());
 
     ArrayList<Instant> instants = testBigQueryWrite.getLatestRequestReceivedInstants();
     Instant previousInstant = instants.get(0);
