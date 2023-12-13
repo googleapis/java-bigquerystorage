@@ -1635,6 +1635,15 @@ public class ITBigQueryWriteManualClientTest {
                     new String[] {new String(new char[19 * 1024 * 1024]).replace("\0", "a")}));
         try {
           response.get();
+          LOG.info(
+              "Message succeded.  Dataset info: "
+                  + datasetInfo.toString()
+                  + " tableinfo: "
+                  + tableInfo.toString()
+                  + " parent: "
+                  + parent
+                  + "streamWriter: "
+                  + streamWriter.toString());
           Assert.fail("Large request should fail with InvalidArgumentError");
         } catch (ExecutionException ex) {
           assertEquals(io.grpc.StatusRuntimeException.class, ex.getCause().getClass());
