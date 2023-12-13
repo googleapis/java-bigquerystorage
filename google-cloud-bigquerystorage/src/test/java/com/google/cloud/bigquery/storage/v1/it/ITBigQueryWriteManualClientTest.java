@@ -1634,7 +1634,7 @@ public class ITBigQueryWriteManualClientTest {
                 CreateProtoRows(
                     new String[] {new String(new char[19 * 1024 * 1024]).replace("\0", "a")}));
         try {
-          response.get();
+          AppendRowsResponse resp = response.get();
           LOG.info(
               "Message succeded.  Dataset info: "
                   + datasetInfo.toString()
@@ -1643,7 +1643,9 @@ public class ITBigQueryWriteManualClientTest {
                   + " parent: "
                   + parent
                   + "streamWriter: "
-                  + streamWriter.toString());
+                  + streamWriter.toString()
+                  + "response: "
+                  + resp);
           Assert.fail("Large request should fail with InvalidArgumentError");
         } catch (ExecutionException ex) {
           assertEquals(io.grpc.StatusRuntimeException.class, ex.getCause().getClass());
