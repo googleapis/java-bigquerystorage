@@ -1628,6 +1628,7 @@ public class ITBigQueryWriteManualClientTest {
       try (StreamWriter streamWriter =
           StreamWriter.newBuilder(parent.toString() + "/_default")
               .setWriterSchema(CreateProtoSchemaWithColField())
+              .setRetrySettings(null)
               .build()) {
         ApiFuture<AppendRowsResponse> response =
             streamWriter.append(
@@ -1648,6 +1649,15 @@ public class ITBigQueryWriteManualClientTest {
                   + resp);
           Assert.fail("Large request should fail with InvalidArgumentError");
         } catch (ExecutionException ex) {
+          LOG.info(
+              "Message failed.  Dataset info: "
+                  + datasetInfo.toString()
+                  + " tableinfo: "
+                  + tableInfo.toString()
+                  + " parent: "
+                  + parent
+                  + "streamWriter: "
+                  + streamWriter);
           assertEquals(io.grpc.StatusRuntimeException.class, ex.getCause().getClass());
           io.grpc.StatusRuntimeException actualError =
               (io.grpc.StatusRuntimeException) ex.getCause();
