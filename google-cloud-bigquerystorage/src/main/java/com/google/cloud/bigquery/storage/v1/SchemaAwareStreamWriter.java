@@ -19,7 +19,9 @@ import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowControlSettings;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
+import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.RowIndexToErrorException;
 import com.google.common.base.Preconditions;
@@ -94,9 +96,12 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
         builder.flowControlSettings,
         builder.traceIdBase,
         builder.traceId,
-        builder.compressorName);
+        builder.compressorName,
+        builder.retrySettings);
     streamWriterBuilder.setEnableConnectionPool(builder.enableConnectionPool);
     streamWriterBuilder.setLocation(builder.location);
+    streamWriterBuilder.setDefaultMissingValueInterpretation(
+        builder.defaultMissingValueInterpretation);
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
@@ -279,7 +284,8 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
       @Nullable FlowControlSettings flowControlSettings,
       @Nullable String traceIdBase,
       @Nullable String traceId,
-      @Nullable String compressorName) {
+      @Nullable String compressorName,
+      @Nullable RetrySettings retrySettings) {
     if (channelProvider != null) {
       streamWriterBuilder.setChannelProvider(channelProvider);
     }
@@ -321,6 +327,9 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
     if (compressorName != null) {
       streamWriterBuilder.setCompressorName(compressorName);
+    }
+    if (retrySettings != null) {
+      streamWriterBuilder.setRetrySettings(retrySettings);
     }
   }
 
@@ -432,6 +441,10 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     private boolean enableConnectionPool = false;
     private String location;
     private String compressorName;
+    private RetrySettings retrySettings;
+
+    private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
+        MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
 
     private static final String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
@@ -624,6 +637,27 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
      */
     public Builder<T> setCompressorName(String compressorName) {
       this.compressorName = compressorName;
+      return this;
+    }
+
+    /**
+     * Sets the default missing value interpretation value if the column is not presented in the
+     * missing_value_interpretations map.
+     */
+    public Builder setDefaultMissingValueInterpretation(
+        AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation) {
+      this.defaultMissingValueInterpretation = defaultMissingValueInterpretation;
+      return this;
+    }
+
+    /**
+     * Sets the RetrySettings to use for in-stream error retry.
+     *
+     * @param retrySettings
+     * @return Builder
+     */
+    public Builder setRetrySettings(RetrySettings retrySettings) {
+      this.retrySettings = retrySettings;
       return this;
     }
 

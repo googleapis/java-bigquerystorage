@@ -1,5 +1,131 @@
 # Changelog
 
+## [2.47.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.46.0...v2.47.0) (2023-12-01)
+
+
+### Features
+
+* Adding CDC sample ([#2263](https://github.com/googleapis/java-bigquerystorage/issues/2263)) ([ba134e4](https://github.com/googleapis/java-bigquerystorage/commit/ba134e403f7696d5e797faf7c07ff817b90f1085))
+
+
+### Bug Fixes
+
+* An atempt to solve test failure in nightly build ([#2330](https://github.com/googleapis/java-bigquerystorage/issues/2330)) ([f77465e](https://github.com/googleapis/java-bigquerystorage/commit/f77465e094ca9b00fc2eb6882a69b9eb9dfd8edb))
+* Fix a test that is flaky ([#2340](https://github.com/googleapis/java-bigquerystorage/issues/2340)) ([cb6e2c9](https://github.com/googleapis/java-bigquerystorage/commit/cb6e2c97c854d89c2679d17a24f021a676f25039))
+* Fix the write api integration test ([#2333](https://github.com/googleapis/java-bigquerystorage/issues/2333)) ([a69bec9](https://github.com/googleapis/java-bigquerystorage/commit/a69bec9c017509ef3beb975e2b6d929c12420c0c))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.34.2 ([#2313](https://github.com/googleapis/java-bigquerystorage/issues/2313)) ([1e1b60c](https://github.com/googleapis/java-bigquerystorage/commit/1e1b60cbc036bd8ed48736e3c53a10bc3a76c821))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.20.0 ([#2336](https://github.com/googleapis/java-bigquerystorage/issues/2336)) ([6ada6c5](https://github.com/googleapis/java-bigquerystorage/commit/6ada6c5fd411576c2c27ab94e7ef47f7ba02629b))
+
+## [2.46.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.45.0...v2.46.0) (2023-11-15)
+
+
+### Features
+
+* Add integration tests with RetrySettings enabled. ([#2275](https://github.com/googleapis/java-bigquerystorage/issues/2275)) ([179193a](https://github.com/googleapis/java-bigquerystorage/commit/179193a18ba31c4c82946dc48671512fdac335c8))
+* Add new configuration for nightly retry-related tests. ([#2319](https://github.com/googleapis/java-bigquerystorage/issues/2319)) ([e78b841](https://github.com/googleapis/java-bigquerystorage/commit/e78b84151d1e7f9a4cfc6f252b6215fce4cec670))
+* Enable 20MB request limit, this feature is allowlist only. ([#2311](https://github.com/googleapis/java-bigquerystorage/issues/2311)) ([75c2552](https://github.com/googleapis/java-bigquerystorage/commit/75c2552a2ece47a8e14ad4932d4fcc36c8005cbe))
+
+
+### Bug Fixes
+
+* Add comment/documentation for setRetrySettings ([#2309](https://github.com/googleapis/java-bigquerystorage/issues/2309)) ([664b550](https://github.com/googleapis/java-bigquerystorage/commit/664b550258dbe6037972b4a94eb41acd254849c5))
+* Create next attempt after first attempt to initialize exponential backoff settings. ([#2316](https://github.com/googleapis/java-bigquerystorage/issues/2316)) ([e5884cc](https://github.com/googleapis/java-bigquerystorage/commit/e5884cc0a28a5b3fc6aab6854c6b435431524d42))
+* Enable request limit e2e test. ([#2320](https://github.com/googleapis/java-bigquerystorage/issues/2320)) ([9d8c368](https://github.com/googleapis/java-bigquerystorage/commit/9d8c36859d5dd39f2e5fad26b692aa95308b1f5e))
+
+
+### Dependencies
+
+* Update actions/github-script action to v7 ([#2317](https://github.com/googleapis/java-bigquerystorage/issues/2317)) ([f68064f](https://github.com/googleapis/java-bigquerystorage/commit/f68064f2991768656fdefdce7e089313ee0f1e7e))
+
+## [2.45.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.44.1...v2.45.0) (2023-11-07)
+
+
+### Features
+
+* Add support for proto3 optional tag ([#2295](https://github.com/googleapis/java-bigquerystorage/issues/2295)) ([bc88aa5](https://github.com/googleapis/java-bigquerystorage/commit/bc88aa57f55b2c3605cbb9c66f2e66daa695c20c))
+
+
+### Bug Fixes
+
+* Add native image configurations for com.google.rpc classes ([#2305](https://github.com/googleapis/java-bigquerystorage/issues/2305)) ([3a771fd](https://github.com/googleapis/java-bigquerystorage/commit/3a771fded7c0f5243be1e4c76e7229f15eda95fa))
+* **bigquery:** Make exponential backoff retry second based ([#2212](https://github.com/googleapis/java-bigquerystorage/issues/2212)) ([eff4a09](https://github.com/googleapis/java-bigquerystorage/commit/eff4a09aece936dfee7fff46e7bd031ec780ab96))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.34.0 ([#2291](https://github.com/googleapis/java-bigquerystorage/issues/2291)) ([5377f79](https://github.com/googleapis/java-bigquerystorage/commit/5377f79300e38b192d36fe2e4ee42b34b8173aa1))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.34.1 ([#2308](https://github.com/googleapis/java-bigquerystorage/issues/2308)) ([6aee78f](https://github.com/googleapis/java-bigquerystorage/commit/6aee78f9d0f1918056d8fd2dd74bd0934733d496))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.19.0 ([#2300](https://github.com/googleapis/java-bigquerystorage/issues/2300)) ([1ddd11c](https://github.com/googleapis/java-bigquerystorage/commit/1ddd11c8910df6fc277d7bdd6856f85695a43009))
+
+## [2.44.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.44.0...v2.44.1) (2023-10-25)
+
+
+### Dependencies
+
+* Update actions/checkout digest to b4ffde6 ([#2281](https://github.com/googleapis/java-bigquerystorage/issues/2281)) ([8c78515](https://github.com/googleapis/java-bigquerystorage/commit/8c78515979e22a802e70def26dafa9512d785268))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.33.2 ([#2274](https://github.com/googleapis/java-bigquerystorage/issues/2274)) ([d55ce5e](https://github.com/googleapis/java-bigquerystorage/commit/d55ce5edd6f728cfce7ce0d59cf29d6e9d14d80a))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.18.0 ([#2282](https://github.com/googleapis/java-bigquerystorage/issues/2282)) ([12f3fce](https://github.com/googleapis/java-bigquerystorage/commit/12f3fce59ab95b6b0319c080b86916586e35ce00))
+* Update dependency org.json:json to v20231013 - abandoned ([#2276](https://github.com/googleapis/java-bigquerystorage/issues/2276)) ([0c5a60b](https://github.com/googleapis/java-bigquerystorage/commit/0c5a60b9ead20cbceda08805229ad6fa3f91c7e3))
+* Update dependency org.json:json to v20231013 [security] ([#2278](https://github.com/googleapis/java-bigquerystorage/issues/2278)) ([2b7887d](https://github.com/googleapis/java-bigquerystorage/commit/2b7887d0bab1e0534f1616f3b64a28d7a57518d6))
+
+## [2.44.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.43.0...v2.44.0) (2023-10-10)
+
+
+### Features
+
+* Add in-stream retry logic for retryable and quota errors ([#2243](https://github.com/googleapis/java-bigquerystorage/issues/2243)) ([6435a04](https://github.com/googleapis/java-bigquerystorage/commit/6435a0491827779b01dd0c3cf184f6578bf33f3e))
+
+
+### Dependencies
+
+* Bumping google-cloud-shared-config to v1.5.8 ([#2269](https://github.com/googleapis/java-bigquerystorage/issues/2269)) ([fb6e38d](https://github.com/googleapis/java-bigquerystorage/commit/fb6e38d575800ab4c7c16ae0545fdbd91ea358bd))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.33.1 ([#2258](https://github.com/googleapis/java-bigquerystorage/issues/2258)) ([f6cbea2](https://github.com/googleapis/java-bigquerystorage/commit/f6cbea204b5a414d8e2932ad2fd194996685ec39))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.17.0 ([#2266](https://github.com/googleapis/java-bigquerystorage/issues/2266)) ([827aaf7](https://github.com/googleapis/java-bigquerystorage/commit/827aaf70bc19de8d67d0f386085877eb5d2fbced))
+
+## [2.43.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.42.0...v2.43.0) (2023-09-28)
+
+
+### Features
+
+* Add sample code about default missingValueInterpretation ([#2249](https://github.com/googleapis/java-bigquerystorage/issues/2249)) ([ebedcc0](https://github.com/googleapis/java-bigquerystorage/commit/ebedcc07e400429fc6b80a4ad0543fe25eef970d))
+
+
+### Dependencies
+
+* Update actions/checkout digest to 8ade135 ([#2251](https://github.com/googleapis/java-bigquerystorage/issues/2251)) ([182e050](https://github.com/googleapis/java-bigquerystorage/commit/182e050d9929f9fb58694e76625b03bb54f67efe))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.32.0 ([#2246](https://github.com/googleapis/java-bigquerystorage/issues/2246)) ([893fcb9](https://github.com/googleapis/java-bigquerystorage/commit/893fcb9f6c4b2eb9814ea2597fe9aae95367b4cd))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.33.0 ([#2255](https://github.com/googleapis/java-bigquerystorage/issues/2255)) ([7689dee](https://github.com/googleapis/java-bigquerystorage/commit/7689dee5f70a144efb9eb9be1a058d11d7e3c05d))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.16.1 ([#2250](https://github.com/googleapis/java-bigquerystorage/issues/2250)) ([43d96d2](https://github.com/googleapis/java-bigquerystorage/commit/43d96d288207a607d168f604f190fb28b5eab132))
+* Update dependency org.apache.arrow:arrow-vector to v13 ([#2236](https://github.com/googleapis/java-bigquerystorage/issues/2236)) ([afde7ce](https://github.com/googleapis/java-bigquerystorage/commit/afde7ce1f48f1c7cdd4b06d4aabdaac9d367aa50))
+* Update dependency org.apache.avro:avro to v1.11.3 ([#2252](https://github.com/googleapis/java-bigquerystorage/issues/2252)) ([10b615b](https://github.com/googleapis/java-bigquerystorage/commit/10b615b49ba8889f7d051ac03d4751ace82b6823))
+
+## [2.42.0](https://github.com/googleapis/java-bigquerystorage/compare/v2.41.1...v2.42.0) (2023-09-13)
+
+
+### Features
+
+* Add default_missing_value_interpretation field; indicate KMS_SERVICE_ERROR is retryable ([#2229](https://github.com/googleapis/java-bigquerystorage/issues/2229)) ([df686d6](https://github.com/googleapis/java-bigquerystorage/commit/df686d6ac51d182b52dbd1f5a69585bb605e9b94))
+* Expose settings to configure default missing value interpretation. ([#2230](https://github.com/googleapis/java-bigquerystorage/issues/2230)) ([dc5ed73](https://github.com/googleapis/java-bigquerystorage/commit/dc5ed73f513a77939286d3c129fc26f039c23d5c))
+
+
+### Bug Fixes
+
+* Populate final stauts to initial request during connection shutdown ([#2228](https://github.com/googleapis/java-bigquerystorage/issues/2228)) ([9b9b5c0](https://github.com/googleapis/java-bigquerystorage/commit/9b9b5c09d7bc458493338eced8527a168fff0129))
+
+
+### Dependencies
+
+* Update actions/checkout action to v4 ([#2237](https://github.com/googleapis/java-bigquerystorage/issues/2237)) ([d5d739f](https://github.com/googleapis/java-bigquerystorage/commit/d5d739fe7624b74584c1272f13635f728fdf53d2))
+* Update arrow.version to v13 ([#2234](https://github.com/googleapis/java-bigquerystorage/issues/2234)) ([ac45c2a](https://github.com/googleapis/java-bigquerystorage/commit/ac45c2aa189fa0cba05f88486f44d3b1d6f761ca))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.31.1 ([#2225](https://github.com/googleapis/java-bigquerystorage/issues/2225)) ([5144c5a](https://github.com/googleapis/java-bigquerystorage/commit/5144c5ad1e107f96d2003064cd2823982ac0e360))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.31.2 ([#2241](https://github.com/googleapis/java-bigquerystorage/issues/2241)) ([91e3730](https://github.com/googleapis/java-bigquerystorage/commit/91e37303f57ec2e211a375652a8eca8b7d39d1e6))
+* Update dependency com.google.cloud:google-cloud-shared-dependencies to v3.15.0 ([#2239](https://github.com/googleapis/java-bigquerystorage/issues/2239)) ([5352a7d](https://github.com/googleapis/java-bigquerystorage/commit/5352a7d7e1d7b01a33936adf7e204c5f49f0c230))
+* Update dependency org.apache.arrow:arrow-memory-netty to v13 ([#2235](https://github.com/googleapis/java-bigquerystorage/issues/2235)) ([7e50bef](https://github.com/googleapis/java-bigquerystorage/commit/7e50bef3fa3c92c94aeefedca0ae87c5132bb1be))
+
 ## [2.41.1](https://github.com/googleapis/java-bigquerystorage/compare/v2.41.0...v2.41.1) (2023-08-08)
 
 

@@ -16,10 +16,15 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.core.ApiFuture;
+import com.google.api.core.NanoClock;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
+import com.google.api.gax.retrying.ExponentialRetryAlgorithm;
+import com.google.api.gax.retrying.RetrySettings;
+import com.google.api.gax.retrying.TimedAttemptSettings;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auto.value.AutoValue;
+import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
@@ -81,7 +86,11 @@ class ConnectionWorker implements AutoCloseable {
   private Lock lock;
   private Condition hasMessageInWaitingQueue;
   private Condition inflightReduced;
-  private static Duration maxRetryDuration = Duration.ofMinutes(5);
+  /*
+   * Max retry duration when trying to establish a connection.  This does not
+   * apply to in-stream retries.
+   */
+  private final Duration maxRetryDuration;
   private ExecutorService threadPool = Executors.newFixedThreadPool(1);
 
   /*
@@ -226,12 +235,32 @@ class ConnectionWorker implements AutoCloseable {
   private RuntimeException testOnlyRunTimeExceptionInAppendLoop = null;
   private long testOnlyAppendLoopSleepTime = 0;
 
+  /*
+   * Tracks the number of responses to ignore in the case of exclusive stream retry
+   */
+  @GuardedBy("lock")
+  private int responsesToIgnore = 0;
+
+  /*
+   * Contains settings related to in-stream retries.  If retrySettings is null,
+   * this implies that no retries will occur on retryable in-stream errors.
+   */
+  private final RetrySettings retrySettings;
+
   private static String projectMatching = "projects/[^/]+/";
   private static Pattern streamPatternProject = Pattern.compile(projectMatching);
 
+  static final Pattern DEFAULT_STREAM_PATTERN =
+      Pattern.compile("projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)/(streams/)?_default$");
+
+  public static Boolean isDefaultStreamName(String streamName) {
+    Matcher matcher = DEFAULT_STREAM_PATTERN.matcher(streamName);
+    return matcher.matches();
+  }
+
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
-    return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
+    return 20L * 1000L * 1000L; // 20 megabytes (https://en.wikipedia.org/wiki/Megabyte)
   }
 
   static String extractProjectName(String streamName) {
@@ -259,7 +288,8 @@ class ConnectionWorker implements AutoCloseable {
       FlowController.LimitExceededBehavior limitExceededBehavior,
       String traceId,
       @Nullable String compressorName,
-      BigQueryWriteSettings clientSettings)
+      BigQueryWriteSettings clientSettings,
+      RetrySettings retrySettings)
       throws IOException {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
@@ -268,7 +298,7 @@ class ConnectionWorker implements AutoCloseable {
     if (location != null && !location.isEmpty()) {
       this.location = location;
     }
-    this.maxRetryDuration = maxRetryDuration;
+    this.maxRetryDuration = maxRetryDuration != null ? maxRetryDuration : Duration.ofMinutes(5);
     if (writerSchema == null) {
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
@@ -281,6 +311,7 @@ class ConnectionWorker implements AutoCloseable {
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.compressorName = compressorName;
+    this.retrySettings = retrySettings;
     // Always recreate a client for connection worker.
     HashMap<String, String> newHeaders = new HashMap<>();
     newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
@@ -355,6 +386,57 @@ class ConnectionWorker implements AutoCloseable {
     log.info("Finish connecting stream: " + streamName + " id: " + writerId);
   }
 
+  @GuardedBy("lock")
+  private boolean shouldWaitForBackoff(AppendRequestAndResponse requestWrapper) {
+    if (this.retrySettings != null
+        && Instant.now().isBefore(requestWrapper.blockMessageSendDeadline)) {
+      log.fine(
+          String.format(
+              "Waiting for wait queue to unblock at %s for retry # %s",
+              requestWrapper.blockMessageSendDeadline, requestWrapper.retryCount));
+      return true;
+    }
+
+    return false;
+  }
+
+  private void waitForBackoffIfNecessary(AppendRequestAndResponse requestWrapper) {
+    lock.lock();
+    try {
+      Condition condition = lock.newCondition();
+      while (shouldWaitForBackoff(requestWrapper)) {
+        condition.await(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+      }
+    } catch (InterruptedException e) {
+      throw new IllegalStateException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @GuardedBy("lock")
+  private void addMessageToFrontOfWaitingQueue(AppendRequestAndResponse requestWrapper) {
+    addMessageToWaitingQueue(requestWrapper, /* addToFront= */ true);
+  }
+
+  @GuardedBy("lock")
+  private void addMessageToBackOfWaitingQueue(AppendRequestAndResponse requestWrapper) {
+    addMessageToWaitingQueue(requestWrapper, /* addToFront= */ false);
+  }
+
+  @GuardedBy("lock")
+  private void addMessageToWaitingQueue(
+      AppendRequestAndResponse requestWrapper, boolean addToFront) {
+    ++this.inflightRequests;
+    this.inflightBytes += requestWrapper.messageSize;
+    hasMessageInWaitingQueue.signal();
+    if (addToFront) {
+      waitingRequestQueue.addFirst(requestWrapper);
+    } else {
+      waitingRequestQueue.add(requestWrapper);
+    }
+  }
+
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
     if (this.location != null && !this.location.equals(streamWriter.getLocation())) {
@@ -388,6 +470,11 @@ class ConnectionWorker implements AutoCloseable {
     requestBuilder.setWriteStream(streamWriter.getStreamName());
     requestBuilder.putAllMissingValueInterpretations(
         streamWriter.getMissingValueInterpretationMap());
+    if (streamWriter.getDefaultValueInterpretation()
+        != MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED) {
+      requestBuilder.setDefaultMissingValueInterpretation(
+          streamWriter.getDefaultValueInterpretation());
+    }
     return appendInternal(streamWriter, requestBuilder.build());
   }
 
@@ -406,7 +493,8 @@ class ConnectionWorker implements AutoCloseable {
 
   private ApiFuture<AppendRowsResponse> appendInternal(
       StreamWriter streamWriter, AppendRowsRequest message) {
-    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message, streamWriter);
+    AppendRequestAndResponse requestWrapper =
+        new AppendRequestAndResponse(message, streamWriter, this.retrySettings);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
@@ -502,7 +590,7 @@ class ConnectionWorker implements AutoCloseable {
 
   @VisibleForTesting
   static long calculateSleepTimeMilli(long retryCount) {
-    return Math.min((long) Math.pow(2, retryCount), 60000);
+    return (long) Math.min(Math.pow(2, retryCount) * 50, 60000);
   }
 
   @VisibleForTesting
@@ -624,11 +712,16 @@ class ConnectionWorker implements AutoCloseable {
           while (!inflightRequestQueue.isEmpty()) {
             waitingRequestQueue.addFirst(inflightRequestQueue.pollLast());
           }
+
+          // If any of the inflight messages were meant to be ignored during requestCallback, they
+          // no longer will be able to make the round trip, so clear responsesToIgnore.
+          this.responsesToIgnore = 0;
         }
         while (!this.waitingRequestQueue.isEmpty()) {
           AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
+          waitForBackoffIfNecessary(requestWrapper);
           requestWrapper.trySetRequestInsertQueueTime();
-          this.inflightRequestQueue.addLast(requestWrapper);
+          this.inflightRequestQueue.add(requestWrapper);
           localQueue.addLast(requestWrapper);
         }
       } catch (InterruptedException e) {
@@ -824,7 +917,7 @@ class ConnectionWorker implements AutoCloseable {
         finalStatus = this.connectionFinalStatus;
       }
       while (!this.inflightRequestQueue.isEmpty()) {
-        localQueue.addLast(pollInflightRequestQueue());
+        localQueue.addLast(pollFirstInflightRequestQueue());
       }
       this.inflightCleanuped = true;
     } finally {
@@ -839,9 +932,101 @@ class ConnectionWorker implements AutoCloseable {
             + streamName
             + " id: "
             + writerId);
-    while (!localQueue.isEmpty()) {
-      localQueue.pollFirst().appendResult.setException(finalStatus);
+    int sizeOfQueue = localQueue.size();
+    for (int i = 0; i < sizeOfQueue; i++) {
+      if (i == 0) {
+        localQueue.pollFirst().appendResult.setException(finalStatus);
+      } else {
+        localQueue
+            .pollFirst()
+            .appendResult
+            .setException(
+                new Exceptions.StreamWriterClosedException(
+                    Status.fromCode(Code.ABORTED)
+                        .withDescription(
+                            "Connection is aborted due to an unrecoverable failure of "
+                                + "another request sharing the connection. Please retry this "
+                                + "request."),
+                    streamName,
+                    writerId));
+      }
     }
+  }
+
+  private Boolean retryOnRetryableError(Code errorCode, AppendRequestAndResponse requestWrapper) {
+    if (this.retrySettings == null) {
+      return false;
+    }
+
+    if (this.retrySettings.getMaxAttempts() == 0) {
+      return false;
+    }
+
+    if (!isConnectionErrorRetriable(errorCode) && errorCode != Code.RESOURCE_EXHAUSTED) {
+      return false;
+    }
+
+    if (requestWrapper.retryCount < this.retrySettings.getMaxAttempts()) {
+      lock.lock();
+      try {
+        requestWrapper.retryCount++;
+        if (this.retrySettings != null && useBackoffForError(errorCode, streamName)) {
+          // Trigger exponential backoff in append loop when request is resent for quota errors.
+          // createNextAttempt correctly initializes the retry delay; createfirstAttempt does not
+          // include a positive delay, just 0.
+          requestWrapper.attemptSettings =
+              requestWrapper.retryAlgorithm.createNextAttempt(
+                  requestWrapper.attemptSettings == null
+                      ? requestWrapper.retryAlgorithm.createFirstAttempt()
+                      : requestWrapper.attemptSettings);
+          requestWrapper.blockMessageSendDeadline =
+              Instant.now().plusMillis(requestWrapper.attemptSettings.getRetryDelay().toMillis());
+          log.info(
+              "Messages blocked for retry for "
+                  + java.time.Duration.between(
+                      java.time.Instant.now(), requestWrapper.blockMessageSendDeadline)
+                  + " until "
+                  + requestWrapper.blockMessageSendDeadline);
+        }
+
+        Long offset =
+            requestWrapper.message.hasOffset() ? requestWrapper.message.getOffset().getValue() : -1;
+        if (isDefaultStreamName(streamName) || offset == -1) {
+          log.info(
+              String.format(
+                  "Retrying default stream message in stream %s for in-stream error: %s, retry count:"
+                      + " %s",
+                  streamName, errorCode, requestWrapper.retryCount));
+          addMessageToFrontOfWaitingQueue(requestWrapper);
+        } else {
+          log.info(
+              String.format(
+                  "Retrying exclusive message in stream %s at offset %d for in-stream error: %s, retry"
+                      + " count: %s",
+                  streamName,
+                  requestWrapper.message.getOffset().getValue(),
+                  errorCode,
+                  requestWrapper.retryCount));
+          // Send all inflight messages to front of queue
+          while (!inflightRequestQueue.isEmpty()) {
+            AppendRequestAndResponse element = pollLastInflightRequestQueue();
+            addMessageToFrontOfWaitingQueue(element);
+            responsesToIgnore++;
+          }
+
+          addMessageToFrontOfWaitingQueue(requestWrapper);
+        }
+        return true;
+      } finally {
+        lock.unlock();
+      }
+    }
+
+    log.info(
+        String.format(
+            "Max retry count reached for message in stream %s at offset %d.  Retry count: %d",
+            streamName, requestWrapper.message.getOffset().getValue(), requestWrapper.retryCount));
+    return false;
   }
 
   private void requestCallback(AppendRowsResponse response) {
@@ -858,11 +1043,28 @@ class ConnectionWorker implements AutoCloseable {
 
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
-    if (response.hasUpdatedSchema()) {
-      this.updatedSchema =
-          TableSchemaAndTimestamp.create(System.nanoTime(), response.getUpdatedSchema());
-    }
     try {
+      // Ignored response has arrived
+      if (responsesToIgnore > 0) {
+        if (response.hasError()) {
+          log.fine(
+              String.format("Ignoring response in stream %s at offset %s.", streamName, response));
+        } else {
+          log.warning(
+              String.format(
+                  "Unexpected successful response in stream %s at offset %s.  Due to a previous"
+                      + " retryable error being inflight, this message is being ignored.",
+                  streamName, response.getAppendResult().getOffset()));
+        }
+
+        responsesToIgnore--;
+        return;
+      }
+
+      if (response.hasUpdatedSchema()) {
+        this.updatedSchema =
+            TableSchemaAndTimestamp.create(System.nanoTime(), response.getUpdatedSchema());
+      }
       // Had a successful connection with at least one result, reset retries.
       // conectionRetryCountWithoutCallback is reset so that only multiple retries, without
       // successful records sent, will cause the stream to fail.
@@ -873,7 +1075,7 @@ class ConnectionWorker implements AutoCloseable {
         connectionRetryStartTime = 0;
       }
       if (!this.inflightRequestQueue.isEmpty()) {
-        requestWrapper = pollInflightRequestQueue();
+        requestWrapper = pollFirstInflightRequestQueue();
       } else if (inflightCleanuped) {
         // It is possible when requestCallback is called, the inflight queue is already drained
         // because we timed out waiting for done.
@@ -891,7 +1093,15 @@ class ConnectionWorker implements AutoCloseable {
       this.lock.unlock();
     }
 
-    // We need a separte thread pool to unblock the next request callback.
+    // Retries need to happen on the same thread as queue locking may occur
+    if (response.hasError()) {
+      if (retryOnRetryableError(Code.values()[response.getError().getCode()], requestWrapper)) {
+        log.info("Attempting to retry on error: " + response.getError().toString());
+        return;
+      }
+    }
+
+    // We need a separate thread pool to unblock the next request callback.
     // Otherwise user may call append inside request callback, which may be blocked on waiting
     // on in flight quota, causing deadlock as requests can't be popped out of queue until
     // the current request callback finishes.
@@ -930,13 +1140,23 @@ class ConnectionWorker implements AutoCloseable {
         });
   }
 
-  private boolean isConnectionErrorRetriable(Throwable t) {
-    Status status = Status.fromThrowable(t);
-    return status.getCode() == Code.ABORTED
-        || status.getCode() == Code.UNAVAILABLE
-        || status.getCode() == Code.CANCELLED
-        || status.getCode() == Code.INTERNAL
-        || status.getCode() == Code.DEADLINE_EXCEEDED;
+  private boolean isConnectionErrorRetriable(Code statusCode) {
+    return statusCode == Code.ABORTED
+        || statusCode == Code.UNAVAILABLE
+        || statusCode == Code.CANCELLED
+        || statusCode == Code.INTERNAL
+        || statusCode == Code.DEADLINE_EXCEEDED;
+  }
+
+  private boolean useBackoffForError(Code statusCode, String streamName) {
+    // Default stream uses backoff for INTERNAL, as THROTTLED errors are more likely with default
+    // streams.  RESOURCE_EXHAUSTED streams are used for backoff for each stream type.
+    if (isDefaultStreamName(streamName)) {
+      if (statusCode == Code.INTERNAL) {
+        return true;
+      }
+    }
+    return statusCode == Code.RESOURCE_EXHAUSTED;
   }
 
   private void doneCallback(Throwable finalStatus) {
@@ -955,7 +1175,7 @@ class ConnectionWorker implements AutoCloseable {
           connectionRetryStartTime = System.currentTimeMillis();
         }
         // If the error can be retried, don't set it here, let it try to retry later on.
-        if (isConnectionErrorRetriable(finalStatus)
+        if (isConnectionErrorRetriable(Status.fromThrowable(finalStatus).getCode())
             && !userClosed
             && (maxRetryDuration.toMillis() == 0f
                 || System.currentTimeMillis() - connectionRetryStartTime
@@ -991,12 +1211,23 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   @GuardedBy("lock")
-  private AppendRequestAndResponse pollInflightRequestQueue() {
-    AppendRequestAndResponse requestWrapper = this.inflightRequestQueue.pollFirst();
+  private AppendRequestAndResponse pollInflightRequestQueue(boolean pollLast) {
+    AppendRequestAndResponse requestWrapper =
+        pollLast ? inflightRequestQueue.pollLast() : inflightRequestQueue.poll();
     --this.inflightRequests;
     this.inflightBytes -= requestWrapper.messageSize;
     this.inflightReduced.signal();
     return requestWrapper;
+  }
+
+  @GuardedBy("lock")
+  private AppendRequestAndResponse pollLastInflightRequestQueue() {
+    return pollInflightRequestQueue(/* pollLast= */ true);
+  }
+
+  @GuardedBy("lock")
+  private AppendRequestAndResponse pollFirstInflightRequestQueue() {
+    return pollInflightRequestQueue(/* pollLast= */ false);
   }
 
   /** Thread-safe getter of updated TableSchema */
@@ -1010,17 +1241,36 @@ class ConnectionWorker implements AutoCloseable {
     final SettableApiFuture<AppendRowsResponse> appendResult;
     final AppendRowsRequest message;
     final long messageSize;
+    // Used to determine the point at which appendLoop is able to process messages from the waiting
+    // queue.  This is used to process errors that support exponential backoff retry.
+    Instant blockMessageSendDeadline;
+
+    Integer retryCount;
+    ExponentialRetryAlgorithm retryAlgorithm;
 
     // The writer that issues the call of the request.
     final StreamWriter streamWriter;
 
+    TimedAttemptSettings attemptSettings;
+
     Instant requestCreationTimeStamp;
 
-    AppendRequestAndResponse(AppendRowsRequest message, StreamWriter streamWriter) {
+    AppendRequestAndResponse(
+        AppendRowsRequest message, StreamWriter streamWriter, RetrySettings retrySettings) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
       this.messageSize = message.getProtoRows().getSerializedSize();
       this.streamWriter = streamWriter;
+      this.blockMessageSendDeadline = Instant.now();
+      this.retryCount = 0;
+      // To be set after first retry
+      this.attemptSettings = null;
+      if (retrySettings != null) {
+        this.retryAlgorithm =
+            new ExponentialRetryAlgorithm(retrySettings, NanoClock.getDefaultClock());
+      } else {
+        this.retryAlgorithm = null;
+      }
     }
 
     void trySetRequestInsertQueueTime() {
