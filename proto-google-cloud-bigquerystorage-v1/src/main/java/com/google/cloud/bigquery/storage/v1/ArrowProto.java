@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,12 +58,12 @@ public final class ArrowProto {
           + ".storage.v1.ArrowSerializationOptions.Co"
           + "mpressionCodec\"H\n\020CompressionCodec\022\033\n\027CO"
           + "MPRESSION_UNSPECIFIED\020\000\022\r\n\tLZ4_FRAME\020\001\022\010"
-          + "\n\004ZSTD\020\002B\303\001\n$com.google.cloud.bigquery.s"
-          + "torage.v1B\nArrowProtoP\001ZGgoogle.golang.o"
-          + "rg/genproto/googleapis/cloud/bigquery/st"
-          + "orage/v1;storage\252\002 Google.Cloud.BigQuery"
-          + ".Storage.V1\312\002 Google\\Cloud\\BigQuery\\Stor"
-          + "age\\V1b\006proto3"
+          + "\n\004ZSTD\020\002B\272\001\n$com.google.cloud.bigquery.s"
+          + "torage.v1B\nArrowProtoP\001Z>cloud.google.co"
+          + "m/go/bigquery/storage/apiv1/storagepb;st"
+          + "oragepb\252\002 Google.Cloud.BigQuery.Storage."
+          + "V1\312\002 Google\\Cloud\\BigQuery\\Storage\\V1b\006p"
+          + "roto3"
     };
     descriptor =
         com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(

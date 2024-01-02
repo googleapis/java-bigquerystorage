@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,12 @@ package com.google.cloud.bigquery.storage.v1;
  *
  * <pre>
  * Request message for `AppendRows`.
- * Due to the nature of AppendRows being a bidirectional streaming RPC, certain
- * parts of the AppendRowsRequest need only be specified for the first request
- * sent each time the gRPC network connection is opened/reopened.
+ *
+ * Because AppendRows is a bidirectional streaming RPC, certain parts of the
+ * AppendRowsRequest need only be specified for the first request before
+ * switching table destinations. You can also switch table destinations within
+ * the same connection for the default stream.
+ *
  * The size of a single AppendRowsRequest must be less than 10 MB in size.
  * Requests larger than this return an error, typically `INVALID_ARGUMENT`.
  * </pre>
@@ -45,17 +48,13 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
   private AppendRowsRequest() {
     writeStream_ = "";
     traceId_ = "";
+    defaultMissingValueInterpretation_ = 0;
   }
 
   @java.lang.Override
   @SuppressWarnings({"unused"})
   protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new AppendRowsRequest();
-  }
-
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -88,10 +87,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    *
    *
    * <pre>
-   * An enum to indicate how to interpret missing values. Missing values are
-   * fields present in user schema but missing in rows. A missing value can
-   * represent a NULL or a column default value defined in BigQuery table
-   * schema.
+   * An enum to indicate how to interpret missing values of fields that are
+   * present in user schema but missing in rows. A missing value can represent a
+   * NULL or a column default value defined in BigQuery table schema.
    * </pre>
    *
    * Protobuf enum {@code
@@ -263,9 +261,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Proto schema used to serialize the data.  This value only needs to be
-     * provided as part of the first request on a gRPC network connection,
-     * and will be ignored for subsequent requests on the connection.
+     * The protocol buffer schema used to serialize the data. Provide this value
+     * whenever:
+     *
+     * * You send the first request of an RPC connection.
+     *
+     * * You change the input schema.
+     *
+     * * You specify a new destination table.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -277,9 +280,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Proto schema used to serialize the data.  This value only needs to be
-     * provided as part of the first request on a gRPC network connection,
-     * and will be ignored for subsequent requests on the connection.
+     * The protocol buffer schema used to serialize the data. Provide this value
+     * whenever:
+     *
+     * * You send the first request of an RPC connection.
+     *
+     * * You change the input schema.
+     *
+     * * You specify a new destination table.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -291,9 +299,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Proto schema used to serialize the data.  This value only needs to be
-     * provided as part of the first request on a gRPC network connection,
-     * and will be ignored for subsequent requests on the connection.
+     * The protocol buffer schema used to serialize the data. Provide this value
+     * whenever:
+     *
+     * * You send the first request of an RPC connection.
+     *
+     * * You change the input schema.
+     *
+     * * You specify a new destination table.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -372,11 +385,6 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       return new ProtoData();
     }
 
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-      return this.unknownFields;
-    }
-
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
       return com.google.cloud.bigquery.storage.v1.StorageProto
           .internal_static_google_cloud_bigquery_storage_v1_AppendRowsRequest_ProtoData_descriptor;
@@ -398,9 +406,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Proto schema used to serialize the data.  This value only needs to be
-     * provided as part of the first request on a gRPC network connection,
-     * and will be ignored for subsequent requests on the connection.
+     * The protocol buffer schema used to serialize the data. Provide this value
+     * whenever:
+     *
+     * * You send the first request of an RPC connection.
+     *
+     * * You change the input schema.
+     *
+     * * You specify a new destination table.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -415,9 +428,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Proto schema used to serialize the data.  This value only needs to be
-     * provided as part of the first request on a gRPC network connection,
-     * and will be ignored for subsequent requests on the connection.
+     * The protocol buffer schema used to serialize the data. Provide this value
+     * whenever:
+     *
+     * * You send the first request of an RPC connection.
+     *
+     * * You change the input schema.
+     *
+     * * You specify a new destination table.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -434,16 +452,23 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Proto schema used to serialize the data.  This value only needs to be
-     * provided as part of the first request on a gRPC network connection,
-     * and will be ignored for subsequent requests on the connection.
+     * The protocol buffer schema used to serialize the data. Provide this value
+     * whenever:
+     *
+     * * You send the first request of an RPC connection.
+     *
+     * * You change the input schema.
+     *
+     * * You specify a new destination table.
      * </pre>
      *
      * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
      */
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1.ProtoSchemaOrBuilder getWriterSchemaOrBuilder() {
-      return getWriterSchema();
+      return writerSchema_ == null
+          ? com.google.cloud.bigquery.storage.v1.ProtoSchema.getDefaultInstance()
+          : writerSchema_;
     }
 
     public static final int ROWS_FIELD_NUMBER = 2;
@@ -500,7 +525,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      */
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1.ProtoRowsOrBuilder getRowsOrBuilder() {
-      return getRows();
+      return rows_ == null
+          ? com.google.cloud.bigquery.storage.v1.ProtoRows.getDefaultInstance()
+          : rows_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -731,16 +758,15 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       @java.lang.Override
       public Builder clear() {
         super.clear();
-        if (writerSchemaBuilder_ == null) {
-          writerSchema_ = null;
-        } else {
-          writerSchema_ = null;
+        bitField0_ = 0;
+        writerSchema_ = null;
+        if (writerSchemaBuilder_ != null) {
+          writerSchemaBuilder_.dispose();
           writerSchemaBuilder_ = null;
         }
-        if (rowsBuilder_ == null) {
-          rows_ = null;
-        } else {
-          rows_ = null;
+        rows_ = null;
+        if (rowsBuilder_ != null) {
+          rowsBuilder_.dispose();
           rowsBuilder_ = null;
         }
         return this;
@@ -772,18 +798,23 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       public com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData buildPartial() {
         com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData result =
             new com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData(this);
-        if (writerSchemaBuilder_ == null) {
-          result.writerSchema_ = writerSchema_;
-        } else {
-          result.writerSchema_ = writerSchemaBuilder_.build();
-        }
-        if (rowsBuilder_ == null) {
-          result.rows_ = rows_;
-        } else {
-          result.rows_ = rowsBuilder_.build();
+        if (bitField0_ != 0) {
+          buildPartial0(result);
         }
         onBuilt();
         return result;
+      }
+
+      private void buildPartial0(
+          com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.writerSchema_ =
+              writerSchemaBuilder_ == null ? writerSchema_ : writerSchemaBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.rows_ = rowsBuilder_ == null ? rows_ : rowsBuilder_.build();
+        }
       }
 
       @java.lang.Override
@@ -877,13 +908,13 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
               case 10:
                 {
                   input.readMessage(getWriterSchemaFieldBuilder().getBuilder(), extensionRegistry);
-
+                  bitField0_ |= 0x00000001;
                   break;
                 } // case 10
               case 18:
                 {
                   input.readMessage(getRowsFieldBuilder().getBuilder(), extensionRegistry);
-
+                  bitField0_ |= 0x00000002;
                   break;
                 } // case 18
               default:
@@ -903,6 +934,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
         return this;
       }
 
+      private int bitField0_;
+
       private com.google.cloud.bigquery.storage.v1.ProtoSchema writerSchema_;
       private com.google.protobuf.SingleFieldBuilderV3<
               com.google.cloud.bigquery.storage.v1.ProtoSchema,
@@ -913,9 +946,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
        *
        *
        * <pre>
-       * Proto schema used to serialize the data.  This value only needs to be
-       * provided as part of the first request on a gRPC network connection,
-       * and will be ignored for subsequent requests on the connection.
+       * The protocol buffer schema used to serialize the data. Provide this value
+       * whenever:
+       *
+       * * You send the first request of an RPC connection.
+       *
+       * * You change the input schema.
+       *
+       * * You specify a new destination table.
        * </pre>
        *
        * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -923,15 +961,20 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
        * @return Whether the writerSchema field is set.
        */
       public boolean hasWriterSchema() {
-        return writerSchemaBuilder_ != null || writerSchema_ != null;
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        *
        *
        * <pre>
-       * Proto schema used to serialize the data.  This value only needs to be
-       * provided as part of the first request on a gRPC network connection,
-       * and will be ignored for subsequent requests on the connection.
+       * The protocol buffer schema used to serialize the data. Provide this value
+       * whenever:
+       *
+       * * You send the first request of an RPC connection.
+       *
+       * * You change the input schema.
+       *
+       * * You specify a new destination table.
        * </pre>
        *
        * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -951,9 +994,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
        *
        *
        * <pre>
-       * Proto schema used to serialize the data.  This value only needs to be
-       * provided as part of the first request on a gRPC network connection,
-       * and will be ignored for subsequent requests on the connection.
+       * The protocol buffer schema used to serialize the data. Provide this value
+       * whenever:
+       *
+       * * You send the first request of an RPC connection.
+       *
+       * * You change the input schema.
+       *
+       * * You specify a new destination table.
        * </pre>
        *
        * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -964,20 +1012,25 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
             throw new NullPointerException();
           }
           writerSchema_ = value;
-          onChanged();
         } else {
           writerSchemaBuilder_.setMessage(value);
         }
-
+        bitField0_ |= 0x00000001;
+        onChanged();
         return this;
       }
       /**
        *
        *
        * <pre>
-       * Proto schema used to serialize the data.  This value only needs to be
-       * provided as part of the first request on a gRPC network connection,
-       * and will be ignored for subsequent requests on the connection.
+       * The protocol buffer schema used to serialize the data. Provide this value
+       * whenever:
+       *
+       * * You send the first request of an RPC connection.
+       *
+       * * You change the input schema.
+       *
+       * * You specify a new destination table.
        * </pre>
        *
        * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -986,76 +1039,90 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
           com.google.cloud.bigquery.storage.v1.ProtoSchema.Builder builderForValue) {
         if (writerSchemaBuilder_ == null) {
           writerSchema_ = builderForValue.build();
-          onChanged();
         } else {
           writerSchemaBuilder_.setMessage(builderForValue.build());
         }
-
+        bitField0_ |= 0x00000001;
+        onChanged();
         return this;
       }
       /**
        *
        *
        * <pre>
-       * Proto schema used to serialize the data.  This value only needs to be
-       * provided as part of the first request on a gRPC network connection,
-       * and will be ignored for subsequent requests on the connection.
+       * The protocol buffer schema used to serialize the data. Provide this value
+       * whenever:
+       *
+       * * You send the first request of an RPC connection.
+       *
+       * * You change the input schema.
+       *
+       * * You specify a new destination table.
        * </pre>
        *
        * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
        */
       public Builder mergeWriterSchema(com.google.cloud.bigquery.storage.v1.ProtoSchema value) {
         if (writerSchemaBuilder_ == null) {
-          if (writerSchema_ != null) {
-            writerSchema_ =
-                com.google.cloud.bigquery.storage.v1.ProtoSchema.newBuilder(writerSchema_)
-                    .mergeFrom(value)
-                    .buildPartial();
+          if (((bitField0_ & 0x00000001) != 0)
+              && writerSchema_ != null
+              && writerSchema_
+                  != com.google.cloud.bigquery.storage.v1.ProtoSchema.getDefaultInstance()) {
+            getWriterSchemaBuilder().mergeFrom(value);
           } else {
             writerSchema_ = value;
           }
-          onChanged();
         } else {
           writerSchemaBuilder_.mergeFrom(value);
         }
-
+        bitField0_ |= 0x00000001;
+        onChanged();
         return this;
       }
       /**
        *
        *
        * <pre>
-       * Proto schema used to serialize the data.  This value only needs to be
-       * provided as part of the first request on a gRPC network connection,
-       * and will be ignored for subsequent requests on the connection.
+       * The protocol buffer schema used to serialize the data. Provide this value
+       * whenever:
+       *
+       * * You send the first request of an RPC connection.
+       *
+       * * You change the input schema.
+       *
+       * * You specify a new destination table.
        * </pre>
        *
        * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
        */
       public Builder clearWriterSchema() {
-        if (writerSchemaBuilder_ == null) {
-          writerSchema_ = null;
-          onChanged();
-        } else {
-          writerSchema_ = null;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        writerSchema_ = null;
+        if (writerSchemaBuilder_ != null) {
+          writerSchemaBuilder_.dispose();
           writerSchemaBuilder_ = null;
         }
-
+        onChanged();
         return this;
       }
       /**
        *
        *
        * <pre>
-       * Proto schema used to serialize the data.  This value only needs to be
-       * provided as part of the first request on a gRPC network connection,
-       * and will be ignored for subsequent requests on the connection.
+       * The protocol buffer schema used to serialize the data. Provide this value
+       * whenever:
+       *
+       * * You send the first request of an RPC connection.
+       *
+       * * You change the input schema.
+       *
+       * * You specify a new destination table.
        * </pre>
        *
        * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
        */
       public com.google.cloud.bigquery.storage.v1.ProtoSchema.Builder getWriterSchemaBuilder() {
-
+        bitField0_ |= 0x00000001;
         onChanged();
         return getWriterSchemaFieldBuilder().getBuilder();
       }
@@ -1063,9 +1130,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
        *
        *
        * <pre>
-       * Proto schema used to serialize the data.  This value only needs to be
-       * provided as part of the first request on a gRPC network connection,
-       * and will be ignored for subsequent requests on the connection.
+       * The protocol buffer schema used to serialize the data. Provide this value
+       * whenever:
+       *
+       * * You send the first request of an RPC connection.
+       *
+       * * You change the input schema.
+       *
+       * * You specify a new destination table.
        * </pre>
        *
        * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -1083,9 +1155,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
        *
        *
        * <pre>
-       * Proto schema used to serialize the data.  This value only needs to be
-       * provided as part of the first request on a gRPC network connection,
-       * and will be ignored for subsequent requests on the connection.
+       * The protocol buffer schema used to serialize the data. Provide this value
+       * whenever:
+       *
+       * * You send the first request of an RPC connection.
+       *
+       * * You change the input schema.
+       *
+       * * You specify a new destination table.
        * </pre>
        *
        * <code>.google.cloud.bigquery.storage.v1.ProtoSchema writer_schema = 1;</code>
@@ -1128,7 +1205,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
        * @return Whether the rows field is set.
        */
       public boolean hasRows() {
-        return rowsBuilder_ != null || rows_ != null;
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        *
@@ -1171,11 +1248,11 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
             throw new NullPointerException();
           }
           rows_ = value;
-          onChanged();
         } else {
           rowsBuilder_.setMessage(value);
         }
-
+        bitField0_ |= 0x00000002;
+        onChanged();
         return this;
       }
       /**
@@ -1194,11 +1271,11 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
           com.google.cloud.bigquery.storage.v1.ProtoRows.Builder builderForValue) {
         if (rowsBuilder_ == null) {
           rows_ = builderForValue.build();
-          onChanged();
         } else {
           rowsBuilder_.setMessage(builderForValue.build());
         }
-
+        bitField0_ |= 0x00000002;
+        onChanged();
         return this;
       }
       /**
@@ -1215,19 +1292,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
        */
       public Builder mergeRows(com.google.cloud.bigquery.storage.v1.ProtoRows value) {
         if (rowsBuilder_ == null) {
-          if (rows_ != null) {
-            rows_ =
-                com.google.cloud.bigquery.storage.v1.ProtoRows.newBuilder(rows_)
-                    .mergeFrom(value)
-                    .buildPartial();
+          if (((bitField0_ & 0x00000002) != 0)
+              && rows_ != null
+              && rows_ != com.google.cloud.bigquery.storage.v1.ProtoRows.getDefaultInstance()) {
+            getRowsBuilder().mergeFrom(value);
           } else {
             rows_ = value;
           }
-          onChanged();
         } else {
           rowsBuilder_.mergeFrom(value);
         }
-
+        bitField0_ |= 0x00000002;
+        onChanged();
         return this;
       }
       /**
@@ -1243,14 +1319,13 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
        * <code>.google.cloud.bigquery.storage.v1.ProtoRows rows = 2;</code>
        */
       public Builder clearRows() {
-        if (rowsBuilder_ == null) {
-          rows_ = null;
-          onChanged();
-        } else {
-          rows_ = null;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        rows_ = null;
+        if (rowsBuilder_ != null) {
+          rowsBuilder_.dispose();
           rowsBuilder_ = null;
         }
-
+        onChanged();
         return this;
       }
       /**
@@ -1266,7 +1341,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
        * <code>.google.cloud.bigquery.storage.v1.ProtoRows rows = 2;</code>
        */
       public com.google.cloud.bigquery.storage.v1.ProtoRows.Builder getRowsBuilder() {
-
+        bitField0_ |= 0x00000002;
         onChanged();
         return getRowsFieldBuilder().getBuilder();
       }
@@ -1388,6 +1463,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
   }
 
   private int rowsCase_ = 0;
+
+  @SuppressWarnings("serial")
   private java.lang.Object rows_;
 
   public enum RowsCase
@@ -1432,19 +1509,45 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
   }
 
   public static final int WRITE_STREAM_FIELD_NUMBER = 1;
-  private volatile java.lang.Object writeStream_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object writeStream_ = "";
   /**
    *
    *
    * <pre>
-   * Required. The write_stream identifies the target of the append operation,
-   * and only needs to be specified as part of the first request on the gRPC
-   * connection. If provided for subsequent requests, it must match the value of
-   * the first request.
+   * Required. The write_stream identifies the append operation. It must be
+   * provided in the following scenarios:
+   *
+   * * In the first request to an AppendRows connection.
+   *
+   * * In all subsequent requests to an AppendRows connection, if you use the
+   * same connection to write to multiple tables or change the input schema for
+   * default streams.
+   *
    * For explicitly created write streams, the format is:
+   *
    * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/{id}`
+   *
    * For the special default stream, the format is:
+   *
    * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/_default`.
+   *
+   * An example of a possible sequence of requests with write_stream fields
+   * within a single connection:
+   *
+   * * r1: {write_stream: stream_name_1}
+   *
+   * * r2: {write_stream: /&#42;omit*&#47;}
+   *
+   * * r3: {write_stream: /&#42;omit*&#47;}
+   *
+   * * r4: {write_stream: stream_name_2}
+   *
+   * * r5: {write_stream: stream_name_2}
+   *
+   * The destination changed in request_4, so the write_stream field must be
+   * populated in all subsequent requests in this stream.
    * </pre>
    *
    * <code>
@@ -1469,14 +1572,38 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    *
    *
    * <pre>
-   * Required. The write_stream identifies the target of the append operation,
-   * and only needs to be specified as part of the first request on the gRPC
-   * connection. If provided for subsequent requests, it must match the value of
-   * the first request.
+   * Required. The write_stream identifies the append operation. It must be
+   * provided in the following scenarios:
+   *
+   * * In the first request to an AppendRows connection.
+   *
+   * * In all subsequent requests to an AppendRows connection, if you use the
+   * same connection to write to multiple tables or change the input schema for
+   * default streams.
+   *
    * For explicitly created write streams, the format is:
+   *
    * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/{id}`
+   *
    * For the special default stream, the format is:
+   *
    * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/_default`.
+   *
+   * An example of a possible sequence of requests with write_stream fields
+   * within a single connection:
+   *
+   * * r1: {write_stream: stream_name_1}
+   *
+   * * r2: {write_stream: /&#42;omit*&#47;}
+   *
+   * * r3: {write_stream: /&#42;omit*&#47;}
+   *
+   * * r4: {write_stream: stream_name_2}
+   *
+   * * r5: {write_stream: stream_name_2}
+   *
+   * The destination changed in request_4, so the write_stream field must be
+   * populated in all subsequent requests in this stream.
    * </pre>
    *
    * <code>
@@ -1550,7 +1677,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    */
   @java.lang.Override
   public com.google.protobuf.Int64ValueOrBuilder getOffsetOrBuilder() {
-    return getOffset();
+    return offset_ == null ? com.google.protobuf.Int64Value.getDefaultInstance() : offset_;
   }
 
   public static final int PROTO_ROWS_FIELD_NUMBER = 4;
@@ -1606,7 +1733,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
   }
 
   public static final int TRACE_ID_FIELD_NUMBER = 6;
-  private volatile java.lang.Object traceId_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object traceId_ = "";
   /**
    *
    *
@@ -1671,6 +1800,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
                 .getNumber());
   }
 
+  @SuppressWarnings("serial")
   private com.google.protobuf.MapField<java.lang.String, java.lang.Integer>
       missingValueInterpretations_;
 
@@ -1715,14 +1845,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    * values are fields present in user schema but missing in rows. The key is
    * the field name. The value is the interpretation of missing values for the
    * field.
+   *
    * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
    * missing values in field foo are interpreted as NULL, all missing values in
    * field bar are interpreted as the default value of field bar in table
    * schema.
+   *
    * If a field is not in this map and has missing values, the missing values
    * in this field are interpreted as NULL.
+   *
    * This field only applies to the current request, it won't affect other
    * requests on the connection.
+   *
    * Currently, field name can only be top-level column name, can't be a struct
    * field path like 'foo.bar'.
    * </pre>
@@ -1755,14 +1889,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    * values are fields present in user schema but missing in rows. The key is
    * the field name. The value is the interpretation of missing values for the
    * field.
+   *
    * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
    * missing values in field foo are interpreted as NULL, all missing values in
    * field bar are interpreted as the default value of field bar in table
    * schema.
+   *
    * If a field is not in this map and has missing values, the missing values
    * in this field are interpreted as NULL.
+   *
    * This field only applies to the current request, it won't affect other
    * requests on the connection.
+   *
    * Currently, field name can only be top-level column name, can't be a struct
    * field path like 'foo.bar'.
    * </pre>
@@ -1787,14 +1925,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    * values are fields present in user schema but missing in rows. The key is
    * the field name. The value is the interpretation of missing values for the
    * field.
+   *
    * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
    * missing values in field foo are interpreted as NULL, all missing values in
    * field bar are interpreted as the default value of field bar in table
    * schema.
+   *
    * If a field is not in this map and has missing values, the missing values
    * in this field are interpreted as NULL.
+   *
    * This field only applies to the current request, it won't affect other
    * requests on the connection.
+   *
    * Currently, field name can only be top-level column name, can't be a struct
    * field path like 'foo.bar'.
    * </pre>
@@ -1828,14 +1970,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    * values are fields present in user schema but missing in rows. The key is
    * the field name. The value is the interpretation of missing values for the
    * field.
+   *
    * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
    * missing values in field foo are interpreted as NULL, all missing values in
    * field bar are interpreted as the default value of field bar in table
    * schema.
+   *
    * If a field is not in this map and has missing values, the missing values
    * in this field are interpreted as NULL.
+   *
    * This field only applies to the current request, it won't affect other
    * requests on the connection.
+   *
    * Currently, field name can only be top-level column name, can't be a struct
    * field path like 'foo.bar'.
    * </pre>
@@ -1871,14 +2017,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    * values are fields present in user schema but missing in rows. The key is
    * the field name. The value is the interpretation of missing values for the
    * field.
+   *
    * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
    * missing values in field foo are interpreted as NULL, all missing values in
    * field bar are interpreted as the default value of field bar in table
    * schema.
+   *
    * If a field is not in this map and has missing values, the missing values
    * in this field are interpreted as NULL.
+   *
    * This field only applies to the current request, it won't affect other
    * requests on the connection.
+   *
    * Currently, field name can only be top-level column name, can't be a struct
    * field path like 'foo.bar'.
    * </pre>
@@ -1900,14 +2050,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    * values are fields present in user schema but missing in rows. The key is
    * the field name. The value is the interpretation of missing values for the
    * field.
+   *
    * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
    * missing values in field foo are interpreted as NULL, all missing values in
    * field bar are interpreted as the default value of field bar in table
    * schema.
+   *
    * If a field is not in this map and has missing values, the missing values
    * in this field are interpreted as NULL.
+   *
    * This field only applies to the current request, it won't affect other
    * requests on the connection.
+   *
    * Currently, field name can only be top-level column name, can't be a struct
    * field path like 'foo.bar'.
    * </pre>
@@ -1933,14 +2087,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    * values are fields present in user schema but missing in rows. The key is
    * the field name. The value is the interpretation of missing values for the
    * field.
+   *
    * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
    * missing values in field foo are interpreted as NULL, all missing values in
    * field bar are interpreted as the default value of field bar in table
    * schema.
+   *
    * If a field is not in this map and has missing values, the missing values
    * in this field are interpreted as NULL.
+   *
    * This field only applies to the current request, it won't affect other
    * requests on the connection.
+   *
    * Currently, field name can only be top-level column name, can't be a struct
    * field path like 'foo.bar'.
    * </pre>
@@ -1960,6 +2118,66 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       throw new java.lang.IllegalArgumentException();
     }
     return map.get(key);
+  }
+
+  public static final int DEFAULT_MISSING_VALUE_INTERPRETATION_FIELD_NUMBER = 8;
+  private int defaultMissingValueInterpretation_ = 0;
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Default missing value interpretation for all columns in the
+   * table. When a value is specified on an `AppendRowsRequest`, it is applied
+   * to all requests on the connection from that point forward, until a
+   * subsequent `AppendRowsRequest` sets it to a different value.
+   * `missing_value_interpretation` can override
+   * `default_missing_value_interpretation`. For example, if you want to write
+   * `NULL` instead of using default values for some columns, you can set
+   * `default_missing_value_interpretation` to `DEFAULT_VALUE` and at the same
+   * time, set `missing_value_interpretations` to `NULL_VALUE` on those columns.
+   * </pre>
+   *
+   * <code>
+   * .google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation default_missing_value_interpretation = 8 [(.google.api.field_behavior) = OPTIONAL];
+   * </code>
+   *
+   * @return The enum numeric value on the wire for defaultMissingValueInterpretation.
+   */
+  @java.lang.Override
+  public int getDefaultMissingValueInterpretationValue() {
+    return defaultMissingValueInterpretation_;
+  }
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Default missing value interpretation for all columns in the
+   * table. When a value is specified on an `AppendRowsRequest`, it is applied
+   * to all requests on the connection from that point forward, until a
+   * subsequent `AppendRowsRequest` sets it to a different value.
+   * `missing_value_interpretation` can override
+   * `default_missing_value_interpretation`. For example, if you want to write
+   * `NULL` instead of using default values for some columns, you can set
+   * `default_missing_value_interpretation` to `DEFAULT_VALUE` and at the same
+   * time, set `missing_value_interpretations` to `NULL_VALUE` on those columns.
+   * </pre>
+   *
+   * <code>
+   * .google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation default_missing_value_interpretation = 8 [(.google.api.field_behavior) = OPTIONAL];
+   * </code>
+   *
+   * @return The defaultMissingValueInterpretation.
+   */
+  @java.lang.Override
+  public com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation
+      getDefaultMissingValueInterpretation() {
+    com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation result =
+        com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation.forNumber(
+            defaultMissingValueInterpretation_);
+    return result == null
+        ? com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation
+            .UNRECOGNIZED
+        : result;
   }
 
   private byte memoizedIsInitialized = -1;
@@ -2000,6 +2218,12 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
         internalGetMissingValueInterpretations(),
         MissingValueInterpretationsDefaultEntryHolder.defaultEntry,
         7);
+    if (defaultMissingValueInterpretation_
+        != com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation
+            .MISSING_VALUE_INTERPRETATION_UNSPECIFIED
+            .getNumber()) {
+      output.writeEnum(8, defaultMissingValueInterpretation_);
+    }
     getUnknownFields().writeTo(output);
   }
 
@@ -2036,6 +2260,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
           com.google.protobuf.CodedOutputStream.computeMessageSize(
               7, missingValueInterpretations__);
     }
+    if (defaultMissingValueInterpretation_
+        != com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation
+            .MISSING_VALUE_INTERPRETATION_UNSPECIFIED
+            .getNumber()) {
+      size +=
+          com.google.protobuf.CodedOutputStream.computeEnumSize(
+              8, defaultMissingValueInterpretation_);
+    }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -2060,6 +2292,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
     if (!getTraceId().equals(other.getTraceId())) return false;
     if (!internalGetMissingValueInterpretations()
         .equals(other.internalGetMissingValueInterpretations())) return false;
+    if (defaultMissingValueInterpretation_ != other.defaultMissingValueInterpretation_)
+      return false;
     if (!getRowsCase().equals(other.getRowsCase())) return false;
     switch (rowsCase_) {
       case 4:
@@ -2091,6 +2325,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       hash = (37 * hash) + MISSING_VALUE_INTERPRETATIONS_FIELD_NUMBER;
       hash = (53 * hash) + internalGetMissingValueInterpretations().hashCode();
     }
+    hash = (37 * hash) + DEFAULT_MISSING_VALUE_INTERPRETATION_FIELD_NUMBER;
+    hash = (53 * hash) + defaultMissingValueInterpretation_;
     switch (rowsCase_) {
       case 4:
         hash = (37 * hash) + PROTO_ROWS_FIELD_NUMBER;
@@ -2205,9 +2441,12 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    *
    * <pre>
    * Request message for `AppendRows`.
-   * Due to the nature of AppendRows being a bidirectional streaming RPC, certain
-   * parts of the AppendRowsRequest need only be specified for the first request
-   * sent each time the gRPC network connection is opened/reopened.
+   *
+   * Because AppendRows is a bidirectional streaming RPC, certain parts of the
+   * AppendRowsRequest need only be specified for the first request before
+   * switching table destinations. You can also switch table destinations within
+   * the same connection for the default stream.
+   *
    * The size of a single AppendRowsRequest must be less than 10 MB in size.
    * Requests larger than this return an error, typically `INVALID_ARGUMENT`.
    * </pre>
@@ -2263,20 +2502,19 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
     @java.lang.Override
     public Builder clear() {
       super.clear();
+      bitField0_ = 0;
       writeStream_ = "";
-
-      if (offsetBuilder_ == null) {
-        offset_ = null;
-      } else {
-        offset_ = null;
+      offset_ = null;
+      if (offsetBuilder_ != null) {
+        offsetBuilder_.dispose();
         offsetBuilder_ = null;
       }
       if (protoRowsBuilder_ != null) {
         protoRowsBuilder_.clear();
       }
       traceId_ = "";
-
       internalGetMutableMissingValueInterpretations().clear();
+      defaultMissingValueInterpretation_ = 0;
       rowsCase_ = 0;
       rows_ = null;
       return this;
@@ -2306,26 +2544,40 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
     public com.google.cloud.bigquery.storage.v1.AppendRowsRequest buildPartial() {
       com.google.cloud.bigquery.storage.v1.AppendRowsRequest result =
           new com.google.cloud.bigquery.storage.v1.AppendRowsRequest(this);
-      int from_bitField0_ = bitField0_;
-      result.writeStream_ = writeStream_;
-      if (offsetBuilder_ == null) {
-        result.offset_ = offset_;
-      } else {
-        result.offset_ = offsetBuilder_.build();
+      if (bitField0_ != 0) {
+        buildPartial0(result);
       }
-      if (rowsCase_ == 4) {
-        if (protoRowsBuilder_ == null) {
-          result.rows_ = rows_;
-        } else {
-          result.rows_ = protoRowsBuilder_.build();
-        }
-      }
-      result.traceId_ = traceId_;
-      result.missingValueInterpretations_ = internalGetMissingValueInterpretations();
-      result.missingValueInterpretations_.makeImmutable();
-      result.rowsCase_ = rowsCase_;
+      buildPartialOneofs(result);
       onBuilt();
       return result;
+    }
+
+    private void buildPartial0(com.google.cloud.bigquery.storage.v1.AppendRowsRequest result) {
+      int from_bitField0_ = bitField0_;
+      if (((from_bitField0_ & 0x00000001) != 0)) {
+        result.writeStream_ = writeStream_;
+      }
+      if (((from_bitField0_ & 0x00000002) != 0)) {
+        result.offset_ = offsetBuilder_ == null ? offset_ : offsetBuilder_.build();
+      }
+      if (((from_bitField0_ & 0x00000008) != 0)) {
+        result.traceId_ = traceId_;
+      }
+      if (((from_bitField0_ & 0x00000010) != 0)) {
+        result.missingValueInterpretations_ = internalGetMissingValueInterpretations();
+        result.missingValueInterpretations_.makeImmutable();
+      }
+      if (((from_bitField0_ & 0x00000020) != 0)) {
+        result.defaultMissingValueInterpretation_ = defaultMissingValueInterpretation_;
+      }
+    }
+
+    private void buildPartialOneofs(com.google.cloud.bigquery.storage.v1.AppendRowsRequest result) {
+      result.rowsCase_ = rowsCase_;
+      result.rows_ = this.rows_;
+      if (rowsCase_ == 4 && protoRowsBuilder_ != null) {
+        result.rows_ = protoRowsBuilder_.build();
+      }
     }
 
     @java.lang.Override
@@ -2376,6 +2628,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
         return this;
       if (!other.getWriteStream().isEmpty()) {
         writeStream_ = other.writeStream_;
+        bitField0_ |= 0x00000001;
         onChanged();
       }
       if (other.hasOffset()) {
@@ -2383,10 +2636,16 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       }
       if (!other.getTraceId().isEmpty()) {
         traceId_ = other.traceId_;
+        bitField0_ |= 0x00000008;
         onChanged();
       }
       internalGetMutableMissingValueInterpretations()
           .mergeFrom(other.internalGetMissingValueInterpretations());
+      bitField0_ |= 0x00000010;
+      if (other.defaultMissingValueInterpretation_ != 0) {
+        setDefaultMissingValueInterpretationValue(
+            other.getDefaultMissingValueInterpretationValue());
+      }
       switch (other.getRowsCase()) {
         case PROTO_ROWS:
           {
@@ -2432,13 +2691,13 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
             case 10:
               {
                 writeStream_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000001;
                 break;
               } // case 10
             case 18:
               {
                 input.readMessage(getOffsetFieldBuilder().getBuilder(), extensionRegistry);
-
+                bitField0_ |= 0x00000002;
                 break;
               } // case 18
             case 34:
@@ -2450,7 +2709,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
             case 50:
               {
                 traceId_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000008;
                 break;
               } // case 50
             case 58:
@@ -2466,8 +2725,15 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
                     .put(
                         missingValueInterpretations__.getKey(),
                         missingValueInterpretations__.getValue());
+                bitField0_ |= 0x00000010;
                 break;
               } // case 58
+            case 64:
+              {
+                defaultMissingValueInterpretation_ = input.readEnum();
+                bitField0_ |= 0x00000020;
+                break;
+              } // case 64
             default:
               {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
@@ -2506,14 +2772,38 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The write_stream identifies the target of the append operation,
-     * and only needs to be specified as part of the first request on the gRPC
-     * connection. If provided for subsequent requests, it must match the value of
-     * the first request.
+     * Required. The write_stream identifies the append operation. It must be
+     * provided in the following scenarios:
+     *
+     * * In the first request to an AppendRows connection.
+     *
+     * * In all subsequent requests to an AppendRows connection, if you use the
+     * same connection to write to multiple tables or change the input schema for
+     * default streams.
+     *
      * For explicitly created write streams, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/{id}`
+     *
      * For the special default stream, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/_default`.
+     *
+     * An example of a possible sequence of requests with write_stream fields
+     * within a single connection:
+     *
+     * * r1: {write_stream: stream_name_1}
+     *
+     * * r2: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r3: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r4: {write_stream: stream_name_2}
+     *
+     * * r5: {write_stream: stream_name_2}
+     *
+     * The destination changed in request_4, so the write_stream field must be
+     * populated in all subsequent requests in this stream.
      * </pre>
      *
      * <code>
@@ -2537,14 +2827,38 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The write_stream identifies the target of the append operation,
-     * and only needs to be specified as part of the first request on the gRPC
-     * connection. If provided for subsequent requests, it must match the value of
-     * the first request.
+     * Required. The write_stream identifies the append operation. It must be
+     * provided in the following scenarios:
+     *
+     * * In the first request to an AppendRows connection.
+     *
+     * * In all subsequent requests to an AppendRows connection, if you use the
+     * same connection to write to multiple tables or change the input schema for
+     * default streams.
+     *
      * For explicitly created write streams, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/{id}`
+     *
      * For the special default stream, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/_default`.
+     *
+     * An example of a possible sequence of requests with write_stream fields
+     * within a single connection:
+     *
+     * * r1: {write_stream: stream_name_1}
+     *
+     * * r2: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r3: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r4: {write_stream: stream_name_2}
+     *
+     * * r5: {write_stream: stream_name_2}
+     *
+     * The destination changed in request_4, so the write_stream field must be
+     * populated in all subsequent requests in this stream.
      * </pre>
      *
      * <code>
@@ -2568,14 +2882,38 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The write_stream identifies the target of the append operation,
-     * and only needs to be specified as part of the first request on the gRPC
-     * connection. If provided for subsequent requests, it must match the value of
-     * the first request.
+     * Required. The write_stream identifies the append operation. It must be
+     * provided in the following scenarios:
+     *
+     * * In the first request to an AppendRows connection.
+     *
+     * * In all subsequent requests to an AppendRows connection, if you use the
+     * same connection to write to multiple tables or change the input schema for
+     * default streams.
+     *
      * For explicitly created write streams, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/{id}`
+     *
      * For the special default stream, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/_default`.
+     *
+     * An example of a possible sequence of requests with write_stream fields
+     * within a single connection:
+     *
+     * * r1: {write_stream: stream_name_1}
+     *
+     * * r2: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r3: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r4: {write_stream: stream_name_2}
+     *
+     * * r5: {write_stream: stream_name_2}
+     *
+     * The destination changed in request_4, so the write_stream field must be
+     * populated in all subsequent requests in this stream.
      * </pre>
      *
      * <code>
@@ -2589,8 +2927,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       if (value == null) {
         throw new NullPointerException();
       }
-
       writeStream_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -2598,14 +2936,38 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The write_stream identifies the target of the append operation,
-     * and only needs to be specified as part of the first request on the gRPC
-     * connection. If provided for subsequent requests, it must match the value of
-     * the first request.
+     * Required. The write_stream identifies the append operation. It must be
+     * provided in the following scenarios:
+     *
+     * * In the first request to an AppendRows connection.
+     *
+     * * In all subsequent requests to an AppendRows connection, if you use the
+     * same connection to write to multiple tables or change the input schema for
+     * default streams.
+     *
      * For explicitly created write streams, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/{id}`
+     *
      * For the special default stream, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/_default`.
+     *
+     * An example of a possible sequence of requests with write_stream fields
+     * within a single connection:
+     *
+     * * r1: {write_stream: stream_name_1}
+     *
+     * * r2: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r3: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r4: {write_stream: stream_name_2}
+     *
+     * * r5: {write_stream: stream_name_2}
+     *
+     * The destination changed in request_4, so the write_stream field must be
+     * populated in all subsequent requests in this stream.
      * </pre>
      *
      * <code>
@@ -2615,8 +2977,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * @return This builder for chaining.
      */
     public Builder clearWriteStream() {
-
       writeStream_ = getDefaultInstance().getWriteStream();
+      bitField0_ = (bitField0_ & ~0x00000001);
       onChanged();
       return this;
     }
@@ -2624,14 +2986,38 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The write_stream identifies the target of the append operation,
-     * and only needs to be specified as part of the first request on the gRPC
-     * connection. If provided for subsequent requests, it must match the value of
-     * the first request.
+     * Required. The write_stream identifies the append operation. It must be
+     * provided in the following scenarios:
+     *
+     * * In the first request to an AppendRows connection.
+     *
+     * * In all subsequent requests to an AppendRows connection, if you use the
+     * same connection to write to multiple tables or change the input schema for
+     * default streams.
+     *
      * For explicitly created write streams, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/{id}`
+     *
      * For the special default stream, the format is:
+     *
      * * `projects/{project}/datasets/{dataset}/tables/{table}/streams/_default`.
+     *
+     * An example of a possible sequence of requests with write_stream fields
+     * within a single connection:
+     *
+     * * r1: {write_stream: stream_name_1}
+     *
+     * * r2: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r3: {write_stream: /&#42;omit*&#47;}
+     *
+     * * r4: {write_stream: stream_name_2}
+     *
+     * * r5: {write_stream: stream_name_2}
+     *
+     * The destination changed in request_4, so the write_stream field must be
+     * populated in all subsequent requests in this stream.
      * </pre>
      *
      * <code>
@@ -2646,8 +3032,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       writeStream_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -2673,7 +3059,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * @return Whether the offset field is set.
      */
     public boolean hasOffset() {
-      return offsetBuilder_ != null || offset_ != null;
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      *
@@ -2714,11 +3100,11 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
           throw new NullPointerException();
         }
         offset_ = value;
-        onChanged();
       } else {
         offsetBuilder_.setMessage(value);
       }
-
+      bitField0_ |= 0x00000002;
+      onChanged();
       return this;
     }
     /**
@@ -2736,11 +3122,11 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
     public Builder setOffset(com.google.protobuf.Int64Value.Builder builderForValue) {
       if (offsetBuilder_ == null) {
         offset_ = builderForValue.build();
-        onChanged();
       } else {
         offsetBuilder_.setMessage(builderForValue.build());
       }
-
+      bitField0_ |= 0x00000002;
+      onChanged();
       return this;
     }
     /**
@@ -2757,17 +3143,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      */
     public Builder mergeOffset(com.google.protobuf.Int64Value value) {
       if (offsetBuilder_ == null) {
-        if (offset_ != null) {
-          offset_ =
-              com.google.protobuf.Int64Value.newBuilder(offset_).mergeFrom(value).buildPartial();
+        if (((bitField0_ & 0x00000002) != 0)
+            && offset_ != null
+            && offset_ != com.google.protobuf.Int64Value.getDefaultInstance()) {
+          getOffsetBuilder().mergeFrom(value);
         } else {
           offset_ = value;
         }
-        onChanged();
       } else {
         offsetBuilder_.mergeFrom(value);
       }
-
+      bitField0_ |= 0x00000002;
+      onChanged();
       return this;
     }
     /**
@@ -2783,14 +3170,13 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * <code>.google.protobuf.Int64Value offset = 2;</code>
      */
     public Builder clearOffset() {
-      if (offsetBuilder_ == null) {
-        offset_ = null;
-        onChanged();
-      } else {
-        offset_ = null;
+      bitField0_ = (bitField0_ & ~0x00000002);
+      offset_ = null;
+      if (offsetBuilder_ != null) {
+        offsetBuilder_.dispose();
         offsetBuilder_ = null;
       }
-
+      onChanged();
       return this;
     }
     /**
@@ -2806,7 +3192,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * <code>.google.protobuf.Int64Value offset = 2;</code>
      */
     public com.google.protobuf.Int64Value.Builder getOffsetBuilder() {
-
+      bitField0_ |= 0x00000002;
       onChanged();
       return getOffsetFieldBuilder().getBuilder();
     }
@@ -3074,7 +3460,6 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       }
       rowsCase_ = 4;
       onChanged();
-      ;
       return protoRowsBuilder_;
     }
 
@@ -3142,8 +3527,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       if (value == null) {
         throw new NullPointerException();
       }
-
       traceId_ = value;
+      bitField0_ |= 0x00000008;
       onChanged();
       return this;
     }
@@ -3160,8 +3545,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * @return This builder for chaining.
      */
     public Builder clearTraceId() {
-
       traceId_ = getDefaultInstance().getTraceId();
+      bitField0_ = (bitField0_ & ~0x00000008);
       onChanged();
       return this;
     }
@@ -3183,8 +3568,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       traceId_ = value;
+      bitField0_ |= 0x00000008;
       onChanged();
       return this;
     }
@@ -3203,8 +3588,6 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
 
     private com.google.protobuf.MapField<java.lang.String, java.lang.Integer>
         internalGetMutableMissingValueInterpretations() {
-      onChanged();
-      ;
       if (missingValueInterpretations_ == null) {
         missingValueInterpretations_ =
             com.google.protobuf.MapField.newMapField(
@@ -3213,6 +3596,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       if (!missingValueInterpretations_.isMutable()) {
         missingValueInterpretations_ = missingValueInterpretations_.copy();
       }
+      bitField0_ |= 0x00000010;
+      onChanged();
       return missingValueInterpretations_;
     }
 
@@ -3227,14 +3612,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3267,14 +3656,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3299,14 +3692,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3340,14 +3737,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3384,14 +3785,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3413,14 +3818,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3447,14 +3856,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3477,6 +3890,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
     }
 
     public Builder clearMissingValueInterpretations() {
+      bitField0_ = (bitField0_ & ~0x00000010);
       internalGetMutableMissingValueInterpretations().getMutableMap().clear();
       return this;
     }
@@ -3488,14 +3902,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3517,6 +3935,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
             java.lang.String,
             com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation>
         getMutableMissingValueInterpretations() {
+      bitField0_ |= 0x00000010;
       return internalGetAdaptedMissingValueInterpretationsMap(
           internalGetMutableMissingValueInterpretations().getMutableMap());
     }
@@ -3528,14 +3947,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3554,6 +3977,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       internalGetMutableMissingValueInterpretations()
           .getMutableMap()
           .put(key, missingValueInterpretationsValueConverter.doBackward(value));
+      bitField0_ |= 0x00000010;
       return this;
     }
     /**
@@ -3564,14 +3988,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3588,12 +4016,14 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       internalGetAdaptedMissingValueInterpretationsMap(
               internalGetMutableMissingValueInterpretations().getMutableMap())
           .putAll(values);
+      bitField0_ |= 0x00000010;
       return this;
     }
     /** Use alternate mutation accessors instead. */
     @java.lang.Deprecated
     public java.util.Map<java.lang.String, java.lang.Integer>
         getMutableMissingValueInterpretationsValue() {
+      bitField0_ |= 0x00000010;
       return internalGetMutableMissingValueInterpretations().getMutableMap();
     }
     /**
@@ -3604,14 +4034,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3626,6 +4060,7 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
       }
 
       internalGetMutableMissingValueInterpretations().getMutableMap().put(key, value);
+      bitField0_ |= 0x00000010;
       return this;
     }
     /**
@@ -3636,14 +4071,18 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      * values are fields present in user schema but missing in rows. The key is
      * the field name. The value is the interpretation of missing values for the
      * field.
+     *
      * For example, a map {'foo': NULL_VALUE, 'bar': DEFAULT_VALUE} means all
      * missing values in field foo are interpreted as NULL, all missing values in
      * field bar are interpreted as the default value of field bar in table
      * schema.
+     *
      * If a field is not in this map and has missing values, the missing values
      * in this field are interpreted as NULL.
+     *
      * This field only applies to the current request, it won't affect other
      * requests on the connection.
+     *
      * Currently, field name can only be top-level column name, can't be a struct
      * field path like 'foo.bar'.
      * </pre>
@@ -3655,6 +4094,153 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
     public Builder putAllMissingValueInterpretationsValue(
         java.util.Map<java.lang.String, java.lang.Integer> values) {
       internalGetMutableMissingValueInterpretations().getMutableMap().putAll(values);
+      bitField0_ |= 0x00000010;
+      return this;
+    }
+
+    private int defaultMissingValueInterpretation_ = 0;
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Default missing value interpretation for all columns in the
+     * table. When a value is specified on an `AppendRowsRequest`, it is applied
+     * to all requests on the connection from that point forward, until a
+     * subsequent `AppendRowsRequest` sets it to a different value.
+     * `missing_value_interpretation` can override
+     * `default_missing_value_interpretation`. For example, if you want to write
+     * `NULL` instead of using default values for some columns, you can set
+     * `default_missing_value_interpretation` to `DEFAULT_VALUE` and at the same
+     * time, set `missing_value_interpretations` to `NULL_VALUE` on those columns.
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation default_missing_value_interpretation = 8 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     *
+     * @return The enum numeric value on the wire for defaultMissingValueInterpretation.
+     */
+    @java.lang.Override
+    public int getDefaultMissingValueInterpretationValue() {
+      return defaultMissingValueInterpretation_;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Default missing value interpretation for all columns in the
+     * table. When a value is specified on an `AppendRowsRequest`, it is applied
+     * to all requests on the connection from that point forward, until a
+     * subsequent `AppendRowsRequest` sets it to a different value.
+     * `missing_value_interpretation` can override
+     * `default_missing_value_interpretation`. For example, if you want to write
+     * `NULL` instead of using default values for some columns, you can set
+     * `default_missing_value_interpretation` to `DEFAULT_VALUE` and at the same
+     * time, set `missing_value_interpretations` to `NULL_VALUE` on those columns.
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation default_missing_value_interpretation = 8 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     *
+     * @param value The enum numeric value on the wire for defaultMissingValueInterpretation to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDefaultMissingValueInterpretationValue(int value) {
+      defaultMissingValueInterpretation_ = value;
+      bitField0_ |= 0x00000020;
+      onChanged();
+      return this;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Default missing value interpretation for all columns in the
+     * table. When a value is specified on an `AppendRowsRequest`, it is applied
+     * to all requests on the connection from that point forward, until a
+     * subsequent `AppendRowsRequest` sets it to a different value.
+     * `missing_value_interpretation` can override
+     * `default_missing_value_interpretation`. For example, if you want to write
+     * `NULL` instead of using default values for some columns, you can set
+     * `default_missing_value_interpretation` to `DEFAULT_VALUE` and at the same
+     * time, set `missing_value_interpretations` to `NULL_VALUE` on those columns.
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation default_missing_value_interpretation = 8 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     *
+     * @return The defaultMissingValueInterpretation.
+     */
+    @java.lang.Override
+    public com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation
+        getDefaultMissingValueInterpretation() {
+      com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation result =
+          com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation
+              .forNumber(defaultMissingValueInterpretation_);
+      return result == null
+          ? com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation
+              .UNRECOGNIZED
+          : result;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Default missing value interpretation for all columns in the
+     * table. When a value is specified on an `AppendRowsRequest`, it is applied
+     * to all requests on the connection from that point forward, until a
+     * subsequent `AppendRowsRequest` sets it to a different value.
+     * `missing_value_interpretation` can override
+     * `default_missing_value_interpretation`. For example, if you want to write
+     * `NULL` instead of using default values for some columns, you can set
+     * `default_missing_value_interpretation` to `DEFAULT_VALUE` and at the same
+     * time, set `missing_value_interpretations` to `NULL_VALUE` on those columns.
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation default_missing_value_interpretation = 8 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     *
+     * @param value The defaultMissingValueInterpretation to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDefaultMissingValueInterpretation(
+        com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      bitField0_ |= 0x00000020;
+      defaultMissingValueInterpretation_ = value.getNumber();
+      onChanged();
+      return this;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Default missing value interpretation for all columns in the
+     * table. When a value is specified on an `AppendRowsRequest`, it is applied
+     * to all requests on the connection from that point forward, until a
+     * subsequent `AppendRowsRequest` sets it to a different value.
+     * `missing_value_interpretation` can override
+     * `default_missing_value_interpretation`. For example, if you want to write
+     * `NULL` instead of using default values for some columns, you can set
+     * `default_missing_value_interpretation` to `DEFAULT_VALUE` and at the same
+     * time, set `missing_value_interpretations` to `NULL_VALUE` on those columns.
+     * </pre>
+     *
+     * <code>
+     * .google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation default_missing_value_interpretation = 8 [(.google.api.field_behavior) = OPTIONAL];
+     * </code>
+     *
+     * @return This builder for chaining.
+     */
+    public Builder clearDefaultMissingValueInterpretation() {
+      bitField0_ = (bitField0_ & ~0x00000020);
+      defaultMissingValueInterpretation_ = 0;
+      onChanged();
       return this;
     }
 

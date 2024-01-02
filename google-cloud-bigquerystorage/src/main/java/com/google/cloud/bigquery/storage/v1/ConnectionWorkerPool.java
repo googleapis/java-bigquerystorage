@@ -18,9 +18,11 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutures;
 import com.google.api.gax.batching.FlowController;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.Load;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
@@ -28,6 +30,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +42,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 /** Pool of connections to accept appends and distirbute to different connections. */
@@ -48,7 +52,7 @@ public class ConnectionWorkerPool {
 
   private static final Logger log = Logger.getLogger(ConnectionWorkerPool.class.getName());
   /*
-   * Max allowed inflight requests in the stream. Method append is blocked at this.
+   * Max allowed inflight requests in the stream.getInflightWaitSeconds Method append is blocked at this.
    */
   private final long maxInflightRequests;
 
@@ -58,17 +62,22 @@ public class ConnectionWorkerPool {
   private final long maxInflightBytes;
 
   /*
+   * Max retry duration for retryable errors.
+   */
+  private final java.time.Duration maxRetryDuration;
+
+  private RetrySettings retrySettings;
+
+  /*
    * Behavior when inflight queue is exceeded. Only supports Block or Throw, default is Block.
    */
   private final FlowController.LimitExceededBehavior limitExceededBehavior;
 
   /** Map from write stream to corresponding connection. */
-  private final Map<StreamWriter, ConnectionWorker> streamWriterToConnection =
-      new ConcurrentHashMap<>();
+  private final Map<StreamWriter, ConnectionWorker> streamWriterToConnection = new HashMap<>();
 
   /** Map from a connection to a set of write stream that have sent requests onto it. */
-  private final Map<ConnectionWorker, Set<StreamWriter>> connectionToWriteStream =
-      new ConcurrentHashMap<>();
+  private final Map<ConnectionWorker, Set<StreamWriter>> connectionToWriteStream = new HashMap<>();
 
   /** Collection of all the created connections. */
   private final Set<ConnectionWorker> connectionWorkerPool =
@@ -86,6 +95,10 @@ public class ConnectionWorkerPool {
    * TraceId for debugging purpose.
    */
   private final String traceId;
+  /*
+   * Sets the compression to use for the calls
+   */
+  private String compressorName;
 
   /** Used for test on the number of times createWorker is called. */
   private final AtomicInteger testValueCreateConnectionCount = new AtomicInteger(0);
@@ -144,12 +157,7 @@ public class ConnectionWorkerPool {
   /*
    * A client used to interact with BigQuery.
    */
-  private BigQueryWriteClient client;
-
-  /*
-   * If true, the client above is created by this writer and should be closed.
-   */
-  private boolean ownsBigQueryWriteClient = false;
+  private BigQueryWriteSettings clientSettings;
 
   /**
    * The current maximum connection count. This value is gradually increased till the user defined
@@ -193,20 +201,24 @@ public class ConnectionWorkerPool {
   /** Static setting for connection pool. */
   private static Settings settings = Settings.builder().build();
 
-  public ConnectionWorkerPool(
+  ConnectionWorkerPool(
       long maxInflightRequests,
       long maxInflightBytes,
+      java.time.Duration maxRetryDuration,
       FlowController.LimitExceededBehavior limitExceededBehavior,
       String traceId,
-      BigQueryWriteClient client,
-      boolean ownsBigQueryWriteClient) {
+      @Nullable String comperssorName,
+      BigQueryWriteSettings clientSettings) {
     this.maxInflightRequests = maxInflightRequests;
     this.maxInflightBytes = maxInflightBytes;
+    this.maxRetryDuration = maxRetryDuration;
     this.limitExceededBehavior = limitExceededBehavior;
     this.traceId = traceId;
-    this.client = client;
-    this.ownsBigQueryWriteClient = ownsBigQueryWriteClient;
+    this.compressorName = comperssorName;
+    this.clientSettings = clientSettings;
     this.currentMaxConnectionCount = settings.minConnectionsPerRegion();
+    // In-stream retry is not enabled for multiplexing.
+    this.retrySettings = null;
   }
 
   /**
@@ -219,26 +231,32 @@ public class ConnectionWorkerPool {
   }
 
   /** Distributes the writing of a message to an underlying connection. */
-  public ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows) {
+  ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows) {
     return append(streamWriter, rows, -1);
   }
 
   /** Distributes the writing of a message to an underlying connection. */
-  public ApiFuture<AppendRowsResponse> append(
-      StreamWriter streamWriter, ProtoRows rows, long offset) {
+  ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
     // We are in multiplexing mode after entering the following logic.
-    ConnectionWorker connectionWorker =
-        streamWriterToConnection.compute(
-            streamWriter,
-            (key, existingStream) -> {
-              // Though compute on concurrent map is atomic, we still do explicit locking as we
-              // may have concurrent close(...) triggered.
-              lock.lock();
-              try {
+    ConnectionWorker connectionWorker;
+    lock.lock();
+    try {
+      connectionWorker =
+          streamWriterToConnection.compute(
+              streamWriter,
+              (key, existingStream) -> {
                 // Stick to the existing stream if it's not overwhelmed.
-                if (existingStream != null && !existingStream.getLoad().isOverwhelmed()) {
+                if (existingStream != null
+                    && !existingStream.getLoad().isOverwhelmed()
+                    && !existingStream.isConnectionInUnrecoverableState()) {
                   return existingStream;
                 }
+                if (existingStream != null && existingStream.isConnectionInUnrecoverableState()) {
+                  existingStream = null;
+                }
+                // Before search for the next connection to attach, clear the finalized connections
+                // first so that they will not be selected.
+                clearFinalizedConnectionWorker();
                 // Try to create or find another existing stream to reuse.
                 ConnectionWorker createdOrExistingConnection = null;
                 try {
@@ -252,14 +270,13 @@ public class ConnectionWorkerPool {
                     createdOrExistingConnection, (ConnectionWorker k) -> new HashSet<>());
                 connectionToWriteStream.get(createdOrExistingConnection).add(streamWriter);
                 return createdOrExistingConnection;
-              } finally {
-                lock.unlock();
-              }
-            });
+              });
+    } finally {
+      lock.unlock();
+    }
     Stopwatch stopwatch = Stopwatch.createStarted();
     ApiFuture<AppendRowsResponse> responseFuture =
-        connectionWorker.append(
-            streamWriter.getStreamName(), streamWriter.getProtoSchema(), rows, offset);
+        connectionWorker.append(streamWriter, rows, offset);
     return ApiFutures.transform(
         responseFuture,
         // Add callback for update schema
@@ -283,7 +300,8 @@ public class ConnectionWorkerPool {
     String streamReference = streamWriter.getStreamName();
     if (connectionWorkerPool.size() < currentMaxConnectionCount) {
       // Always create a new connection if we haven't reached current maximum.
-      return createConnectionWorker(streamWriter.getStreamName(), streamWriter.getProtoSchema());
+      return createConnectionWorker(
+          streamWriter.getStreamName(), streamWriter.getLocation(), streamWriter.getProtoSchema());
     } else {
       ConnectionWorker existingBestConnection =
           pickBestLoadConnection(
@@ -299,7 +317,10 @@ public class ConnectionWorkerPool {
         if (currentMaxConnectionCount > settings.maxConnectionsPerRegion()) {
           currentMaxConnectionCount = settings.maxConnectionsPerRegion();
         }
-        return createConnectionWorker(streamWriter.getStreamName(), streamWriter.getProtoSchema());
+        return createConnectionWorker(
+            streamWriter.getStreamName(),
+            streamWriter.getLocation(),
+            streamWriter.getProtoSchema());
       } else {
         // Stick to the original connection if all the connections are overwhelmed.
         if (existingConnectionWorker != null) {
@@ -308,6 +329,18 @@ public class ConnectionWorkerPool {
         // If we are at this branch, it means we reached the maximum connections.
         return existingBestConnection;
       }
+    }
+  }
+
+  private void clearFinalizedConnectionWorker() {
+    Set<ConnectionWorker> connectionWorkerSet = new HashSet<>();
+    for (ConnectionWorker existingWorker : connectionWorkerPool) {
+      if (existingWorker.isConnectionInUnrecoverableState()) {
+        connectionWorkerSet.add(existingWorker);
+      }
+    }
+    for (ConnectionWorker workerToRemove : connectionWorkerSet) {
+      connectionWorkerPool.remove(workerToRemove);
     }
   }
 
@@ -342,28 +375,29 @@ public class ConnectionWorkerPool {
    * a single stream reference. This is because createConnectionWorker(...) is called via
    * computeIfAbsent(...) which is at most once per key.
    */
-  private ConnectionWorker createConnectionWorker(String streamName, ProtoSchema writeSchema)
-      throws IOException {
+  private ConnectionWorker createConnectionWorker(
+      String streamName, String location, ProtoSchema writeSchema) throws IOException {
     if (enableTesting) {
       // Though atomic integer is super lightweight, add extra if check in case adding future logic.
       testValueCreateConnectionCount.getAndIncrement();
     }
-    // currently we use different header for the client in each connection worker to be different
-    // as the backend require the header to have the same write_stream field as request body.
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             streamName,
+            location,
             writeSchema,
             maxInflightRequests,
             maxInflightBytes,
+            maxRetryDuration,
             limitExceededBehavior,
             traceId,
-            client,
-            ownsBigQueryWriteClient);
+            compressorName,
+            clientSettings,
+            retrySettings);
     connectionWorkerPool.add(connectionWorker);
     log.info(
         String.format(
-            "Scaling up new connection for stream name: %s, pool size after scaling up %s",
+            "Scaling up new connection for stream name: %s, pool size after scaling up %d",
             streamName, connectionWorkerPool.size()));
     return connectionWorker;
   }
@@ -374,7 +408,7 @@ public class ConnectionWorkerPool {
    * <p>The corresponding worker is not closed until there is no stream reference is targeting to
    * that worker.
    */
-  public void close(StreamWriter streamWriter) {
+  void close(StreamWriter streamWriter) {
     lock.lock();
     try {
       streamWriterToConnection.remove(streamWriter);
@@ -394,8 +428,11 @@ public class ConnectionWorkerPool {
       log.info(
           String.format(
               "During closing of writeStream for %s with writer id %s, we decided to close %s "
-                  + "connections",
-              streamWriter.getStreamName(), streamWriter.getWriterId(), connectionToRemove.size()));
+                  + "connections, pool size after removal $s",
+              streamWriter.getStreamName(),
+              streamWriter.getWriterId(),
+              connectionToRemove.size(),
+              connectionToWriteStream.size() - 1));
       connectionToWriteStream.keySet().removeAll(connectionToRemove);
     } finally {
       lock.unlock();
@@ -403,7 +440,7 @@ public class ConnectionWorkerPool {
   }
 
   /** Fetch the wait seconds from corresponding worker. */
-  public long getInflightWaitSeconds(StreamWriter streamWriter) {
+  long getInflightWaitSeconds(StreamWriter streamWriter) {
     lock.lock();
     try {
       ConnectionWorker connectionWorker = streamWriterToConnection.get(streamWriter);
@@ -422,7 +459,8 @@ public class ConnectionWorkerPool {
   }
 
   /** Enable Test related logic. */
-  public static void enableTestingLogic() {
+  @VisibleForTesting
+  static void enableTestingLogic() {
     enableTesting = true;
   }
 
@@ -439,16 +477,12 @@ public class ConnectionWorkerPool {
     return traceId;
   }
 
-  boolean ownsBigQueryWriteClient() {
-    return ownsBigQueryWriteClient;
-  }
-
   FlowController.LimitExceededBehavior limitExceededBehavior() {
     return limitExceededBehavior;
   }
 
-  BigQueryWriteClient bigQueryWriteClient() {
-    return client;
+  BigQueryWriteSettings bigQueryWriteSettings() {
+    return clientSettings;
   }
 
   static String toTableName(String streamName) {

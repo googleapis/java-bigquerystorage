@@ -618,7 +618,7 @@ public class JsonToProtoMessageTest {
     json.put("fooBar", "hello");
 
     DynamicMessage protoMsg =
-        com.google.cloud.bigquery.storage.v1.JsonToProtoMessage.convertJsonToProtoMessage(
+        com.google.cloud.bigquery.storage.v1.JsonToProtoMessage.INSTANCE.convertToProtoMessage(
             TestMixedCaseFieldNames.getDescriptor(), tableSchema, json);
   }
 
@@ -935,7 +935,7 @@ public class JsonToProtoMessageTest {
       Assert.fail("should fail");
     } catch (IllegalArgumentException e) {
       assertEquals(
-          "JSONObject does not have a double field at root.test_repeated[2].", e.getMessage());
+          "JSONObject does not have a double field at root.test_repeated[0].", e.getMessage());
     }
   }
 

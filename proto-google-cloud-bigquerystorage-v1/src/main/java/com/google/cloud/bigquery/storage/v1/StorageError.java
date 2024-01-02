@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,11 +50,6 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
   @SuppressWarnings({"unused"})
   protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new StorageError();
-  }
-
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -186,6 +181,58 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
      * <code>OFFSET_OUT_OF_RANGE = 9;</code>
      */
     OFFSET_OUT_OF_RANGE(9),
+    /**
+     *
+     *
+     * <pre>
+     * Customer-managed encryption key (CMEK) not provided for CMEK-enabled
+     * data.
+     * </pre>
+     *
+     * <code>CMEK_NOT_PROVIDED = 10;</code>
+     */
+    CMEK_NOT_PROVIDED(10),
+    /**
+     *
+     *
+     * <pre>
+     * Customer-managed encryption key (CMEK) was incorrectly provided.
+     * </pre>
+     *
+     * <code>INVALID_CMEK_PROVIDED = 11;</code>
+     */
+    INVALID_CMEK_PROVIDED(11),
+    /**
+     *
+     *
+     * <pre>
+     * There is an encryption error while using customer-managed encryption key.
+     * </pre>
+     *
+     * <code>CMEK_ENCRYPTION_ERROR = 12;</code>
+     */
+    CMEK_ENCRYPTION_ERROR(12),
+    /**
+     *
+     *
+     * <pre>
+     * Key Management Service (KMS) service returned an error, which can be
+     * retried.
+     * </pre>
+     *
+     * <code>KMS_SERVICE_ERROR = 13;</code>
+     */
+    KMS_SERVICE_ERROR(13),
+    /**
+     *
+     *
+     * <pre>
+     * Permission denied while using customer-managed encryption key.
+     * </pre>
+     *
+     * <code>KMS_PERMISSION_DENIED = 14;</code>
+     */
+    KMS_PERMISSION_DENIED(14),
     UNRECOGNIZED(-1),
     ;
 
@@ -293,6 +340,58 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
      * <code>OFFSET_OUT_OF_RANGE = 9;</code>
      */
     public static final int OFFSET_OUT_OF_RANGE_VALUE = 9;
+    /**
+     *
+     *
+     * <pre>
+     * Customer-managed encryption key (CMEK) not provided for CMEK-enabled
+     * data.
+     * </pre>
+     *
+     * <code>CMEK_NOT_PROVIDED = 10;</code>
+     */
+    public static final int CMEK_NOT_PROVIDED_VALUE = 10;
+    /**
+     *
+     *
+     * <pre>
+     * Customer-managed encryption key (CMEK) was incorrectly provided.
+     * </pre>
+     *
+     * <code>INVALID_CMEK_PROVIDED = 11;</code>
+     */
+    public static final int INVALID_CMEK_PROVIDED_VALUE = 11;
+    /**
+     *
+     *
+     * <pre>
+     * There is an encryption error while using customer-managed encryption key.
+     * </pre>
+     *
+     * <code>CMEK_ENCRYPTION_ERROR = 12;</code>
+     */
+    public static final int CMEK_ENCRYPTION_ERROR_VALUE = 12;
+    /**
+     *
+     *
+     * <pre>
+     * Key Management Service (KMS) service returned an error, which can be
+     * retried.
+     * </pre>
+     *
+     * <code>KMS_SERVICE_ERROR = 13;</code>
+     */
+    public static final int KMS_SERVICE_ERROR_VALUE = 13;
+    /**
+     *
+     *
+     * <pre>
+     * Permission denied while using customer-managed encryption key.
+     * </pre>
+     *
+     * <code>KMS_PERMISSION_DENIED = 14;</code>
+     */
+    public static final int KMS_PERMISSION_DENIED_VALUE = 14;
 
     public final int getNumber() {
       if (this == UNRECOGNIZED) {
@@ -338,6 +437,16 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
           return OFFSET_ALREADY_EXISTS;
         case 9:
           return OFFSET_OUT_OF_RANGE;
+        case 10:
+          return CMEK_NOT_PROVIDED;
+        case 11:
+          return INVALID_CMEK_PROVIDED;
+        case 12:
+          return CMEK_ENCRYPTION_ERROR;
+        case 13:
+          return KMS_SERVICE_ERROR;
+        case 14:
+          return KMS_PERMISSION_DENIED;
         default:
           return null;
       }
@@ -396,7 +505,7 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
   }
 
   public static final int CODE_FIELD_NUMBER = 1;
-  private int code_;
+  private int code_ = 0;
   /**
    *
    *
@@ -425,16 +534,17 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
    */
   @java.lang.Override
   public com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode getCode() {
-    @SuppressWarnings("deprecation")
     com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode result =
-        com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode.valueOf(code_);
+        com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode.forNumber(code_);
     return result == null
         ? com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode.UNRECOGNIZED
         : result;
   }
 
   public static final int ENTITY_FIELD_NUMBER = 2;
-  private volatile java.lang.Object entity_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object entity_ = "";
   /**
    *
    *
@@ -483,7 +593,9 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
   }
 
   public static final int ERROR_MESSAGE_FIELD_NUMBER = 3;
-  private volatile java.lang.Object errorMessage_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object errorMessage_ = "";
   /**
    *
    *
@@ -755,12 +867,10 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
     @java.lang.Override
     public Builder clear() {
       super.clear();
+      bitField0_ = 0;
       code_ = 0;
-
       entity_ = "";
-
       errorMessage_ = "";
-
       return this;
     }
 
@@ -788,11 +898,24 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
     public com.google.cloud.bigquery.storage.v1.StorageError buildPartial() {
       com.google.cloud.bigquery.storage.v1.StorageError result =
           new com.google.cloud.bigquery.storage.v1.StorageError(this);
-      result.code_ = code_;
-      result.entity_ = entity_;
-      result.errorMessage_ = errorMessage_;
+      if (bitField0_ != 0) {
+        buildPartial0(result);
+      }
       onBuilt();
       return result;
+    }
+
+    private void buildPartial0(com.google.cloud.bigquery.storage.v1.StorageError result) {
+      int from_bitField0_ = bitField0_;
+      if (((from_bitField0_ & 0x00000001) != 0)) {
+        result.code_ = code_;
+      }
+      if (((from_bitField0_ & 0x00000002) != 0)) {
+        result.entity_ = entity_;
+      }
+      if (((from_bitField0_ & 0x00000004) != 0)) {
+        result.errorMessage_ = errorMessage_;
+      }
     }
 
     @java.lang.Override
@@ -846,10 +969,12 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
       }
       if (!other.getEntity().isEmpty()) {
         entity_ = other.entity_;
+        bitField0_ |= 0x00000002;
         onChanged();
       }
       if (!other.getErrorMessage().isEmpty()) {
         errorMessage_ = other.errorMessage_;
+        bitField0_ |= 0x00000004;
         onChanged();
       }
       this.mergeUnknownFields(other.getUnknownFields());
@@ -881,19 +1006,19 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
             case 8:
               {
                 code_ = input.readEnum();
-
+                bitField0_ |= 0x00000001;
                 break;
               } // case 8
             case 18:
               {
                 entity_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000002;
                 break;
               } // case 18
             case 26:
               {
                 errorMessage_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000004;
                 break;
               } // case 26
             default:
@@ -912,6 +1037,8 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
       } // finally
       return this;
     }
+
+    private int bitField0_;
 
     private int code_ = 0;
     /**
@@ -942,8 +1069,8 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder setCodeValue(int value) {
-
       code_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -960,9 +1087,8 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
      */
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode getCode() {
-      @SuppressWarnings("deprecation")
       com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode result =
-          com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode.valueOf(code_);
+          com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode.forNumber(code_);
       return result == null
           ? com.google.cloud.bigquery.storage.v1.StorageError.StorageErrorCode.UNRECOGNIZED
           : result;
@@ -984,7 +1110,7 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
       if (value == null) {
         throw new NullPointerException();
       }
-
+      bitField0_ |= 0x00000001;
       code_ = value.getNumber();
       onChanged();
       return this;
@@ -1001,7 +1127,7 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearCode() {
-
+      bitField0_ = (bitField0_ & ~0x00000001);
       code_ = 0;
       onChanged();
       return this;
@@ -1068,8 +1194,8 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
       if (value == null) {
         throw new NullPointerException();
       }
-
       entity_ = value;
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -1085,8 +1211,8 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearEntity() {
-
       entity_ = getDefaultInstance().getEntity();
+      bitField0_ = (bitField0_ & ~0x00000002);
       onChanged();
       return this;
     }
@@ -1107,8 +1233,8 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       entity_ = value;
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -1174,8 +1300,8 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
       if (value == null) {
         throw new NullPointerException();
       }
-
       errorMessage_ = value;
+      bitField0_ |= 0x00000004;
       onChanged();
       return this;
     }
@@ -1191,8 +1317,8 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearErrorMessage() {
-
       errorMessage_ = getDefaultInstance().getErrorMessage();
+      bitField0_ = (bitField0_ & ~0x00000004);
       onChanged();
       return this;
     }
@@ -1213,8 +1339,8 @@ public final class StorageError extends com.google.protobuf.GeneratedMessageV3
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       errorMessage_ = value;
+      bitField0_ |= 0x00000004;
       onChanged();
       return this;
     }

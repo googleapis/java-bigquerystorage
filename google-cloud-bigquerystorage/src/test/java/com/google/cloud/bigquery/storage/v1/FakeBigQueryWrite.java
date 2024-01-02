@@ -18,9 +18,13 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.protobuf.AbstractMessage;
 import io.grpc.ServerServiceDefinition;
+import io.grpc.Status;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 import org.threeten.bp.Duration;
 
 /**
@@ -64,9 +68,21 @@ public class FakeBigQueryWrite implements MockGrpcService {
     }
   }
 
+  /**
+   * Add a response supplier to end of list. This supplier can be used to simulate retries or other
+   * forms of behavior.
+   */
+  public void addResponse(Supplier<FakeBigQueryWriteImpl.Response> response) {
+    serviceImpl.addResponse(response);
+  }
+
   @Override
   public void addException(Exception exception) {
     serviceImpl.addConnectionError(exception);
+  }
+
+  public void addStatusException(com.google.rpc.Status status) {
+    serviceImpl.addException(status);
   }
 
   @Override
@@ -91,11 +107,31 @@ public class FakeBigQueryWrite implements MockGrpcService {
     serviceImpl.setTimesToClose(numberTimesToClose);
   }
 
+  public void setCloseForeverAfter(long closeForeverAfter) {
+    serviceImpl.setCloseForeverAfter(closeForeverAfter);
+  }
+
   public long getConnectionCount() {
     return serviceImpl.getConnectionCount();
   }
 
   public void setExecutor(ScheduledExecutorService executor) {
     serviceImpl.setExecutor(executor);
+  }
+
+  public void setFailedStatus(Status failedStatus) {
+    serviceImpl.setFailedStatus(failedStatus);
+  }
+
+  public void setReturnErrorDuringExclusiveStreamRetry(boolean retryOnError) {
+    serviceImpl.setReturnErrorDuringExclusiveStreamRetry(retryOnError);
+  }
+
+  public void setVerifyOffset(boolean verifyOffset) {
+    serviceImpl.setVerifyOffset(verifyOffset);
+  }
+
+  public ArrayList<Instant> getLatestRequestReceivedInstants() {
+    return serviceImpl.getLatestRequestReceivedInstants();
   }
 }

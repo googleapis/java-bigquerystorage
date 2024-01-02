@@ -30,6 +30,7 @@ import org.threeten.bp.temporal.ChronoUnit;
  * <p>The valid range and number of bits required by each date/time field is as the following:
  *
  * <table>
+ *   <caption>Range and bits for date/time fields</caption>
  *   <tr> <th> Field  </th> <th> Range          </th> <th> #Bits </th> </tr>
  *   <tr> <td> Year   </td> <td> [1, 9999]      </td> <td> 14    </td> </tr>
  *   <tr> <td> Month  </td> <td> [1, 12]        </td> <td> 4     </td> </tr>
@@ -46,6 +47,7 @@ import org.threeten.bp.temporal.ChronoUnit;
  * <p>When encoding the TIME or DATETIME into a bit field, larger date/time field is on the more
  * significant side.
  */
+@Deprecated
 public final class CivilTimeEncoder {
   private static final int NANO_LENGTH = 30;
   private static final int MICRO_LENGTH = 20;

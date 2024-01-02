@@ -50,6 +50,12 @@ message ComplicateType {
   optional InnerType inner_type = 2;
 }
 
+message SimpleTypeForDefaultValue {
+  optional string foo_with_default = 1;
+  optional string bar_without_default = 2;
+  optional string date_with_default_to_current = 3;
+}
+
 message ContainsRecursive {
   optional RecursiveType field = 1;
 }
@@ -92,4 +98,13 @@ message DuplicateType {
 message FlexibleType {
   optional string col_dGVzdC3liJc = 1
   [(.google.cloud.bigquery.storage.v1.column_name) = "test-列"];
+}
+
+message RepetitionType {
+  required bytes a = 1;
+  required bytes b = 2;
+  required bytes c = 3;
+  repeated bytes aa = 4;
+  repeated bytes bb = 5;
+  repeated bytes cc = 6;
 }

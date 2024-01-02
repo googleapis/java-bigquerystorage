@@ -17,8 +17,10 @@ package com.google.cloud.bigquery.storage.v1;
 
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.Uninterruptibles;
+import com.google.rpc.Code;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import org.threeten.bp.Duration;
 
@@ -37,13 +40,14 @@ import org.threeten.bp.Duration;
  * unit testing.
  */
 class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
-  private static final Logger LOG = Logger.getLogger(FakeBigQueryWriteImpl.class.getName());
 
+  private static final Logger LOG = Logger.getLogger(FakeBigQueryWriteImpl.class.getName());
+  private final List<Supplier<Response>> responses =
+      Collections.synchronizedList(new ArrayList<>());
   private final LinkedBlockingQueue<AppendRowsRequest> requests = new LinkedBlockingQueue<>();
   private final LinkedBlockingQueue<GetWriteStreamRequest> writeRequests =
       new LinkedBlockingQueue<>();
   private final LinkedBlockingQueue<FlushRowsRequest> flushRequests = new LinkedBlockingQueue<>();
-  private final List<Response> responses = Collections.synchronizedList(new ArrayList<>());
   private final LinkedBlockingQueue<WriteStream> writeResponses = new LinkedBlockingQueue<>();
   private final LinkedBlockingQueue<FlushRowsResponse> flushResponses = new LinkedBlockingQueue<>();
   private final AtomicInteger nextMessageId = new AtomicInteger(1);
@@ -57,13 +61,24 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   private long closeAfter = 0;
   private long recordCount = 0;
   private long connectionCount = 0;
+  private long closeForeverAfter = 0;
+  private int responseIndex = 0;
+  private long expectedOffset = 0;
+  private boolean verifyOffset = false;
+  private boolean returnErrorDuringExclusiveStreamRetry = false;
+  private boolean returnErrorUntilRetrySuccess = false;
+  private Response retryResponse;
+  private long retryingOffset = -1;
 
   // Record whether the first record has been seen on a connection.
   private final Map<StreamObserver<AppendRowsResponse>, Boolean> connectionToFirstRequest =
       new ConcurrentHashMap<>();
+  private Status failedStatus = Status.ABORTED;
+  private ArrayList<Instant> requestReceivedInstants = new ArrayList<>();
 
   /** Class used to save the state of a possible response. */
-  private static class Response {
+  public static class Response {
+
     Optional<AppendRowsResponse> appendResponse;
     Optional<Throwable> error;
 
@@ -96,6 +111,10 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
       }
       return appendResponse.get().toString();
     }
+  }
+
+  public ArrayList<Instant> getLatestRequestReceivedInstants() {
+    return requestReceivedInstants;
   }
 
   @Override
@@ -137,6 +156,44 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     return connectionCount;
   }
 
+  public void setFailedStatus(Status failedStatus) {
+    this.failedStatus = failedStatus;
+  }
+
+  private Response determineResponse(long offset) {
+    // The logic here checks to see if a retry is ongoing.  The implication is that the
+    // offset that is being retried (retryingOffset) should lead to returning the same error
+    // over and over until a request eventually resolves, instead of calling get() on
+    // suppliers that, in the future, may be expected to trigger full retry loops.
+    Response response;
+    // Retry is in progress and the offset isn't the retrying offset; return saved response
+    if (returnErrorUntilRetrySuccess && offset != retryingOffset) {
+      response = retryResponse;
+    } else {
+      // We received the retryingOffset OR we aren't in retry mode; get response as
+      // expected.
+      // In case of connection reset: normally each response will only be sent once. But, if the
+      // stream is aborted, the last few responses may not be received, and the client will request
+      // them again.
+      response = responses.get(Math.toIntExact(offset)).get();
+      // If we are in retry mode and don't have an error, clear retry variables
+      if (returnErrorUntilRetrySuccess && !response.getResponse().hasError()) {
+        retryingOffset = -1;
+        retryResponse = null;
+      }
+    }
+
+    returnErrorUntilRetrySuccess =
+        returnErrorDuringExclusiveStreamRetry && response.getResponse().hasError();
+    // If this is a new retry cycle, set retry variables
+    if (retryingOffset == -1 && returnErrorUntilRetrySuccess) {
+      retryingOffset = offset;
+      retryResponse = response;
+    }
+
+    return response;
+  }
+
   @Override
   public StreamObserver<AppendRowsRequest> appendRows(
       final StreamObserver<AppendRowsResponse> responseObserver) {
@@ -146,15 +203,16 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
         new StreamObserver<AppendRowsRequest>() {
           @Override
           public void onNext(AppendRowsRequest value) {
-            LOG.fine("Get request:" + value.toString());
-            requests.add(value);
+            requestReceivedInstants.add(Instant.now());
             recordCount++;
-            int offset = (int) (recordCount - 1);
-            if (value.hasOffset() && value.getOffset().getValue() != -1) {
-              offset = (int) value.getOffset().getValue();
+            requests.add(value);
+            long offset = value.getOffset().getValue();
+            if (offset == -1 || !value.hasOffset()) {
+              offset = responseIndex;
             }
+            responseIndex++;
             if (responseSleep.compareTo(Duration.ZERO) > 0) {
-              LOG.fine("Sleeping before response for " + responseSleep.toString());
+              LOG.info("Sleeping before response for " + responseSleep.toString());
               Uninterruptibles.sleepUninterruptibly(
                   responseSleep.toMillis(), TimeUnit.MILLISECONDS);
             }
@@ -173,12 +231,35 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
             }
             connectionToFirstRequest.put(responseObserver, false);
             if (closeAfter > 0
+                && responseIndex % closeAfter == 0
                 && recordCount % closeAfter == 0
                 && (numberTimesToClose == 0 || connectionCount <= numberTimesToClose)) {
               LOG.info("Shutting down connection from test...");
-              responseObserver.onError(Status.ABORTED.asException());
+              responseObserver.onError(failedStatus.asException());
+            } else if (closeForeverAfter > 0 && recordCount > closeForeverAfter) {
+              LOG.info("Shutting down connection from test...");
+              responseObserver.onError(failedStatus.asException());
             } else {
-              final Response response = responses.get(offset);
+              Response response = determineResponse(offset);
+              if (verifyOffset
+                  && !response.getResponse().hasError()
+                  && response.getResponse().getAppendResult().getOffset().getValue() > -1) {
+                // No error and offset is present; verify order
+                if (response.getResponse().getAppendResult().getOffset().getValue()
+                    != expectedOffset) {
+                  com.google.rpc.Status status =
+                      com.google.rpc.Status.newBuilder().setCode(Code.INTERNAL_VALUE).build();
+                  response = new Response(AppendRowsResponse.newBuilder().setError(status).build());
+                } else {
+                  LOG.info(
+                      String.format(
+                          "asserted offset: %s expected: %s",
+                          response.getResponse().getAppendResult().getOffset().getValue(),
+                          expectedOffset));
+                  LOG.info(String.format("sending response: %s", response.getResponse()));
+                  expectedOffset++;
+                }
+              }
               sendResponse(response, responseObserver);
             }
           }
@@ -198,7 +279,6 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
 
   private void sendResponse(
       Response response, StreamObserver<AppendRowsResponse> responseObserver) {
-    LOG.fine("Sending response: " + response.toString());
     if (response.isError()) {
       responseObserver.onError(response.getError());
     } else {
@@ -218,13 +298,20 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
     return this;
   }
 
-  public FakeBigQueryWriteImpl addResponse(AppendRowsResponse appendRowsResponse) {
-    responses.add(new Response(appendRowsResponse));
-    return this;
+  /**
+   * Add a response to end of list. Response can be either an record, or an exception. All repsones
+   * must be set up before any rows are appended.
+   */
+  public void addResponse(AppendRowsResponse appendRowsResponse) {
+    responses.add(() -> new Response(appendRowsResponse));
   }
 
-  public FakeBigQueryWriteImpl addResponse(AppendRowsResponse.Builder appendResponseBuilder) {
-    return addResponse(appendResponseBuilder.build());
+  /**
+   * Add a response supplier to end of list. This supplier can be used to simulate retries or other
+   * forms of behavior.
+   */
+  public void addResponse(Supplier<Response> response) {
+    responses.add(response);
   }
 
   public FakeBigQueryWriteImpl addWriteStreamResponse(WriteStream response) {
@@ -238,8 +325,32 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   }
 
   public FakeBigQueryWriteImpl addConnectionError(Throwable error) {
-    responses.add(new Response(error));
+    responses.add(() -> new Response(error));
     return this;
+  }
+
+  /**
+   * Returns the given status, instead of a valid response. This should be treated as an exception
+   * on the other side. This will not stop processing.
+   */
+  public void addException(com.google.rpc.Status status) {
+    responses.add(() -> new Response(AppendRowsResponse.newBuilder().setError(status).build()));
+  }
+
+  /**
+   * Will abort the connection instead of return a valid response. This should NOT be used to return
+   * a retriable error (as that will cause an infinite loop.)
+   */
+  public void addNonRetriableError(com.google.rpc.Status status) {
+    responses.add(() -> new Response(AppendRowsResponse.newBuilder().setError(status).build()));
+  }
+
+  public void setVerifyOffset(boolean verifyOffset) {
+    this.verifyOffset = verifyOffset;
+  }
+
+  public void setReturnErrorDuringExclusiveStreamRetry(boolean retryOnError) {
+    this.returnErrorDuringExclusiveStreamRetry = retryOnError;
   }
 
   public List<AppendRowsRequest> getCapturedRequests() {
@@ -267,6 +378,7 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
   public void setCloseEveryNAppends(long closeAfter) {
     this.closeAfter = closeAfter;
   }
+
   /* If setCloseEveryNAppends is greater than 0, then the stream will be aborted every N appends.
    * setTimesToClose will limit the number of times to do the abort. If it is set to 0, it will
    * abort every N appends.
@@ -278,5 +390,11 @@ class FakeBigQueryWriteImpl extends BigQueryWriteGrpc.BigQueryWriteImplBase {
    **/
   public void setTimesToClose(long numberTimesToClose) {
     this.numberTimesToClose = numberTimesToClose;
+  }
+
+  /* The connection will forever return failure after numberTimesToClose. This option shouldn't
+   * be used together with setCloseEveryNAppends and setTimesToClose*/
+  public void setCloseForeverAfter(long closeForeverAfter) {
+    this.closeForeverAfter = closeForeverAfter;
   }
 }

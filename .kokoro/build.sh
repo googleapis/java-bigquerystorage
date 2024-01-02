@@ -29,7 +29,7 @@ echo ${JOB_TYPE}
 
 # attempt to install 3 times with exponential backoff (starting with 10 seconds)
 retry_with_backoff 3 10 \
-  mvn install -B -V \
+  mvn install -B -V -U \
     -DskipTests=true \
     -Dclirr.skip=true \
     -Denforcer.skip=true \
@@ -47,7 +47,8 @@ set +e
 
 case ${JOB_TYPE} in
 test)
-    mvn test -B -Dclirr.skip=true -Denforcer.skip=true
+    echo "SUREFIRE_JVM_OPT: ${SUREFIRE_JVM_OPT}"
+    mvn test -B -ntp -Dclirr.skip=true -Denforcer.skip=true ${SUREFIRE_JVM_OPT}
     RETURN_CODE=$?
     ;;
 lint)
@@ -64,18 +65,21 @@ integration)
       -DtrimStackTrace=false \
       -Dclirr.skip=true \
       -Denforcer.skip=true \
+      -Dit.test=!ITBigQueryWrite*RetryTest \
+      -Dsurefire.failIfNoSpecifiedTests=false \
+      -Dfailsafe.failIfNoSpecifiedTests=false \
       -fae \
       verify
     RETURN_CODE=$?
     ;;
 graalvm)
     # Run Unit and Integration Tests with Native Image
-    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -Pnative -Penable-integration-tests test
+    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -PcustomNative -Penable-integration-tests  test
     RETURN_CODE=$?
     ;;
 graalvm17)
     # Run Unit and Integration Tests with Native Image
-    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -Pnative -Penable-integration-tests test
+    mvn -B ${INTEGRATION_TEST_ARGS} -ntp -PcustomNative -Penable-integration-tests test
     RETURN_CODE=$?
     ;;
 samples)
@@ -109,6 +113,22 @@ samples)
     ;;
 clirr)
     mvn -B -Denforcer.skip=true clirr:check
+    RETURN_CODE=$?
+    ;;
+retry_quota)
+    mvn -B ${INTEGRATION_TEST_ARGS} \
+      -Dit.test=ITBigQueryWriteQuotaRetryTest \
+      -Dsurefire.failIfNoSpecifiedTests=false \
+      -Dfailsafe.failIfNoSpecifiedTests=false \
+      test
+    RETURN_CODE=$?
+    ;;
+retry_non_quota)
+    mvn -B ${INTEGRATION_TEST_ARGS} \
+      -Dit.test=ITBigQueryWriteNonQuotaRetryTest \
+      -Dsurefire.failIfNoSpecifiedTests=false \
+      -Dfailsafe.failIfNoSpecifiedTests=false \
+      test
     RETURN_CODE=$?
     ;;
 *)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,11 +47,6 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
     return new SplitReadStreamRequest();
   }
 
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
-  }
-
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
     return com.google.cloud.bigquery.storage.v1beta2.StorageProto
         .internal_static_google_cloud_bigquery_storage_v1beta2_SplitReadStreamRequest_descriptor;
@@ -68,7 +63,9 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
   }
 
   public static final int NAME_FIELD_NUMBER = 1;
-  private volatile java.lang.Object name_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object name_ = "";
   /**
    *
    *
@@ -121,7 +118,7 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
   }
 
   public static final int FRACTION_FIELD_NUMBER = 2;
-  private double fraction_;
+  private double fraction_ = 0D;
   /**
    *
    *
@@ -355,10 +352,9 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
     @java.lang.Override
     public Builder clear() {
       super.clear();
+      bitField0_ = 0;
       name_ = "";
-
       fraction_ = 0D;
-
       return this;
     }
 
@@ -387,10 +383,22 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
     public com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest buildPartial() {
       com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest result =
           new com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest(this);
-      result.name_ = name_;
-      result.fraction_ = fraction_;
+      if (bitField0_ != 0) {
+        buildPartial0(result);
+      }
       onBuilt();
       return result;
+    }
+
+    private void buildPartial0(
+        com.google.cloud.bigquery.storage.v1beta2.SplitReadStreamRequest result) {
+      int from_bitField0_ = bitField0_;
+      if (((from_bitField0_ & 0x00000001) != 0)) {
+        result.name_ = name_;
+      }
+      if (((from_bitField0_ & 0x00000002) != 0)) {
+        result.fraction_ = fraction_;
+      }
     }
 
     @java.lang.Override
@@ -443,6 +451,7 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
         return this;
       if (!other.getName().isEmpty()) {
         name_ = other.name_;
+        bitField0_ |= 0x00000001;
         onChanged();
       }
       if (other.getFraction() != 0D) {
@@ -477,13 +486,13 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
             case 10:
               {
                 name_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000001;
                 break;
               } // case 10
             case 17:
               {
                 fraction_ = input.readDouble();
-
+                bitField0_ |= 0x00000002;
                 break;
               } // case 17
             default:
@@ -502,6 +511,8 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
       } // finally
       return this;
     }
+
+    private int bitField0_;
 
     private java.lang.Object name_ = "";
     /**
@@ -570,8 +581,8 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
       if (value == null) {
         throw new NullPointerException();
       }
-
       name_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -589,8 +600,8 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
      * @return This builder for chaining.
      */
     public Builder clearName() {
-
       name_ = getDefaultInstance().getName();
+      bitField0_ = (bitField0_ & ~0x00000001);
       onChanged();
       return this;
     }
@@ -613,8 +624,8 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       name_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -662,6 +673,7 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
     public Builder setFraction(double value) {
 
       fraction_ = value;
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -683,7 +695,7 @@ public final class SplitReadStreamRequest extends com.google.protobuf.GeneratedM
      * @return This builder for chaining.
      */
     public Builder clearFraction() {
-
+      bitField0_ = (bitField0_ & ~0x00000002);
       fraction_ = 0D;
       onChanged();
       return this;

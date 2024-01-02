@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,11 +47,6 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
     return new AvroRows();
   }
 
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
-  }
-
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
     return com.google.cloud.bigquery.storage.v1.AvroProto
         .internal_static_google_cloud_bigquery_storage_v1_AvroRows_descriptor;
@@ -68,7 +63,8 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
   }
 
   public static final int SERIALIZED_BINARY_ROWS_FIELD_NUMBER = 1;
-  private com.google.protobuf.ByteString serializedBinaryRows_;
+  private com.google.protobuf.ByteString serializedBinaryRows_ =
+      com.google.protobuf.ByteString.EMPTY;
   /**
    *
    *
@@ -86,7 +82,7 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
   }
 
   public static final int ROW_COUNT_FIELD_NUMBER = 2;
-  private long rowCount_;
+  private long rowCount_ = 0L;
   /**
    *
    *
@@ -313,10 +309,9 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
     @java.lang.Override
     public Builder clear() {
       super.clear();
+      bitField0_ = 0;
       serializedBinaryRows_ = com.google.protobuf.ByteString.EMPTY;
-
       rowCount_ = 0L;
-
       return this;
     }
 
@@ -344,10 +339,21 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
     public com.google.cloud.bigquery.storage.v1.AvroRows buildPartial() {
       com.google.cloud.bigquery.storage.v1.AvroRows result =
           new com.google.cloud.bigquery.storage.v1.AvroRows(this);
-      result.serializedBinaryRows_ = serializedBinaryRows_;
-      result.rowCount_ = rowCount_;
+      if (bitField0_ != 0) {
+        buildPartial0(result);
+      }
       onBuilt();
       return result;
+    }
+
+    private void buildPartial0(com.google.cloud.bigquery.storage.v1.AvroRows result) {
+      int from_bitField0_ = bitField0_;
+      if (((from_bitField0_ & 0x00000001) != 0)) {
+        result.serializedBinaryRows_ = serializedBinaryRows_;
+      }
+      if (((from_bitField0_ & 0x00000002) != 0)) {
+        result.rowCount_ = rowCount_;
+      }
     }
 
     @java.lang.Override
@@ -430,13 +436,13 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
             case 10:
               {
                 serializedBinaryRows_ = input.readBytes();
-
+                bitField0_ |= 0x00000001;
                 break;
               } // case 10
             case 16:
               {
                 rowCount_ = input.readInt64();
-
+                bitField0_ |= 0x00000002;
                 break;
               } // case 16
             default:
@@ -455,6 +461,8 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
       } // finally
       return this;
     }
+
+    private int bitField0_;
 
     private com.google.protobuf.ByteString serializedBinaryRows_ =
         com.google.protobuf.ByteString.EMPTY;
@@ -489,8 +497,8 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
       if (value == null) {
         throw new NullPointerException();
       }
-
       serializedBinaryRows_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -506,7 +514,7 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearSerializedBinaryRows() {
-
+      bitField0_ = (bitField0_ & ~0x00000001);
       serializedBinaryRows_ = getDefaultInstance().getSerializedBinaryRows();
       onChanged();
       return this;
@@ -551,6 +559,7 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
     public Builder setRowCount(long value) {
 
       rowCount_ = value;
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -570,7 +579,7 @@ public final class AvroRows extends com.google.protobuf.GeneratedMessageV3
      */
     @java.lang.Deprecated
     public Builder clearRowCount() {
-
+      bitField0_ = (bitField0_ & ~0x00000002);
       rowCount_ = 0L;
       onChanged();
       return this;

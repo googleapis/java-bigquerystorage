@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,17 +43,13 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     mode_ = 0;
     fields_ = java.util.Collections.emptyList();
     description_ = "";
+    defaultValueExpression_ = "";
   }
 
   @java.lang.Override
   @SuppressWarnings({"unused"})
   protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new TableFieldSchema();
-  }
-
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -634,7 +630,9 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
   }
 
   public static final int NAME_FIELD_NUMBER = 1;
-  private volatile java.lang.Object name_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object name_ = "";
   /**
    *
    *
@@ -687,7 +685,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
   }
 
   public static final int TYPE_FIELD_NUMBER = 2;
-  private int type_;
+  private int type_ = 0;
   /**
    *
    *
@@ -720,16 +718,15 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
    */
   @java.lang.Override
   public com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type getType() {
-    @SuppressWarnings("deprecation")
     com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type result =
-        com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type.valueOf(type_);
+        com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type.forNumber(type_);
     return result == null
         ? com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type.UNRECOGNIZED
         : result;
   }
 
   public static final int MODE_FIELD_NUMBER = 3;
-  private int mode_;
+  private int mode_ = 0;
   /**
    *
    *
@@ -762,15 +759,16 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
    */
   @java.lang.Override
   public com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode getMode() {
-    @SuppressWarnings("deprecation")
     com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode result =
-        com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode.valueOf(mode_);
+        com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode.forNumber(mode_);
     return result == null
         ? com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode.UNRECOGNIZED
         : result;
   }
 
   public static final int FIELDS_FIELD_NUMBER = 4;
+
+  @SuppressWarnings("serial")
   private java.util.List<com.google.cloud.bigquery.storage.v1.TableFieldSchema> fields_;
   /**
    *
@@ -856,7 +854,9 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
   }
 
   public static final int DESCRIPTION_FIELD_NUMBER = 6;
-  private volatile java.lang.Object description_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object description_ = "";
   /**
    *
    *
@@ -905,18 +905,22 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
   }
 
   public static final int MAX_LENGTH_FIELD_NUMBER = 7;
-  private long maxLength_;
+  private long maxLength_ = 0L;
   /**
    *
    *
    * <pre>
    * Optional. Maximum length of values of this field for STRINGS or BYTES.
+   *
    * If max_length is not specified, no maximum length constraint is imposed
    * on this field.
+   *
    * If type = "STRING", then max_length represents the maximum UTF-8
    * length of strings in this field.
+   *
    * If type = "BYTES", then max_length represents the maximum number of
    * bytes in this field.
+   *
    * It is invalid to set this field if type is not "STRING" or "BYTES".
    * </pre>
    *
@@ -930,7 +934,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
   }
 
   public static final int PRECISION_FIELD_NUMBER = 8;
-  private long precision_;
+  private long precision_ = 0L;
   /**
    *
    *
@@ -938,25 +942,34 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
    * Optional. Precision (maximum number of total digits in base 10) and scale
    * (maximum number of digits in the fractional part in base 10) constraints
    * for values of this field for NUMERIC or BIGNUMERIC.
+   *
    * It is invalid to set precision or scale if type is not "NUMERIC" or
    * "BIGNUMERIC".
+   *
    * If precision and scale are not specified, no value range constraint is
    * imposed on this field insofar as values are permitted by the type.
+   *
    * Values of this NUMERIC or BIGNUMERIC field must be in this range when:
+   *
    * * Precision (P) and scale (S) are specified:
    *   [-10^(P-S) + 10^(-S), 10^(P-S) - 10^(-S)]
    * * Precision (P) is specified but not scale (and thus scale is
    *   interpreted to be equal to zero):
    *   [-10^P + 1, 10^P - 1].
+   *
    * Acceptable values for precision and scale if both are specified:
+   *
    * * If type = "NUMERIC":
    *   1 &lt;= precision - scale &lt;= 29 and 0 &lt;= scale &lt;= 9.
    * * If type = "BIGNUMERIC":
    *   1 &lt;= precision - scale &lt;= 38 and 0 &lt;= scale &lt;= 38.
+   *
    * Acceptable values for precision if only precision is specified but not
    * scale (and thus scale is interpreted to be equal to zero):
+   *
    * * If type = "NUMERIC": 1 &lt;= precision &lt;= 29.
    * * If type = "BIGNUMERIC": 1 &lt;= precision &lt;= 38.
+   *
    * If scale is specified but not precision, then it is invalid.
    * </pre>
    *
@@ -970,7 +983,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
   }
 
   public static final int SCALE_FIELD_NUMBER = 9;
-  private long scale_;
+  private long scale_ = 0L;
   /**
    *
    *
@@ -985,6 +998,59 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
   @java.lang.Override
   public long getScale() {
     return scale_;
+  }
+
+  public static final int DEFAULT_VALUE_EXPRESSION_FIELD_NUMBER = 10;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object defaultValueExpression_ = "";
+  /**
+   *
+   *
+   * <pre>
+   * Optional. A SQL expression to specify the [default value]
+   * (https://cloud.google.com/bigquery/docs/default-values) for this field.
+   * </pre>
+   *
+   * <code>string default_value_expression = 10 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The defaultValueExpression.
+   */
+  @java.lang.Override
+  public java.lang.String getDefaultValueExpression() {
+    java.lang.Object ref = defaultValueExpression_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      defaultValueExpression_ = s;
+      return s;
+    }
+  }
+  /**
+   *
+   *
+   * <pre>
+   * Optional. A SQL expression to specify the [default value]
+   * (https://cloud.google.com/bigquery/docs/default-values) for this field.
+   * </pre>
+   *
+   * <code>string default_value_expression = 10 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The bytes for defaultValueExpression.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString getDefaultValueExpressionBytes() {
+    java.lang.Object ref = defaultValueExpression_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b =
+          com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+      defaultValueExpression_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
   }
 
   private byte memoizedIsInitialized = -1;
@@ -1029,6 +1095,9 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     if (scale_ != 0L) {
       output.writeInt64(9, scale_);
     }
+    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(defaultValueExpression_)) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 10, defaultValueExpression_);
+    }
     getUnknownFields().writeTo(output);
   }
 
@@ -1066,6 +1135,9 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     if (scale_ != 0L) {
       size += com.google.protobuf.CodedOutputStream.computeInt64Size(9, scale_);
     }
+    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(defaultValueExpression_)) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(10, defaultValueExpression_);
+    }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -1090,6 +1162,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     if (getMaxLength() != other.getMaxLength()) return false;
     if (getPrecision() != other.getPrecision()) return false;
     if (getScale() != other.getScale()) return false;
+    if (!getDefaultValueExpression().equals(other.getDefaultValueExpression())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -1119,6 +1192,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getPrecision());
     hash = (37 * hash) + SCALE_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getScale());
+    hash = (37 * hash) + DEFAULT_VALUE_EXPRESSION_FIELD_NUMBER;
+    hash = (53 * hash) + getDefaultValueExpression().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -1258,27 +1333,22 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     @java.lang.Override
     public Builder clear() {
       super.clear();
+      bitField0_ = 0;
       name_ = "";
-
       type_ = 0;
-
       mode_ = 0;
-
       if (fieldsBuilder_ == null) {
         fields_ = java.util.Collections.emptyList();
       } else {
         fields_ = null;
         fieldsBuilder_.clear();
       }
-      bitField0_ = (bitField0_ & ~0x00000001);
+      bitField0_ = (bitField0_ & ~0x00000008);
       description_ = "";
-
       maxLength_ = 0L;
-
       precision_ = 0L;
-
       scale_ = 0L;
-
+      defaultValueExpression_ = "";
       return this;
     }
 
@@ -1306,25 +1376,53 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     public com.google.cloud.bigquery.storage.v1.TableFieldSchema buildPartial() {
       com.google.cloud.bigquery.storage.v1.TableFieldSchema result =
           new com.google.cloud.bigquery.storage.v1.TableFieldSchema(this);
-      int from_bitField0_ = bitField0_;
-      result.name_ = name_;
-      result.type_ = type_;
-      result.mode_ = mode_;
+      buildPartialRepeatedFields(result);
+      if (bitField0_ != 0) {
+        buildPartial0(result);
+      }
+      onBuilt();
+      return result;
+    }
+
+    private void buildPartialRepeatedFields(
+        com.google.cloud.bigquery.storage.v1.TableFieldSchema result) {
       if (fieldsBuilder_ == null) {
-        if (((bitField0_ & 0x00000001) != 0)) {
+        if (((bitField0_ & 0x00000008) != 0)) {
           fields_ = java.util.Collections.unmodifiableList(fields_);
-          bitField0_ = (bitField0_ & ~0x00000001);
+          bitField0_ = (bitField0_ & ~0x00000008);
         }
         result.fields_ = fields_;
       } else {
         result.fields_ = fieldsBuilder_.build();
       }
-      result.description_ = description_;
-      result.maxLength_ = maxLength_;
-      result.precision_ = precision_;
-      result.scale_ = scale_;
-      onBuilt();
-      return result;
+    }
+
+    private void buildPartial0(com.google.cloud.bigquery.storage.v1.TableFieldSchema result) {
+      int from_bitField0_ = bitField0_;
+      if (((from_bitField0_ & 0x00000001) != 0)) {
+        result.name_ = name_;
+      }
+      if (((from_bitField0_ & 0x00000002) != 0)) {
+        result.type_ = type_;
+      }
+      if (((from_bitField0_ & 0x00000004) != 0)) {
+        result.mode_ = mode_;
+      }
+      if (((from_bitField0_ & 0x00000010) != 0)) {
+        result.description_ = description_;
+      }
+      if (((from_bitField0_ & 0x00000020) != 0)) {
+        result.maxLength_ = maxLength_;
+      }
+      if (((from_bitField0_ & 0x00000040) != 0)) {
+        result.precision_ = precision_;
+      }
+      if (((from_bitField0_ & 0x00000080) != 0)) {
+        result.scale_ = scale_;
+      }
+      if (((from_bitField0_ & 0x00000100) != 0)) {
+        result.defaultValueExpression_ = defaultValueExpression_;
+      }
     }
 
     @java.lang.Override
@@ -1375,6 +1473,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
         return this;
       if (!other.getName().isEmpty()) {
         name_ = other.name_;
+        bitField0_ |= 0x00000001;
         onChanged();
       }
       if (other.type_ != 0) {
@@ -1387,7 +1486,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
         if (!other.fields_.isEmpty()) {
           if (fields_.isEmpty()) {
             fields_ = other.fields_;
-            bitField0_ = (bitField0_ & ~0x00000001);
+            bitField0_ = (bitField0_ & ~0x00000008);
           } else {
             ensureFieldsIsMutable();
             fields_.addAll(other.fields_);
@@ -1400,7 +1499,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
             fieldsBuilder_.dispose();
             fieldsBuilder_ = null;
             fields_ = other.fields_;
-            bitField0_ = (bitField0_ & ~0x00000001);
+            bitField0_ = (bitField0_ & ~0x00000008);
             fieldsBuilder_ =
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders
                     ? getFieldsFieldBuilder()
@@ -1412,6 +1511,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
       }
       if (!other.getDescription().isEmpty()) {
         description_ = other.description_;
+        bitField0_ |= 0x00000010;
         onChanged();
       }
       if (other.getMaxLength() != 0L) {
@@ -1422,6 +1522,11 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
       }
       if (other.getScale() != 0L) {
         setScale(other.getScale());
+      }
+      if (!other.getDefaultValueExpression().isEmpty()) {
+        defaultValueExpression_ = other.defaultValueExpression_;
+        bitField0_ |= 0x00000100;
+        onChanged();
       }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
@@ -1452,19 +1557,19 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
             case 10:
               {
                 name_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000001;
                 break;
               } // case 10
             case 16:
               {
                 type_ = input.readEnum();
-
+                bitField0_ |= 0x00000002;
                 break;
               } // case 16
             case 24:
               {
                 mode_ = input.readEnum();
-
+                bitField0_ |= 0x00000004;
                 break;
               } // case 24
             case 34:
@@ -1484,27 +1589,33 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
             case 50:
               {
                 description_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000010;
                 break;
               } // case 50
             case 56:
               {
                 maxLength_ = input.readInt64();
-
+                bitField0_ |= 0x00000020;
                 break;
               } // case 56
             case 64:
               {
                 precision_ = input.readInt64();
-
+                bitField0_ |= 0x00000040;
                 break;
               } // case 64
             case 72:
               {
                 scale_ = input.readInt64();
-
+                bitField0_ |= 0x00000080;
                 break;
               } // case 72
+            case 82:
+              {
+                defaultValueExpression_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000100;
+                break;
+              } // case 82
             default:
               {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
@@ -1591,8 +1702,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
       if (value == null) {
         throw new NullPointerException();
       }
-
       name_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -1610,8 +1721,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * @return This builder for chaining.
      */
     public Builder clearName() {
-
       name_ = getDefaultInstance().getName();
+      bitField0_ = (bitField0_ & ~0x00000001);
       onChanged();
       return this;
     }
@@ -1634,8 +1745,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       name_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -1673,8 +1784,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * @return This builder for chaining.
      */
     public Builder setTypeValue(int value) {
-
       type_ = value;
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -1693,9 +1804,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      */
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type getType() {
-      @SuppressWarnings("deprecation")
       com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type result =
-          com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type.valueOf(type_);
+          com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type.forNumber(type_);
       return result == null
           ? com.google.cloud.bigquery.storage.v1.TableFieldSchema.Type.UNRECOGNIZED
           : result;
@@ -1718,7 +1828,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
       if (value == null) {
         throw new NullPointerException();
       }
-
+      bitField0_ |= 0x00000002;
       type_ = value.getNumber();
       onChanged();
       return this;
@@ -1737,7 +1847,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * @return This builder for chaining.
      */
     public Builder clearType() {
-
+      bitField0_ = (bitField0_ & ~0x00000002);
       type_ = 0;
       onChanged();
       return this;
@@ -1776,8 +1886,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * @return This builder for chaining.
      */
     public Builder setModeValue(int value) {
-
       mode_ = value;
+      bitField0_ |= 0x00000004;
       onChanged();
       return this;
     }
@@ -1796,9 +1906,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      */
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode getMode() {
-      @SuppressWarnings("deprecation")
       com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode result =
-          com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode.valueOf(mode_);
+          com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode.forNumber(mode_);
       return result == null
           ? com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode.UNRECOGNIZED
           : result;
@@ -1821,7 +1930,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
       if (value == null) {
         throw new NullPointerException();
       }
-
+      bitField0_ |= 0x00000004;
       mode_ = value.getNumber();
       onChanged();
       return this;
@@ -1840,7 +1949,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * @return This builder for chaining.
      */
     public Builder clearMode() {
-
+      bitField0_ = (bitField0_ & ~0x00000004);
       mode_ = 0;
       onChanged();
       return this;
@@ -1850,10 +1959,10 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
         java.util.Collections.emptyList();
 
     private void ensureFieldsIsMutable() {
-      if (!((bitField0_ & 0x00000001) != 0)) {
+      if (!((bitField0_ & 0x00000008) != 0)) {
         fields_ =
             new java.util.ArrayList<com.google.cloud.bigquery.storage.v1.TableFieldSchema>(fields_);
-        bitField0_ |= 0x00000001;
+        bitField0_ |= 0x00000008;
       }
     }
 
@@ -2105,7 +2214,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     public Builder clearFields() {
       if (fieldsBuilder_ == null) {
         fields_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00000001);
+        bitField0_ = (bitField0_ & ~0x00000008);
         onChanged();
       } else {
         fieldsBuilder_.clear();
@@ -2252,7 +2361,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
                 com.google.cloud.bigquery.storage.v1.TableFieldSchema,
                 com.google.cloud.bigquery.storage.v1.TableFieldSchema.Builder,
                 com.google.cloud.bigquery.storage.v1.TableFieldSchemaOrBuilder>(
-                fields_, ((bitField0_ & 0x00000001) != 0), getParentForChildren(), isClean());
+                fields_, ((bitField0_ & 0x00000008) != 0), getParentForChildren(), isClean());
         fields_ = null;
       }
       return fieldsBuilder_;
@@ -2319,8 +2428,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
       if (value == null) {
         throw new NullPointerException();
       }
-
       description_ = value;
+      bitField0_ |= 0x00000010;
       onChanged();
       return this;
     }
@@ -2336,8 +2445,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * @return This builder for chaining.
      */
     public Builder clearDescription() {
-
       description_ = getDefaultInstance().getDescription();
+      bitField0_ = (bitField0_ & ~0x00000010);
       onChanged();
       return this;
     }
@@ -2358,8 +2467,8 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       description_ = value;
+      bitField0_ |= 0x00000010;
       onChanged();
       return this;
     }
@@ -2370,12 +2479,16 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      *
      * <pre>
      * Optional. Maximum length of values of this field for STRINGS or BYTES.
+     *
      * If max_length is not specified, no maximum length constraint is imposed
      * on this field.
+     *
      * If type = "STRING", then max_length represents the maximum UTF-8
      * length of strings in this field.
+     *
      * If type = "BYTES", then max_length represents the maximum number of
      * bytes in this field.
+     *
      * It is invalid to set this field if type is not "STRING" or "BYTES".
      * </pre>
      *
@@ -2392,12 +2505,16 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      *
      * <pre>
      * Optional. Maximum length of values of this field for STRINGS or BYTES.
+     *
      * If max_length is not specified, no maximum length constraint is imposed
      * on this field.
+     *
      * If type = "STRING", then max_length represents the maximum UTF-8
      * length of strings in this field.
+     *
      * If type = "BYTES", then max_length represents the maximum number of
      * bytes in this field.
+     *
      * It is invalid to set this field if type is not "STRING" or "BYTES".
      * </pre>
      *
@@ -2409,6 +2526,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     public Builder setMaxLength(long value) {
 
       maxLength_ = value;
+      bitField0_ |= 0x00000020;
       onChanged();
       return this;
     }
@@ -2417,12 +2535,16 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      *
      * <pre>
      * Optional. Maximum length of values of this field for STRINGS or BYTES.
+     *
      * If max_length is not specified, no maximum length constraint is imposed
      * on this field.
+     *
      * If type = "STRING", then max_length represents the maximum UTF-8
      * length of strings in this field.
+     *
      * If type = "BYTES", then max_length represents the maximum number of
      * bytes in this field.
+     *
      * It is invalid to set this field if type is not "STRING" or "BYTES".
      * </pre>
      *
@@ -2431,7 +2553,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * @return This builder for chaining.
      */
     public Builder clearMaxLength() {
-
+      bitField0_ = (bitField0_ & ~0x00000020);
       maxLength_ = 0L;
       onChanged();
       return this;
@@ -2445,25 +2567,34 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * Optional. Precision (maximum number of total digits in base 10) and scale
      * (maximum number of digits in the fractional part in base 10) constraints
      * for values of this field for NUMERIC or BIGNUMERIC.
+     *
      * It is invalid to set precision or scale if type is not "NUMERIC" or
      * "BIGNUMERIC".
+     *
      * If precision and scale are not specified, no value range constraint is
      * imposed on this field insofar as values are permitted by the type.
+     *
      * Values of this NUMERIC or BIGNUMERIC field must be in this range when:
+     *
      * * Precision (P) and scale (S) are specified:
      *   [-10^(P-S) + 10^(-S), 10^(P-S) - 10^(-S)]
      * * Precision (P) is specified but not scale (and thus scale is
      *   interpreted to be equal to zero):
      *   [-10^P + 1, 10^P - 1].
+     *
      * Acceptable values for precision and scale if both are specified:
+     *
      * * If type = "NUMERIC":
      *   1 &lt;= precision - scale &lt;= 29 and 0 &lt;= scale &lt;= 9.
      * * If type = "BIGNUMERIC":
      *   1 &lt;= precision - scale &lt;= 38 and 0 &lt;= scale &lt;= 38.
+     *
      * Acceptable values for precision if only precision is specified but not
      * scale (and thus scale is interpreted to be equal to zero):
+     *
      * * If type = "NUMERIC": 1 &lt;= precision &lt;= 29.
      * * If type = "BIGNUMERIC": 1 &lt;= precision &lt;= 38.
+     *
      * If scale is specified but not precision, then it is invalid.
      * </pre>
      *
@@ -2482,25 +2613,34 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * Optional. Precision (maximum number of total digits in base 10) and scale
      * (maximum number of digits in the fractional part in base 10) constraints
      * for values of this field for NUMERIC or BIGNUMERIC.
+     *
      * It is invalid to set precision or scale if type is not "NUMERIC" or
      * "BIGNUMERIC".
+     *
      * If precision and scale are not specified, no value range constraint is
      * imposed on this field insofar as values are permitted by the type.
+     *
      * Values of this NUMERIC or BIGNUMERIC field must be in this range when:
+     *
      * * Precision (P) and scale (S) are specified:
      *   [-10^(P-S) + 10^(-S), 10^(P-S) - 10^(-S)]
      * * Precision (P) is specified but not scale (and thus scale is
      *   interpreted to be equal to zero):
      *   [-10^P + 1, 10^P - 1].
+     *
      * Acceptable values for precision and scale if both are specified:
+     *
      * * If type = "NUMERIC":
      *   1 &lt;= precision - scale &lt;= 29 and 0 &lt;= scale &lt;= 9.
      * * If type = "BIGNUMERIC":
      *   1 &lt;= precision - scale &lt;= 38 and 0 &lt;= scale &lt;= 38.
+     *
      * Acceptable values for precision if only precision is specified but not
      * scale (and thus scale is interpreted to be equal to zero):
+     *
      * * If type = "NUMERIC": 1 &lt;= precision &lt;= 29.
      * * If type = "BIGNUMERIC": 1 &lt;= precision &lt;= 38.
+     *
      * If scale is specified but not precision, then it is invalid.
      * </pre>
      *
@@ -2512,6 +2652,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     public Builder setPrecision(long value) {
 
       precision_ = value;
+      bitField0_ |= 0x00000040;
       onChanged();
       return this;
     }
@@ -2522,25 +2663,34 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * Optional. Precision (maximum number of total digits in base 10) and scale
      * (maximum number of digits in the fractional part in base 10) constraints
      * for values of this field for NUMERIC or BIGNUMERIC.
+     *
      * It is invalid to set precision or scale if type is not "NUMERIC" or
      * "BIGNUMERIC".
+     *
      * If precision and scale are not specified, no value range constraint is
      * imposed on this field insofar as values are permitted by the type.
+     *
      * Values of this NUMERIC or BIGNUMERIC field must be in this range when:
+     *
      * * Precision (P) and scale (S) are specified:
      *   [-10^(P-S) + 10^(-S), 10^(P-S) - 10^(-S)]
      * * Precision (P) is specified but not scale (and thus scale is
      *   interpreted to be equal to zero):
      *   [-10^P + 1, 10^P - 1].
+     *
      * Acceptable values for precision and scale if both are specified:
+     *
      * * If type = "NUMERIC":
      *   1 &lt;= precision - scale &lt;= 29 and 0 &lt;= scale &lt;= 9.
      * * If type = "BIGNUMERIC":
      *   1 &lt;= precision - scale &lt;= 38 and 0 &lt;= scale &lt;= 38.
+     *
      * Acceptable values for precision if only precision is specified but not
      * scale (and thus scale is interpreted to be equal to zero):
+     *
      * * If type = "NUMERIC": 1 &lt;= precision &lt;= 29.
      * * If type = "BIGNUMERIC": 1 &lt;= precision &lt;= 38.
+     *
      * If scale is specified but not precision, then it is invalid.
      * </pre>
      *
@@ -2549,7 +2699,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * @return This builder for chaining.
      */
     public Builder clearPrecision() {
-
+      bitField0_ = (bitField0_ & ~0x00000040);
       precision_ = 0L;
       onChanged();
       return this;
@@ -2586,6 +2736,7 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
     public Builder setScale(long value) {
 
       scale_ = value;
+      bitField0_ |= 0x00000080;
       onChanged();
       return this;
     }
@@ -2601,8 +2752,119 @@ public final class TableFieldSchema extends com.google.protobuf.GeneratedMessage
      * @return This builder for chaining.
      */
     public Builder clearScale() {
-
+      bitField0_ = (bitField0_ & ~0x00000080);
       scale_ = 0L;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object defaultValueExpression_ = "";
+    /**
+     *
+     *
+     * <pre>
+     * Optional. A SQL expression to specify the [default value]
+     * (https://cloud.google.com/bigquery/docs/default-values) for this field.
+     * </pre>
+     *
+     * <code>string default_value_expression = 10 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return The defaultValueExpression.
+     */
+    public java.lang.String getDefaultValueExpression() {
+      java.lang.Object ref = defaultValueExpression_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        defaultValueExpression_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. A SQL expression to specify the [default value]
+     * (https://cloud.google.com/bigquery/docs/default-values) for this field.
+     * </pre>
+     *
+     * <code>string default_value_expression = 10 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return The bytes for defaultValueExpression.
+     */
+    public com.google.protobuf.ByteString getDefaultValueExpressionBytes() {
+      java.lang.Object ref = defaultValueExpression_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+        defaultValueExpression_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. A SQL expression to specify the [default value]
+     * (https://cloud.google.com/bigquery/docs/default-values) for this field.
+     * </pre>
+     *
+     * <code>string default_value_expression = 10 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @param value The defaultValueExpression to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDefaultValueExpression(java.lang.String value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      defaultValueExpression_ = value;
+      bitField0_ |= 0x00000100;
+      onChanged();
+      return this;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. A SQL expression to specify the [default value]
+     * (https://cloud.google.com/bigquery/docs/default-values) for this field.
+     * </pre>
+     *
+     * <code>string default_value_expression = 10 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return This builder for chaining.
+     */
+    public Builder clearDefaultValueExpression() {
+      defaultValueExpression_ = getDefaultInstance().getDefaultValueExpression();
+      bitField0_ = (bitField0_ & ~0x00000100);
+      onChanged();
+      return this;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. A SQL expression to specify the [default value]
+     * (https://cloud.google.com/bigquery/docs/default-values) for this field.
+     * </pre>
+     *
+     * <code>string default_value_expression = 10 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @param value The bytes for defaultValueExpression to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDefaultValueExpressionBytes(com.google.protobuf.ByteString value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      checkByteStringIsUtf8(value);
+      defaultValueExpression_ = value;
+      bitField0_ |= 0x00000100;
       onChanged();
       return this;
     }

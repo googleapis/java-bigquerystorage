@@ -16,21 +16,29 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.core.ApiFuture;
+import com.google.api.core.NanoClock;
 import com.google.api.core.SettableApiFuture;
 import com.google.api.gax.batching.FlowController;
+import com.google.api.gax.retrying.ExponentialRetryAlgorithm;
+import com.google.api.gax.retrying.RetrySettings;
+import com.google.api.gax.retrying.TimedAttemptSettings;
+import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auto.value.AutoValue;
-import com.google.cloud.bigquery.storage.util.Errors;
+import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
-import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializtionError;
+import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.RequestCallback;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
@@ -39,6 +47,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
@@ -46,6 +56,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 /**
@@ -55,18 +68,41 @@ import javax.annotation.concurrent.GuardedBy;
  *
  * <p>TODO: support updated schema
  */
-public class ConnectionWorker implements AutoCloseable {
+class ConnectionWorker implements AutoCloseable {
+
   private static final Logger log = Logger.getLogger(StreamWriter.class.getName());
+
+  // Maximum wait time on inflight quota before error out.
+  private static long INFLIGHT_QUOTA_MAX_WAIT_TIME_MILLI = 300000;
+
+  /*
+   * Maximum time waiting for request callback before shutting down the connection.
+   *
+   * We will constantly checking how much time we have been waiting for the next request callback
+   * if we wait too much time we will start shutting down the connections and clean up the queues.
+   */
+  static Duration MAXIMUM_REQUEST_CALLBACK_WAIT_TIME = Duration.ofMinutes(5);
 
   private Lock lock;
   private Condition hasMessageInWaitingQueue;
   private Condition inflightReduced;
+  /*
+   * Max retry duration when trying to establish a connection.  This does not
+   * apply to in-stream retries.
+   */
+  private final Duration maxRetryDuration;
+  private ExecutorService threadPool = Executors.newFixedThreadPool(1);
 
   /*
    * The identifier of the current stream to write to. This stream name can change during
    * multiplexing.
    */
   private String streamName;
+
+  /*
+   * The location of this connection.
+   */
+  private String location = null;
 
   /*
    * The proto schema of rows to write. This schema can change during multiplexing.
@@ -94,6 +130,10 @@ public class ConnectionWorker implements AutoCloseable {
   private final String traceId;
 
   /*
+   * Enables compression on the wire.
+   */
+  private String compressorName = null;
+  /*
    * Tracks current inflight requests in the stream.
    */
   @GuardedBy("lock")
@@ -113,6 +153,9 @@ public class ConnectionWorker implements AutoCloseable {
    */
   @GuardedBy("lock")
   private long conectionRetryCountWithoutCallback = 0;
+
+  @GuardedBy("lock")
+  private long connectionRetryStartTime = 0;
 
   /*
    * If false, streamConnection needs to be reset.
@@ -167,11 +210,6 @@ public class ConnectionWorker implements AutoCloseable {
   private BigQueryWriteClient client;
 
   /*
-   * If true, the client above is created by this writer and should be closed.
-   */
-  private boolean ownsBigQueryWriteClient = false;
-
-  /*
    * Wraps the underlying bi-directional stream connection with server.
    */
   private StreamConnection streamConnection;
@@ -191,39 +229,105 @@ public class ConnectionWorker implements AutoCloseable {
    */
   private final String writerId = UUID.randomUUID().toString();
 
+  /*
+   * Test only exception behavior testing params.
+   */
+  private RuntimeException testOnlyRunTimeExceptionInAppendLoop = null;
+  private long testOnlyAppendLoopSleepTime = 0;
+
+  /*
+   * Tracks the number of responses to ignore in the case of exclusive stream retry
+   */
+  @GuardedBy("lock")
+  private int responsesToIgnore = 0;
+
+  /*
+   * Contains settings related to in-stream retries.  If retrySettings is null,
+   * this implies that no retries will occur on retryable in-stream errors.
+   */
+  private final RetrySettings retrySettings;
+
+  private static String projectMatching = "projects/[^/]+/";
+  private static Pattern streamPatternProject = Pattern.compile(projectMatching);
+
+  static final Pattern DEFAULT_STREAM_PATTERN =
+      Pattern.compile("projects/([^/]+)/datasets/([^/]+)/tables/([^/]+)/(streams/)?_default$");
+
+  public static Boolean isDefaultStreamName(String streamName) {
+    Matcher matcher = DEFAULT_STREAM_PATTERN.matcher(streamName);
+    return matcher.matches();
+  }
+
   /** The maximum size of one request. Defined by the API. */
   public static long getApiMaxRequestBytes() {
-    return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
+    return 20L * 1000L * 1000L; // 20 megabytes (https://en.wikipedia.org/wiki/Megabyte)
+  }
+
+  static String extractProjectName(String streamName) {
+    Matcher streamMatcher = streamPatternProject.matcher(streamName);
+    if (streamMatcher.find()) {
+      return streamMatcher.group();
+    } else {
+      throw new IllegalStateException(
+          String.format("The passed in stream name does not match standard format %s", streamName));
+    }
+  }
+
+  static String getRoutingHeader(String streamName, String location) {
+    String project = extractProjectName(streamName);
+    return project + "locations/" + location;
   }
 
   public ConnectionWorker(
       String streamName,
+      String location,
       ProtoSchema writerSchema,
       long maxInflightRequests,
       long maxInflightBytes,
+      Duration maxRetryDuration,
       FlowController.LimitExceededBehavior limitExceededBehavior,
       String traceId,
-      BigQueryWriteClient client,
-      boolean ownsBigQueryWriteClient)
+      @Nullable String compressorName,
+      BigQueryWriteSettings clientSettings,
+      RetrySettings retrySettings)
       throws IOException {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
     this.inflightReduced = lock.newCondition();
     this.streamName = streamName;
+    if (location != null && !location.isEmpty()) {
+      this.location = location;
+    }
+    this.maxRetryDuration = maxRetryDuration != null ? maxRetryDuration : Duration.ofMinutes(5);
     if (writerSchema == null) {
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
               .withDescription("Writer schema must be provided when building this writer."));
     }
-    this.writerSchema = writerSchema;
     this.maxInflightRequests = maxInflightRequests;
     this.maxInflightBytes = maxInflightBytes;
     this.limitExceededBehavior = limitExceededBehavior;
     this.traceId = traceId;
     this.waitingRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
-    this.client = client;
-    this.ownsBigQueryWriteClient = ownsBigQueryWriteClient;
+    this.compressorName = compressorName;
+    this.retrySettings = retrySettings;
+    // Always recreate a client for connection worker.
+    HashMap<String, String> newHeaders = new HashMap<>();
+    newHeaders.putAll(clientSettings.toBuilder().getHeaderProvider().getHeaders());
+    if (this.location == null) {
+      newHeaders.put("x-goog-request-params", "write_stream=" + this.streamName);
+    } else {
+      newHeaders.put(
+          "x-goog-request-params",
+          "write_location=" + getRoutingHeader(this.streamName, this.location));
+    }
+    BigQueryWriteSettings stubSettings =
+        clientSettings
+            .toBuilder()
+            .setHeaderProvider(FixedHeaderProvider.create(newHeaders))
+            .build();
+    this.client = BigQueryWriteClient.create(clientSettings);
 
     this.appendThread =
         new Thread(
@@ -233,10 +337,36 @@ public class ConnectionWorker implements AutoCloseable {
                 appendLoop();
               }
             });
+    appendThread.setUncaughtExceptionHandler(
+        (Thread t, Throwable e) -> {
+          log.warning(
+              "Exception thrown from append loop, thus stream writer is shutdown due to exception: "
+                  + e.toString());
+          lock.lock();
+          try {
+            connectionFinalStatus = e;
+            // Move all current waiting requests to in flight queue.
+            while (!this.waitingRequestQueue.isEmpty()) {
+              AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
+              this.inflightRequestQueue.addLast(requestWrapper);
+            }
+          } finally {
+            lock.unlock();
+          }
+          cleanupInflightRequests();
+        });
     this.appendThread.start();
   }
 
   private void resetConnection() {
+    log.info("Start connecting stream: " + streamName + " id: " + writerId);
+    if (this.streamConnection != null) {
+      // It's safe to directly close the previous connection as the in flight messages
+      // will be picked up by the next connection.
+      this.streamConnection.close();
+      Uninterruptibles.sleepUninterruptibly(
+          calculateSleepTimeMilli(conectionRetryCountWithoutCallback), TimeUnit.MILLISECONDS);
+    }
     this.streamConnection =
         new StreamConnection(
             this.client,
@@ -251,24 +381,120 @@ public class ConnectionWorker implements AutoCloseable {
               public void run(Throwable finalStatus) {
                 doneCallback(finalStatus);
               }
-            });
+            },
+            this.compressorName);
+    log.info("Finish connecting stream: " + streamName + " id: " + writerId);
+  }
+
+  @GuardedBy("lock")
+  private boolean shouldWaitForBackoff(AppendRequestAndResponse requestWrapper) {
+    if (this.retrySettings != null
+        && Instant.now().isBefore(requestWrapper.blockMessageSendDeadline)) {
+      log.fine(
+          String.format(
+              "Waiting for wait queue to unblock at %s for retry # %s",
+              requestWrapper.blockMessageSendDeadline, requestWrapper.retryCount));
+      return true;
+    }
+
+    return false;
+  }
+
+  private void waitForBackoffIfNecessary(AppendRequestAndResponse requestWrapper) {
+    lock.lock();
+    try {
+      Condition condition = lock.newCondition();
+      while (shouldWaitForBackoff(requestWrapper)) {
+        condition.await(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+      }
+    } catch (InterruptedException e) {
+      throw new IllegalStateException(e);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  @GuardedBy("lock")
+  private void addMessageToFrontOfWaitingQueue(AppendRequestAndResponse requestWrapper) {
+    addMessageToWaitingQueue(requestWrapper, /* addToFront= */ true);
+  }
+
+  @GuardedBy("lock")
+  private void addMessageToBackOfWaitingQueue(AppendRequestAndResponse requestWrapper) {
+    addMessageToWaitingQueue(requestWrapper, /* addToFront= */ false);
+  }
+
+  @GuardedBy("lock")
+  private void addMessageToWaitingQueue(
+      AppendRequestAndResponse requestWrapper, boolean addToFront) {
+    ++this.inflightRequests;
+    this.inflightBytes += requestWrapper.messageSize;
+    hasMessageInWaitingQueue.signal();
+    if (addToFront) {
+      waitingRequestQueue.addFirst(requestWrapper);
+    } else {
+      waitingRequestQueue.add(requestWrapper);
+    }
   }
 
   /** Schedules the writing of rows at given offset. */
-  ApiFuture<AppendRowsResponse> append(
-      String streamName, ProtoSchema writerSchema, ProtoRows rows, long offset) {
+  ApiFuture<AppendRowsResponse> append(StreamWriter streamWriter, ProtoRows rows, long offset) {
+    if (this.location != null && !this.location.equals(streamWriter.getLocation())) {
+      throw new StatusRuntimeException(
+          Status.fromCode(Code.INVALID_ARGUMENT)
+              .withDescription(
+                  "StreamWriter with location "
+                      + streamWriter.getLocation()
+                      + " is scheduled to use a connection with location "
+                      + this.location));
+    } else if (this.location == null && !streamWriter.getStreamName().equals(this.streamName)) {
+      // Location is null implies this is non-multiplexed connection.
+      throw new StatusRuntimeException(
+          Status.fromCode(Code.INVALID_ARGUMENT)
+              .withDescription(
+                  "StreamWriter with stream name "
+                      + streamWriter.getStreamName()
+                      + " is scheduled to use a connection with stream name "
+                      + this.streamName));
+    }
+    Preconditions.checkNotNull(streamWriter);
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
     requestBuilder.setProtoRows(
-        ProtoData.newBuilder().setWriterSchema(writerSchema).setRows(rows).build());
+        ProtoData.newBuilder()
+            .setWriterSchema(streamWriter.getProtoSchema())
+            .setRows(rows)
+            .build());
     if (offset >= 0) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
-    requestBuilder.setWriteStream(streamName);
-    return appendInternal(requestBuilder.build());
+    requestBuilder.setWriteStream(streamWriter.getStreamName());
+    requestBuilder.putAllMissingValueInterpretations(
+        streamWriter.getMissingValueInterpretationMap());
+    if (streamWriter.getDefaultValueInterpretation()
+        != MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED) {
+      requestBuilder.setDefaultMissingValueInterpretation(
+          streamWriter.getDefaultValueInterpretation());
+    }
+    return appendInternal(streamWriter, requestBuilder.build());
   }
 
-  private ApiFuture<AppendRowsResponse> appendInternal(AppendRowsRequest message) {
-    AppendRequestAndResponse requestWrapper = new AppendRequestAndResponse(message);
+  Boolean isUserClosed() {
+    this.lock.lock();
+    try {
+      return userClosed;
+    } finally {
+      this.lock.unlock();
+    }
+  }
+
+  String getWriteLocation() {
+    return this.location;
+  }
+
+  private ApiFuture<AppendRowsResponse> appendInternal(
+      StreamWriter streamWriter, AppendRowsRequest message) {
+    AppendRequestAndResponse requestWrapper =
+        new AppendRequestAndResponse(message, streamWriter, this.retrySettings);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
@@ -286,7 +512,7 @@ public class ConnectionWorker implements AutoCloseable {
         requestWrapper.appendResult.setException(
             new Exceptions.StreamWriterClosedException(
                 Status.fromCode(Status.Code.FAILED_PRECONDITION)
-                    .withDescription("Connection is already closed"),
+                    .withDescription("Connection is already closed during append"),
                 streamName,
                 writerId));
         return requestWrapper.appendResult;
@@ -317,7 +543,14 @@ public class ConnectionWorker implements AutoCloseable {
       this.inflightBytes += requestWrapper.messageSize;
       waitingRequestQueue.addLast(requestWrapper);
       hasMessageInWaitingQueue.signal();
-      maybeWaitForInflightQuota();
+      try {
+        maybeWaitForInflightQuota();
+      } catch (StatusRuntimeException ex) {
+        --this.inflightRequests;
+        waitingRequestQueue.pollLast();
+        this.inflightBytes -= requestWrapper.messageSize;
+        throw ex;
+      }
       return requestWrapper.appendResult;
     } finally {
       this.lock.unlock();
@@ -342,8 +575,33 @@ public class ConnectionWorker implements AutoCloseable {
                 .withCause(e)
                 .withDescription("Interrupted while waiting for quota."));
       }
+      long current_wait_time = System.currentTimeMillis() - start_time;
+      if (current_wait_time > INFLIGHT_QUOTA_MAX_WAIT_TIME_MILLI) {
+        throw new StatusRuntimeException(
+            Status.fromCode(Code.CANCELLED)
+                .withDescription(
+                    String.format(
+                        "Interrupted while waiting for quota due to long waiting time %sms",
+                        current_wait_time)));
+      }
     }
     inflightWaitSec.set((System.currentTimeMillis() - start_time) / 1000);
+  }
+
+  @VisibleForTesting
+  static long calculateSleepTimeMilli(long retryCount) {
+    return (long) Math.min(Math.pow(2, retryCount) * 50, 60000);
+  }
+
+  @VisibleForTesting
+  void setTestOnlyAppendLoopSleepTime(long testOnlyAppendLoopSleepTime) {
+    this.testOnlyAppendLoopSleepTime = testOnlyAppendLoopSleepTime;
+  }
+
+  @VisibleForTesting
+  void setTestOnlyRunTimeExceptionInAppendLoop(
+      RuntimeException testOnlyRunTimeExceptionInAppendLoop) {
+    this.testOnlyRunTimeExceptionInAppendLoop = testOnlyRunTimeExceptionInAppendLoop;
   }
 
   public long getInflightWaitSeconds() {
@@ -353,6 +611,16 @@ public class ConnectionWorker implements AutoCloseable {
   /** @return a unique Id for the writer. */
   public String getWriterId() {
     return writerId;
+  }
+
+  boolean isConnectionInUnrecoverableState() {
+    this.lock.lock();
+    try {
+      // If final status is set, there's no
+      return connectionFinalStatus != null;
+    } finally {
+      this.lock.unlock();
+    }
   }
 
   /** Close the stream writer. Shut down all resources. */
@@ -365,23 +633,48 @@ public class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
-    log.fine("Waiting for append thread to finish. Stream: " + streamName);
+    log.info("Waiting for append thread to finish. Stream: " + streamName + " id: " + writerId);
     try {
       appendThread.join();
-      log.info("User close complete. Stream: " + streamName);
     } catch (InterruptedException e) {
       // Unexpected. Just swallow the exception with logging.
       log.warning(
-          "Append handler join is interrupted. Stream: " + streamName + " Error: " + e.toString());
+          "Append handler join is interrupted. Stream: "
+              + streamName
+              + " id: "
+              + writerId
+              + " Error: "
+              + e.toString());
     }
-    if (this.ownsBigQueryWriteClient) {
-      this.client.close();
-      try {
-        // Backend request has a 2 minute timeout, so wait a little longer than that.
-        this.client.awaitTermination(150, TimeUnit.SECONDS);
-      } catch (InterruptedException ignored) {
-      }
+    this.client.close();
+    try {
+      // Backend request has a 2 minute timeout, so wait a little longer than that.
+      this.client.awaitTermination(150, TimeUnit.SECONDS);
+    } catch (InterruptedException ignored) {
+      log.warning("Client await termination timeout in writer id " + writerId);
     }
+
+    try {
+      log.fine(
+          "Begin shutting down user callback thread pool for stream "
+              + streamName
+              + " id: "
+              + writerId);
+      threadPool.shutdown();
+      threadPool.awaitTermination(3, TimeUnit.MINUTES);
+    } catch (InterruptedException e) {
+      // Unexpected. Just swallow the exception with logging.
+      log.warning(
+          "Close on thread pool for "
+              + streamName
+              + " id: "
+              + writerId
+              + " is interrupted with exception: "
+              + e.toString());
+      throw new IllegalStateException(
+          "Thread pool shutdown is interrupted for stream " + streamName);
+    }
+    log.info("User close finishes for stream " + streamName);
   }
 
   /*
@@ -395,7 +688,7 @@ public class ConnectionWorker implements AutoCloseable {
 
     // Indicate whether we are at the first request after switching destination.
     // True means the schema and other metadata are needed.
-    boolean firstRequestForDestinationSwitch = true;
+    boolean firstRequestForTableOrSchemaSwitch = true;
     // Represent whether we have entered multiplexing.
     boolean isMultiplexing = false;
 
@@ -403,6 +696,11 @@ public class ConnectionWorker implements AutoCloseable {
       this.lock.lock();
       try {
         hasMessageInWaitingQueue.await(100, TimeUnit.MILLISECONDS);
+        // Check whether we should error out the current append loop.
+        if (inflightRequestQueue.size() > 0) {
+          throwIfWaitCallbackTooLong(inflightRequestQueue.getFirst().requestCreationTimeStamp);
+        }
+
         // Copy the streamConnectionIsConnected guarded by lock to a local variable.
         // In addition, only reconnect if there is a retriable error.
         streamNeedsConnecting = !streamConnectionIsConnected && connectionFinalStatus == null;
@@ -414,16 +712,24 @@ public class ConnectionWorker implements AutoCloseable {
           while (!inflightRequestQueue.isEmpty()) {
             waitingRequestQueue.addFirst(inflightRequestQueue.pollLast());
           }
+
+          // If any of the inflight messages were meant to be ignored during requestCallback, they
+          // no longer will be able to make the round trip, so clear responsesToIgnore.
+          this.responsesToIgnore = 0;
         }
         while (!this.waitingRequestQueue.isEmpty()) {
           AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
-          this.inflightRequestQueue.addLast(requestWrapper);
+          waitForBackoffIfNecessary(requestWrapper);
+          requestWrapper.trySetRequestInsertQueueTime();
+          this.inflightRequestQueue.add(requestWrapper);
           localQueue.addLast(requestWrapper);
         }
       } catch (InterruptedException e) {
         log.warning(
             "Interrupted while waiting for message. Stream: "
                 + streamName
+                + " id: "
+                + writerId
                 + " Error: "
                 + e.toString());
       } finally {
@@ -443,28 +749,42 @@ public class ConnectionWorker implements AutoCloseable {
         } finally {
           lock.unlock();
         }
+        if (testOnlyRunTimeExceptionInAppendLoop != null) {
+          Uninterruptibles.sleepUninterruptibly(testOnlyAppendLoopSleepTime, TimeUnit.MILLISECONDS);
+          throw testOnlyRunTimeExceptionInAppendLoop;
+        }
         resetConnection();
         // Set firstRequestInConnection to indicate the next request to be sent should include
         // metedata. Reset everytime after reconnection.
-        firstRequestForDestinationSwitch = true;
+        firstRequestForTableOrSchemaSwitch = true;
       }
       while (!localQueue.isEmpty()) {
         AppendRowsRequest originalRequest = localQueue.pollFirst().message;
         AppendRowsRequest.Builder originalRequestBuilder = originalRequest.toBuilder();
-
-        // Consider we enter multiplexing if we met a different non empty stream name.
-        if (!originalRequest.getWriteStream().isEmpty()
-            && !streamName.isEmpty()
-            && !originalRequest.getWriteStream().equals(streamName)) {
+        // Always respect the first writer schema seen by the loop.
+        if (writerSchema == null) {
+          writerSchema = originalRequest.getProtoRows().getWriterSchema();
+        }
+        // Consider we enter multiplexing if we met a different non empty stream name or we meet
+        // a new schema for the same stream name.
+        // For the schema comparision we don't use message differencer to speed up the comparing
+        // process. `equals(...)` can bring us false positive, e.g. two repeated field can be
+        // considered the same but is not considered equals(). However as long as it's never provide
+        // false negative we will always correctly pass writer schema to backend.
+        if ((!originalRequest.getWriteStream().isEmpty()
+                && !streamName.isEmpty()
+                && !originalRequest.getWriteStream().equals(streamName))
+            || (originalRequest.getProtoRows().hasWriterSchema()
+                && !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema))) {
           streamName = originalRequest.getWriteStream();
+          writerSchema = originalRequest.getProtoRows().getWriterSchema();
           isMultiplexing = true;
-          firstRequestForDestinationSwitch = true;
+          firstRequestForTableOrSchemaSwitch = true;
         }
 
-        if (firstRequestForDestinationSwitch) {
+        if (firstRequestForTableOrSchemaSwitch) {
           // If we are at the first request for every table switch, including the first request in
           // the connection, we will attach both stream name and table schema to the request.
-          // We don't support change of schema change during multiplexing for the saeme stream name.
           destinationSet.add(streamName);
           if (this.traceId != null) {
             originalRequestBuilder.setTraceId(this.traceId);
@@ -474,17 +794,11 @@ public class ConnectionWorker implements AutoCloseable {
           originalRequestBuilder.clearWriteStream();
         }
 
-        // We don't use message differencer to speed up the comparing process.
-        // `equals(...)` can bring us false positive, e.g. two repeated field can be considered the
-        // same but is not considered equals(). However as long as it's never provide false negative
-        // we will always correctly pass writer schema to backend.
-        if (firstRequestForDestinationSwitch
-            || !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema)) {
-          writerSchema = originalRequest.getProtoRows().getWriterSchema();
-        } else {
+        // During non table/schema switch requests, clear writer schema.
+        if (!firstRequestForTableOrSchemaSwitch) {
           originalRequestBuilder.getProtoRowsBuilder().clearWriterSchema();
         }
-        firstRequestForDestinationSwitch = false;
+        firstRequestForTableOrSchemaSwitch = false;
 
         // Send should only throw an exception if there is a problem with the request. The catch
         // block will handle this case, and return the exception with the result.
@@ -495,17 +809,21 @@ public class ConnectionWorker implements AutoCloseable {
         // TODO: Handle NOT_ENOUGH_QUOTA.
         // In the close case, the request is in the inflight queue, and will either be returned
         // to the user with an error, or will be resent.
-        log.fine(
-            "Sending "
-                + originalRequestBuilder.getProtoRows().getRows().getSerializedRowsCount()
-                + " rows to stream '"
-                + originalRequestBuilder.getWriteStream()
-                + "'");
         this.streamConnection.send(originalRequestBuilder.build());
       }
     }
 
-    log.fine("Cleanup starts. Stream: " + streamName);
+    log.info(
+        "Cleanup starts. Stream: "
+            + streamName
+            + " id: "
+            + writerId
+            + " userClose: "
+            + userClosed
+            + " final exception: "
+            + (this.connectionFinalStatus == null
+                ? "null"
+                : this.connectionFinalStatus.toString()));
     // At this point, the waiting queue is drained, so no more requests.
     // We can close the stream connection and handle the remaining inflight requests.
     if (streamConnection != null) {
@@ -514,10 +832,24 @@ public class ConnectionWorker implements AutoCloseable {
     }
 
     // At this point, there cannot be more callback. It is safe to clean up all inflight requests.
-    log.fine(
-        "Stream connection is fully closed. Cleaning up inflight requests. Stream: " + streamName);
+    log.info(
+        "Stream connection is fully closed. Cleaning up inflight requests. Stream: "
+            + streamName
+            + " id: "
+            + writerId);
     cleanupInflightRequests();
-    log.fine("Append thread is done. Stream: " + streamName);
+    log.info("Append thread is done. Stream: " + streamName + " id: " + writerId);
+  }
+
+  private void throwIfWaitCallbackTooLong(Instant timeToCheck) {
+    Duration milliSinceLastCallback = Duration.between(timeToCheck, Instant.now());
+    if (milliSinceLastCallback.compareTo(MAXIMUM_REQUEST_CALLBACK_WAIT_TIME) > 0) {
+      throw new RuntimeException(
+          String.format(
+              "Request has waited in inflight queue for %sms for writer %s, "
+                  + "which is over maximum wait time %s",
+              milliSinceLastCallback, writerId, MAXIMUM_REQUEST_CALLBACK_WAIT_TIME.toString()));
+    }
   }
 
   /*
@@ -537,7 +869,11 @@ public class ConnectionWorker implements AutoCloseable {
   }
 
   private void waitForDoneCallback(long duration, TimeUnit timeUnit) {
-    log.fine("Waiting for done callback from stream connection. Stream: " + streamName);
+    log.fine(
+        "Waiting for done callback from stream connection. Stream: "
+            + streamName
+            + " id: "
+            + writerId);
     long deadline = System.nanoTime() + timeUnit.toNanos(duration);
     while (System.nanoTime() <= deadline) {
       this.lock.lock();
@@ -553,6 +889,7 @@ public class ConnectionWorker implements AutoCloseable {
     }
     this.lock.lock();
     try {
+      log.warning("Donecallback is not triggered within timeout frame for writer " + writerId);
       if (connectionFinalStatus == null) {
         connectionFinalStatus =
             new StatusRuntimeException(
@@ -580,46 +917,165 @@ public class ConnectionWorker implements AutoCloseable {
         finalStatus = this.connectionFinalStatus;
       }
       while (!this.inflightRequestQueue.isEmpty()) {
-        localQueue.addLast(pollInflightRequestQueue());
+        localQueue.addLast(pollFirstInflightRequestQueue());
       }
       this.inflightCleanuped = true;
     } finally {
       this.lock.unlock();
     }
-    log.fine("Cleaning " + localQueue.size() + " inflight requests with error: " + finalStatus);
-    while (!localQueue.isEmpty()) {
-      localQueue.pollFirst().appendResult.setException(finalStatus);
+    log.fine(
+        "Cleaning "
+            + localQueue.size()
+            + " inflight requests with error: "
+            + finalStatus
+            + " for Stream "
+            + streamName
+            + " id: "
+            + writerId);
+    int sizeOfQueue = localQueue.size();
+    for (int i = 0; i < sizeOfQueue; i++) {
+      if (i == 0) {
+        localQueue.pollFirst().appendResult.setException(finalStatus);
+      } else {
+        localQueue
+            .pollFirst()
+            .appendResult
+            .setException(
+                new Exceptions.StreamWriterClosedException(
+                    Status.fromCode(Code.ABORTED)
+                        .withDescription(
+                            "Connection is aborted due to an unrecoverable failure of "
+                                + "another request sharing the connection. Please retry this "
+                                + "request."),
+                    streamName,
+                    writerId));
+      }
     }
   }
 
+  private Boolean retryOnRetryableError(Code errorCode, AppendRequestAndResponse requestWrapper) {
+    if (this.retrySettings == null) {
+      return false;
+    }
+
+    if (this.retrySettings.getMaxAttempts() == 0) {
+      return false;
+    }
+
+    if (!isConnectionErrorRetriable(errorCode) && errorCode != Code.RESOURCE_EXHAUSTED) {
+      return false;
+    }
+
+    if (requestWrapper.retryCount < this.retrySettings.getMaxAttempts()) {
+      lock.lock();
+      try {
+        requestWrapper.retryCount++;
+        if (this.retrySettings != null && useBackoffForError(errorCode, streamName)) {
+          // Trigger exponential backoff in append loop when request is resent for quota errors.
+          // createNextAttempt correctly initializes the retry delay; createfirstAttempt does not
+          // include a positive delay, just 0.
+          requestWrapper.attemptSettings =
+              requestWrapper.retryAlgorithm.createNextAttempt(
+                  requestWrapper.attemptSettings == null
+                      ? requestWrapper.retryAlgorithm.createFirstAttempt()
+                      : requestWrapper.attemptSettings);
+          requestWrapper.blockMessageSendDeadline =
+              Instant.now().plusMillis(requestWrapper.attemptSettings.getRetryDelay().toMillis());
+          log.info(
+              "Messages blocked for retry for "
+                  + java.time.Duration.between(
+                      java.time.Instant.now(), requestWrapper.blockMessageSendDeadline)
+                  + " until "
+                  + requestWrapper.blockMessageSendDeadline);
+        }
+
+        Long offset =
+            requestWrapper.message.hasOffset() ? requestWrapper.message.getOffset().getValue() : -1;
+        if (isDefaultStreamName(streamName) || offset == -1) {
+          log.info(
+              String.format(
+                  "Retrying default stream message in stream %s for in-stream error: %s, retry count:"
+                      + " %s",
+                  streamName, errorCode, requestWrapper.retryCount));
+          addMessageToFrontOfWaitingQueue(requestWrapper);
+        } else {
+          log.info(
+              String.format(
+                  "Retrying exclusive message in stream %s at offset %d for in-stream error: %s, retry"
+                      + " count: %s",
+                  streamName,
+                  requestWrapper.message.getOffset().getValue(),
+                  errorCode,
+                  requestWrapper.retryCount));
+          // Send all inflight messages to front of queue
+          while (!inflightRequestQueue.isEmpty()) {
+            AppendRequestAndResponse element = pollLastInflightRequestQueue();
+            addMessageToFrontOfWaitingQueue(element);
+            responsesToIgnore++;
+          }
+
+          addMessageToFrontOfWaitingQueue(requestWrapper);
+        }
+        return true;
+      } finally {
+        lock.unlock();
+      }
+    }
+
+    log.info(
+        String.format(
+            "Max retry count reached for message in stream %s at offset %d.  Retry count: %d",
+            streamName, requestWrapper.message.getOffset().getValue(), requestWrapper.retryCount));
+    return false;
+  }
+
   private void requestCallback(AppendRowsResponse response) {
-    if (!response.hasUpdatedSchema()) {
-      log.fine(String.format("Got response on stream %s", response.toString()));
-    } else {
+    if (response.hasUpdatedSchema()) {
       AppendRowsResponse responseWithUpdatedSchemaRemoved =
           response.toBuilder().clearUpdatedSchema().build();
 
       log.fine(
           String.format(
-              "Got response with schema updated (omitting updated schema in response here): %s",
-              responseWithUpdatedSchemaRemoved.toString()));
+              "Got response with schema updated (omitting updated schema in response here): %s"
+                  + " writer id %s",
+              responseWithUpdatedSchemaRemoved.toString(), writerId));
     }
 
     AppendRequestAndResponse requestWrapper;
     this.lock.lock();
-    if (response.hasUpdatedSchema()) {
-      this.updatedSchema =
-          TableSchemaAndTimestamp.create(System.nanoTime(), response.getUpdatedSchema());
-    }
     try {
+      // Ignored response has arrived
+      if (responsesToIgnore > 0) {
+        if (response.hasError()) {
+          log.fine(
+              String.format("Ignoring response in stream %s at offset %s.", streamName, response));
+        } else {
+          log.warning(
+              String.format(
+                  "Unexpected successful response in stream %s at offset %s.  Due to a previous"
+                      + " retryable error being inflight, this message is being ignored.",
+                  streamName, response.getAppendResult().getOffset()));
+        }
+
+        responsesToIgnore--;
+        return;
+      }
+
+      if (response.hasUpdatedSchema()) {
+        this.updatedSchema =
+            TableSchemaAndTimestamp.create(System.nanoTime(), response.getUpdatedSchema());
+      }
       // Had a successful connection with at least one result, reset retries.
       // conectionRetryCountWithoutCallback is reset so that only multiple retries, without
       // successful records sent, will cause the stream to fail.
       if (conectionRetryCountWithoutCallback != 0) {
         conectionRetryCountWithoutCallback = 0;
       }
+      if (connectionRetryStartTime != 0) {
+        connectionRetryStartTime = 0;
+      }
       if (!this.inflightRequestQueue.isEmpty()) {
-        requestWrapper = pollInflightRequestQueue();
+        requestWrapper = pollFirstInflightRequestQueue();
       } else if (inflightCleanuped) {
         // It is possible when requestCallback is called, the inflight queue is already drained
         // because we timed out waiting for done.
@@ -636,66 +1092,107 @@ public class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
+
+    // Retries need to happen on the same thread as queue locking may occur
     if (response.hasError()) {
-      Exceptions.StorageException storageException =
-          Exceptions.toStorageException(response.getError(), null);
-      if (storageException != null) {
-        requestWrapper.appendResult.setException(storageException);
-      } else if (response.getRowErrorsCount() > 0) {
-        Map<Integer, String> rowIndexToErrorMessage = new HashMap<>();
-        for (int i = 0; i < response.getRowErrorsCount(); i++) {
-          RowError rowError = response.getRowErrors(i);
-          rowIndexToErrorMessage.put(Math.toIntExact(rowError.getIndex()), rowError.getMessage());
-        }
-        AppendSerializtionError exception =
-            new AppendSerializtionError(
-                response.getError().getCode(),
-                response.getError().getMessage(),
-                streamName,
-                rowIndexToErrorMessage);
-        requestWrapper.appendResult.setException(exception);
-      } else {
-        StatusRuntimeException exception =
-            new StatusRuntimeException(
-                Status.fromCodeValue(response.getError().getCode())
-                    .withDescription(response.getError().getMessage()));
-        requestWrapper.appendResult.setException(exception);
+      if (retryOnRetryableError(Code.values()[response.getError().getCode()], requestWrapper)) {
+        log.info("Attempting to retry on error: " + response.getError().toString());
+        return;
       }
-    } else {
-      requestWrapper.appendResult.set(response);
     }
+
+    // We need a separate thread pool to unblock the next request callback.
+    // Otherwise user may call append inside request callback, which may be blocked on waiting
+    // on in flight quota, causing deadlock as requests can't be popped out of queue until
+    // the current request callback finishes.
+    threadPool.submit(
+        () -> {
+          if (response.hasError()) {
+            Exceptions.StorageException storageException =
+                Exceptions.toStorageException(response.getError(), null);
+            log.fine(String.format("Got error message: %s", response.toString()));
+            if (storageException != null) {
+              requestWrapper.appendResult.setException(storageException);
+            } else if (response.getRowErrorsCount() > 0) {
+              Map<Integer, String> rowIndexToErrorMessage = new HashMap<>();
+              for (int i = 0; i < response.getRowErrorsCount(); i++) {
+                RowError rowError = response.getRowErrors(i);
+                rowIndexToErrorMessage.put(
+                    Math.toIntExact(rowError.getIndex()), rowError.getMessage());
+              }
+              AppendSerializationError exception =
+                  new AppendSerializationError(
+                      response.getError().getCode(),
+                      response.getError().getMessage(),
+                      streamName,
+                      rowIndexToErrorMessage);
+              requestWrapper.appendResult.setException(exception);
+            } else {
+              StatusRuntimeException exception =
+                  new StatusRuntimeException(
+                      Status.fromCodeValue(response.getError().getCode())
+                          .withDescription(response.getError().getMessage()));
+              requestWrapper.appendResult.setException(exception);
+            }
+          } else {
+            requestWrapper.appendResult.set(response);
+          }
+        });
   }
 
-  private boolean isRetriableError(Throwable t) {
-    Status status = Status.fromThrowable(t);
-    if (Errors.isRetryableInternalStatus(status)) {
-      return true;
+  private boolean isConnectionErrorRetriable(Code statusCode) {
+    return statusCode == Code.ABORTED
+        || statusCode == Code.UNAVAILABLE
+        || statusCode == Code.CANCELLED
+        || statusCode == Code.INTERNAL
+        || statusCode == Code.DEADLINE_EXCEEDED;
+  }
+
+  private boolean useBackoffForError(Code statusCode, String streamName) {
+    // Default stream uses backoff for INTERNAL, as THROTTLED errors are more likely with default
+    // streams.  RESOURCE_EXHAUSTED streams are used for backoff for each stream type.
+    if (isDefaultStreamName(streamName)) {
+      if (statusCode == Code.INTERNAL) {
+        return true;
+      }
     }
-    return status.getCode() == Code.ABORTED
-        || status.getCode() == Code.UNAVAILABLE
-        || status.getCode() == Code.CANCELLED;
+    return statusCode == Code.RESOURCE_EXHAUSTED;
   }
 
   private void doneCallback(Throwable finalStatus) {
-    log.fine(
+    log.info(
         "Received done callback. Stream: "
             + streamName
+            + " worker id: "
+            + writerId
             + " Final status: "
             + finalStatus.toString());
     this.lock.lock();
     try {
       this.streamConnectionIsConnected = false;
       if (connectionFinalStatus == null) {
+        if (connectionRetryStartTime == 0) {
+          connectionRetryStartTime = System.currentTimeMillis();
+        }
         // If the error can be retried, don't set it here, let it try to retry later on.
-        if (isRetriableError(finalStatus) && !userClosed) {
+        if (isConnectionErrorRetriable(Status.fromThrowable(finalStatus).getCode())
+            && !userClosed
+            && (maxRetryDuration.toMillis() == 0f
+                || System.currentTimeMillis() - connectionRetryStartTime
+                    <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
           log.info(
               "Retriable error "
                   + finalStatus.toString()
                   + " received, retry count "
                   + conectionRetryCountWithoutCallback
-                  + " for stream "
-                  + streamName);
+                  + ", millis left to retry "
+                  + (maxRetryDuration.toMillis()
+                      - (System.currentTimeMillis() - connectionRetryStartTime))
+                  + ", for stream "
+                  + streamName
+                  + " id:"
+                  + writerId);
         } else {
           Exceptions.StorageException storageException = Exceptions.toStorageException(finalStatus);
           this.connectionFinalStatus = storageException != null ? storageException : finalStatus;
@@ -703,7 +1200,9 @@ public class ConnectionWorker implements AutoCloseable {
               "Connection finished with error "
                   + finalStatus.toString()
                   + " for stream "
-                  + streamName);
+                  + streamName
+                  + " with write id: "
+                  + writerId);
         }
       }
     } finally {
@@ -712,12 +1211,23 @@ public class ConnectionWorker implements AutoCloseable {
   }
 
   @GuardedBy("lock")
-  private AppendRequestAndResponse pollInflightRequestQueue() {
-    AppendRequestAndResponse requestWrapper = this.inflightRequestQueue.pollFirst();
+  private AppendRequestAndResponse pollInflightRequestQueue(boolean pollLast) {
+    AppendRequestAndResponse requestWrapper =
+        pollLast ? inflightRequestQueue.pollLast() : inflightRequestQueue.poll();
     --this.inflightRequests;
     this.inflightBytes -= requestWrapper.messageSize;
     this.inflightReduced.signal();
     return requestWrapper;
+  }
+
+  @GuardedBy("lock")
+  private AppendRequestAndResponse pollLastInflightRequestQueue() {
+    return pollInflightRequestQueue(/* pollLast= */ true);
+  }
+
+  @GuardedBy("lock")
+  private AppendRequestAndResponse pollFirstInflightRequestQueue() {
+    return pollInflightRequestQueue(/* pollLast= */ false);
   }
 
   /** Thread-safe getter of updated TableSchema */
@@ -726,15 +1236,48 @@ public class ConnectionWorker implements AutoCloseable {
   }
 
   // Class that wraps AppendRowsRequest and its corresponding Response future.
-  private static final class AppendRequestAndResponse {
+  static final class AppendRequestAndResponse {
+
     final SettableApiFuture<AppendRowsResponse> appendResult;
     final AppendRowsRequest message;
     final long messageSize;
+    // Used to determine the point at which appendLoop is able to process messages from the waiting
+    // queue.  This is used to process errors that support exponential backoff retry.
+    Instant blockMessageSendDeadline;
 
-    AppendRequestAndResponse(AppendRowsRequest message) {
+    Integer retryCount;
+    ExponentialRetryAlgorithm retryAlgorithm;
+
+    // The writer that issues the call of the request.
+    final StreamWriter streamWriter;
+
+    TimedAttemptSettings attemptSettings;
+
+    Instant requestCreationTimeStamp;
+
+    AppendRequestAndResponse(
+        AppendRowsRequest message, StreamWriter streamWriter, RetrySettings retrySettings) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
       this.messageSize = message.getProtoRows().getSerializedSize();
+      this.streamWriter = streamWriter;
+      this.blockMessageSendDeadline = Instant.now();
+      this.retryCount = 0;
+      // To be set after first retry
+      this.attemptSettings = null;
+      if (retrySettings != null) {
+        this.retryAlgorithm =
+            new ExponentialRetryAlgorithm(retrySettings, NanoClock.getDefaultClock());
+      } else {
+        this.retryAlgorithm = null;
+      }
+    }
+
+    void trySetRequestInsertQueueTime() {
+      // Only set the first time the caller tries to set the timestamp.
+      if (requestCreationTimeStamp == null) {
+        requestCreationTimeStamp = Instant.now();
+      }
     }
   }
 
@@ -754,6 +1297,7 @@ public class ConnectionWorker implements AutoCloseable {
    */
   @AutoValue
   public abstract static class Load {
+
     // Consider the load on this worker to be overwhelmed when above some percentage of
     // in-flight bytes or in-flight requests count.
     private static double overwhelmedInflightCount = 0.2;
@@ -820,8 +1364,19 @@ public class ConnectionWorker implements AutoCloseable {
     }
   }
 
+  @VisibleForTesting
+  static void setMaxInflightQueueWaitTime(long waitTime) {
+    INFLIGHT_QUOTA_MAX_WAIT_TIME_MILLI = waitTime;
+  }
+
+  @VisibleForTesting
+  static void setMaxInflightRequestWaitTime(Duration waitTime) {
+    MAXIMUM_REQUEST_CALLBACK_WAIT_TIME = waitTime;
+  }
+
   @AutoValue
   abstract static class TableSchemaAndTimestamp {
+
     // Shows the timestamp updated schema is reported from response
     abstract long updateTimeStamp();
 

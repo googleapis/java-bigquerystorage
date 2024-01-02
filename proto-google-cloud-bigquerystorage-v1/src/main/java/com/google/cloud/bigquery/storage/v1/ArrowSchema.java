@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ package com.google.cloud.bigquery.storage.v1;
  * https://arrow.apache.org/docs/python/api/datatypes.html
  * and serialized to bytes using IPC:
  * https://arrow.apache.org/docs/format/Columnar.html#serialization-and-interprocess-communication-ipc
+ *
  * See code samples on how this message can be deserialized.
  * </pre>
  *
@@ -51,11 +52,6 @@ public final class ArrowSchema extends com.google.protobuf.GeneratedMessageV3
     return new ArrowSchema();
   }
 
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
-  }
-
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
     return com.google.cloud.bigquery.storage.v1.ArrowProto
         .internal_static_google_cloud_bigquery_storage_v1_ArrowSchema_descriptor;
@@ -72,7 +68,7 @@ public final class ArrowSchema extends com.google.protobuf.GeneratedMessageV3
   }
 
   public static final int SERIALIZED_SCHEMA_FIELD_NUMBER = 1;
-  private com.google.protobuf.ByteString serializedSchema_;
+  private com.google.protobuf.ByteString serializedSchema_ = com.google.protobuf.ByteString.EMPTY;
   /**
    *
    *
@@ -256,6 +252,7 @@ public final class ArrowSchema extends com.google.protobuf.GeneratedMessageV3
    * https://arrow.apache.org/docs/python/api/datatypes.html
    * and serialized to bytes using IPC:
    * https://arrow.apache.org/docs/format/Columnar.html#serialization-and-interprocess-communication-ipc
+   *
    * See code samples on how this message can be deserialized.
    * </pre>
    *
@@ -290,8 +287,8 @@ public final class ArrowSchema extends com.google.protobuf.GeneratedMessageV3
     @java.lang.Override
     public Builder clear() {
       super.clear();
+      bitField0_ = 0;
       serializedSchema_ = com.google.protobuf.ByteString.EMPTY;
-
       return this;
     }
 
@@ -319,9 +316,18 @@ public final class ArrowSchema extends com.google.protobuf.GeneratedMessageV3
     public com.google.cloud.bigquery.storage.v1.ArrowSchema buildPartial() {
       com.google.cloud.bigquery.storage.v1.ArrowSchema result =
           new com.google.cloud.bigquery.storage.v1.ArrowSchema(this);
-      result.serializedSchema_ = serializedSchema_;
+      if (bitField0_ != 0) {
+        buildPartial0(result);
+      }
       onBuilt();
       return result;
+    }
+
+    private void buildPartial0(com.google.cloud.bigquery.storage.v1.ArrowSchema result) {
+      int from_bitField0_ = bitField0_;
+      if (((from_bitField0_ & 0x00000001) != 0)) {
+        result.serializedSchema_ = serializedSchema_;
+      }
     }
 
     @java.lang.Override
@@ -402,7 +408,7 @@ public final class ArrowSchema extends com.google.protobuf.GeneratedMessageV3
             case 10:
               {
                 serializedSchema_ = input.readBytes();
-
+                bitField0_ |= 0x00000001;
                 break;
               } // case 10
             default:
@@ -421,6 +427,8 @@ public final class ArrowSchema extends com.google.protobuf.GeneratedMessageV3
       } // finally
       return this;
     }
+
+    private int bitField0_;
 
     private com.google.protobuf.ByteString serializedSchema_ = com.google.protobuf.ByteString.EMPTY;
     /**
@@ -454,8 +462,8 @@ public final class ArrowSchema extends com.google.protobuf.GeneratedMessageV3
       if (value == null) {
         throw new NullPointerException();
       }
-
       serializedSchema_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -471,7 +479,7 @@ public final class ArrowSchema extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearSerializedSchema() {
-
+      bitField0_ = (bitField0_ & ~0x00000001);
       serializedSchema_ = getDefaultInstance().getSerializedSchema();
       onChanged();
       return this;

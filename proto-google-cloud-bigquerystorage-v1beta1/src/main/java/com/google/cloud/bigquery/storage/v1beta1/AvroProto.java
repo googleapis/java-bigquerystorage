@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,11 +88,6 @@ public final class AvroProto {
       return new AvroSchema();
     }
 
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-      return this.unknownFields;
-    }
-
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
       return com.google.cloud.bigquery.storage.v1beta1.AvroProto
           .internal_static_google_cloud_bigquery_storage_v1beta1_AvroSchema_descriptor;
@@ -109,7 +104,9 @@ public final class AvroProto {
     }
 
     public static final int SCHEMA_FIELD_NUMBER = 1;
-    private volatile java.lang.Object schema_;
+
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object schema_ = "";
     /**
      *
      *
@@ -359,8 +356,8 @@ public final class AvroProto {
       @java.lang.Override
       public Builder clear() {
         super.clear();
+        bitField0_ = 0;
         schema_ = "";
-
         return this;
       }
 
@@ -389,9 +386,19 @@ public final class AvroProto {
       public com.google.cloud.bigquery.storage.v1beta1.AvroProto.AvroSchema buildPartial() {
         com.google.cloud.bigquery.storage.v1beta1.AvroProto.AvroSchema result =
             new com.google.cloud.bigquery.storage.v1beta1.AvroProto.AvroSchema(this);
-        result.schema_ = schema_;
+        if (bitField0_ != 0) {
+          buildPartial0(result);
+        }
         onBuilt();
         return result;
+      }
+
+      private void buildPartial0(
+          com.google.cloud.bigquery.storage.v1beta1.AvroProto.AvroSchema result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.schema_ = schema_;
+        }
       }
 
       @java.lang.Override
@@ -446,6 +453,7 @@ public final class AvroProto {
           return this;
         if (!other.getSchema().isEmpty()) {
           schema_ = other.schema_;
+          bitField0_ |= 0x00000001;
           onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
@@ -477,7 +485,7 @@ public final class AvroProto {
               case 10:
                 {
                   schema_ = input.readStringRequireUtf8();
-
+                  bitField0_ |= 0x00000001;
                   break;
                 } // case 10
               default:
@@ -496,6 +504,8 @@ public final class AvroProto {
         } // finally
         return this;
       }
+
+      private int bitField0_;
 
       private java.lang.Object schema_ = "";
       /**
@@ -561,8 +571,8 @@ public final class AvroProto {
         if (value == null) {
           throw new NullPointerException();
         }
-
         schema_ = value;
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -579,8 +589,8 @@ public final class AvroProto {
        * @return This builder for chaining.
        */
       public Builder clearSchema() {
-
         schema_ = getDefaultInstance().getSchema();
+        bitField0_ = (bitField0_ & ~0x00000001);
         onChanged();
         return this;
       }
@@ -602,8 +612,8 @@ public final class AvroProto {
           throw new NullPointerException();
         }
         checkByteStringIsUtf8(value);
-
         schema_ = value;
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -735,11 +745,6 @@ public final class AvroProto {
       return new AvroRows();
     }
 
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-      return this.unknownFields;
-    }
-
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
       return com.google.cloud.bigquery.storage.v1beta1.AvroProto
           .internal_static_google_cloud_bigquery_storage_v1beta1_AvroRows_descriptor;
@@ -756,7 +761,8 @@ public final class AvroProto {
     }
 
     public static final int SERIALIZED_BINARY_ROWS_FIELD_NUMBER = 1;
-    private com.google.protobuf.ByteString serializedBinaryRows_;
+    private com.google.protobuf.ByteString serializedBinaryRows_ =
+        com.google.protobuf.ByteString.EMPTY;
     /**
      *
      *
@@ -774,7 +780,7 @@ public final class AvroProto {
     }
 
     public static final int ROW_COUNT_FIELD_NUMBER = 2;
-    private long rowCount_;
+    private long rowCount_ = 0L;
     /**
      *
      *
@@ -1000,10 +1006,9 @@ public final class AvroProto {
       @java.lang.Override
       public Builder clear() {
         super.clear();
+        bitField0_ = 0;
         serializedBinaryRows_ = com.google.protobuf.ByteString.EMPTY;
-
         rowCount_ = 0L;
-
         return this;
       }
 
@@ -1032,10 +1037,22 @@ public final class AvroProto {
       public com.google.cloud.bigquery.storage.v1beta1.AvroProto.AvroRows buildPartial() {
         com.google.cloud.bigquery.storage.v1beta1.AvroProto.AvroRows result =
             new com.google.cloud.bigquery.storage.v1beta1.AvroProto.AvroRows(this);
-        result.serializedBinaryRows_ = serializedBinaryRows_;
-        result.rowCount_ = rowCount_;
+        if (bitField0_ != 0) {
+          buildPartial0(result);
+        }
         onBuilt();
         return result;
+      }
+
+      private void buildPartial0(
+          com.google.cloud.bigquery.storage.v1beta1.AvroProto.AvroRows result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.serializedBinaryRows_ = serializedBinaryRows_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.rowCount_ = rowCount_;
+        }
       }
 
       @java.lang.Override
@@ -1122,13 +1139,13 @@ public final class AvroProto {
               case 10:
                 {
                   serializedBinaryRows_ = input.readBytes();
-
+                  bitField0_ |= 0x00000001;
                   break;
                 } // case 10
               case 16:
                 {
                   rowCount_ = input.readInt64();
-
+                  bitField0_ |= 0x00000002;
                   break;
                 } // case 16
               default:
@@ -1147,6 +1164,8 @@ public final class AvroProto {
         } // finally
         return this;
       }
+
+      private int bitField0_;
 
       private com.google.protobuf.ByteString serializedBinaryRows_ =
           com.google.protobuf.ByteString.EMPTY;
@@ -1181,8 +1200,8 @@ public final class AvroProto {
         if (value == null) {
           throw new NullPointerException();
         }
-
         serializedBinaryRows_ = value;
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -1198,7 +1217,7 @@ public final class AvroProto {
        * @return This builder for chaining.
        */
       public Builder clearSerializedBinaryRows() {
-
+        bitField0_ = (bitField0_ & ~0x00000001);
         serializedBinaryRows_ = getDefaultInstance().getSerializedBinaryRows();
         onChanged();
         return this;
@@ -1235,6 +1254,7 @@ public final class AvroProto {
       public Builder setRowCount(long value) {
 
         rowCount_ = value;
+        bitField0_ |= 0x00000002;
         onChanged();
         return this;
       }
@@ -1250,7 +1270,7 @@ public final class AvroProto {
        * @return This builder for chaining.
        */
       public Builder clearRowCount() {
-
+        bitField0_ = (bitField0_ & ~0x00000002);
         rowCount_ = 0L;
         onChanged();
         return this;
@@ -1344,11 +1364,10 @@ public final class AvroProto {
           + "avro.proto\022%google.cloud.bigquery.storag"
           + "e.v1beta1\"\034\n\nAvroSchema\022\016\n\006schema\030\001 \001(\t\""
           + "=\n\010AvroRows\022\036\n\026serialized_binary_rows\030\001 "
-          + "\001(\014\022\021\n\trow_count\030\002 \001(\003B\204\001\n)com.google.cl"
-          + "oud.bigquery.storage.v1beta1B\tAvroProtoZ"
-          + "Lgoogle.golang.org/genproto/googleapis/c"
-          + "loud/bigquery/storage/v1beta1;storageb\006p"
-          + "roto3"
+          + "\001(\014\022\021\n\trow_count\030\002 \001(\003B{\n)com.google.clo"
+          + "ud.bigquery.storage.v1beta1B\tAvroProtoZC"
+          + "cloud.google.com/go/bigquery/storage/api"
+          + "v1beta1/storagepb;storagepbb\006proto3"
     };
     descriptor =
         com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(

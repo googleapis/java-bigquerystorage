@@ -25,6 +25,9 @@ import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorkerPool.Settings;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Int64Value;
@@ -35,6 +38,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,9 +53,9 @@ public class ConnectionWorkerPoolTest {
   private FakeBigQueryWrite testBigQueryWrite;
   private FakeScheduledExecutorService fakeExecutor;
   private static MockServiceHelper serviceHelper;
-  private BigQueryWriteClient client;
+  private BigQueryWriteSettings clientSettings;
 
-  private static final String TEST_TRACE_ID = "home:job1";
+  private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
   private static final String TEST_STREAM_1 = "projects/p1/datasets/d1/tables/t1/streams/_default";
   private static final String TEST_STREAM_2 = "projects/p1/datasets/d1/tables/t2/streams/_default";
 
@@ -63,12 +68,11 @@ public class ConnectionWorkerPoolTest {
     serviceHelper.start();
     fakeExecutor = new FakeScheduledExecutorService();
     testBigQueryWrite.setExecutor(fakeExecutor);
-    client =
-        BigQueryWriteClient.create(
-            BigQueryWriteSettings.newBuilder()
-                .setCredentialsProvider(NoCredentialsProvider.create())
-                .setTransportChannelProvider(serviceHelper.createChannelProvider())
-                .build());
+    clientSettings =
+        BigQueryWriteSettings.newBuilder()
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .setTransportChannelProvider(serviceHelper.createChannelProvider())
+            .build();
     ConnectionWorker.Load.setOverwhelmedCountsThreshold(0.5);
     ConnectionWorker.Load.setOverwhelmedBytesThreshold(0.6);
   }
@@ -153,7 +157,8 @@ public class ConnectionWorkerPoolTest {
             .setMaxConnectionsPerRegion(maxConnections)
             .build());
     ConnectionWorkerPool connectionWorkerPool =
-        createConnectionWorkerPool(maxRequests, /*maxBytes=*/ 100000);
+        createConnectionWorkerPool(
+            maxRequests, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
@@ -206,7 +211,8 @@ public class ConnectionWorkerPoolTest {
     ConnectionWorkerPool.setOptions(
         Settings.builder().setMaxConnectionsPerRegion(10).setMinConnectionsPerRegion(5).build());
     ConnectionWorkerPool connectionWorkerPool =
-        createConnectionWorkerPool(/*maxRequests=*/ 3, /*maxBytes=*/ 1000);
+        createConnectionWorkerPool(
+            /*maxRequests=*/ 3, /*maxBytes=*/ 1000, java.time.Duration.ofSeconds(5));
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
@@ -255,7 +261,8 @@ public class ConnectionWorkerPoolTest {
     ConnectionWorkerPool.setOptions(
         Settings.builder().setMaxConnectionsPerRegion(10).setMinConnectionsPerRegion(5).build());
     ConnectionWorkerPool connectionWorkerPool =
-        createConnectionWorkerPool(/*maxRequests=*/ 3, /*maxBytes=*/ 100000);
+        createConnectionWorkerPool(
+            /*maxRequests=*/ 3, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
@@ -313,6 +320,46 @@ public class ConnectionWorkerPoolTest {
   }
 
   @Test
+  public void testCloseWhileAppending_noDeadlockHappen() throws Exception {
+    ConnectionWorkerPool.setOptions(
+        Settings.builder().setMaxConnectionsPerRegion(10).setMinConnectionsPerRegion(5).build());
+    ConnectionWorkerPool connectionWorkerPool =
+        createConnectionWorkerPool(
+            /*maxRequests=*/ 1500, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
+
+    // Sets the sleep time to simulate requests stuck in connection.
+    testBigQueryWrite.setResponseSleep(Duration.ofMillis(20L));
+    StreamWriter writeStream1 = getTestStreamWriter(TEST_STREAM_1);
+
+    ListeningExecutorService threadPool =
+        MoreExecutors.listeningDecorator(
+            Executors.newCachedThreadPool(
+                new ThreadFactoryBuilder()
+                    .setDaemon(true)
+                    .setNameFormat("AsyncStreamReadThread")
+                    .build()));
+
+    long appendCount = 10;
+    for (long i = 0; i < appendCount; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+    List<Future<?>> futures = new ArrayList<>();
+
+    for (int i = 0; i < 500; i++) {
+      futures.add(
+          threadPool.submit(
+              () -> {
+                sendFooStringTestMessage(
+                    writeStream1, connectionWorkerPool, new String[] {String.valueOf(0)}, 0);
+              }));
+    }
+    connectionWorkerPool.close(writeStream1);
+    for (int i = 0; i < 500; i++) {
+      futures.get(i).get();
+    }
+  }
+
+  @Test
   public void testToTableName() {
     assertThat(ConnectionWorkerPool.toTableName("projects/p/datasets/d/tables/t/streams/s"))
         .isEqualTo("projects/p/datasets/d/tables/t");
@@ -320,6 +367,61 @@ public class ConnectionWorkerPoolTest {
     IllegalArgumentException ex =
         assertThrows(
             IllegalArgumentException.class, () -> ConnectionWorkerPool.toTableName("projects/p/"));
+  }
+
+  @Test
+  public void testCloseExternalClient()
+      throws IOException, InterruptedException, ExecutionException {
+    StreamWriter.clearConnectionPool();
+    // Try append 100 requests.
+    long appendCount = 100L;
+    // testBigQueryWrite is used to
+    for (long i = 0; i < appendCount * 2; i++) {
+      testBigQueryWrite.addResponse(createAppendResponse(i));
+    }
+    testBigQueryWrite.addResponse(WriteStream.newBuilder().setLocation("us").build());
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    BigQueryWriteClient externalClient =
+        BigQueryWriteClient.create(
+            BigQueryWriteSettings.newBuilder()
+                .setCredentialsProvider(NoCredentialsProvider.create())
+                .setTransportChannelProvider(serviceHelper.createChannelProvider())
+                .build());
+    // Create some stream writers.
+    List<StreamWriter> streamWriterList = new ArrayList<>();
+    for (int i = 0; i < 4; i++) {
+      streamWriterList.add(
+          StreamWriter.newBuilder(
+                  String.format("projects/p1/datasets/d1/tables/t%s/streams/_default", i),
+                  externalClient)
+              .setEnableConnectionPool(true)
+              .setWriterSchema(createProtoSchema())
+              .setTraceId(TEST_TRACE_ID)
+              .setLocation("us")
+              .build());
+    }
+
+    for (long i = 0; i < appendCount; i++) {
+      StreamWriter sw = streamWriterList.get((int) (i % streamWriterList.size()));
+      // Round robinly insert requests to different tables.
+      futures.add(sw.append(createProtoRows(new String[] {String.valueOf(i)}), i));
+    }
+    externalClient.close();
+    externalClient.awaitTermination(1, TimeUnit.MINUTES);
+    // Send more requests, the connections should still work.
+    for (long i = appendCount; i < appendCount * 2; i++) {
+      StreamWriter sw = streamWriterList.get((int) (i % streamWriterList.size()));
+      futures.add(sw.append(createProtoRows(new String[] {String.valueOf(i)}), i));
+    }
+    for (int i = 0; i < appendCount * 2; i++) {
+      AppendRowsResponse response = futures.get(i).get();
+      assertThat(response.getAppendResult().getOffset().getValue()).isEqualTo(i);
+    }
+    assertThat(testBigQueryWrite.getAppendRequests().size()).isEqualTo(appendCount * 2);
+    for (int i = 0; i < streamWriterList.size(); i++) {
+      streamWriterList.get(i).close();
+    }
+    StreamWriter.clearConnectionPool();
   }
 
   private AppendRowsResponse createAppendResponse(long offset) {
@@ -330,9 +432,12 @@ public class ConnectionWorkerPoolTest {
   }
 
   private StreamWriter getTestStreamWriter(String streamName) throws IOException {
-    return StreamWriter.newBuilder(streamName, client)
+    return StreamWriter.newBuilder(streamName)
         .setWriterSchema(createProtoSchema())
         .setTraceId(TEST_TRACE_ID)
+        .setLocation("us")
+        .setCredentialsProvider(NoCredentialsProvider.create())
+        .setChannelProvider(serviceHelper.createChannelProvider())
         .build();
   }
 
@@ -368,14 +473,16 @@ public class ConnectionWorkerPoolTest {
     return rowsBuilder.build();
   }
 
-  ConnectionWorkerPool createConnectionWorkerPool(long maxRequests, long maxBytes) {
+  ConnectionWorkerPool createConnectionWorkerPool(
+      long maxRequests, long maxBytes, java.time.Duration maxRetryDuration) {
     ConnectionWorkerPool.enableTestingLogic();
     return new ConnectionWorkerPool(
         maxRequests,
         maxBytes,
+        maxRetryDuration,
         FlowController.LimitExceededBehavior.Block,
         TEST_TRACE_ID,
-        client,
-        /*ownsBigQueryWriteClient=*/ false);
+        null,
+        clientSettings);
   }
 }

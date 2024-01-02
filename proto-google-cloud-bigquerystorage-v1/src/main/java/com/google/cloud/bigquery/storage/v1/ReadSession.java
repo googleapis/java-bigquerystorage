@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,11 +49,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   @SuppressWarnings({"unused"})
   protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new ReadSession();
-  }
-
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -138,11 +133,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       return new TableModifiers();
     }
 
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-      return this.unknownFields;
-    }
-
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
       return com.google.cloud.bigquery.storage.v1.StreamProto
           .internal_static_google_cloud_bigquery_storage_v1_ReadSession_TableModifiers_descriptor;
@@ -203,7 +193,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      */
     @java.lang.Override
     public com.google.protobuf.TimestampOrBuilder getSnapshotTimeOrBuilder() {
-      return getSnapshotTime();
+      return snapshotTime_ == null
+          ? com.google.protobuf.Timestamp.getDefaultInstance()
+          : snapshotTime_;
     }
 
     private byte memoizedIsInitialized = -1;
@@ -413,10 +405,10 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       @java.lang.Override
       public Builder clear() {
         super.clear();
-        if (snapshotTimeBuilder_ == null) {
-          snapshotTime_ = null;
-        } else {
-          snapshotTime_ = null;
+        bitField0_ = 0;
+        snapshotTime_ = null;
+        if (snapshotTimeBuilder_ != null) {
+          snapshotTimeBuilder_.dispose();
           snapshotTimeBuilder_ = null;
         }
         return this;
@@ -447,13 +439,20 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       public com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers buildPartial() {
         com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers result =
             new com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers(this);
-        if (snapshotTimeBuilder_ == null) {
-          result.snapshotTime_ = snapshotTime_;
-        } else {
-          result.snapshotTime_ = snapshotTimeBuilder_.build();
+        if (bitField0_ != 0) {
+          buildPartial0(result);
         }
         onBuilt();
         return result;
+      }
+
+      private void buildPartial0(
+          com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.snapshotTime_ =
+              snapshotTimeBuilder_ == null ? snapshotTime_ : snapshotTimeBuilder_.build();
+        }
       }
 
       @java.lang.Override
@@ -538,7 +537,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
               case 10:
                 {
                   input.readMessage(getSnapshotTimeFieldBuilder().getBuilder(), extensionRegistry);
-
+                  bitField0_ |= 0x00000001;
                   break;
                 } // case 10
               default:
@@ -558,6 +557,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         return this;
       }
 
+      private int bitField0_;
+
       private com.google.protobuf.Timestamp snapshotTime_;
       private com.google.protobuf.SingleFieldBuilderV3<
               com.google.protobuf.Timestamp,
@@ -576,7 +577,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * @return Whether the snapshotTime field is set.
        */
       public boolean hasSnapshotTime() {
-        return snapshotTimeBuilder_ != null || snapshotTime_ != null;
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        *
@@ -613,11 +614,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             throw new NullPointerException();
           }
           snapshotTime_ = value;
-          onChanged();
         } else {
           snapshotTimeBuilder_.setMessage(value);
         }
-
+        bitField0_ |= 0x00000001;
+        onChanged();
         return this;
       }
       /**
@@ -632,11 +633,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       public Builder setSnapshotTime(com.google.protobuf.Timestamp.Builder builderForValue) {
         if (snapshotTimeBuilder_ == null) {
           snapshotTime_ = builderForValue.build();
-          onChanged();
         } else {
           snapshotTimeBuilder_.setMessage(builderForValue.build());
         }
-
+        bitField0_ |= 0x00000001;
+        onChanged();
         return this;
       }
       /**
@@ -650,19 +651,18 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        */
       public Builder mergeSnapshotTime(com.google.protobuf.Timestamp value) {
         if (snapshotTimeBuilder_ == null) {
-          if (snapshotTime_ != null) {
-            snapshotTime_ =
-                com.google.protobuf.Timestamp.newBuilder(snapshotTime_)
-                    .mergeFrom(value)
-                    .buildPartial();
+          if (((bitField0_ & 0x00000001) != 0)
+              && snapshotTime_ != null
+              && snapshotTime_ != com.google.protobuf.Timestamp.getDefaultInstance()) {
+            getSnapshotTimeBuilder().mergeFrom(value);
           } else {
             snapshotTime_ = value;
           }
-          onChanged();
         } else {
           snapshotTimeBuilder_.mergeFrom(value);
         }
-
+        bitField0_ |= 0x00000001;
+        onChanged();
         return this;
       }
       /**
@@ -675,14 +675,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <code>.google.protobuf.Timestamp snapshot_time = 1;</code>
        */
       public Builder clearSnapshotTime() {
-        if (snapshotTimeBuilder_ == null) {
-          snapshotTime_ = null;
-          onChanged();
-        } else {
-          snapshotTime_ = null;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        snapshotTime_ = null;
+        if (snapshotTimeBuilder_ != null) {
+          snapshotTimeBuilder_.dispose();
           snapshotTimeBuilder_ = null;
         }
-
+        onChanged();
         return this;
       }
       /**
@@ -695,7 +694,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <code>.google.protobuf.Timestamp snapshot_time = 1;</code>
        */
       public com.google.protobuf.Timestamp.Builder getSnapshotTimeBuilder() {
-
+        bitField0_ |= 0x00000001;
         onChanged();
         return getSnapshotTimeFieldBuilder().getBuilder();
       }
@@ -821,12 +820,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * Optional. The names of the fields in the table to be returned. If no
      * field names are specified, then all fields in the table are returned.
+     *
      * Nested fields -- the child elements of a STRUCT field -- can be selected
      * individually using their fully-qualified names, and will be returned as
      * record fields containing only the selected nested fields. If a STRUCT
      * field is specified in the selected fields list, all of the child elements
      * will be returned.
+     *
      * As an example, consider a table with the following schema:
+     *
      *   {
      *       "name": "struct_field",
      *       "type": "RECORD",
@@ -844,17 +846,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *           }
      *       ]
      *   }
+     *
      * Specifying "struct_field" in the selected fields list will result in a
      * read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *       string_field2
      *   }
+     *
      * Specifying "struct_field.string_field1" in the selected fields list will
      * result in a read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *   }
+     *
      * The order of the fields in the read session schema is derived from the
      * table schema and does not correspond to the order in which the fields are
      * specified in this list.
@@ -871,12 +878,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * Optional. The names of the fields in the table to be returned. If no
      * field names are specified, then all fields in the table are returned.
+     *
      * Nested fields -- the child elements of a STRUCT field -- can be selected
      * individually using their fully-qualified names, and will be returned as
      * record fields containing only the selected nested fields. If a STRUCT
      * field is specified in the selected fields list, all of the child elements
      * will be returned.
+     *
      * As an example, consider a table with the following schema:
+     *
      *   {
      *       "name": "struct_field",
      *       "type": "RECORD",
@@ -894,17 +904,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *           }
      *       ]
      *   }
+     *
      * Specifying "struct_field" in the selected fields list will result in a
      * read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *       string_field2
      *   }
+     *
      * Specifying "struct_field.string_field1" in the selected fields list will
      * result in a read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *   }
+     *
      * The order of the fields in the read session schema is derived from the
      * table schema and does not correspond to the order in which the fields are
      * specified in this list.
@@ -921,12 +936,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * Optional. The names of the fields in the table to be returned. If no
      * field names are specified, then all fields in the table are returned.
+     *
      * Nested fields -- the child elements of a STRUCT field -- can be selected
      * individually using their fully-qualified names, and will be returned as
      * record fields containing only the selected nested fields. If a STRUCT
      * field is specified in the selected fields list, all of the child elements
      * will be returned.
+     *
      * As an example, consider a table with the following schema:
+     *
      *   {
      *       "name": "struct_field",
      *       "type": "RECORD",
@@ -944,17 +962,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *           }
      *       ]
      *   }
+     *
      * Specifying "struct_field" in the selected fields list will result in a
      * read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *       string_field2
      *   }
+     *
      * Specifying "struct_field.string_field1" in the selected fields list will
      * result in a read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *   }
+     *
      * The order of the fields in the read session schema is derived from the
      * table schema and does not correspond to the order in which the fields are
      * specified in this list.
@@ -972,12 +995,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * Optional. The names of the fields in the table to be returned. If no
      * field names are specified, then all fields in the table are returned.
+     *
      * Nested fields -- the child elements of a STRUCT field -- can be selected
      * individually using their fully-qualified names, and will be returned as
      * record fields containing only the selected nested fields. If a STRUCT
      * field is specified in the selected fields list, all of the child elements
      * will be returned.
+     *
      * As an example, consider a table with the following schema:
+     *
      *   {
      *       "name": "struct_field",
      *       "type": "RECORD",
@@ -995,17 +1021,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *           }
      *       ]
      *   }
+     *
      * Specifying "struct_field" in the selected fields list will result in a
      * read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *       string_field2
      *   }
+     *
      * Specifying "struct_field.string_field1" in the selected fields list will
      * result in a read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *   }
+     *
      * The order of the fields in the read session schema is derived from the
      * table schema and does not correspond to the order in which the fields are
      * specified in this list.
@@ -1024,11 +1055,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * SQL text filtering statement, similar to a WHERE clause in a query.
      * Aggregates are not supported.
+     *
      * Examples: "int_field &gt; 5"
      *           "date_field = CAST('2014-9-27' as DATE)"
      *           "nullable_field is not NULL"
      *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
      *           "numeric_field BETWEEN 1.0 AND 5.0"
+     *
      * Restricted to a maximum length for 1 MB.
      * </pre>
      *
@@ -1043,11 +1076,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * SQL text filtering statement, similar to a WHERE clause in a query.
      * Aggregates are not supported.
+     *
      * Examples: "int_field &gt; 5"
      *           "date_field = CAST('2014-9-27' as DATE)"
      *           "nullable_field is not NULL"
      *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
      *           "numeric_field BETWEEN 1.0 AND 5.0"
+     *
      * Restricted to a maximum length for 1 MB.
      * </pre>
      *
@@ -1141,7 +1176,42 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     com.google.cloud.bigquery.storage.v1.AvroSerializationOptionsOrBuilder
         getAvroSerializationOptionsOrBuilder();
 
-    public com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Specifies a table sampling percentage. Specifically, the query
+     * planner will use TABLESAMPLE SYSTEM (sample_percentage PERCENT). The
+     * sampling percentage is applied at the data block granularity. It will
+     * randomly choose for each data block whether to read the rows in that data
+     * block. For more details, see
+     * https://cloud.google.com/bigquery/docs/table-sampling)
+     * </pre>
+     *
+     * <code>optional double sample_percentage = 5 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return Whether the samplePercentage field is set.
+     */
+    boolean hasSamplePercentage();
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Specifies a table sampling percentage. Specifically, the query
+     * planner will use TABLESAMPLE SYSTEM (sample_percentage PERCENT). The
+     * sampling percentage is applied at the data block granularity. It will
+     * randomly choose for each data block whether to read the rows in that data
+     * block. For more details, see
+     * https://cloud.google.com/bigquery/docs/table-sampling)
+     * </pre>
+     *
+     * <code>optional double sample_percentage = 5 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return The samplePercentage.
+     */
+    double getSamplePercentage();
+
+    com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions
             .OutputFormatSerializationOptionsCase
         getOutputFormatSerializationOptionsCase();
   }
@@ -1165,7 +1235,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     }
 
     private TableReadOptions() {
-      selectedFields_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      selectedFields_ = com.google.protobuf.LazyStringArrayList.emptyList();
       rowRestriction_ = "";
     }
 
@@ -1173,11 +1243,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     @SuppressWarnings({"unused"})
     protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
       return new TableReadOptions();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-      return this.unknownFields;
     }
 
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -1195,7 +1260,10 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
               com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions.Builder.class);
     }
 
+    private int bitField0_;
     private int outputFormatSerializationOptionsCase_ = 0;
+
+    @SuppressWarnings("serial")
     private java.lang.Object outputFormatSerializationOptions_;
 
     public enum OutputFormatSerializationOptionsCase
@@ -1243,19 +1311,25 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     }
 
     public static final int SELECTED_FIELDS_FIELD_NUMBER = 1;
-    private com.google.protobuf.LazyStringList selectedFields_;
+
+    @SuppressWarnings("serial")
+    private com.google.protobuf.LazyStringArrayList selectedFields_ =
+        com.google.protobuf.LazyStringArrayList.emptyList();
     /**
      *
      *
      * <pre>
      * Optional. The names of the fields in the table to be returned. If no
      * field names are specified, then all fields in the table are returned.
+     *
      * Nested fields -- the child elements of a STRUCT field -- can be selected
      * individually using their fully-qualified names, and will be returned as
      * record fields containing only the selected nested fields. If a STRUCT
      * field is specified in the selected fields list, all of the child elements
      * will be returned.
+     *
      * As an example, consider a table with the following schema:
+     *
      *   {
      *       "name": "struct_field",
      *       "type": "RECORD",
@@ -1273,17 +1347,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *           }
      *       ]
      *   }
+     *
      * Specifying "struct_field" in the selected fields list will result in a
      * read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *       string_field2
      *   }
+     *
      * Specifying "struct_field.string_field1" in the selected fields list will
      * result in a read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *   }
+     *
      * The order of the fields in the read session schema is derived from the
      * table schema and does not correspond to the order in which the fields are
      * specified in this list.
@@ -1302,12 +1381,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * Optional. The names of the fields in the table to be returned. If no
      * field names are specified, then all fields in the table are returned.
+     *
      * Nested fields -- the child elements of a STRUCT field -- can be selected
      * individually using their fully-qualified names, and will be returned as
      * record fields containing only the selected nested fields. If a STRUCT
      * field is specified in the selected fields list, all of the child elements
      * will be returned.
+     *
      * As an example, consider a table with the following schema:
+     *
      *   {
      *       "name": "struct_field",
      *       "type": "RECORD",
@@ -1325,17 +1407,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *           }
      *       ]
      *   }
+     *
      * Specifying "struct_field" in the selected fields list will result in a
      * read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *       string_field2
      *   }
+     *
      * Specifying "struct_field.string_field1" in the selected fields list will
      * result in a read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *   }
+     *
      * The order of the fields in the read session schema is derived from the
      * table schema and does not correspond to the order in which the fields are
      * specified in this list.
@@ -1354,12 +1441,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * Optional. The names of the fields in the table to be returned. If no
      * field names are specified, then all fields in the table are returned.
+     *
      * Nested fields -- the child elements of a STRUCT field -- can be selected
      * individually using their fully-qualified names, and will be returned as
      * record fields containing only the selected nested fields. If a STRUCT
      * field is specified in the selected fields list, all of the child elements
      * will be returned.
+     *
      * As an example, consider a table with the following schema:
+     *
      *   {
      *       "name": "struct_field",
      *       "type": "RECORD",
@@ -1377,17 +1467,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *           }
      *       ]
      *   }
+     *
      * Specifying "struct_field" in the selected fields list will result in a
      * read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *       string_field2
      *   }
+     *
      * Specifying "struct_field.string_field1" in the selected fields list will
      * result in a read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *   }
+     *
      * The order of the fields in the read session schema is derived from the
      * table schema and does not correspond to the order in which the fields are
      * specified in this list.
@@ -1407,12 +1502,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * Optional. The names of the fields in the table to be returned. If no
      * field names are specified, then all fields in the table are returned.
+     *
      * Nested fields -- the child elements of a STRUCT field -- can be selected
      * individually using their fully-qualified names, and will be returned as
      * record fields containing only the selected nested fields. If a STRUCT
      * field is specified in the selected fields list, all of the child elements
      * will be returned.
+     *
      * As an example, consider a table with the following schema:
+     *
      *   {
      *       "name": "struct_field",
      *       "type": "RECORD",
@@ -1430,17 +1528,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *           }
      *       ]
      *   }
+     *
      * Specifying "struct_field" in the selected fields list will result in a
      * read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *       string_field2
      *   }
+     *
      * Specifying "struct_field.string_field1" in the selected fields list will
      * result in a read session schema with the following logical structure:
+     *
      *   struct_field {
      *       string_field1
      *   }
+     *
      * The order of the fields in the read session schema is derived from the
      * table schema and does not correspond to the order in which the fields are
      * specified in this list.
@@ -1456,18 +1559,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     }
 
     public static final int ROW_RESTRICTION_FIELD_NUMBER = 2;
-    private volatile java.lang.Object rowRestriction_;
+
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object rowRestriction_ = "";
     /**
      *
      *
      * <pre>
      * SQL text filtering statement, similar to a WHERE clause in a query.
      * Aggregates are not supported.
+     *
      * Examples: "int_field &gt; 5"
      *           "date_field = CAST('2014-9-27' as DATE)"
      *           "nullable_field is not NULL"
      *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
      *           "numeric_field BETWEEN 1.0 AND 5.0"
+     *
      * Restricted to a maximum length for 1 MB.
      * </pre>
      *
@@ -1493,11 +1600,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * <pre>
      * SQL text filtering statement, similar to a WHERE clause in a query.
      * Aggregates are not supported.
+     *
      * Examples: "int_field &gt; 5"
      *           "date_field = CAST('2014-9-27' as DATE)"
      *           "nullable_field is not NULL"
      *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
      *           "numeric_field BETWEEN 1.0 AND 5.0"
+     *
      * Restricted to a maximum length for 1 MB.
      * </pre>
      *
@@ -1640,6 +1749,49 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       return com.google.cloud.bigquery.storage.v1.AvroSerializationOptions.getDefaultInstance();
     }
 
+    public static final int SAMPLE_PERCENTAGE_FIELD_NUMBER = 5;
+    private double samplePercentage_ = 0D;
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Specifies a table sampling percentage. Specifically, the query
+     * planner will use TABLESAMPLE SYSTEM (sample_percentage PERCENT). The
+     * sampling percentage is applied at the data block granularity. It will
+     * randomly choose for each data block whether to read the rows in that data
+     * block. For more details, see
+     * https://cloud.google.com/bigquery/docs/table-sampling)
+     * </pre>
+     *
+     * <code>optional double sample_percentage = 5 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return Whether the samplePercentage field is set.
+     */
+    @java.lang.Override
+    public boolean hasSamplePercentage() {
+      return ((bitField0_ & 0x00000001) != 0);
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Specifies a table sampling percentage. Specifically, the query
+     * planner will use TABLESAMPLE SYSTEM (sample_percentage PERCENT). The
+     * sampling percentage is applied at the data block granularity. It will
+     * randomly choose for each data block whether to read the rows in that data
+     * block. For more details, see
+     * https://cloud.google.com/bigquery/docs/table-sampling)
+     * </pre>
+     *
+     * <code>optional double sample_percentage = 5 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return The samplePercentage.
+     */
+    @java.lang.Override
+    public double getSamplePercentage() {
+      return samplePercentage_;
+    }
+
     private byte memoizedIsInitialized = -1;
 
     @java.lang.Override
@@ -1671,6 +1823,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             4,
             (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
                 outputFormatSerializationOptions_);
+      }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        output.writeDouble(5, samplePercentage_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -1706,6 +1861,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
                 (com.google.cloud.bigquery.storage.v1.AvroSerializationOptions)
                     outputFormatSerializationOptions_);
       }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        size += com.google.protobuf.CodedOutputStream.computeDoubleSize(5, samplePercentage_);
+      }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
@@ -1724,6 +1882,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
 
       if (!getSelectedFieldsList().equals(other.getSelectedFieldsList())) return false;
       if (!getRowRestriction().equals(other.getRowRestriction())) return false;
+      if (hasSamplePercentage() != other.hasSamplePercentage()) return false;
+      if (hasSamplePercentage()) {
+        if (java.lang.Double.doubleToLongBits(getSamplePercentage())
+            != java.lang.Double.doubleToLongBits(other.getSamplePercentage())) return false;
+      }
       if (!getOutputFormatSerializationOptionsCase()
           .equals(other.getOutputFormatSerializationOptionsCase())) return false;
       switch (outputFormatSerializationOptionsCase_) {
@@ -1755,6 +1918,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       }
       hash = (37 * hash) + ROW_RESTRICTION_FIELD_NUMBER;
       hash = (53 * hash) + getRowRestriction().hashCode();
+      if (hasSamplePercentage()) {
+        hash = (37 * hash) + SAMPLE_PERCENTAGE_FIELD_NUMBER;
+        hash =
+            (53 * hash)
+                + com.google.protobuf.Internal.hashLong(
+                    java.lang.Double.doubleToLongBits(getSamplePercentage()));
+      }
       switch (outputFormatSerializationOptionsCase_) {
         case 3:
           hash = (37 * hash) + ARROW_SERIALIZATION_OPTIONS_FIELD_NUMBER;
@@ -1910,16 +2080,16 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       @java.lang.Override
       public Builder clear() {
         super.clear();
-        selectedFields_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-        bitField0_ = (bitField0_ & ~0x00000001);
+        bitField0_ = 0;
+        selectedFields_ = com.google.protobuf.LazyStringArrayList.emptyList();
         rowRestriction_ = "";
-
         if (arrowSerializationOptionsBuilder_ != null) {
           arrowSerializationOptionsBuilder_.clear();
         }
         if (avroSerializationOptionsBuilder_ != null) {
           avroSerializationOptionsBuilder_.clear();
         }
+        samplePercentage_ = 0D;
         outputFormatSerializationOptionsCase_ = 0;
         outputFormatSerializationOptions_ = null;
         return this;
@@ -1951,30 +2121,44 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       public com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions buildPartial() {
         com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions result =
             new com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions(this);
-        int from_bitField0_ = bitField0_;
-        if (((bitField0_ & 0x00000001) != 0)) {
-          selectedFields_ = selectedFields_.getUnmodifiableView();
-          bitField0_ = (bitField0_ & ~0x00000001);
+        if (bitField0_ != 0) {
+          buildPartial0(result);
         }
-        result.selectedFields_ = selectedFields_;
-        result.rowRestriction_ = rowRestriction_;
-        if (outputFormatSerializationOptionsCase_ == 3) {
-          if (arrowSerializationOptionsBuilder_ == null) {
-            result.outputFormatSerializationOptions_ = outputFormatSerializationOptions_;
-          } else {
-            result.outputFormatSerializationOptions_ = arrowSerializationOptionsBuilder_.build();
-          }
-        }
-        if (outputFormatSerializationOptionsCase_ == 4) {
-          if (avroSerializationOptionsBuilder_ == null) {
-            result.outputFormatSerializationOptions_ = outputFormatSerializationOptions_;
-          } else {
-            result.outputFormatSerializationOptions_ = avroSerializationOptionsBuilder_.build();
-          }
-        }
-        result.outputFormatSerializationOptionsCase_ = outputFormatSerializationOptionsCase_;
+        buildPartialOneofs(result);
         onBuilt();
         return result;
+      }
+
+      private void buildPartial0(
+          com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          selectedFields_.makeImmutable();
+          result.selectedFields_ = selectedFields_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.rowRestriction_ = rowRestriction_;
+        }
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.samplePercentage_ = samplePercentage_;
+          to_bitField0_ |= 0x00000001;
+        }
+        result.bitField0_ |= to_bitField0_;
+      }
+
+      private void buildPartialOneofs(
+          com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions result) {
+        result.outputFormatSerializationOptionsCase_ = outputFormatSerializationOptionsCase_;
+        result.outputFormatSerializationOptions_ = this.outputFormatSerializationOptions_;
+        if (outputFormatSerializationOptionsCase_ == 3
+            && arrowSerializationOptionsBuilder_ != null) {
+          result.outputFormatSerializationOptions_ = arrowSerializationOptionsBuilder_.build();
+        }
+        if (outputFormatSerializationOptionsCase_ == 4
+            && avroSerializationOptionsBuilder_ != null) {
+          result.outputFormatSerializationOptions_ = avroSerializationOptionsBuilder_.build();
+        }
       }
 
       @java.lang.Override
@@ -2031,7 +2215,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         if (!other.selectedFields_.isEmpty()) {
           if (selectedFields_.isEmpty()) {
             selectedFields_ = other.selectedFields_;
-            bitField0_ = (bitField0_ & ~0x00000001);
+            bitField0_ |= 0x00000001;
           } else {
             ensureSelectedFieldsIsMutable();
             selectedFields_.addAll(other.selectedFields_);
@@ -2040,7 +2224,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         }
         if (!other.getRowRestriction().isEmpty()) {
           rowRestriction_ = other.rowRestriction_;
+          bitField0_ |= 0x00000002;
           onChanged();
+        }
+        if (other.hasSamplePercentage()) {
+          setSamplePercentage(other.getSamplePercentage());
         }
         switch (other.getOutputFormatSerializationOptionsCase()) {
           case ARROW_SERIALIZATION_OPTIONS:
@@ -2094,7 +2282,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
               case 18:
                 {
                   rowRestriction_ = input.readStringRequireUtf8();
-
+                  bitField0_ |= 0x00000002;
                   break;
                 } // case 18
               case 26:
@@ -2111,6 +2299,12 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
                   outputFormatSerializationOptionsCase_ = 4;
                   break;
                 } // case 34
+              case 41:
+                {
+                  samplePercentage_ = input.readDouble();
+                  bitField0_ |= 0x00000010;
+                  break;
+                } // case 41
               default:
                 {
                   if (!super.parseUnknownField(input, extensionRegistry, tag)) {
@@ -2145,14 +2339,14 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
 
       private int bitField0_;
 
-      private com.google.protobuf.LazyStringList selectedFields_ =
-          com.google.protobuf.LazyStringArrayList.EMPTY;
+      private com.google.protobuf.LazyStringArrayList selectedFields_ =
+          com.google.protobuf.LazyStringArrayList.emptyList();
 
       private void ensureSelectedFieldsIsMutable() {
-        if (!((bitField0_ & 0x00000001) != 0)) {
+        if (!selectedFields_.isModifiable()) {
           selectedFields_ = new com.google.protobuf.LazyStringArrayList(selectedFields_);
-          bitField0_ |= 0x00000001;
         }
+        bitField0_ |= 0x00000001;
       }
       /**
        *
@@ -2160,12 +2354,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * Optional. The names of the fields in the table to be returned. If no
        * field names are specified, then all fields in the table are returned.
+       *
        * Nested fields -- the child elements of a STRUCT field -- can be selected
        * individually using their fully-qualified names, and will be returned as
        * record fields containing only the selected nested fields. If a STRUCT
        * field is specified in the selected fields list, all of the child elements
        * will be returned.
+       *
        * As an example, consider a table with the following schema:
+       *
        *   {
        *       "name": "struct_field",
        *       "type": "RECORD",
@@ -2183,17 +2380,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *           }
        *       ]
        *   }
+       *
        * Specifying "struct_field" in the selected fields list will result in a
        * read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *       string_field2
        *   }
+       *
        * Specifying "struct_field.string_field1" in the selected fields list will
        * result in a read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *   }
+       *
        * The order of the fields in the read session schema is derived from the
        * table schema and does not correspond to the order in which the fields are
        * specified in this list.
@@ -2204,7 +2406,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * @return A list containing the selectedFields.
        */
       public com.google.protobuf.ProtocolStringList getSelectedFieldsList() {
-        return selectedFields_.getUnmodifiableView();
+        selectedFields_.makeImmutable();
+        return selectedFields_;
       }
       /**
        *
@@ -2212,12 +2415,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * Optional. The names of the fields in the table to be returned. If no
        * field names are specified, then all fields in the table are returned.
+       *
        * Nested fields -- the child elements of a STRUCT field -- can be selected
        * individually using their fully-qualified names, and will be returned as
        * record fields containing only the selected nested fields. If a STRUCT
        * field is specified in the selected fields list, all of the child elements
        * will be returned.
+       *
        * As an example, consider a table with the following schema:
+       *
        *   {
        *       "name": "struct_field",
        *       "type": "RECORD",
@@ -2235,17 +2441,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *           }
        *       ]
        *   }
+       *
        * Specifying "struct_field" in the selected fields list will result in a
        * read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *       string_field2
        *   }
+       *
        * Specifying "struct_field.string_field1" in the selected fields list will
        * result in a read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *   }
+       *
        * The order of the fields in the read session schema is derived from the
        * table schema and does not correspond to the order in which the fields are
        * specified in this list.
@@ -2264,12 +2475,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * Optional. The names of the fields in the table to be returned. If no
        * field names are specified, then all fields in the table are returned.
+       *
        * Nested fields -- the child elements of a STRUCT field -- can be selected
        * individually using their fully-qualified names, and will be returned as
        * record fields containing only the selected nested fields. If a STRUCT
        * field is specified in the selected fields list, all of the child elements
        * will be returned.
+       *
        * As an example, consider a table with the following schema:
+       *
        *   {
        *       "name": "struct_field",
        *       "type": "RECORD",
@@ -2287,17 +2501,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *           }
        *       ]
        *   }
+       *
        * Specifying "struct_field" in the selected fields list will result in a
        * read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *       string_field2
        *   }
+       *
        * Specifying "struct_field.string_field1" in the selected fields list will
        * result in a read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *   }
+       *
        * The order of the fields in the read session schema is derived from the
        * table schema and does not correspond to the order in which the fields are
        * specified in this list.
@@ -2317,12 +2536,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * Optional. The names of the fields in the table to be returned. If no
        * field names are specified, then all fields in the table are returned.
+       *
        * Nested fields -- the child elements of a STRUCT field -- can be selected
        * individually using their fully-qualified names, and will be returned as
        * record fields containing only the selected nested fields. If a STRUCT
        * field is specified in the selected fields list, all of the child elements
        * will be returned.
+       *
        * As an example, consider a table with the following schema:
+       *
        *   {
        *       "name": "struct_field",
        *       "type": "RECORD",
@@ -2340,17 +2562,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *           }
        *       ]
        *   }
+       *
        * Specifying "struct_field" in the selected fields list will result in a
        * read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *       string_field2
        *   }
+       *
        * Specifying "struct_field.string_field1" in the selected fields list will
        * result in a read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *   }
+       *
        * The order of the fields in the read session schema is derived from the
        * table schema and does not correspond to the order in which the fields are
        * specified in this list.
@@ -2370,12 +2597,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * Optional. The names of the fields in the table to be returned. If no
        * field names are specified, then all fields in the table are returned.
+       *
        * Nested fields -- the child elements of a STRUCT field -- can be selected
        * individually using their fully-qualified names, and will be returned as
        * record fields containing only the selected nested fields. If a STRUCT
        * field is specified in the selected fields list, all of the child elements
        * will be returned.
+       *
        * As an example, consider a table with the following schema:
+       *
        *   {
        *       "name": "struct_field",
        *       "type": "RECORD",
@@ -2393,17 +2623,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *           }
        *       ]
        *   }
+       *
        * Specifying "struct_field" in the selected fields list will result in a
        * read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *       string_field2
        *   }
+       *
        * Specifying "struct_field.string_field1" in the selected fields list will
        * result in a read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *   }
+       *
        * The order of the fields in the read session schema is derived from the
        * table schema and does not correspond to the order in which the fields are
        * specified in this list.
@@ -2421,6 +2656,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         }
         ensureSelectedFieldsIsMutable();
         selectedFields_.set(index, value);
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -2430,12 +2666,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * Optional. The names of the fields in the table to be returned. If no
        * field names are specified, then all fields in the table are returned.
+       *
        * Nested fields -- the child elements of a STRUCT field -- can be selected
        * individually using their fully-qualified names, and will be returned as
        * record fields containing only the selected nested fields. If a STRUCT
        * field is specified in the selected fields list, all of the child elements
        * will be returned.
+       *
        * As an example, consider a table with the following schema:
+       *
        *   {
        *       "name": "struct_field",
        *       "type": "RECORD",
@@ -2453,17 +2692,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *           }
        *       ]
        *   }
+       *
        * Specifying "struct_field" in the selected fields list will result in a
        * read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *       string_field2
        *   }
+       *
        * Specifying "struct_field.string_field1" in the selected fields list will
        * result in a read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *   }
+       *
        * The order of the fields in the read session schema is derived from the
        * table schema and does not correspond to the order in which the fields are
        * specified in this list.
@@ -2480,6 +2724,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         }
         ensureSelectedFieldsIsMutable();
         selectedFields_.add(value);
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -2489,12 +2734,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * Optional. The names of the fields in the table to be returned. If no
        * field names are specified, then all fields in the table are returned.
+       *
        * Nested fields -- the child elements of a STRUCT field -- can be selected
        * individually using their fully-qualified names, and will be returned as
        * record fields containing only the selected nested fields. If a STRUCT
        * field is specified in the selected fields list, all of the child elements
        * will be returned.
+       *
        * As an example, consider a table with the following schema:
+       *
        *   {
        *       "name": "struct_field",
        *       "type": "RECORD",
@@ -2512,17 +2760,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *           }
        *       ]
        *   }
+       *
        * Specifying "struct_field" in the selected fields list will result in a
        * read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *       string_field2
        *   }
+       *
        * Specifying "struct_field.string_field1" in the selected fields list will
        * result in a read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *   }
+       *
        * The order of the fields in the read session schema is derived from the
        * table schema and does not correspond to the order in which the fields are
        * specified in this list.
@@ -2536,6 +2789,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       public Builder addAllSelectedFields(java.lang.Iterable<java.lang.String> values) {
         ensureSelectedFieldsIsMutable();
         com.google.protobuf.AbstractMessageLite.Builder.addAll(values, selectedFields_);
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -2545,12 +2799,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * Optional. The names of the fields in the table to be returned. If no
        * field names are specified, then all fields in the table are returned.
+       *
        * Nested fields -- the child elements of a STRUCT field -- can be selected
        * individually using their fully-qualified names, and will be returned as
        * record fields containing only the selected nested fields. If a STRUCT
        * field is specified in the selected fields list, all of the child elements
        * will be returned.
+       *
        * As an example, consider a table with the following schema:
+       *
        *   {
        *       "name": "struct_field",
        *       "type": "RECORD",
@@ -2568,17 +2825,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *           }
        *       ]
        *   }
+       *
        * Specifying "struct_field" in the selected fields list will result in a
        * read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *       string_field2
        *   }
+       *
        * Specifying "struct_field.string_field1" in the selected fields list will
        * result in a read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *   }
+       *
        * The order of the fields in the read session schema is derived from the
        * table schema and does not correspond to the order in which the fields are
        * specified in this list.
@@ -2589,8 +2851,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * @return This builder for chaining.
        */
       public Builder clearSelectedFields() {
-        selectedFields_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        selectedFields_ = com.google.protobuf.LazyStringArrayList.emptyList();
         bitField0_ = (bitField0_ & ~0x00000001);
+        ;
         onChanged();
         return this;
       }
@@ -2600,12 +2863,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * Optional. The names of the fields in the table to be returned. If no
        * field names are specified, then all fields in the table are returned.
+       *
        * Nested fields -- the child elements of a STRUCT field -- can be selected
        * individually using their fully-qualified names, and will be returned as
        * record fields containing only the selected nested fields. If a STRUCT
        * field is specified in the selected fields list, all of the child elements
        * will be returned.
+       *
        * As an example, consider a table with the following schema:
+       *
        *   {
        *       "name": "struct_field",
        *       "type": "RECORD",
@@ -2623,17 +2889,22 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        *           }
        *       ]
        *   }
+       *
        * Specifying "struct_field" in the selected fields list will result in a
        * read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *       string_field2
        *   }
+       *
        * Specifying "struct_field.string_field1" in the selected fields list will
        * result in a read session schema with the following logical structure:
+       *
        *   struct_field {
        *       string_field1
        *   }
+       *
        * The order of the fields in the read session schema is derived from the
        * table schema and does not correspond to the order in which the fields are
        * specified in this list.
@@ -2651,6 +2922,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         checkByteStringIsUtf8(value);
         ensureSelectedFieldsIsMutable();
         selectedFields_.add(value);
+        bitField0_ |= 0x00000001;
         onChanged();
         return this;
       }
@@ -2662,11 +2934,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -2691,11 +2965,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -2720,11 +2996,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -2737,8 +3015,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         if (value == null) {
           throw new NullPointerException();
         }
-
         rowRestriction_ = value;
+        bitField0_ |= 0x00000002;
         onChanged();
         return this;
       }
@@ -2748,11 +3026,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -2761,8 +3041,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * @return This builder for chaining.
        */
       public Builder clearRowRestriction() {
-
         rowRestriction_ = getDefaultInstance().getRowRestriction();
+        bitField0_ = (bitField0_ & ~0x00000002);
         onChanged();
         return this;
       }
@@ -2772,11 +3052,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
        * <pre>
        * SQL text filtering statement, similar to a WHERE clause in a query.
        * Aggregates are not supported.
+       *
        * Examples: "int_field &gt; 5"
        *           "date_field = CAST('2014-9-27' as DATE)"
        *           "nullable_field is not NULL"
        *           "st_equals(geo_field, st_geofromtext("POINT(2, 2)"))"
        *           "numeric_field BETWEEN 1.0 AND 5.0"
+       *
        * Restricted to a maximum length for 1 MB.
        * </pre>
        *
@@ -2790,8 +3072,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
           throw new NullPointerException();
         }
         checkByteStringIsUtf8(value);
-
         rowRestriction_ = value;
+        bitField0_ |= 0x00000002;
         onChanged();
         return this;
       }
@@ -3036,7 +3318,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         }
         outputFormatSerializationOptionsCase_ = 3;
         onChanged();
-        ;
         return arrowSerializationOptionsBuilder_;
       }
 
@@ -3277,8 +3558,99 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         }
         outputFormatSerializationOptionsCase_ = 4;
         onChanged();
-        ;
         return avroSerializationOptionsBuilder_;
+      }
+
+      private double samplePercentage_;
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Specifies a table sampling percentage. Specifically, the query
+       * planner will use TABLESAMPLE SYSTEM (sample_percentage PERCENT). The
+       * sampling percentage is applied at the data block granularity. It will
+       * randomly choose for each data block whether to read the rows in that data
+       * block. For more details, see
+       * https://cloud.google.com/bigquery/docs/table-sampling)
+       * </pre>
+       *
+       * <code>optional double sample_percentage = 5 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       *
+       * @return Whether the samplePercentage field is set.
+       */
+      @java.lang.Override
+      public boolean hasSamplePercentage() {
+        return ((bitField0_ & 0x00000010) != 0);
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Specifies a table sampling percentage. Specifically, the query
+       * planner will use TABLESAMPLE SYSTEM (sample_percentage PERCENT). The
+       * sampling percentage is applied at the data block granularity. It will
+       * randomly choose for each data block whether to read the rows in that data
+       * block. For more details, see
+       * https://cloud.google.com/bigquery/docs/table-sampling)
+       * </pre>
+       *
+       * <code>optional double sample_percentage = 5 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       *
+       * @return The samplePercentage.
+       */
+      @java.lang.Override
+      public double getSamplePercentage() {
+        return samplePercentage_;
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Specifies a table sampling percentage. Specifically, the query
+       * planner will use TABLESAMPLE SYSTEM (sample_percentage PERCENT). The
+       * sampling percentage is applied at the data block granularity. It will
+       * randomly choose for each data block whether to read the rows in that data
+       * block. For more details, see
+       * https://cloud.google.com/bigquery/docs/table-sampling)
+       * </pre>
+       *
+       * <code>optional double sample_percentage = 5 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       *
+       * @param value The samplePercentage to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSamplePercentage(double value) {
+
+        samplePercentage_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+      /**
+       *
+       *
+       * <pre>
+       * Optional. Specifies a table sampling percentage. Specifically, the query
+       * planner will use TABLESAMPLE SYSTEM (sample_percentage PERCENT). The
+       * sampling percentage is applied at the data block granularity. It will
+       * randomly choose for each data block whether to read the rows in that data
+       * block. For more details, see
+       * https://cloud.google.com/bigquery/docs/table-sampling)
+       * </pre>
+       *
+       * <code>optional double sample_percentage = 5 [(.google.api.field_behavior) = OPTIONAL];
+       * </code>
+       *
+       * @return This builder for chaining.
+       */
+      public Builder clearSamplePercentage() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        samplePercentage_ = 0D;
+        onChanged();
+        return this;
       }
 
       @java.lang.Override
@@ -3349,6 +3721,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   }
 
   private int schemaCase_ = 0;
+
+  @SuppressWarnings("serial")
   private java.lang.Object schema_;
 
   public enum SchemaCase
@@ -3396,7 +3770,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   }
 
   public static final int NAME_FIELD_NUMBER = 1;
-  private volatile java.lang.Object name_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object name_ = "";
   /**
    *
    *
@@ -3501,11 +3877,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    */
   @java.lang.Override
   public com.google.protobuf.TimestampOrBuilder getExpireTimeOrBuilder() {
-    return getExpireTime();
+    return expireTime_ == null ? com.google.protobuf.Timestamp.getDefaultInstance() : expireTime_;
   }
 
   public static final int DATA_FORMAT_FIELD_NUMBER = 3;
-  private int dataFormat_;
+  private int dataFormat_ = 0;
   /**
    *
    *
@@ -3540,9 +3916,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    */
   @java.lang.Override
   public com.google.cloud.bigquery.storage.v1.DataFormat getDataFormat() {
-    @SuppressWarnings("deprecation")
     com.google.cloud.bigquery.storage.v1.DataFormat result =
-        com.google.cloud.bigquery.storage.v1.DataFormat.valueOf(dataFormat_);
+        com.google.cloud.bigquery.storage.v1.DataFormat.forNumber(dataFormat_);
     return result == null ? com.google.cloud.bigquery.storage.v1.DataFormat.UNRECOGNIZED : result;
   }
 
@@ -3661,7 +4036,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   }
 
   public static final int TABLE_FIELD_NUMBER = 6;
-  private volatile java.lang.Object table_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object table_ = "";
   /**
    *
    *
@@ -3770,7 +4147,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   @java.lang.Override
   public com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiersOrBuilder
       getTableModifiersOrBuilder() {
-    return getTableModifiers();
+    return tableModifiers_ == null
+        ? com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers.getDefaultInstance()
+        : tableModifiers_;
   }
 
   public static final int READ_OPTIONS_FIELD_NUMBER = 8;
@@ -3825,16 +4204,21 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   @java.lang.Override
   public com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptionsOrBuilder
       getReadOptionsOrBuilder() {
-    return getReadOptions();
+    return readOptions_ == null
+        ? com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions.getDefaultInstance()
+        : readOptions_;
   }
 
   public static final int STREAMS_FIELD_NUMBER = 10;
+
+  @SuppressWarnings("serial")
   private java.util.List<com.google.cloud.bigquery.storage.v1.ReadStream> streams_;
   /**
    *
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -3854,6 +4238,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -3874,6 +4259,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -3893,6 +4279,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -3912,6 +4299,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    *
    * <pre>
    * Output only. A list of streams created with the session.
+   *
    * At least one stream is created with the session. In the future, larger
    * request_stream_count values *may* result in this list being unpopulated,
    * in that case, the user will need to use a List method to get the streams
@@ -3928,7 +4316,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   }
 
   public static final int ESTIMATED_TOTAL_BYTES_SCANNED_FIELD_NUMBER = 12;
-  private long estimatedTotalBytesScanned_;
+  private long estimatedTotalBytesScanned_ = 0L;
   /**
    *
    *
@@ -3948,8 +4336,32 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     return estimatedTotalBytesScanned_;
   }
 
+  public static final int ESTIMATED_TOTAL_PHYSICAL_FILE_SIZE_FIELD_NUMBER = 15;
+  private long estimatedTotalPhysicalFileSize_ = 0L;
+  /**
+   *
+   *
+   * <pre>
+   * Output only. A pre-projected estimate of the total physical size of files
+   * (in bytes) that this session will scan when all streams are consumed. This
+   * estimate is independent of the selected columns and can be based on
+   * incomplete or stale metadata from the table.  This field is only set for
+   * BigLake tables.
+   * </pre>
+   *
+   * <code>
+   * int64 estimated_total_physical_file_size = 15 [(.google.api.field_behavior) = OUTPUT_ONLY];
+   * </code>
+   *
+   * @return The estimatedTotalPhysicalFileSize.
+   */
+  @java.lang.Override
+  public long getEstimatedTotalPhysicalFileSize() {
+    return estimatedTotalPhysicalFileSize_;
+  }
+
   public static final int ESTIMATED_ROW_COUNT_FIELD_NUMBER = 14;
-  private long estimatedRowCount_;
+  private long estimatedRowCount_ = 0L;
   /**
    *
    *
@@ -3969,7 +4381,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
   }
 
   public static final int TRACE_ID_FIELD_NUMBER = 13;
-  private volatile java.lang.Object traceId_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object traceId_ = "";
   /**
    *
    *
@@ -3978,6 +4392,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    * need to be strictly unique, but instead the same ID should be used to group
    * logically connected sessions (e.g. All using the same ID for all sessions
    * needed to complete a Spark SQL query is reasonable).
+   *
    * Maximum length is 256 bytes.
    * </pre>
    *
@@ -4005,6 +4420,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
    * need to be strictly unique, but instead the same ID should be used to group
    * logically connected sessions (e.g. All using the same ID for all sessions
    * needed to complete a Spark SQL query is reasonable).
+   *
    * Maximum length is 256 bytes.
    * </pre>
    *
@@ -4076,6 +4492,9 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     if (estimatedRowCount_ != 0L) {
       output.writeInt64(14, estimatedRowCount_);
     }
+    if (estimatedTotalPhysicalFileSize_ != 0L) {
+      output.writeInt64(15, estimatedTotalPhysicalFileSize_);
+    }
     getUnknownFields().writeTo(output);
   }
 
@@ -4127,6 +4546,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     if (estimatedRowCount_ != 0L) {
       size += com.google.protobuf.CodedOutputStream.computeInt64Size(14, estimatedRowCount_);
     }
+    if (estimatedTotalPhysicalFileSize_ != 0L) {
+      size +=
+          com.google.protobuf.CodedOutputStream.computeInt64Size(
+              15, estimatedTotalPhysicalFileSize_);
+    }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
     return size;
@@ -4160,6 +4584,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     }
     if (!getStreamsList().equals(other.getStreamsList())) return false;
     if (getEstimatedTotalBytesScanned() != other.getEstimatedTotalBytesScanned()) return false;
+    if (getEstimatedTotalPhysicalFileSize() != other.getEstimatedTotalPhysicalFileSize())
+      return false;
     if (getEstimatedRowCount() != other.getEstimatedRowCount()) return false;
     if (!getTraceId().equals(other.getTraceId())) return false;
     if (!getSchemaCase().equals(other.getSchemaCase())) return false;
@@ -4208,6 +4634,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     }
     hash = (37 * hash) + ESTIMATED_TOTAL_BYTES_SCANNED_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getEstimatedTotalBytesScanned());
+    hash = (37 * hash) + ESTIMATED_TOTAL_PHYSICAL_FILE_SIZE_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getEstimatedTotalPhysicalFileSize());
     hash = (37 * hash) + ESTIMATED_ROW_COUNT_FIELD_NUMBER;
     hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getEstimatedRowCount());
     hash = (37 * hash) + TRACE_ID_FIELD_NUMBER;
@@ -4362,16 +4790,14 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     @java.lang.Override
     public Builder clear() {
       super.clear();
+      bitField0_ = 0;
       name_ = "";
-
-      if (expireTimeBuilder_ == null) {
-        expireTime_ = null;
-      } else {
-        expireTime_ = null;
+      expireTime_ = null;
+      if (expireTimeBuilder_ != null) {
+        expireTimeBuilder_.dispose();
         expireTimeBuilder_ = null;
       }
       dataFormat_ = 0;
-
       if (avroSchemaBuilder_ != null) {
         avroSchemaBuilder_.clear();
       }
@@ -4379,17 +4805,14 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         arrowSchemaBuilder_.clear();
       }
       table_ = "";
-
-      if (tableModifiersBuilder_ == null) {
-        tableModifiers_ = null;
-      } else {
-        tableModifiers_ = null;
+      tableModifiers_ = null;
+      if (tableModifiersBuilder_ != null) {
+        tableModifiersBuilder_.dispose();
         tableModifiersBuilder_ = null;
       }
-      if (readOptionsBuilder_ == null) {
-        readOptions_ = null;
-      } else {
-        readOptions_ = null;
+      readOptions_ = null;
+      if (readOptionsBuilder_ != null) {
+        readOptionsBuilder_.dispose();
         readOptionsBuilder_ = null;
       }
       if (streamsBuilder_ == null) {
@@ -4398,13 +4821,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         streams_ = null;
         streamsBuilder_.clear();
       }
-      bitField0_ = (bitField0_ & ~0x00000001);
+      bitField0_ = (bitField0_ & ~0x00000100);
       estimatedTotalBytesScanned_ = 0L;
-
+      estimatedTotalPhysicalFileSize_ = 0L;
       estimatedRowCount_ = 0L;
-
       traceId_ = "";
-
       schemaCase_ = 0;
       schema_ = null;
       return this;
@@ -4434,54 +4855,73 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     public com.google.cloud.bigquery.storage.v1.ReadSession buildPartial() {
       com.google.cloud.bigquery.storage.v1.ReadSession result =
           new com.google.cloud.bigquery.storage.v1.ReadSession(this);
-      int from_bitField0_ = bitField0_;
-      result.name_ = name_;
-      if (expireTimeBuilder_ == null) {
-        result.expireTime_ = expireTime_;
-      } else {
-        result.expireTime_ = expireTimeBuilder_.build();
+      buildPartialRepeatedFields(result);
+      if (bitField0_ != 0) {
+        buildPartial0(result);
       }
-      result.dataFormat_ = dataFormat_;
-      if (schemaCase_ == 4) {
-        if (avroSchemaBuilder_ == null) {
-          result.schema_ = schema_;
-        } else {
-          result.schema_ = avroSchemaBuilder_.build();
-        }
-      }
-      if (schemaCase_ == 5) {
-        if (arrowSchemaBuilder_ == null) {
-          result.schema_ = schema_;
-        } else {
-          result.schema_ = arrowSchemaBuilder_.build();
-        }
-      }
-      result.table_ = table_;
-      if (tableModifiersBuilder_ == null) {
-        result.tableModifiers_ = tableModifiers_;
-      } else {
-        result.tableModifiers_ = tableModifiersBuilder_.build();
-      }
-      if (readOptionsBuilder_ == null) {
-        result.readOptions_ = readOptions_;
-      } else {
-        result.readOptions_ = readOptionsBuilder_.build();
-      }
+      buildPartialOneofs(result);
+      onBuilt();
+      return result;
+    }
+
+    private void buildPartialRepeatedFields(
+        com.google.cloud.bigquery.storage.v1.ReadSession result) {
       if (streamsBuilder_ == null) {
-        if (((bitField0_ & 0x00000001) != 0)) {
+        if (((bitField0_ & 0x00000100) != 0)) {
           streams_ = java.util.Collections.unmodifiableList(streams_);
-          bitField0_ = (bitField0_ & ~0x00000001);
+          bitField0_ = (bitField0_ & ~0x00000100);
         }
         result.streams_ = streams_;
       } else {
         result.streams_ = streamsBuilder_.build();
       }
-      result.estimatedTotalBytesScanned_ = estimatedTotalBytesScanned_;
-      result.estimatedRowCount_ = estimatedRowCount_;
-      result.traceId_ = traceId_;
+    }
+
+    private void buildPartial0(com.google.cloud.bigquery.storage.v1.ReadSession result) {
+      int from_bitField0_ = bitField0_;
+      if (((from_bitField0_ & 0x00000001) != 0)) {
+        result.name_ = name_;
+      }
+      if (((from_bitField0_ & 0x00000002) != 0)) {
+        result.expireTime_ = expireTimeBuilder_ == null ? expireTime_ : expireTimeBuilder_.build();
+      }
+      if (((from_bitField0_ & 0x00000004) != 0)) {
+        result.dataFormat_ = dataFormat_;
+      }
+      if (((from_bitField0_ & 0x00000020) != 0)) {
+        result.table_ = table_;
+      }
+      if (((from_bitField0_ & 0x00000040) != 0)) {
+        result.tableModifiers_ =
+            tableModifiersBuilder_ == null ? tableModifiers_ : tableModifiersBuilder_.build();
+      }
+      if (((from_bitField0_ & 0x00000080) != 0)) {
+        result.readOptions_ =
+            readOptionsBuilder_ == null ? readOptions_ : readOptionsBuilder_.build();
+      }
+      if (((from_bitField0_ & 0x00000200) != 0)) {
+        result.estimatedTotalBytesScanned_ = estimatedTotalBytesScanned_;
+      }
+      if (((from_bitField0_ & 0x00000400) != 0)) {
+        result.estimatedTotalPhysicalFileSize_ = estimatedTotalPhysicalFileSize_;
+      }
+      if (((from_bitField0_ & 0x00000800) != 0)) {
+        result.estimatedRowCount_ = estimatedRowCount_;
+      }
+      if (((from_bitField0_ & 0x00001000) != 0)) {
+        result.traceId_ = traceId_;
+      }
+    }
+
+    private void buildPartialOneofs(com.google.cloud.bigquery.storage.v1.ReadSession result) {
       result.schemaCase_ = schemaCase_;
-      onBuilt();
-      return result;
+      result.schema_ = this.schema_;
+      if (schemaCase_ == 4 && avroSchemaBuilder_ != null) {
+        result.schema_ = avroSchemaBuilder_.build();
+      }
+      if (schemaCase_ == 5 && arrowSchemaBuilder_ != null) {
+        result.schema_ = arrowSchemaBuilder_.build();
+      }
     }
 
     @java.lang.Override
@@ -4532,6 +4972,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         return this;
       if (!other.getName().isEmpty()) {
         name_ = other.name_;
+        bitField0_ |= 0x00000001;
         onChanged();
       }
       if (other.hasExpireTime()) {
@@ -4542,6 +4983,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       }
       if (!other.getTable().isEmpty()) {
         table_ = other.table_;
+        bitField0_ |= 0x00000020;
         onChanged();
       }
       if (other.hasTableModifiers()) {
@@ -4554,7 +4996,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         if (!other.streams_.isEmpty()) {
           if (streams_.isEmpty()) {
             streams_ = other.streams_;
-            bitField0_ = (bitField0_ & ~0x00000001);
+            bitField0_ = (bitField0_ & ~0x00000100);
           } else {
             ensureStreamsIsMutable();
             streams_.addAll(other.streams_);
@@ -4567,7 +5009,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             streamsBuilder_.dispose();
             streamsBuilder_ = null;
             streams_ = other.streams_;
-            bitField0_ = (bitField0_ & ~0x00000001);
+            bitField0_ = (bitField0_ & ~0x00000100);
             streamsBuilder_ =
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders
                     ? getStreamsFieldBuilder()
@@ -4580,11 +5022,15 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       if (other.getEstimatedTotalBytesScanned() != 0L) {
         setEstimatedTotalBytesScanned(other.getEstimatedTotalBytesScanned());
       }
+      if (other.getEstimatedTotalPhysicalFileSize() != 0L) {
+        setEstimatedTotalPhysicalFileSize(other.getEstimatedTotalPhysicalFileSize());
+      }
       if (other.getEstimatedRowCount() != 0L) {
         setEstimatedRowCount(other.getEstimatedRowCount());
       }
       if (!other.getTraceId().isEmpty()) {
         traceId_ = other.traceId_;
+        bitField0_ |= 0x00001000;
         onChanged();
       }
       switch (other.getSchemaCase()) {
@@ -4632,19 +5078,19 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             case 10:
               {
                 name_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000001;
                 break;
               } // case 10
             case 18:
               {
                 input.readMessage(getExpireTimeFieldBuilder().getBuilder(), extensionRegistry);
-
+                bitField0_ |= 0x00000002;
                 break;
               } // case 18
             case 24:
               {
                 dataFormat_ = input.readEnum();
-
+                bitField0_ |= 0x00000004;
                 break;
               } // case 24
             case 34:
@@ -4662,19 +5108,19 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             case 50:
               {
                 table_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000020;
                 break;
               } // case 50
             case 58:
               {
                 input.readMessage(getTableModifiersFieldBuilder().getBuilder(), extensionRegistry);
-
+                bitField0_ |= 0x00000040;
                 break;
               } // case 58
             case 66:
               {
                 input.readMessage(getReadOptionsFieldBuilder().getBuilder(), extensionRegistry);
-
+                bitField0_ |= 0x00000080;
                 break;
               } // case 66
             case 82:
@@ -4694,21 +5140,27 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
             case 96:
               {
                 estimatedTotalBytesScanned_ = input.readInt64();
-
+                bitField0_ |= 0x00000200;
                 break;
               } // case 96
             case 106:
               {
                 traceId_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00001000;
                 break;
               } // case 106
             case 112:
               {
                 estimatedRowCount_ = input.readInt64();
-
+                bitField0_ |= 0x00000800;
                 break;
               } // case 112
+            case 120:
+              {
+                estimatedTotalPhysicalFileSize_ = input.readInt64();
+                bitField0_ |= 0x00000400;
+                break;
+              } // case 120
             default:
               {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
@@ -4806,8 +5258,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       if (value == null) {
         throw new NullPointerException();
       }
-
       name_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -4824,8 +5276,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearName() {
-
       name_ = getDefaultInstance().getName();
+      bitField0_ = (bitField0_ & ~0x00000001);
       onChanged();
       return this;
     }
@@ -4847,8 +5299,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       name_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -4876,7 +5328,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return Whether the expireTime field is set.
      */
     public boolean hasExpireTime() {
-      return expireTimeBuilder_ != null || expireTime_ != null;
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      *
@@ -4923,11 +5375,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
           throw new NullPointerException();
         }
         expireTime_ = value;
-        onChanged();
       } else {
         expireTimeBuilder_.setMessage(value);
       }
-
+      bitField0_ |= 0x00000002;
+      onChanged();
       return this;
     }
     /**
@@ -4947,11 +5399,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     public Builder setExpireTime(com.google.protobuf.Timestamp.Builder builderForValue) {
       if (expireTimeBuilder_ == null) {
         expireTime_ = builderForValue.build();
-        onChanged();
       } else {
         expireTimeBuilder_.setMessage(builderForValue.build());
       }
-
+      bitField0_ |= 0x00000002;
+      onChanged();
       return this;
     }
     /**
@@ -4970,17 +5422,18 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      */
     public Builder mergeExpireTime(com.google.protobuf.Timestamp value) {
       if (expireTimeBuilder_ == null) {
-        if (expireTime_ != null) {
-          expireTime_ =
-              com.google.protobuf.Timestamp.newBuilder(expireTime_).mergeFrom(value).buildPartial();
+        if (((bitField0_ & 0x00000002) != 0)
+            && expireTime_ != null
+            && expireTime_ != com.google.protobuf.Timestamp.getDefaultInstance()) {
+          getExpireTimeBuilder().mergeFrom(value);
         } else {
           expireTime_ = value;
         }
-        onChanged();
       } else {
         expireTimeBuilder_.mergeFrom(value);
       }
-
+      bitField0_ |= 0x00000002;
+      onChanged();
       return this;
     }
     /**
@@ -4998,14 +5451,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * </code>
      */
     public Builder clearExpireTime() {
-      if (expireTimeBuilder_ == null) {
-        expireTime_ = null;
-        onChanged();
-      } else {
-        expireTime_ = null;
+      bitField0_ = (bitField0_ & ~0x00000002);
+      expireTime_ = null;
+      if (expireTimeBuilder_ != null) {
+        expireTimeBuilder_.dispose();
         expireTimeBuilder_ = null;
       }
-
+      onChanged();
       return this;
     }
     /**
@@ -5023,7 +5475,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * </code>
      */
     public com.google.protobuf.Timestamp.Builder getExpireTimeBuilder() {
-
+      bitField0_ |= 0x00000002;
       onChanged();
       return getExpireTimeFieldBuilder().getBuilder();
     }
@@ -5116,8 +5568,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder setDataFormatValue(int value) {
-
       dataFormat_ = value;
+      bitField0_ |= 0x00000004;
       onChanged();
       return this;
     }
@@ -5137,9 +5589,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      */
     @java.lang.Override
     public com.google.cloud.bigquery.storage.v1.DataFormat getDataFormat() {
-      @SuppressWarnings("deprecation")
       com.google.cloud.bigquery.storage.v1.DataFormat result =
-          com.google.cloud.bigquery.storage.v1.DataFormat.valueOf(dataFormat_);
+          com.google.cloud.bigquery.storage.v1.DataFormat.forNumber(dataFormat_);
       return result == null ? com.google.cloud.bigquery.storage.v1.DataFormat.UNRECOGNIZED : result;
     }
     /**
@@ -5161,7 +5612,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       if (value == null) {
         throw new NullPointerException();
       }
-
+      bitField0_ |= 0x00000004;
       dataFormat_ = value.getNumber();
       onChanged();
       return this;
@@ -5181,7 +5632,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearDataFormat() {
-
+      bitField0_ = (bitField0_ & ~0x00000004);
       dataFormat_ = 0;
       onChanged();
       return this;
@@ -5411,7 +5862,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       }
       schemaCase_ = 4;
       onChanged();
-      ;
       return avroSchemaBuilder_;
     }
 
@@ -5639,7 +6089,6 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       }
       schemaCase_ = 5;
       onChanged();
-      ;
       return arrowSchemaBuilder_;
     }
 
@@ -5713,8 +6162,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       if (value == null) {
         throw new NullPointerException();
       }
-
       table_ = value;
+      bitField0_ |= 0x00000020;
       onChanged();
       return this;
     }
@@ -5733,8 +6182,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearTable() {
-
       table_ = getDefaultInstance().getTable();
+      bitField0_ = (bitField0_ & ~0x00000020);
       onChanged();
       return this;
     }
@@ -5758,8 +6207,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       table_ = value;
+      bitField0_ |= 0x00000020;
       onChanged();
       return this;
     }
@@ -5785,7 +6234,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return Whether the tableModifiers field is set.
      */
     public boolean hasTableModifiers() {
-      return tableModifiersBuilder_ != null || tableModifiers_ != null;
+      return ((bitField0_ & 0x00000040) != 0);
     }
     /**
      *
@@ -5829,11 +6278,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
           throw new NullPointerException();
         }
         tableModifiers_ = value;
-        onChanged();
       } else {
         tableModifiersBuilder_.setMessage(value);
       }
-
+      bitField0_ |= 0x00000040;
+      onChanged();
       return this;
     }
     /**
@@ -5852,11 +6301,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers.Builder builderForValue) {
       if (tableModifiersBuilder_ == null) {
         tableModifiers_ = builderForValue.build();
-        onChanged();
       } else {
         tableModifiersBuilder_.setMessage(builderForValue.build());
       }
-
+      bitField0_ |= 0x00000040;
+      onChanged();
       return this;
     }
     /**
@@ -5874,20 +6323,20 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     public Builder mergeTableModifiers(
         com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers value) {
       if (tableModifiersBuilder_ == null) {
-        if (tableModifiers_ != null) {
-          tableModifiers_ =
-              com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers.newBuilder(
-                      tableModifiers_)
-                  .mergeFrom(value)
-                  .buildPartial();
+        if (((bitField0_ & 0x00000040) != 0)
+            && tableModifiers_ != null
+            && tableModifiers_
+                != com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers
+                    .getDefaultInstance()) {
+          getTableModifiersBuilder().mergeFrom(value);
         } else {
           tableModifiers_ = value;
         }
-        onChanged();
       } else {
         tableModifiersBuilder_.mergeFrom(value);
       }
-
+      bitField0_ |= 0x00000040;
+      onChanged();
       return this;
     }
     /**
@@ -5903,14 +6352,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * </code>
      */
     public Builder clearTableModifiers() {
-      if (tableModifiersBuilder_ == null) {
-        tableModifiers_ = null;
-        onChanged();
-      } else {
-        tableModifiers_ = null;
+      bitField0_ = (bitField0_ & ~0x00000040);
+      tableModifiers_ = null;
+      if (tableModifiersBuilder_ != null) {
+        tableModifiersBuilder_.dispose();
         tableModifiersBuilder_ = null;
       }
-
+      onChanged();
       return this;
     }
     /**
@@ -5927,7 +6375,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      */
     public com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers.Builder
         getTableModifiersBuilder() {
-
+      bitField0_ |= 0x00000040;
       onChanged();
       return getTableModifiersFieldBuilder().getBuilder();
     }
@@ -6002,7 +6450,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return Whether the readOptions field is set.
      */
     public boolean hasReadOptions() {
-      return readOptionsBuilder_ != null || readOptions_ != null;
+      return ((bitField0_ & 0x00000080) != 0);
     }
     /**
      *
@@ -6044,11 +6492,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
           throw new NullPointerException();
         }
         readOptions_ = value;
-        onChanged();
       } else {
         readOptionsBuilder_.setMessage(value);
       }
-
+      bitField0_ |= 0x00000080;
+      onChanged();
       return this;
     }
     /**
@@ -6066,11 +6514,11 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions.Builder builderForValue) {
       if (readOptionsBuilder_ == null) {
         readOptions_ = builderForValue.build();
-        onChanged();
       } else {
         readOptionsBuilder_.setMessage(builderForValue.build());
       }
-
+      bitField0_ |= 0x00000080;
+      onChanged();
       return this;
     }
     /**
@@ -6087,20 +6535,20 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     public Builder mergeReadOptions(
         com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions value) {
       if (readOptionsBuilder_ == null) {
-        if (readOptions_ != null) {
-          readOptions_ =
-              com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions.newBuilder(
-                      readOptions_)
-                  .mergeFrom(value)
-                  .buildPartial();
+        if (((bitField0_ & 0x00000080) != 0)
+            && readOptions_ != null
+            && readOptions_
+                != com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions
+                    .getDefaultInstance()) {
+          getReadOptionsBuilder().mergeFrom(value);
         } else {
           readOptions_ = value;
         }
-        onChanged();
       } else {
         readOptionsBuilder_.mergeFrom(value);
       }
-
+      bitField0_ |= 0x00000080;
+      onChanged();
       return this;
     }
     /**
@@ -6115,14 +6563,13 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * </code>
      */
     public Builder clearReadOptions() {
-      if (readOptionsBuilder_ == null) {
-        readOptions_ = null;
-        onChanged();
-      } else {
-        readOptions_ = null;
+      bitField0_ = (bitField0_ & ~0x00000080);
+      readOptions_ = null;
+      if (readOptionsBuilder_ != null) {
+        readOptionsBuilder_.dispose();
         readOptionsBuilder_ = null;
       }
-
+      onChanged();
       return this;
     }
     /**
@@ -6138,7 +6585,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      */
     public com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions.Builder
         getReadOptionsBuilder() {
-
+      bitField0_ |= 0x00000080;
       onChanged();
       return getReadOptionsFieldBuilder().getBuilder();
     }
@@ -6195,10 +6642,10 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         java.util.Collections.emptyList();
 
     private void ensureStreamsIsMutable() {
-      if (!((bitField0_ & 0x00000001) != 0)) {
+      if (!((bitField0_ & 0x00000100) != 0)) {
         streams_ =
             new java.util.ArrayList<com.google.cloud.bigquery.storage.v1.ReadStream>(streams_);
-        bitField0_ |= 0x00000001;
+        bitField0_ |= 0x00000100;
       }
     }
 
@@ -6213,6 +6660,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6235,6 +6683,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6257,6 +6706,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6279,6 +6729,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6307,6 +6758,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6333,6 +6785,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6361,6 +6814,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6389,6 +6843,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6415,6 +6870,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6441,6 +6897,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6467,6 +6924,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6480,7 +6938,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     public Builder clearStreams() {
       if (streamsBuilder_ == null) {
         streams_ = java.util.Collections.emptyList();
-        bitField0_ = (bitField0_ & ~0x00000001);
+        bitField0_ = (bitField0_ & ~0x00000100);
         onChanged();
       } else {
         streamsBuilder_.clear();
@@ -6492,6 +6950,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6517,6 +6976,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6535,6 +6995,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6557,6 +7018,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6580,6 +7042,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6599,6 +7062,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6618,6 +7082,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      *
      * <pre>
      * Output only. A list of streams created with the session.
+     *
      * At least one stream is created with the session. In the future, larger
      * request_stream_count values *may* result in this list being unpopulated,
      * in that case, the user will need to use a List method to get the streams
@@ -6644,7 +7109,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
                 com.google.cloud.bigquery.storage.v1.ReadStream,
                 com.google.cloud.bigquery.storage.v1.ReadStream.Builder,
                 com.google.cloud.bigquery.storage.v1.ReadStreamOrBuilder>(
-                streams_, ((bitField0_ & 0x00000001) != 0), getParentForChildren(), isClean());
+                streams_, ((bitField0_ & 0x00000100) != 0), getParentForChildren(), isClean());
         streams_ = null;
       }
       return streamsBuilder_;
@@ -6687,6 +7152,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     public Builder setEstimatedTotalBytesScanned(long value) {
 
       estimatedTotalBytesScanned_ = value;
+      bitField0_ |= 0x00000200;
       onChanged();
       return this;
     }
@@ -6705,8 +7171,79 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearEstimatedTotalBytesScanned() {
-
+      bitField0_ = (bitField0_ & ~0x00000200);
       estimatedTotalBytesScanned_ = 0L;
+      onChanged();
+      return this;
+    }
+
+    private long estimatedTotalPhysicalFileSize_;
+    /**
+     *
+     *
+     * <pre>
+     * Output only. A pre-projected estimate of the total physical size of files
+     * (in bytes) that this session will scan when all streams are consumed. This
+     * estimate is independent of the selected columns and can be based on
+     * incomplete or stale metadata from the table.  This field is only set for
+     * BigLake tables.
+     * </pre>
+     *
+     * <code>
+     * int64 estimated_total_physical_file_size = 15 [(.google.api.field_behavior) = OUTPUT_ONLY];
+     * </code>
+     *
+     * @return The estimatedTotalPhysicalFileSize.
+     */
+    @java.lang.Override
+    public long getEstimatedTotalPhysicalFileSize() {
+      return estimatedTotalPhysicalFileSize_;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Output only. A pre-projected estimate of the total physical size of files
+     * (in bytes) that this session will scan when all streams are consumed. This
+     * estimate is independent of the selected columns and can be based on
+     * incomplete or stale metadata from the table.  This field is only set for
+     * BigLake tables.
+     * </pre>
+     *
+     * <code>
+     * int64 estimated_total_physical_file_size = 15 [(.google.api.field_behavior) = OUTPUT_ONLY];
+     * </code>
+     *
+     * @param value The estimatedTotalPhysicalFileSize to set.
+     * @return This builder for chaining.
+     */
+    public Builder setEstimatedTotalPhysicalFileSize(long value) {
+
+      estimatedTotalPhysicalFileSize_ = value;
+      bitField0_ |= 0x00000400;
+      onChanged();
+      return this;
+    }
+    /**
+     *
+     *
+     * <pre>
+     * Output only. A pre-projected estimate of the total physical size of files
+     * (in bytes) that this session will scan when all streams are consumed. This
+     * estimate is independent of the selected columns and can be based on
+     * incomplete or stale metadata from the table.  This field is only set for
+     * BigLake tables.
+     * </pre>
+     *
+     * <code>
+     * int64 estimated_total_physical_file_size = 15 [(.google.api.field_behavior) = OUTPUT_ONLY];
+     * </code>
+     *
+     * @return This builder for chaining.
+     */
+    public Builder clearEstimatedTotalPhysicalFileSize() {
+      bitField0_ = (bitField0_ & ~0x00000400);
+      estimatedTotalPhysicalFileSize_ = 0L;
       onChanged();
       return this;
     }
@@ -6746,6 +7283,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
     public Builder setEstimatedRowCount(long value) {
 
       estimatedRowCount_ = value;
+      bitField0_ |= 0x00000800;
       onChanged();
       return this;
     }
@@ -6763,7 +7301,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearEstimatedRowCount() {
-
+      bitField0_ = (bitField0_ & ~0x00000800);
       estimatedRowCount_ = 0L;
       onChanged();
       return this;
@@ -6778,6 +7316,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * need to be strictly unique, but instead the same ID should be used to group
      * logically connected sessions (e.g. All using the same ID for all sessions
      * needed to complete a Spark SQL query is reasonable).
+     *
      * Maximum length is 256 bytes.
      * </pre>
      *
@@ -6804,6 +7343,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * need to be strictly unique, but instead the same ID should be used to group
      * logically connected sessions (e.g. All using the same ID for all sessions
      * needed to complete a Spark SQL query is reasonable).
+     *
      * Maximum length is 256 bytes.
      * </pre>
      *
@@ -6830,6 +7370,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * need to be strictly unique, but instead the same ID should be used to group
      * logically connected sessions (e.g. All using the same ID for all sessions
      * needed to complete a Spark SQL query is reasonable).
+     *
      * Maximum length is 256 bytes.
      * </pre>
      *
@@ -6842,8 +7383,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
       if (value == null) {
         throw new NullPointerException();
       }
-
       traceId_ = value;
+      bitField0_ |= 0x00001000;
       onChanged();
       return this;
     }
@@ -6855,6 +7396,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * need to be strictly unique, but instead the same ID should be used to group
      * logically connected sessions (e.g. All using the same ID for all sessions
      * needed to complete a Spark SQL query is reasonable).
+     *
      * Maximum length is 256 bytes.
      * </pre>
      *
@@ -6863,8 +7405,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * @return This builder for chaining.
      */
     public Builder clearTraceId() {
-
       traceId_ = getDefaultInstance().getTraceId();
+      bitField0_ = (bitField0_ & ~0x00001000);
       onChanged();
       return this;
     }
@@ -6876,6 +7418,7 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
      * need to be strictly unique, but instead the same ID should be used to group
      * logically connected sessions (e.g. All using the same ID for all sessions
      * needed to complete a Spark SQL query is reasonable).
+     *
      * Maximum length is 256 bytes.
      * </pre>
      *
@@ -6889,8 +7432,8 @@ public final class ReadSession extends com.google.protobuf.GeneratedMessageV3
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       traceId_ = value;
+      bitField0_ |= 0x00001000;
       onChanged();
       return this;
     }

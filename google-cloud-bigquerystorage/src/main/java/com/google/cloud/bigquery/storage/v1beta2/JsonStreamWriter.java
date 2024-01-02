@@ -35,7 +35,10 @@ import org.json.JSONObject;
  * A StreamWriter that can write JSON data (JSONObjects) to BigQuery tables. The JsonStreamWriter is
  * built on top of a StreamWriter, and it simply converts all JSON data to protobuf messages then
  * calls StreamWriter's append() method to write to BigQuery tables.
+ *
+ * <p>This client lib is deprecated, please use v1 instead.
  */
+@Deprecated
 public class JsonStreamWriter implements AutoCloseable {
   private static String streamPatternString =
       "projects/[^/]+/datasets/[^/]+/tables/[^/]+/streams/[^/]+";
@@ -83,8 +86,8 @@ public class JsonStreamWriter implements AutoCloseable {
    * data to protobuf messages, then using StreamWriter's append() to write the data.
    *
    * @param jsonArr The JSON array that contains JSONObjects to be written
-   * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
-   *     ApiFuture
+   * @return {@code ApiFuture<AppendRowsResponse>} returns an AppendRowsResponse message wrapped in
+   *     an ApiFuture
    */
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr) {
     return append(jsonArr, -1);
@@ -96,8 +99,8 @@ public class JsonStreamWriter implements AutoCloseable {
    *
    * @param jsonArr The JSON array that contains JSONObjects to be written
    * @param offset Offset for deduplication
-   * @return ApiFuture<AppendRowsResponse> returns an AppendRowsResponse message wrapped in an
-   *     ApiFuture
+   * @return {@code ApiFuture<AppendRowsResponse>} returns an AppendRowsResponse message wrapped in
+   *     an ApiFuture
    */
   public ApiFuture<AppendRowsResponse> append(JSONArray jsonArr, long offset) {
     ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();

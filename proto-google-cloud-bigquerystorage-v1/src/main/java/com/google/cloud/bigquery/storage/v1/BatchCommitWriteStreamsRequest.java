@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,18 +40,13 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
 
   private BatchCommitWriteStreamsRequest() {
     parent_ = "";
-    writeStreams_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+    writeStreams_ = com.google.protobuf.LazyStringArrayList.emptyList();
   }
 
   @java.lang.Override
   @SuppressWarnings({"unused"})
   protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new BatchCommitWriteStreamsRequest();
-  }
-
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -70,7 +65,9 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
   }
 
   public static final int PARENT_FIELD_NUMBER = 1;
-  private volatile java.lang.Object parent_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object parent_ = "";
   /**
    *
    *
@@ -125,7 +122,10 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
   }
 
   public static final int WRITE_STREAMS_FIELD_NUMBER = 2;
-  private com.google.protobuf.LazyStringList writeStreams_;
+
+  @SuppressWarnings("serial")
+  private com.google.protobuf.LazyStringArrayList writeStreams_ =
+      com.google.protobuf.LazyStringArrayList.emptyList();
   /**
    *
    *
@@ -401,10 +401,9 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
     @java.lang.Override
     public Builder clear() {
       super.clear();
+      bitField0_ = 0;
       parent_ = "";
-
-      writeStreams_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      bitField0_ = (bitField0_ & ~0x00000001);
+      writeStreams_ = com.google.protobuf.LazyStringArrayList.emptyList();
       return this;
     }
 
@@ -434,15 +433,23 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
     public com.google.cloud.bigquery.storage.v1.BatchCommitWriteStreamsRequest buildPartial() {
       com.google.cloud.bigquery.storage.v1.BatchCommitWriteStreamsRequest result =
           new com.google.cloud.bigquery.storage.v1.BatchCommitWriteStreamsRequest(this);
-      int from_bitField0_ = bitField0_;
-      result.parent_ = parent_;
-      if (((bitField0_ & 0x00000001) != 0)) {
-        writeStreams_ = writeStreams_.getUnmodifiableView();
-        bitField0_ = (bitField0_ & ~0x00000001);
+      if (bitField0_ != 0) {
+        buildPartial0(result);
       }
-      result.writeStreams_ = writeStreams_;
       onBuilt();
       return result;
+    }
+
+    private void buildPartial0(
+        com.google.cloud.bigquery.storage.v1.BatchCommitWriteStreamsRequest result) {
+      int from_bitField0_ = bitField0_;
+      if (((from_bitField0_ & 0x00000001) != 0)) {
+        result.parent_ = parent_;
+      }
+      if (((from_bitField0_ & 0x00000002) != 0)) {
+        writeStreams_.makeImmutable();
+        result.writeStreams_ = writeStreams_;
+      }
     }
 
     @java.lang.Override
@@ -496,12 +503,13 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
               .getDefaultInstance()) return this;
       if (!other.getParent().isEmpty()) {
         parent_ = other.parent_;
+        bitField0_ |= 0x00000001;
         onChanged();
       }
       if (!other.writeStreams_.isEmpty()) {
         if (writeStreams_.isEmpty()) {
           writeStreams_ = other.writeStreams_;
-          bitField0_ = (bitField0_ & ~0x00000001);
+          bitField0_ |= 0x00000002;
         } else {
           ensureWriteStreamsIsMutable();
           writeStreams_.addAll(other.writeStreams_);
@@ -537,7 +545,7 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
             case 10:
               {
                 parent_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000001;
                 break;
               } // case 10
             case 18:
@@ -636,8 +644,8 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
       if (value == null) {
         throw new NullPointerException();
       }
-
       parent_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -656,8 +664,8 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
      * @return This builder for chaining.
      */
     public Builder clearParent() {
-
       parent_ = getDefaultInstance().getParent();
+      bitField0_ = (bitField0_ & ~0x00000001);
       onChanged();
       return this;
     }
@@ -681,20 +689,20 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       parent_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
 
-    private com.google.protobuf.LazyStringList writeStreams_ =
-        com.google.protobuf.LazyStringArrayList.EMPTY;
+    private com.google.protobuf.LazyStringArrayList writeStreams_ =
+        com.google.protobuf.LazyStringArrayList.emptyList();
 
     private void ensureWriteStreamsIsMutable() {
-      if (!((bitField0_ & 0x00000001) != 0)) {
+      if (!writeStreams_.isModifiable()) {
         writeStreams_ = new com.google.protobuf.LazyStringArrayList(writeStreams_);
-        bitField0_ |= 0x00000001;
       }
+      bitField0_ |= 0x00000002;
     }
     /**
      *
@@ -708,7 +716,8 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
      * @return A list containing the writeStreams.
      */
     public com.google.protobuf.ProtocolStringList getWriteStreamsList() {
-      return writeStreams_.getUnmodifiableView();
+      writeStreams_.makeImmutable();
+      return writeStreams_;
     }
     /**
      *
@@ -773,6 +782,7 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
       }
       ensureWriteStreamsIsMutable();
       writeStreams_.set(index, value);
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -794,6 +804,7 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
       }
       ensureWriteStreamsIsMutable();
       writeStreams_.add(value);
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -812,6 +823,7 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
     public Builder addAllWriteStreams(java.lang.Iterable<java.lang.String> values) {
       ensureWriteStreamsIsMutable();
       com.google.protobuf.AbstractMessageLite.Builder.addAll(values, writeStreams_);
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }
@@ -827,8 +839,9 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
      * @return This builder for chaining.
      */
     public Builder clearWriteStreams() {
-      writeStreams_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-      bitField0_ = (bitField0_ & ~0x00000001);
+      writeStreams_ = com.google.protobuf.LazyStringArrayList.emptyList();
+      bitField0_ = (bitField0_ & ~0x00000002);
+      ;
       onChanged();
       return this;
     }
@@ -851,6 +864,7 @@ public final class BatchCommitWriteStreamsRequest extends com.google.protobuf.Ge
       checkByteStringIsUtf8(value);
       ensureWriteStreamsIsMutable();
       writeStreams_.add(value);
+      bitField0_ |= 0x00000002;
       onChanged();
       return this;
     }

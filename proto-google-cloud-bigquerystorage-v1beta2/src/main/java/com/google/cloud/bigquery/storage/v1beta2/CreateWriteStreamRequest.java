@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,11 +47,6 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
     return new CreateWriteStreamRequest();
   }
 
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
-  }
-
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
     return com.google.cloud.bigquery.storage.v1beta2.StorageProto
         .internal_static_google_cloud_bigquery_storage_v1beta2_CreateWriteStreamRequest_descriptor;
@@ -68,7 +63,9 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
   }
 
   public static final int PARENT_FIELD_NUMBER = 1;
-  private volatile java.lang.Object parent_;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object parent_ = "";
   /**
    *
    *
@@ -173,7 +170,9 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
    */
   @java.lang.Override
   public com.google.cloud.bigquery.storage.v1beta2.WriteStreamOrBuilder getWriteStreamOrBuilder() {
-    return getWriteStream();
+    return writeStream_ == null
+        ? com.google.cloud.bigquery.storage.v1beta2.WriteStream.getDefaultInstance()
+        : writeStream_;
   }
 
   private byte memoizedIsInitialized = -1;
@@ -390,12 +389,11 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
     @java.lang.Override
     public Builder clear() {
       super.clear();
+      bitField0_ = 0;
       parent_ = "";
-
-      if (writeStreamBuilder_ == null) {
-        writeStream_ = null;
-      } else {
-        writeStream_ = null;
+      writeStream_ = null;
+      if (writeStreamBuilder_ != null) {
+        writeStreamBuilder_.dispose();
         writeStreamBuilder_ = null;
       }
       return this;
@@ -427,14 +425,23 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
     public com.google.cloud.bigquery.storage.v1beta2.CreateWriteStreamRequest buildPartial() {
       com.google.cloud.bigquery.storage.v1beta2.CreateWriteStreamRequest result =
           new com.google.cloud.bigquery.storage.v1beta2.CreateWriteStreamRequest(this);
-      result.parent_ = parent_;
-      if (writeStreamBuilder_ == null) {
-        result.writeStream_ = writeStream_;
-      } else {
-        result.writeStream_ = writeStreamBuilder_.build();
+      if (bitField0_ != 0) {
+        buildPartial0(result);
       }
       onBuilt();
       return result;
+    }
+
+    private void buildPartial0(
+        com.google.cloud.bigquery.storage.v1beta2.CreateWriteStreamRequest result) {
+      int from_bitField0_ = bitField0_;
+      if (((from_bitField0_ & 0x00000001) != 0)) {
+        result.parent_ = parent_;
+      }
+      if (((from_bitField0_ & 0x00000002) != 0)) {
+        result.writeStream_ =
+            writeStreamBuilder_ == null ? writeStream_ : writeStreamBuilder_.build();
+      }
     }
 
     @java.lang.Override
@@ -488,6 +495,7 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
               .getDefaultInstance()) return this;
       if (!other.getParent().isEmpty()) {
         parent_ = other.parent_;
+        bitField0_ |= 0x00000001;
         onChanged();
       }
       if (other.hasWriteStream()) {
@@ -522,13 +530,13 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
             case 10:
               {
                 parent_ = input.readStringRequireUtf8();
-
+                bitField0_ |= 0x00000001;
                 break;
               } // case 10
             case 18:
               {
                 input.readMessage(getWriteStreamFieldBuilder().getBuilder(), extensionRegistry);
-
+                bitField0_ |= 0x00000002;
                 break;
               } // case 18
             default:
@@ -547,6 +555,8 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
       } // finally
       return this;
     }
+
+    private int bitField0_;
 
     private java.lang.Object parent_ = "";
     /**
@@ -618,8 +628,8 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
       if (value == null) {
         throw new NullPointerException();
       }
-
       parent_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -638,8 +648,8 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
      * @return This builder for chaining.
      */
     public Builder clearParent() {
-
       parent_ = getDefaultInstance().getParent();
+      bitField0_ = (bitField0_ & ~0x00000001);
       onChanged();
       return this;
     }
@@ -663,8 +673,8 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
         throw new NullPointerException();
       }
       checkByteStringIsUtf8(value);
-
       parent_ = value;
+      bitField0_ |= 0x00000001;
       onChanged();
       return this;
     }
@@ -689,7 +699,7 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
      * @return Whether the writeStream field is set.
      */
     public boolean hasWriteStream() {
-      return writeStreamBuilder_ != null || writeStream_ != null;
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      *
@@ -730,11 +740,11 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
           throw new NullPointerException();
         }
         writeStream_ = value;
-        onChanged();
       } else {
         writeStreamBuilder_.setMessage(value);
       }
-
+      bitField0_ |= 0x00000002;
+      onChanged();
       return this;
     }
     /**
@@ -752,11 +762,11 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
         com.google.cloud.bigquery.storage.v1beta2.WriteStream.Builder builderForValue) {
       if (writeStreamBuilder_ == null) {
         writeStream_ = builderForValue.build();
-        onChanged();
       } else {
         writeStreamBuilder_.setMessage(builderForValue.build());
       }
-
+      bitField0_ |= 0x00000002;
+      onChanged();
       return this;
     }
     /**
@@ -772,19 +782,19 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
      */
     public Builder mergeWriteStream(com.google.cloud.bigquery.storage.v1beta2.WriteStream value) {
       if (writeStreamBuilder_ == null) {
-        if (writeStream_ != null) {
-          writeStream_ =
-              com.google.cloud.bigquery.storage.v1beta2.WriteStream.newBuilder(writeStream_)
-                  .mergeFrom(value)
-                  .buildPartial();
+        if (((bitField0_ & 0x00000002) != 0)
+            && writeStream_ != null
+            && writeStream_
+                != com.google.cloud.bigquery.storage.v1beta2.WriteStream.getDefaultInstance()) {
+          getWriteStreamBuilder().mergeFrom(value);
         } else {
           writeStream_ = value;
         }
-        onChanged();
       } else {
         writeStreamBuilder_.mergeFrom(value);
       }
-
+      bitField0_ |= 0x00000002;
+      onChanged();
       return this;
     }
     /**
@@ -799,14 +809,13 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
      * </code>
      */
     public Builder clearWriteStream() {
-      if (writeStreamBuilder_ == null) {
-        writeStream_ = null;
-        onChanged();
-      } else {
-        writeStream_ = null;
+      bitField0_ = (bitField0_ & ~0x00000002);
+      writeStream_ = null;
+      if (writeStreamBuilder_ != null) {
+        writeStreamBuilder_.dispose();
         writeStreamBuilder_ = null;
       }
-
+      onChanged();
       return this;
     }
     /**
@@ -821,7 +830,7 @@ public final class CreateWriteStreamRequest extends com.google.protobuf.Generate
      * </code>
      */
     public com.google.cloud.bigquery.storage.v1beta2.WriteStream.Builder getWriteStreamBuilder() {
-
+      bitField0_ |= 0x00000002;
       onChanged();
       return getWriteStreamFieldBuilder().getBuilder();
     }
