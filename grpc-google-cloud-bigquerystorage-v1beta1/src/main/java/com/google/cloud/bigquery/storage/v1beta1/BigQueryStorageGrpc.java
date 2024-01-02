@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,10 @@ import static io.grpc.MethodDescriptor.generateFullMethodName;
  * <pre>
  * BigQuery storage API.
  * The BigQuery storage API can be used to read data stored in BigQuery.
+ * The v1beta1 API is not yet officially deprecated, and will go through a full
+ * deprecation cycle (https://cloud.google.com/products#product-launch-stages)
+ * before the service is turned down. However, new code should use the v1 API
+ * going forward.
  * </pre>
  */
 @javax.annotation.Generated(
@@ -33,7 +37,8 @@ public final class BigQueryStorageGrpc {
 
   private BigQueryStorageGrpc() {}
 
-  public static final String SERVICE_NAME = "google.cloud.bigquery.storage.v1beta1.BigQueryStorage";
+  public static final java.lang.String SERVICE_NAME =
+      "google.cloud.bigquery.storage.v1beta1.BigQueryStorage";
 
   // Static method descriptors that strictly reflect the proto.
   private static volatile io.grpc.MethodDescriptor<
@@ -330,9 +335,13 @@ public final class BigQueryStorageGrpc {
    * <pre>
    * BigQuery storage API.
    * The BigQuery storage API can be used to read data stored in BigQuery.
+   * The v1beta1 API is not yet officially deprecated, and will go through a full
+   * deprecation cycle (https://cloud.google.com/products#product-launch-stages)
+   * before the service is turned down. However, new code should use the v1 API
+   * going forward.
    * </pre>
    */
-  public abstract static class BigQueryStorageImplBase implements io.grpc.BindableService {
+  public interface AsyncService {
 
     /**
      *
@@ -346,11 +355,11 @@ public final class BigQueryStorageGrpc {
      * A particular row can be read by at most one stream. When the caller has
      * reached the end of each stream in the session, then all the data in the
      * table has been read.
-     * Read sessions automatically expire 24 hours after they are created and do
+     * Read sessions automatically expire 6 hours after they are created and do
      * not require manual clean-up by the caller.
      * </pre>
      */
-    public void createReadSession(
+    default void createReadSession(
         com.google.cloud.bigquery.storage.v1beta1.Storage.CreateReadSessionRequest request,
         io.grpc.stub.StreamObserver<com.google.cloud.bigquery.storage.v1beta1.Storage.ReadSession>
             responseObserver) {
@@ -372,7 +381,7 @@ public final class BigQueryStorageGrpc {
      * session, and may change as other streams continue to read data.
      * </pre>
      */
-    public void readRows(
+    default void readRows(
         com.google.cloud.bigquery.storage.v1beta1.Storage.ReadRowsRequest request,
         io.grpc.stub.StreamObserver<
                 com.google.cloud.bigquery.storage.v1beta1.Storage.ReadRowsResponse>
@@ -389,7 +398,7 @@ public final class BigQueryStorageGrpc {
      * adding additional workers.
      * </pre>
      */
-    public void batchCreateReadSessionStreams(
+    default void batchCreateReadSessionStreams(
         com.google.cloud.bigquery.storage.v1beta1.Storage.BatchCreateReadSessionStreamsRequest
             request,
         io.grpc.stub.StreamObserver<
@@ -404,7 +413,7 @@ public final class BigQueryStorageGrpc {
      *
      *
      * <pre>
-     * Triggers the graceful termination of a single stream in a ReadSession. This
+     * Causes a single stream in a ReadSession to gracefully stop. This
      * API can be used to dynamically adjust the parallelism of a batch processing
      * task downwards without losing data.
      * This API does not delete the stream -- it remains visible in the
@@ -418,7 +427,7 @@ public final class BigQueryStorageGrpc {
      * Stream.
      * </pre>
      */
-    public void finalizeStream(
+    default void finalizeStream(
         com.google.cloud.bigquery.storage.v1beta1.Storage.FinalizeStreamRequest request,
         io.grpc.stub.StreamObserver<com.google.protobuf.Empty> responseObserver) {
       io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
@@ -442,7 +451,7 @@ public final class BigQueryStorageGrpc {
      * This method is guaranteed to be idempotent.
      * </pre>
      */
-    public void splitReadStream(
+    default void splitReadStream(
         com.google.cloud.bigquery.storage.v1beta1.Storage.SplitReadStreamRequest request,
         io.grpc.stub.StreamObserver<
                 com.google.cloud.bigquery.storage.v1beta1.Storage.SplitReadStreamResponse>
@@ -450,56 +459,39 @@ public final class BigQueryStorageGrpc {
       io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
           getSplitReadStreamMethod(), responseObserver);
     }
-
-    @java.lang.Override
-    public final io.grpc.ServerServiceDefinition bindService() {
-      return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
-          .addMethod(
-              getCreateReadSessionMethod(),
-              io.grpc.stub.ServerCalls.asyncUnaryCall(
-                  new MethodHandlers<
-                      com.google.cloud.bigquery.storage.v1beta1.Storage.CreateReadSessionRequest,
-                      com.google.cloud.bigquery.storage.v1beta1.Storage.ReadSession>(
-                      this, METHODID_CREATE_READ_SESSION)))
-          .addMethod(
-              getReadRowsMethod(),
-              io.grpc.stub.ServerCalls.asyncServerStreamingCall(
-                  new MethodHandlers<
-                      com.google.cloud.bigquery.storage.v1beta1.Storage.ReadRowsRequest,
-                      com.google.cloud.bigquery.storage.v1beta1.Storage.ReadRowsResponse>(
-                      this, METHODID_READ_ROWS)))
-          .addMethod(
-              getBatchCreateReadSessionStreamsMethod(),
-              io.grpc.stub.ServerCalls.asyncUnaryCall(
-                  new MethodHandlers<
-                      com.google.cloud.bigquery.storage.v1beta1.Storage
-                          .BatchCreateReadSessionStreamsRequest,
-                      com.google.cloud.bigquery.storage.v1beta1.Storage
-                          .BatchCreateReadSessionStreamsResponse>(
-                      this, METHODID_BATCH_CREATE_READ_SESSION_STREAMS)))
-          .addMethod(
-              getFinalizeStreamMethod(),
-              io.grpc.stub.ServerCalls.asyncUnaryCall(
-                  new MethodHandlers<
-                      com.google.cloud.bigquery.storage.v1beta1.Storage.FinalizeStreamRequest,
-                      com.google.protobuf.Empty>(this, METHODID_FINALIZE_STREAM)))
-          .addMethod(
-              getSplitReadStreamMethod(),
-              io.grpc.stub.ServerCalls.asyncUnaryCall(
-                  new MethodHandlers<
-                      com.google.cloud.bigquery.storage.v1beta1.Storage.SplitReadStreamRequest,
-                      com.google.cloud.bigquery.storage.v1beta1.Storage.SplitReadStreamResponse>(
-                      this, METHODID_SPLIT_READ_STREAM)))
-          .build();
-    }
   }
 
   /**
-   *
+   * Base class for the server implementation of the service BigQueryStorage.
    *
    * <pre>
    * BigQuery storage API.
    * The BigQuery storage API can be used to read data stored in BigQuery.
+   * The v1beta1 API is not yet officially deprecated, and will go through a full
+   * deprecation cycle (https://cloud.google.com/products#product-launch-stages)
+   * before the service is turned down. However, new code should use the v1 API
+   * going forward.
+   * </pre>
+   */
+  public abstract static class BigQueryStorageImplBase
+      implements io.grpc.BindableService, AsyncService {
+
+    @java.lang.Override
+    public final io.grpc.ServerServiceDefinition bindService() {
+      return BigQueryStorageGrpc.bindService(this);
+    }
+  }
+
+  /**
+   * A stub to allow clients to do asynchronous rpc calls to service BigQueryStorage.
+   *
+   * <pre>
+   * BigQuery storage API.
+   * The BigQuery storage API can be used to read data stored in BigQuery.
+   * The v1beta1 API is not yet officially deprecated, and will go through a full
+   * deprecation cycle (https://cloud.google.com/products#product-launch-stages)
+   * before the service is turned down. However, new code should use the v1 API
+   * going forward.
    * </pre>
    */
   public static final class BigQueryStorageStub
@@ -525,7 +517,7 @@ public final class BigQueryStorageGrpc {
      * A particular row can be read by at most one stream. When the caller has
      * reached the end of each stream in the session, then all the data in the
      * table has been read.
-     * Read sessions automatically expire 24 hours after they are created and do
+     * Read sessions automatically expire 6 hours after they are created and do
      * not require manual clean-up by the caller.
      * </pre>
      */
@@ -588,7 +580,7 @@ public final class BigQueryStorageGrpc {
      *
      *
      * <pre>
-     * Triggers the graceful termination of a single stream in a ReadSession. This
+     * Causes a single stream in a ReadSession to gracefully stop. This
      * API can be used to dynamically adjust the parallelism of a batch processing
      * task downwards without losing data.
      * This API does not delete the stream -- it remains visible in the
@@ -641,11 +633,15 @@ public final class BigQueryStorageGrpc {
   }
 
   /**
-   *
+   * A stub to allow clients to do synchronous rpc calls to service BigQueryStorage.
    *
    * <pre>
    * BigQuery storage API.
    * The BigQuery storage API can be used to read data stored in BigQuery.
+   * The v1beta1 API is not yet officially deprecated, and will go through a full
+   * deprecation cycle (https://cloud.google.com/products#product-launch-stages)
+   * before the service is turned down. However, new code should use the v1 API
+   * going forward.
    * </pre>
    */
   public static final class BigQueryStorageBlockingStub
@@ -672,7 +668,7 @@ public final class BigQueryStorageGrpc {
      * A particular row can be read by at most one stream. When the caller has
      * reached the end of each stream in the session, then all the data in the
      * table has been read.
-     * Read sessions automatically expire 24 hours after they are created and do
+     * Read sessions automatically expire 6 hours after they are created and do
      * not require manual clean-up by the caller.
      * </pre>
      */
@@ -723,7 +719,7 @@ public final class BigQueryStorageGrpc {
      *
      *
      * <pre>
-     * Triggers the graceful termination of a single stream in a ReadSession. This
+     * Causes a single stream in a ReadSession to gracefully stop. This
      * API can be used to dynamically adjust the parallelism of a batch processing
      * task downwards without losing data.
      * This API does not delete the stream -- it remains visible in the
@@ -769,11 +765,15 @@ public final class BigQueryStorageGrpc {
   }
 
   /**
-   *
+   * A stub to allow clients to do ListenableFuture-style rpc calls to service BigQueryStorage.
    *
    * <pre>
    * BigQuery storage API.
    * The BigQuery storage API can be used to read data stored in BigQuery.
+   * The v1beta1 API is not yet officially deprecated, and will go through a full
+   * deprecation cycle (https://cloud.google.com/products#product-launch-stages)
+   * before the service is turned down. However, new code should use the v1 API
+   * going forward.
    * </pre>
    */
   public static final class BigQueryStorageFutureStub
@@ -800,7 +800,7 @@ public final class BigQueryStorageGrpc {
      * A particular row can be read by at most one stream. When the caller has
      * reached the end of each stream in the session, then all the data in the
      * table has been read.
-     * Read sessions automatically expire 24 hours after they are created and do
+     * Read sessions automatically expire 6 hours after they are created and do
      * not require manual clean-up by the caller.
      * </pre>
      */
@@ -835,7 +835,7 @@ public final class BigQueryStorageGrpc {
      *
      *
      * <pre>
-     * Triggers the graceful termination of a single stream in a ReadSession. This
+     * Causes a single stream in a ReadSession to gracefully stop. This
      * API can be used to dynamically adjust the parallelism of a batch processing
      * task downwards without losing data.
      * This API does not delete the stream -- it remains visible in the
@@ -893,10 +893,10 @@ public final class BigQueryStorageGrpc {
           io.grpc.stub.ServerCalls.ServerStreamingMethod<Req, Resp>,
           io.grpc.stub.ServerCalls.ClientStreamingMethod<Req, Resp>,
           io.grpc.stub.ServerCalls.BidiStreamingMethod<Req, Resp> {
-    private final BigQueryStorageImplBase serviceImpl;
+    private final AsyncService serviceImpl;
     private final int methodId;
 
-    MethodHandlers(BigQueryStorageImplBase serviceImpl, int methodId) {
+    MethodHandlers(AsyncService serviceImpl, int methodId) {
       this.serviceImpl = serviceImpl;
       this.methodId = methodId;
     }
@@ -957,6 +957,47 @@ public final class BigQueryStorageGrpc {
     }
   }
 
+  public static final io.grpc.ServerServiceDefinition bindService(AsyncService service) {
+    return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
+        .addMethod(
+            getCreateReadSessionMethod(),
+            io.grpc.stub.ServerCalls.asyncUnaryCall(
+                new MethodHandlers<
+                    com.google.cloud.bigquery.storage.v1beta1.Storage.CreateReadSessionRequest,
+                    com.google.cloud.bigquery.storage.v1beta1.Storage.ReadSession>(
+                    service, METHODID_CREATE_READ_SESSION)))
+        .addMethod(
+            getReadRowsMethod(),
+            io.grpc.stub.ServerCalls.asyncServerStreamingCall(
+                new MethodHandlers<
+                    com.google.cloud.bigquery.storage.v1beta1.Storage.ReadRowsRequest,
+                    com.google.cloud.bigquery.storage.v1beta1.Storage.ReadRowsResponse>(
+                    service, METHODID_READ_ROWS)))
+        .addMethod(
+            getBatchCreateReadSessionStreamsMethod(),
+            io.grpc.stub.ServerCalls.asyncUnaryCall(
+                new MethodHandlers<
+                    com.google.cloud.bigquery.storage.v1beta1.Storage
+                        .BatchCreateReadSessionStreamsRequest,
+                    com.google.cloud.bigquery.storage.v1beta1.Storage
+                        .BatchCreateReadSessionStreamsResponse>(
+                    service, METHODID_BATCH_CREATE_READ_SESSION_STREAMS)))
+        .addMethod(
+            getFinalizeStreamMethod(),
+            io.grpc.stub.ServerCalls.asyncUnaryCall(
+                new MethodHandlers<
+                    com.google.cloud.bigquery.storage.v1beta1.Storage.FinalizeStreamRequest,
+                    com.google.protobuf.Empty>(service, METHODID_FINALIZE_STREAM)))
+        .addMethod(
+            getSplitReadStreamMethod(),
+            io.grpc.stub.ServerCalls.asyncUnaryCall(
+                new MethodHandlers<
+                    com.google.cloud.bigquery.storage.v1beta1.Storage.SplitReadStreamRequest,
+                    com.google.cloud.bigquery.storage.v1beta1.Storage.SplitReadStreamResponse>(
+                    service, METHODID_SPLIT_READ_STREAM)))
+        .build();
+  }
+
   private abstract static class BigQueryStorageBaseDescriptorSupplier
       implements io.grpc.protobuf.ProtoFileDescriptorSupplier,
           io.grpc.protobuf.ProtoServiceDescriptorSupplier {
@@ -981,9 +1022,9 @@ public final class BigQueryStorageGrpc {
   private static final class BigQueryStorageMethodDescriptorSupplier
       extends BigQueryStorageBaseDescriptorSupplier
       implements io.grpc.protobuf.ProtoMethodDescriptorSupplier {
-    private final String methodName;
+    private final java.lang.String methodName;
 
-    BigQueryStorageMethodDescriptorSupplier(String methodName) {
+    BigQueryStorageMethodDescriptorSupplier(java.lang.String methodName) {
       this.methodName = methodName;
     }
 

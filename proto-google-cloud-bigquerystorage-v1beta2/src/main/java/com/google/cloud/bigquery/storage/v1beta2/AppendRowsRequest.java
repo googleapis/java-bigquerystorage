@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,11 +46,6 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
   @SuppressWarnings({"unused"})
   protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
     return new AppendRowsRequest();
-  }
-
-  @java.lang.Override
-  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-    return this.unknownFields;
   }
 
   public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -168,11 +163,6 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
     @SuppressWarnings({"unused"})
     protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
       return new ProtoData();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-      return this.unknownFields;
     }
 
     public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
@@ -1141,6 +1131,8 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
   }
 
   private int rowsCase_ = 0;
+
+  @SuppressWarnings("serial")
   private java.lang.Object rows_;
 
   public enum RowsCase
@@ -1192,9 +1184,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    *
    *
    * <pre>
-   * Required. The stream that is the target of the append operation. This value must be
-   * specified for the initial request. If subsequent requests specify the
-   * stream name, it must equal to the value provided in the first request.
+   * Required. The stream that is the target of the append operation. This value
+   * must be specified for the initial request. If subsequent requests specify
+   * the stream name, it must equal to the value provided in the first request.
    * To write to the _default stream, populate this field with a string in the
    * format `projects/{project}/datasets/{dataset}/tables/{table}/_default`.
    * </pre>
@@ -1221,9 +1213,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
    *
    *
    * <pre>
-   * Required. The stream that is the target of the append operation. This value must be
-   * specified for the initial request. If subsequent requests specify the
-   * stream name, it must equal to the value provided in the first request.
+   * Required. The stream that is the target of the append operation. This value
+   * must be specified for the initial request. If subsequent requests specify
+   * the stream name, it must equal to the value provided in the first request.
    * To write to the _default stream, populate this field with a string in the
    * format `projects/{project}/datasets/{dataset}/tables/{table}/_default`.
    * </pre>
@@ -1894,9 +1886,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The stream that is the target of the append operation. This value must be
-     * specified for the initial request. If subsequent requests specify the
-     * stream name, it must equal to the value provided in the first request.
+     * Required. The stream that is the target of the append operation. This value
+     * must be specified for the initial request. If subsequent requests specify
+     * the stream name, it must equal to the value provided in the first request.
      * To write to the _default stream, populate this field with a string in the
      * format `projects/{project}/datasets/{dataset}/tables/{table}/_default`.
      * </pre>
@@ -1922,9 +1914,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The stream that is the target of the append operation. This value must be
-     * specified for the initial request. If subsequent requests specify the
-     * stream name, it must equal to the value provided in the first request.
+     * Required. The stream that is the target of the append operation. This value
+     * must be specified for the initial request. If subsequent requests specify
+     * the stream name, it must equal to the value provided in the first request.
      * To write to the _default stream, populate this field with a string in the
      * format `projects/{project}/datasets/{dataset}/tables/{table}/_default`.
      * </pre>
@@ -1950,9 +1942,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The stream that is the target of the append operation. This value must be
-     * specified for the initial request. If subsequent requests specify the
-     * stream name, it must equal to the value provided in the first request.
+     * Required. The stream that is the target of the append operation. This value
+     * must be specified for the initial request. If subsequent requests specify
+     * the stream name, it must equal to the value provided in the first request.
      * To write to the _default stream, populate this field with a string in the
      * format `projects/{project}/datasets/{dataset}/tables/{table}/_default`.
      * </pre>
@@ -1977,9 +1969,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The stream that is the target of the append operation. This value must be
-     * specified for the initial request. If subsequent requests specify the
-     * stream name, it must equal to the value provided in the first request.
+     * Required. The stream that is the target of the append operation. This value
+     * must be specified for the initial request. If subsequent requests specify
+     * the stream name, it must equal to the value provided in the first request.
      * To write to the _default stream, populate this field with a string in the
      * format `projects/{project}/datasets/{dataset}/tables/{table}/_default`.
      * </pre>
@@ -2000,9 +1992,9 @@ public final class AppendRowsRequest extends com.google.protobuf.GeneratedMessag
      *
      *
      * <pre>
-     * Required. The stream that is the target of the append operation. This value must be
-     * specified for the initial request. If subsequent requests specify the
-     * stream name, it must equal to the value provided in the first request.
+     * Required. The stream that is the target of the append operation. This value
+     * must be specified for the initial request. If subsequent requests specify
+     * the stream name, it must equal to the value provided in the first request.
      * To write to the _default stream, populate this field with a string in the
      * format `projects/{project}/datasets/{dataset}/tables/{table}/_default`.
      * </pre>

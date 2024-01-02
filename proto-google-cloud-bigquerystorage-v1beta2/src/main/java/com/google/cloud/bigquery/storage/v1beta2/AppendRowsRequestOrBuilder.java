@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ public interface AppendRowsRequestOrBuilder
    *
    *
    * <pre>
-   * Required. The stream that is the target of the append operation. This value must be
-   * specified for the initial request. If subsequent requests specify the
-   * stream name, it must equal to the value provided in the first request.
+   * Required. The stream that is the target of the append operation. This value
+   * must be specified for the initial request. If subsequent requests specify
+   * the stream name, it must equal to the value provided in the first request.
    * To write to the _default stream, populate this field with a string in the
    * format `projects/{project}/datasets/{dataset}/tables/{table}/_default`.
    * </pre>
@@ -45,9 +45,9 @@ public interface AppendRowsRequestOrBuilder
    *
    *
    * <pre>
-   * Required. The stream that is the target of the append operation. This value must be
-   * specified for the initial request. If subsequent requests specify the
-   * stream name, it must equal to the value provided in the first request.
+   * Required. The stream that is the target of the append operation. This value
+   * must be specified for the initial request. If subsequent requests specify
+   * the stream name, it must equal to the value provided in the first request.
    * To write to the _default stream, populate this field with a string in the
    * format `projects/{project}/datasets/{dataset}/tables/{table}/_default`.
    * </pre>
@@ -167,5 +167,5 @@ public interface AppendRowsRequestOrBuilder
    */
   com.google.protobuf.ByteString getTraceIdBytes();
 
-  public com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest.RowsCase getRowsCase();
+  com.google.cloud.bigquery.storage.v1beta2.AppendRowsRequest.RowsCase getRowsCase();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -259,7 +259,9 @@ public class BigQueryWriteStubSettings extends StubSettings<BigQueryWriteStubSet
           "retry_policy_4_codes",
           ImmutableSet.copyOf(
               Lists.<StatusCode.Code>newArrayList(
-                  StatusCode.Code.DEADLINE_EXCEEDED, StatusCode.Code.UNAVAILABLE)));
+                  StatusCode.Code.DEADLINE_EXCEEDED,
+                  StatusCode.Code.UNAVAILABLE,
+                  StatusCode.Code.RESOURCE_EXHAUSTED)));
       RETRYABLE_CODE_DEFINITIONS = definitions.build();
     }
 

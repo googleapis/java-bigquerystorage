@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ public interface BatchCommitWriteStreamsRequestOrBuilder
    *
    *
    * <pre>
-   * Required. Parent table that all the streams should belong to, in the form of
-   * `projects/{project}/datasets/{dataset}/tables/{table}`.
+   * Required. Parent table that all the streams should belong to, in the form
+   * of `projects/{project}/datasets/{dataset}/tables/{table}`.
    * </pre>
    *
    * <code>string parent = 1 [(.google.api.field_behavior) = REQUIRED];</code>
@@ -40,8 +40,8 @@ public interface BatchCommitWriteStreamsRequestOrBuilder
    *
    *
    * <pre>
-   * Required. Parent table that all the streams should belong to, in the form of
-   * `projects/{project}/datasets/{dataset}/tables/{table}`.
+   * Required. Parent table that all the streams should belong to, in the form
+   * of `projects/{project}/datasets/{dataset}/tables/{table}`.
    * </pre>
    *
    * <code>string parent = 1 [(.google.api.field_behavior) = REQUIRED];</code>

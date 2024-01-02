@@ -25,9 +25,12 @@ import static org.junit.Assert.assertTrue;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.*;
+import com.google.cloud.bigquery.Field.Mode;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.storage.test.Test.*;
+import com.google.cloud.bigquery.storage.test.TestOptional.*;
 import com.google.cloud.bigquery.storage.v1.*;
+import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.OffsetAlreadyExists;
 import com.google.cloud.bigquery.storage.v1.Exceptions.OffsetOutOfRange;
@@ -36,6 +39,8 @@ import com.google.cloud.bigquery.storage.v1.Exceptions.StreamFinalizedException;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.DescriptorProtos.DescriptorProto;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import io.grpc.Status;
@@ -43,6 +48,10 @@ import io.grpc.Status.Code;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,14 +72,21 @@ public class ITBigQueryWriteManualClientTest {
   private static final String DATASET_EU = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
   private static final String TABLE2 = "complicatedtable";
+
+  private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
+
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
 
   private static BigQueryWriteClient client;
   private static TableInfo tableInfo;
   private static TableInfo tableInfo2;
+
   private static TableInfo tableInfoEU;
+
+  private static TableDefinition defaultValueTableDefinition;
   private static String tableId;
   private static String tableId2;
+
   private static String tableIdEU;
   private static BigQuery bigquery;
 
@@ -126,6 +142,24 @@ public class ITBigQueryWriteManualClientTest {
                             .build(),
                         innerTypeFieldBuilder.setMode(Field.Mode.NULLABLE).build())))
             .build();
+
+    defaultValueTableDefinition =
+        StandardTableDefinition.of(
+            Schema.of(
+                com.google.cloud.bigquery.Field.newBuilder(
+                        "foo_with_default", LegacySQLTypeName.STRING)
+                    .setDefaultValueExpression("'default_value_for_test'")
+                    .setMode(Field.Mode.NULLABLE)
+                    .build(),
+                com.google.cloud.bigquery.Field.newBuilder(
+                        "bar_without_default", LegacySQLTypeName.STRING)
+                    .setMode(Mode.NULLABLE)
+                    .build(),
+                com.google.cloud.bigquery.Field.newBuilder(
+                        "date_with_default_to_current", LegacySQLTypeName.TIMESTAMP)
+                    .setDefaultValueExpression("CURRENT_TIMESTAMP()")
+                    .setMode(Mode.NULLABLE)
+                    .build()));
     bigquery.create(tableInfo);
     bigquery.create(tableInfo2);
     tableId =
@@ -173,6 +207,30 @@ public class ITBigQueryWriteManualClientTest {
     ProtoRows.Builder rows = ProtoRows.newBuilder();
     for (String message : messages) {
       FooType foo = FooType.newBuilder().setFoo(message).build();
+      rows.addSerializedRows(foo.toByteString());
+    }
+    return rows.build();
+  }
+
+  ProtoSchema CreateProtoSchemaWithColField() {
+    return ProtoSchema.newBuilder()
+        .setProtoDescriptor(
+            DescriptorProto.newBuilder()
+                .setName("testProto")
+                .addField(
+                    FieldDescriptorProto.newBuilder()
+                        .setName("col1")
+                        .setNumber(1)
+                        .setType(FieldDescriptorProto.Type.TYPE_STRING)
+                        .build())
+                .build())
+        .build();
+  }
+
+  ProtoRows CreateProtoOptionalRows(String[] messages) {
+    ProtoRows.Builder rows = ProtoRows.newBuilder();
+    for (String message : messages) {
+      FooOptionalType foo = FooOptionalType.newBuilder().setFoo(message).build();
       rows.addSerializedRows(foo.toByteString());
     }
     return rows.build();
@@ -241,6 +299,35 @@ public class ITBigQueryWriteManualClientTest {
         streamWriter.append(CreateProtoRows(new String[] {"bbb", "ccc"}), 1);
     ApiFuture<AppendRowsResponse> response2 =
         streamWriter.append(CreateProtoRows(new String[] {"ddd"}), 3);
+    assertEquals(1, response1.get().getAppendResult().getOffset().getValue());
+    assertEquals(3, response2.get().getAppendResult().getOffset().getValue());
+  }
+
+  @Test
+  public void testProto3OptionalBatchWriteWithCommittedStream()
+      throws IOException, InterruptedException, ExecutionException {
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(tableId)
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+    StreamWriter streamWriter =
+        StreamWriter.newBuilder(writeStream.getName())
+            .setWriterSchema(ProtoSchemaConverter.convert(FooOptionalType.getDescriptor()))
+            .build();
+    LOG.info("Sending one message");
+
+    ApiFuture<AppendRowsResponse> response =
+        streamWriter.append(CreateProtoOptionalRows(new String[] {"aaa"}), 0);
+    assertEquals(0, response.get().getAppendResult().getOffset().getValue());
+
+    LOG.info("Sending two more messages");
+    ApiFuture<AppendRowsResponse> response1 =
+        streamWriter.append(CreateProtoOptionalRows(new String[] {"bbb", "ccc"}), 1);
+    ApiFuture<AppendRowsResponse> response2 =
+        streamWriter.append(CreateProtoOptionalRows(new String[] {""}), 3);
     assertEquals(1, response1.get().getAppendResult().getOffset().getValue());
     assertEquals(3, response2.get().getAppendResult().getOffset().getValue());
   }
@@ -376,13 +463,15 @@ public class ITBigQueryWriteManualClientTest {
       AppendSerializationError e = (AppendSerializationError) t;
       LOG.info("Found row errors on stream: " + e.getStreamName());
       assertEquals(
-          "Field foo: STRING(10) has maximum length 10 but got a value with length 12 on field foo.",
+          "Field foo: STRING(10) has maximum length 10 but got a value with length 12 on field"
+              + " foo.",
           e.getRowIndexToErrorMessage().get(0));
       assertEquals(
           "Timestamp field value is out of range: -9223372036854775808 on field bar.",
           e.getRowIndexToErrorMessage().get(1));
       assertEquals(
-          "Field foo: STRING(10) has maximum length 10 but got a value with length 15 on field foo.",
+          "Field foo: STRING(10) has maximum length 10 but got a value with length 15 on field"
+              + " foo.",
           e.getRowIndexToErrorMessage().get(2));
       for (Map.Entry<Integer, String> entry : e.getRowIndexToErrorMessage().entrySet()) {
         LOG.info("Bad row index: " + entry.getKey() + ", has problem: " + entry.getValue());
@@ -708,7 +797,12 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals(2, currentRow.get(3).getRepeatedValue().size());
       assertEquals("Yg==", currentRow.get(3).getRepeatedValue().get(1).getStringValue());
       assertEquals(
-          Timestamp.valueOf("2022-02-06 07:24:47.84").getTime() * 1000,
+          Timestamp.valueOf("2022-02-06 07:24:47.84")
+                  .toLocalDateTime()
+                  .atZone(ZoneId.of("UTC"))
+                  .toInstant()
+                  .toEpochMilli()
+              * 1000,
           currentRow.get(4).getTimestampValue()); // timestamp long of "2022-02-06 07:24:47.84"
       assertEquals("bbb", iter.next().get(0).getStringValue());
       assertEquals("ccc", iter.next().get(0).getStringValue());
@@ -717,6 +811,177 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals("YQ==", currentRow2.get(3).getRepeatedValue().get(0).getStringValue());
       assertEquals("Yg==", currentRow2.get(3).getRepeatedValue().get(1).getStringValue());
       assertEquals(false, iter.hasNext());
+    }
+  }
+
+  @Test
+  public void testJsonDefaultStreamOnTableWithDefaultValue_SchemaNotGiven()
+      throws IOException, InterruptedException, ExecutionException,
+          Descriptors.DescriptorValidationException, ParseException {
+    String tableName = "defaultStreamDefaultValue";
+    String defaultTableId =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s",
+            ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    tableInfo =
+        TableInfo.newBuilder(TableId.of(DATASET, tableName), defaultValueTableDefinition).build();
+    bigquery.create(tableInfo);
+    try (JsonStreamWriter jsonStreamWriter =
+        JsonStreamWriter.newBuilder(defaultTableId, client)
+            .setDefaultMissingValueInterpretation(MissingValueInterpretation.DEFAULT_VALUE)
+            .build()) {
+      testJsonStreamWriterForDefaultValue(jsonStreamWriter);
+    }
+  }
+
+  @Test
+  public void testJsonExclusiveStreamOnTableWithDefaultValue_GiveTableSchema()
+      throws IOException, InterruptedException, ExecutionException,
+          Descriptors.DescriptorValidationException, ParseException {
+    String tableName = "exclusiveStreamDefaultValue";
+    String exclusiveTableId =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s",
+            ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    tableInfo =
+        TableInfo.newBuilder(TableId.of(DATASET, tableName), defaultValueTableDefinition).build();
+    bigquery.create(tableInfo);
+    WriteStream writeStream =
+        client.createWriteStream(
+            CreateWriteStreamRequest.newBuilder()
+                .setParent(exclusiveTableId)
+                .setWriteStream(
+                    WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
+                .build());
+    try (JsonStreamWriter jsonStreamWriter =
+        JsonStreamWriter.newBuilder(exclusiveTableId, writeStream.getTableSchema())
+            .setDefaultMissingValueInterpretation(MissingValueInterpretation.DEFAULT_VALUE)
+            .build()) {
+      testJsonStreamWriterForDefaultValue(jsonStreamWriter);
+    }
+  }
+
+  private void testJsonStreamWriterForDefaultValue(JsonStreamWriter jsonStreamWriter)
+      throws DescriptorValidationException, IOException, ExecutionException, InterruptedException,
+          ParseException {
+    // 1. row has both fields set.
+    JSONArray jsonArr1 = new JSONArray();
+    JSONObject row1 = new JSONObject();
+    row1.put("foo_with_default", "aaa");
+    row1.put("bar_without_default", "a");
+    row1.put("date_with_default_to_current", "2022-02-02 01:02:03");
+    jsonArr1.put(row1);
+    // 2. row with the column with default value unset
+    JSONObject row2 = new JSONObject();
+    row2.put("bar_without_default", "a");
+    jsonArr1.put(row2);
+    // 3. both value not set
+    JSONObject row3 = new JSONObject();
+    jsonArr1.put(row3);
+
+    // Start insertion and validation.
+    ApiFuture<AppendRowsResponse> response1 = jsonStreamWriter.append(jsonArr1, -1);
+    response1.get();
+    TableResult result =
+        bigquery.listTableData(tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+    Iterator<FieldValueList> iter = result.getValues().iterator();
+
+    FieldValueList currentRow = iter.next();
+    assertEquals("aaa", currentRow.get(0).getStringValue());
+    assertEquals("a", currentRow.get(1).getStringValue());
+    assertEquals(
+        Timestamp.valueOf("2022-02-02 01:02:03")
+            .toLocalDateTime()
+            .atZone(ZoneId.of("UTC"))
+            .toInstant()
+            .toEpochMilli(),
+        Double.valueOf(currentRow.get(2).getStringValue()).longValue() * 1000);
+
+    currentRow = iter.next();
+    assertEquals("default_value_for_test", currentRow.get(0).getStringValue());
+    assertFalse(currentRow.get(2).getStringValue().isEmpty());
+    assertEquals("a", currentRow.get(1).getStringValue());
+    // Check whether the recorded value is up to date enough.
+    Instant parsedInstant =
+        Instant.ofEpochSecond(Double.valueOf(currentRow.get(2).getStringValue()).longValue());
+    assertTrue(parsedInstant.isAfter(Instant.now().minus(1, ChronoUnit.HOURS)));
+
+    currentRow = iter.next();
+    assertEquals("default_value_for_test", currentRow.get(0).getStringValue());
+    assertEquals(null, currentRow.get(1).getValue());
+    assertFalse(currentRow.get(2).getStringValue().isEmpty());
+    // Check whether the recorded value is up to date enough.
+    parsedInstant =
+        Instant.ofEpochSecond(Double.valueOf(currentRow.get(2).getStringValue()).longValue());
+    assertTrue(parsedInstant.isAfter(Instant.now().minus(1, ChronoUnit.HOURS)));
+
+    assertEquals(false, iter.hasNext());
+  }
+
+  @Test
+  public void testStreamWriterWithDefaultValue() throws ExecutionException, InterruptedException {
+    String tableName = "streamWriterWithDefaultValue";
+    String exclusiveTableId =
+        String.format(
+            "projects/%s/datasets/%s/tables/%s",
+            ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    tableInfo =
+        TableInfo.newBuilder(TableId.of(DATASET, tableName), defaultValueTableDefinition).build();
+    bigquery.create(tableInfo);
+    try (StreamWriter streamWriter =
+        StreamWriter.newBuilder(exclusiveTableId + "/_default")
+            .setWriterSchema(
+                ProtoSchemaConverter.convert(SimpleTypeForDefaultValue.getDescriptor()))
+            .setDefaultMissingValueInterpretation(MissingValueInterpretation.DEFAULT_VALUE)
+            .setEnableConnectionPool(true)
+            .setTraceId(TEST_TRACE_ID)
+            .build()) {
+      // 1. row has both fields set.
+      SimpleTypeForDefaultValue simpleTypeForDefaultValue1 =
+          SimpleTypeForDefaultValue.newBuilder()
+              .setFooWithDefault("foo_value")
+              .setBarWithoutDefault("bar_value")
+              .setDateWithDefaultToCurrent("2022-02-02 01:02:03")
+              .build();
+
+      // 2. row without any column set, expect default value to be filled
+      SimpleTypeForDefaultValue simpleTypeForDefaultValue2 =
+          SimpleTypeForDefaultValue.newBuilder().build();
+      ProtoRows rows =
+          ProtoRows.newBuilder()
+              .addSerializedRows(simpleTypeForDefaultValue1.toByteString())
+              .addSerializedRows(simpleTypeForDefaultValue2.toByteString())
+              .build();
+
+      // Start insertion and validation.
+      ApiFuture<AppendRowsResponse> response1 = streamWriter.append(rows);
+      response1.get();
+      TableResult result =
+          bigquery.listTableData(
+              tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));
+      Iterator<FieldValueList> iter = result.getValues().iterator();
+
+      FieldValueList currentRow = iter.next();
+      assertEquals("foo_value", currentRow.get(0).getStringValue());
+      assertEquals("bar_value", currentRow.get(1).getStringValue());
+      assertEquals(
+          Timestamp.valueOf("2022-02-02 01:02:03")
+              .toLocalDateTime()
+              .atZone(ZoneId.of("UTC"))
+              .toInstant()
+              .toEpochMilli(),
+          Double.valueOf(currentRow.get(2).getStringValue()).longValue() * 1000);
+
+      currentRow = iter.next();
+      assertEquals("default_value_for_test", currentRow.get(0).getStringValue());
+      assertEquals(null, currentRow.get(1).getValue());
+      assertFalse(currentRow.get(2).getStringValue().isEmpty());
+      // Check whether the recorded value is up to date enough.
+      Instant parsedInstant =
+          Instant.ofEpochSecond(Double.valueOf(currentRow.get(2).getStringValue()).longValue());
+      assertTrue(parsedInstant.isAfter(Instant.now().minus(1, ChronoUnit.HOURS)));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -746,9 +1011,7 @@ public class ITBigQueryWriteManualClientTest {
         new ArrayList<ApiFuture<AppendRowsResponse>>(totalRequest);
     // Sends a total of 30MB over the wire.
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
-            .setReconnectAfter10M(true)
-            .build()) {
+        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
       for (int k = 0; k < totalRequest; k++) {
         JSONObject row = new JSONObject();
         row.put("col1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
@@ -791,7 +1054,7 @@ public class ITBigQueryWriteManualClientTest {
                     WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
                 .build());
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
+        JsonStreamWriter.newBuilder(writeStream.getName(), client).build()) {
       // write the 1st row
       JSONObject foo = new JSONObject();
       foo.put("col1", "aaa");
@@ -901,7 +1164,7 @@ public class ITBigQueryWriteManualClientTest {
 
     // Start writing using the JsonWriter
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
+        JsonStreamWriter.newBuilder(writeStream.getName(), client).build()) {
       int numberOfThreads = 5;
       ExecutorService streamTaskExecutor = Executors.newFixedThreadPool(5);
       CountDownLatch latch = new CountDownLatch(numberOfThreads);
@@ -1041,10 +1304,12 @@ public class ITBigQueryWriteManualClientTest {
     Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
     assertTrue(queryIter.hasNext());
     assertEquals(
-        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa}, FieldValue{attribute=PRIMITIVE, value=aaa}]}]",
+        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa},"
+            + " FieldValue{attribute=PRIMITIVE, value=aaa}]}]",
         queryIter.next().get(1).getRepeatedValue().toString());
     assertEquals(
-        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb}, FieldValue{attribute=PRIMITIVE, value=bbb}]}]",
+        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb},"
+            + " FieldValue{attribute=PRIMITIVE, value=bbb}]}]",
         queryIter.next().get(1).getRepeatedValue().toString());
     assertFalse(queryIter.hasNext());
   }
@@ -1276,16 +1541,19 @@ public class ITBigQueryWriteManualClientTest {
         StreamWriter.newBuilder(defaultStream1)
             .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
             .setEnableConnectionPool(true)
+            .setTraceId(TEST_TRACE_ID)
             .build();
     StreamWriter streamWriter2 =
         StreamWriter.newBuilder(defaultStream2)
             .setWriterSchema(ProtoSchemaConverter.convert(ComplicateType.getDescriptor()))
             .setEnableConnectionPool(true)
+            .setTraceId(TEST_TRACE_ID)
             .build();
     StreamWriter streamWriter3 =
         StreamWriter.newBuilder(defaultStream3)
             .setWriterSchema(ProtoSchemaConverter.convert(FooType.getDescriptor()))
             .setEnableConnectionPool(true)
+            .setTraceId(TEST_TRACE_ID)
             .build();
     ApiFuture<AppendRowsResponse> response1 =
         streamWriter1.append(CreateProtoRows(new String[] {"aaa"}));
@@ -1299,5 +1567,49 @@ public class ITBigQueryWriteManualClientTest {
     assertEquals("us", streamWriter1.getLocation());
     assertEquals("us", streamWriter2.getLocation());
     assertEquals("eu", streamWriter3.getLocation());
+    streamWriter1.close();
+    streamWriter2.close();
+    streamWriter3.close();
+  }
+
+  @Test
+  public void testLargeRequest() throws IOException, InterruptedException, ExecutionException {
+    String tableName = "largeRequestTable";
+    TableId tableId = TableId.of(DATASET, tableName);
+    Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
+    Schema originalSchema = Schema.of(col1);
+    TableInfo tableInfo =
+        TableInfo.newBuilder(tableId, StandardTableDefinition.of(originalSchema)).build();
+    bigquery.create(tableInfo);
+    TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+    try (StreamWriter streamWriter =
+        StreamWriter.newBuilder(parent.toString() + "/_default")
+            .setWriterSchema(CreateProtoSchemaWithColField())
+            .build()) {
+      List<Integer> sizeSet = Arrays.asList(15 * 1024 * 1024, 1024);
+      List<ApiFuture<AppendRowsResponse>> responseList =
+          new ArrayList<ApiFuture<AppendRowsResponse>>();
+      Random r = new Random();
+      for (int i = 0; i < 50; i++) {
+        int size = sizeSet.get(r.nextInt(2));
+        LOG.info("Sending size: " + size);
+        responseList.add(
+            streamWriter.append(
+                CreateProtoRows(
+                    new String[] {
+                      new String(new char[size]).replace('\u0000', (char) (r.nextInt(26) + 'a'))
+                    })));
+      }
+      for (int i = 0; i < 50; i++) {
+        assertFalse(responseList.get(i).get().hasError());
+      }
+      TableResult queryResult =
+          bigquery.query(
+              QueryJobConfiguration.newBuilder("SELECT count(*) from " + DATASET + '.' + tableName)
+                  .build());
+      Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
+      assertTrue(queryIter.hasNext());
+      assertEquals("50", queryIter.next().get(0).getStringValue());
+    }
   }
 }

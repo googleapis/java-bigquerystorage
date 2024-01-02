@@ -19,9 +19,11 @@ import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auto.value.AutoOneOf;
 import com.google.auto.value.AutoValue;
+import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.AppendRequestAndResponse;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
 import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
@@ -89,6 +91,13 @@ public class StreamWriter implements AutoCloseable {
    * A String that uniquely identifies this writer.
    */
   private final String writerId = UUID.randomUUID().toString();
+
+  /**
+   * The default missing value interpretation if the column has default value defined but not
+   * presented in the missing value map.
+   */
+  private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
+      MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
 
   /**
    * Stream can access a single connection or a pool of connection depending on whether multiplexing
@@ -201,6 +210,7 @@ public class StreamWriter implements AutoCloseable {
   private StreamWriter(Builder builder) throws IOException {
     this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
+    this.defaultMissingValueInterpretation = builder.defaultMissingValueInterpretation;
     BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
     if (!builder.enableConnectionPool) {
       this.location = builder.location;
@@ -215,7 +225,9 @@ public class StreamWriter implements AutoCloseable {
                   builder.maxRetryDuration,
                   builder.limitExceededBehavior,
                   builder.traceId,
-                  clientSettings));
+                  builder.compressorName,
+                  clientSettings,
+                  builder.retrySettings));
     } else {
       if (!isDefaultStream(streamName)) {
         log.warning(
@@ -223,6 +235,12 @@ public class StreamWriter implements AutoCloseable {
                 + builder.streamName);
         throw new IllegalArgumentException(
             "Trying to enable connection pool in non-default stream.");
+      }
+
+      if (builder.retrySettings != null) {
+        log.warning("Retry settings is only allowed when connection pool is not enabled.");
+        throw new IllegalArgumentException(
+            "Trying to enable connection pool while providing retry settings.");
       }
 
       // We need a client to perform some getWriteStream calls.
@@ -247,7 +265,8 @@ public class StreamWriter implements AutoCloseable {
                   String fetchedLocation = writeStream.getLocation();
                   log.info(
                       String.format(
-                          "Fethed location %s for stream name %s, extracted project and dataset name: %s\"",
+                          "Fethed location %s for stream name %s, extracted project and dataset"
+                              + " name: %s\"",
                           fetchedLocation, streamName, datasetAndProjectName));
                   return fetchedLocation;
                 });
@@ -275,6 +294,7 @@ public class StreamWriter implements AutoCloseable {
                         builder.maxRetryDuration,
                         builder.limitExceededBehavior,
                         builder.traceId,
+                        builder.compressorName,
                         client.getSettings());
                   }));
       validateFetchedConnectonPool(builder);
@@ -309,6 +329,10 @@ public class StreamWriter implements AutoCloseable {
     return streamMatcher.find();
   }
 
+  AppendRowsRequest.MissingValueInterpretation getDefaultValueInterpretation() {
+    return defaultMissingValueInterpretation;
+  }
+
   static BigQueryWriteSettings getBigQueryWriteSettings(Builder builder) throws IOException {
     BigQueryWriteSettings.Builder settingsBuilder = null;
     if (builder.client != null) {
@@ -318,7 +342,10 @@ public class StreamWriter implements AutoCloseable {
           new BigQueryWriteSettings.Builder()
               .setTransportChannelProvider(
                   BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
-                      .setChannelsPerCpu(1)
+                      .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))
+                      .setKeepAliveTimeout(org.threeten.bp.Duration.ofMinutes(1))
+                      .setKeepAliveWithoutCalls(true)
+                      .setChannelsPerCpu(2)
                       .build())
               .setCredentialsProvider(
                   BigQueryWriteSettings.defaultCredentialsProviderBuilder().build())
@@ -344,22 +371,24 @@ public class StreamWriter implements AutoCloseable {
 
   // Validate whether the fetched connection pool matched certain properties.
   private void validateFetchedConnectonPool(StreamWriter.Builder builder) {
-    String paramsValidatedFailed = "";
-    if (!Objects.equals(
-        this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId(),
-        builder.traceId)) {
-      paramsValidatedFailed = "Trace id";
-    } else if (!Objects.equals(
-        this.singleConnectionOrConnectionPool.connectionWorkerPool().limitExceededBehavior(),
-        builder.limitExceededBehavior)) {
-      paramsValidatedFailed = "Limit Exceeds Behavior";
-    }
-
-    if (!paramsValidatedFailed.isEmpty()) {
+    String storedTraceId =
+        this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId();
+    if (!Objects.equals(storedTraceId, builder.traceId)) {
       throw new IllegalArgumentException(
           String.format(
-              "%s used for the same connection pool for the same location must be the same!",
-              paramsValidatedFailed));
+              "Trace id used for the same connection pool for the same location must be the same, "
+                  + "however stored trace id is %s, and expected trace id is %s.",
+              storedTraceId, builder.traceId));
+    }
+    FlowController.LimitExceededBehavior storedLimitExceededBehavior =
+        singleConnectionOrConnectionPool.connectionWorkerPool().limitExceededBehavior();
+    if (!Objects.equals(storedLimitExceededBehavior, builder.limitExceededBehavior)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Limit exceeded behavior setting used for the same connection pool for the same "
+                  + "location must be the same, however stored value is %s, and expected "
+                  + "value is %s.",
+              storedLimitExceededBehavior, builder.limitExceededBehavior));
     }
   }
 
@@ -414,7 +443,7 @@ public class StreamWriter implements AutoCloseable {
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
     if (userClosed.get()) {
       AppendRequestAndResponse requestWrapper =
-          new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build(), this);
+          new AppendRequestAndResponse(AppendRowsRequest.newBuilder().build(), this, null);
       requestWrapper.appendResult.setException(
           new Exceptions.StreamWriterClosedException(
               Status.fromCode(Status.Code.FAILED_PRECONDITION)
@@ -491,12 +520,12 @@ public class StreamWriter implements AutoCloseable {
     singleConnectionOrConnectionPool.close(this);
   }
 
-  /** Constructs a new {@link StreamWriterV2.Builder} using the given stream and client. */
+  /** Constructs a new {@link StreamWriter.Builder} using the given stream and client. */
   public static StreamWriter.Builder newBuilder(String streamName, BigQueryWriteClient client) {
     return new StreamWriter.Builder(streamName, client);
   }
 
-  /** Constructs a new {@link StreamWriterV2.Builder} using the given stream. */
+  /** Constructs a new {@link StreamWriter.Builder} using the given stream. */
   public static StreamWriter.Builder newBuilder(String streamName) {
     return new StreamWriter.Builder(streamName);
   }
@@ -516,6 +545,16 @@ public class StreamWriter implements AutoCloseable {
     return creationTimestamp < tableSchemaAndTimestamp.updateTimeStamp()
         ? tableSchemaAndTimestamp.updatedSchema()
         : null;
+  }
+
+  /**
+   * Sets the maximum time a request is allowed to be waiting in request waiting queue. Under very
+   * low chance, it's possible for append request to be waiting indefintely for request callback
+   * when Google networking SDK does not detect the networking breakage. The default timeout is 15
+   * minutes. We are investigating the root cause for callback not triggered by networking SDK.
+   */
+  public static void setMaxRequestCallbackWaitTime(Duration waitTime) {
+    ConnectionWorker.MAXIMUM_REQUEST_CALLBACK_WAIT_TIME = waitTime;
   }
 
   long getCreationTimestamp() {
@@ -545,6 +584,12 @@ public class StreamWriter implements AutoCloseable {
       connectionWorkerPool = entry.getValue();
     }
     return connectionWorkerPool;
+  }
+
+  // A method to clear the static connectio pool to avoid making pool visible to other tests.
+  @VisibleForTesting
+  static void clearConnectionPool() {
+    connectionPoolMap.clear();
   }
 
   /** A builder of {@link StreamWriter}s. */
@@ -584,6 +629,14 @@ public class StreamWriter implements AutoCloseable {
 
     private java.time.Duration maxRetryDuration = Duration.ofMinutes(5);
 
+    private String compressorName = null;
+
+    // Default missing value interpretation value.
+    private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
+        MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
+
+    private RetrySettings retrySettings = null;
+
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
       this.client = null;
@@ -618,8 +671,7 @@ public class StreamWriter implements AutoCloseable {
 
     /**
      * Enable multiplexing for this writer. In multiplexing mode tables will share the same
-     * connection if possible until the connection is overwhelmed. This feature is still under
-     * development, please contact write api team before using.
+     * connection if possible until the connection is overwhelmed.
      *
      * @param enableConnectionPool
      * @return Builder
@@ -699,6 +751,51 @@ public class StreamWriter implements AutoCloseable {
      */
     public Builder setMaxRetryDuration(java.time.Duration maxRetryDuration) {
       this.maxRetryDuration = maxRetryDuration;
+      return this;
+    }
+
+    public Builder setCompressorName(String compressorName) {
+      Preconditions.checkNotNull(compressorName);
+      Preconditions.checkArgument(
+          compressorName.equals("gzip"),
+          "Compression of type \"%s\" isn't supported, only \"gzip\" compression is supported.",
+          compressorName);
+      this.compressorName = compressorName;
+      return this;
+    }
+
+    /**
+     * Sets the default missing value interpretation value if the column is not presented in the
+     * missing_value_interpretations map.
+     */
+    public Builder setDefaultMissingValueInterpretation(
+        AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation) {
+      this.defaultMissingValueInterpretation = defaultMissingValueInterpretation;
+      return this;
+    }
+
+    /**
+     * Enable client lib automatic retries on request level errors.
+     *
+     * <pre>
+     * Immeidate Retry code:
+     * ABORTED, UNAVAILABLE, CANCELLED, INTERNAL, DEADLINE_EXCEEDED
+     * Backoff Retry code:
+     * RESOURCE_EXHAUSTED
+     *
+     * Example:
+     * RetrySettings retrySettings = RetrySettings.newBuilder()
+     *      .setInitialRetryDelay(Duration.ofMillis(500)) // applies to backoff retry
+     *      .setRetryDelayMultiplier(1.1) // applies to backoff retry
+     *      .setMaxAttempts(5) // applies to both retries
+     *      .setMaxRetryDelay(Duration.ofMinutes(1)) // applies to backoff retry .build();
+     * </pre>
+     *
+     * @param retrySettings
+     * @return
+     */
+    public Builder setRetrySettings(RetrySettings retrySettings) {
+      this.retrySettings = retrySettings;
       return this;
     }
 

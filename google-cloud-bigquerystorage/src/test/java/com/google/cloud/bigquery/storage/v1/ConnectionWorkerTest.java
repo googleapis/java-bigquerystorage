@@ -25,6 +25,7 @@ import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.testing.MockGrpcService;
 import com.google.api.gax.grpc.testing.MockServiceHelper;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigquery.storage.test.Test.ComplicateType;
 import com.google.cloud.bigquery.storage.test.Test.FooType;
 import com.google.cloud.bigquery.storage.test.Test.InnerType;
@@ -51,6 +52,13 @@ public class ConnectionWorkerTest {
   private static final String TEST_STREAM_1 = "projects/p1/datasets/d1/tables/t1/streams/s1";
   private static final String TEST_STREAM_2 = "projects/p2/datasets/d2/tables/t2/streams/s2";
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
+  private static final RetrySettings retrySettings =
+      RetrySettings.newBuilder()
+          .setInitialRetryDelay(org.threeten.bp.Duration.ofMillis(500))
+          .setRetryDelayMultiplier(1.1)
+          .setMaxAttempts(3)
+          .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
+          .build();
 
   private FakeBigQueryWrite testBigQueryWrite;
   private FakeScheduledExecutorService fakeExecutor;
@@ -333,7 +341,9 @@ public class ConnectionWorkerTest {
             Duration.ofSeconds(100),
             FlowController.LimitExceededBehavior.Block,
             TEST_TRACE_ID,
-            client.getSettings());
+            null,
+            client.getSettings(),
+            retrySettings);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -388,7 +398,9 @@ public class ConnectionWorkerTest {
             Duration.ofSeconds(100),
             FlowController.LimitExceededBehavior.Block,
             TEST_TRACE_ID,
-            client.getSettings());
+            null,
+            client.getSettings(),
+            retrySettings);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -416,7 +428,11 @@ public class ConnectionWorkerTest {
           assertThrows(
               ExecutionException.class,
               () -> futures.get(finalI).get().getAppendResult().getOffset().getValue());
-      assertThat(ex.getCause()).hasMessageThat().contains("Any exception can happen.");
+      if (i == 0) {
+        assertThat(ex.getCause()).hasMessageThat().contains("Any exception can happen.");
+      } else {
+        assertThat(ex.getCause()).hasMessageThat().contains("Connection is aborted due to ");
+      }
     }
 
     // The future append will directly fail.
@@ -451,7 +467,9 @@ public class ConnectionWorkerTest {
             Duration.ofSeconds(100),
             FlowController.LimitExceededBehavior.Block,
             TEST_TRACE_ID,
-            client.getSettings());
+            null,
+            client.getSettings(),
+            retrySettings);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -481,7 +499,9 @@ public class ConnectionWorkerTest {
             Duration.ofSeconds(100),
             FlowController.LimitExceededBehavior.Block,
             TEST_TRACE_ID,
-            client.getSettings());
+            null,
+            client.getSettings(),
+            retrySettings);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -498,8 +518,8 @@ public class ConnectionWorkerTest {
 
   @Test
   public void testExponentialBackoff() throws Exception {
-    assertThat(ConnectionWorker.calculateSleepTimeMilli(0)).isEqualTo(1);
-    assertThat(ConnectionWorker.calculateSleepTimeMilli(5)).isEqualTo(32);
+    assertThat(ConnectionWorker.calculateSleepTimeMilli(0)).isEqualTo(50);
+    assertThat(ConnectionWorker.calculateSleepTimeMilli(5)).isEqualTo(1600);
     assertThat(ConnectionWorker.calculateSleepTimeMilli(100)).isEqualTo(60000);
   }
 
@@ -532,7 +552,9 @@ public class ConnectionWorkerTest {
         maxRetryDuration,
         FlowController.LimitExceededBehavior.Block,
         TEST_TRACE_ID,
-        client.getSettings());
+        null,
+        client.getSettings(),
+        retrySettings);
   }
 
   private ProtoSchema createProtoSchema(String protoName) {
@@ -625,7 +647,9 @@ public class ConnectionWorkerTest {
             Duration.ofSeconds(100),
             FlowController.LimitExceededBehavior.Block,
             TEST_TRACE_ID,
-            client.getSettings());
+            null,
+            client.getSettings(),
+            retrySettings);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(3));
 
     long appendCount = 10;
@@ -648,7 +672,11 @@ public class ConnectionWorkerTest {
           assertThrows(
               ExecutionException.class,
               () -> futures.get(finalI).get().getAppendResult().getOffset().getValue());
-      assertThat(ex.getCause()).hasMessageThat().contains("Request has waited in inflight queue");
+      if (i == 0) {
+        assertThat(ex.getCause()).hasMessageThat().contains("Request has waited in inflight queue");
+      } else {
+        assertThat(ex.getCause()).hasMessageThat().contains("Connection is aborted due to ");
+      }
     }
 
     // The future append will directly fail.
@@ -681,7 +709,9 @@ public class ConnectionWorkerTest {
             Duration.ofSeconds(100),
             FlowController.LimitExceededBehavior.Block,
             TEST_TRACE_ID,
-            client.getSettings());
+            null,
+            client.getSettings(),
+            retrySettings);
 
     long appendCount = 10;
     for (int i = 0; i < appendCount * 2; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class JsonWriterDefaultStreamIT {
+public class JsonWriterStreamCdcIT {
 
   private static final String GOOGLE_CLOUD_PROJECT = System.getenv("GOOGLE_CLOUD_PROJECT");
 
@@ -57,17 +57,26 @@ public class JsonWriterDefaultStreamIT {
     bigquery = BigQueryOptions.getDefaultInstance().getService();
 
     // Create a new dataset for each test.
-    datasetName = "JAVA_WRITER_DEFAULT_STREAM_TEST" + UUID.randomUUID().toString().substring(0, 8);
+    datasetName = "JAVA_WRITER_STREAM_CDC_TEST" + UUID.randomUUID().toString().substring(0, 8);
     bigquery.create(DatasetInfo.newBuilder(datasetName).build());
   }
 
   @Test
-  public void testJsonWriterDefaultStream() throws Exception {
-    Path dataFilePath = FileSystems.getDefault().getPath("src/test/resources", "TestData.json");
+  public void testJsonWriterStreamCdc() throws Exception {
+    Path newCustomersDataFilePath =
+        FileSystems.getDefault().getPath("../snippets/src/test/resources", "NewCustomers.json");
+    Path modifiedCustomersDataFilePath =
+        FileSystems.getDefault()
+            .getPath("../snippets/src/test/resources", "ModifiedCustomers.json");
+    String[] args = {
+      GOOGLE_CLOUD_PROJECT,
+      datasetName,
+      "customers",
+      newCustomersDataFilePath.toAbsolutePath().toString(),
+      modifiedCustomersDataFilePath.toAbsolutePath().toString()
+    };
 
-    System.out.println(dataFilePath.toString());
-    String[] args = {GOOGLE_CLOUD_PROJECT, datasetName, "github", dataFilePath.toString()};
-    JsonWriterDefaultStream.main(args);
+    JsonWriterStreamCdc.main(args);
     assertThat(bout.toString()).contains("Wrote batch");
   }
 

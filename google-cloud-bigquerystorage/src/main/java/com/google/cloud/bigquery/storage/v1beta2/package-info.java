@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,10 @@
  * <p>Service Description: BigQuery Write API.
  *
  * <p>The Write API can be used to write data to BigQuery.
+ *
+ * <p>The [google.cloud.bigquery.storage.v1
+ * API](/bigquery/docs/reference/storage/rpc/google.cloud.bigquery.storage.v1) should be used
+ * instead of the v1beta2 API for BigQueryWrite operations.
  *
  * <p>Sample for BigQueryWriteClient:
  *

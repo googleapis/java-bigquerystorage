@@ -18,6 +18,7 @@ package com.google.cloud.bigquery.storage.v1;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutures;
 import com.google.api.gax.batching.FlowController;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.auto.value.AutoValue;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.Load;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
@@ -41,6 +42,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 /** Pool of connections to accept appends and distirbute to different connections. */
@@ -63,6 +65,8 @@ public class ConnectionWorkerPool {
    * Max retry duration for retryable errors.
    */
   private final java.time.Duration maxRetryDuration;
+
+  private RetrySettings retrySettings;
 
   /*
    * Behavior when inflight queue is exceeded. Only supports Block or Throw, default is Block.
@@ -91,6 +95,10 @@ public class ConnectionWorkerPool {
    * TraceId for debugging purpose.
    */
   private final String traceId;
+  /*
+   * Sets the compression to use for the calls
+   */
+  private String compressorName;
 
   /** Used for test on the number of times createWorker is called. */
   private final AtomicInteger testValueCreateConnectionCount = new AtomicInteger(0);
@@ -199,14 +207,18 @@ public class ConnectionWorkerPool {
       java.time.Duration maxRetryDuration,
       FlowController.LimitExceededBehavior limitExceededBehavior,
       String traceId,
+      @Nullable String comperssorName,
       BigQueryWriteSettings clientSettings) {
     this.maxInflightRequests = maxInflightRequests;
     this.maxInflightBytes = maxInflightBytes;
     this.maxRetryDuration = maxRetryDuration;
     this.limitExceededBehavior = limitExceededBehavior;
     this.traceId = traceId;
+    this.compressorName = comperssorName;
     this.clientSettings = clientSettings;
     this.currentMaxConnectionCount = settings.minConnectionsPerRegion();
+    // In-stream retry is not enabled for multiplexing.
+    this.retrySettings = null;
   }
 
   /**
@@ -379,7 +391,9 @@ public class ConnectionWorkerPool {
             maxRetryDuration,
             limitExceededBehavior,
             traceId,
-            clientSettings);
+            compressorName,
+            clientSettings,
+            retrySettings);
     connectionWorkerPool.add(connectionWorker);
     log.info(
         String.format(
