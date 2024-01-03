@@ -888,11 +888,18 @@ public class JsonToProtoMessageTest {
         TableSchema.newBuilder()
             .addFields(TableFieldSchema.newBuilder(TEST_DATE).setName("test_string").build())
             .addFields(TableFieldSchema.newBuilder(TEST_DATE).setName("test_long").build())
+            .addFields(TableFieldSchema.newBuilder(TEST_DATE).setName("test_iso_string").build())
             .build();
-    TestDate expectedProto = TestDate.newBuilder().setTestString(18935).setTestLong(18935).build();
+    TestDate expectedProto =
+        TestDate.newBuilder()
+            .setTestString(18935)
+            .setTestLong(18935)
+            .setTestIsoString("1999-01-01")
+            .build();
     JSONObject json = new JSONObject();
     json.put("test_string", "2021-11-04");
     json.put("test_long", 18935L);
+    json.put("test_iso_string", "1999-01-01");
     DynamicMessage protoMsg =
         JsonToProtoMessage.INSTANCE.convertToProtoMessage(
             TestDate.getDescriptor(), tableSchema, json);

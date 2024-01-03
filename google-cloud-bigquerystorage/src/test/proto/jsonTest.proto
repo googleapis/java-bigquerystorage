@@ -170,6 +170,7 @@ message TestRepeatedTimestamp {
 message TestDate {
   optional int32 test_string = 1;
   optional int32 test_long = 2;
+  optional string test_iso_string = 3;
 }
 
 message NestedRepeated {

@@ -647,6 +647,12 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         }
         break;
       case STRING:
+        if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATE) {
+          if (val instanceof String) {
+            protoMsg.setField(fieldDescriptor, (String) val);
+            return;
+          }
+        }
         if (val instanceof String) {
           protoMsg.setField(fieldDescriptor, val);
           return;
@@ -908,6 +914,12 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           }
           break;
         case STRING:
+          if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.DATE) {
+            if (val instanceof String) {
+              protoMsg.setField(fieldDescriptor, (String) val);
+              return;
+            }
+          }
           if (val instanceof String) {
             protoMsg.addRepeatedField(fieldDescriptor, val);
           } else {
