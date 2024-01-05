@@ -1369,8 +1369,7 @@ class ConnectionWorker implements AutoCloseable {
     INFLIGHT_QUOTA_MAX_WAIT_TIME_MILLI = waitTime;
   }
 
-  @VisibleForTesting
-  static void setMaxInflightRequestWaitTime(Duration waitTime) {
+  public static void setMaxInflightRequestWaitTime(Duration waitTime) {
     MAXIMUM_REQUEST_CALLBACK_WAIT_TIME = waitTime;
   }
 
