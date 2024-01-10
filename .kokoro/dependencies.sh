@@ -73,17 +73,24 @@ function completenessCheck() {
   mvn dependency:list -f .flattened-pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore,protobuf-java-util,google-http-client -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.new-list.txt
 
   # Compare two dependency lists
-  msg "Comparing dependency lists..."
-  # diff .org-list.txt .new-list.txt >.diff.txt
+  # msg "Comparing dependency lists..."
+  msg "*****original pom contents start*****" 
+  cat .org-list.txt
+  msg "*****original pom contents end*****"
+  msg "*****new pom contents start*****"
+  cat .new-list.txt
+  msg "*****new pom contents end*****"
+  
+  # diff .org-list.txt .new-list.txt >.diff.txt 
   diff_result=$(diff .org-list.txt .new-list.txt)
   if [[ $? == 0 ]]
     then
       msg "Success. No diff!"
   else
     msg "Diff found. See below: "
-    echo "*************** the diff result starts ***************"
-    echo "$diff_result"
-    echo "*************** the diff result ends ***************"
+    # echo "*************** the diff result starts ***************"
+    # echo "$diff_result"
+    # echo "*************** the diff result ends ***************"
     msg "You can also check .diff.txt file located in $1."
     cat .diff.txt
     return 1
