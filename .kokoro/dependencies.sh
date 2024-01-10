@@ -74,12 +74,14 @@ function completenessCheck() {
 
   # Compare two dependency lists
   msg "Comparing dependency lists..."
-  diff .org-list.txt .new-list.txt >.diff.txt
+  # diff .org-list.txt .new-list.txt >.diff.txt
+  diff_result=$(diff .org-list.txt .new-list.txt)
   if [[ $? == 0 ]]
     then
       msg "Success. No diff!"
   else
     msg "Diff found. See below: "
+    echo "$diff_result"
     msg "You can also check .diff.txt file located in $1."
     cat .diff.txt
     return 1
