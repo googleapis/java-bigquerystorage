@@ -67,18 +67,20 @@ function completenessCheck() {
   # Only dependencies with 'compile' or 'runtime' scope are included from original dependency list.
   msg "Generating dependency list using original pom..."
   mvn dependency:list -f pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore,protobuf-java-util,google-http-client -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' | sed -e 's/ --.*//' >.org-list.txt
+  mvn dependency:list -f pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore,protobuf-java-util,google-http-client -Dsort=true >.org-list-tree.txt
 
   # Output dep list generated using the flattened pom (only 'compile' and 'runtime' scopes)
   msg "Generating dependency list using flattened pom..."
   mvn dependency:list -f .flattened-pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore,protobuf-java-util,google-http-client -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.new-list.txt
-
+  mvn dependency:list -f .flattened-pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore,protobuf-java-util,google-http-client -Dsort=true >.new-list-tree.txt
+  
   # Compare two dependency lists
   # msg "Comparing dependency lists..."
   msg "*****original pom contents start*****" 
-  cat .org-list.txt
+  cat .org-list-tree.txt
   msg "*****original pom contents end*****"
   msg "*****new pom contents start*****"
-  cat .new-list.txt
+  cat .new-list-tree.txt
   msg "*****new pom contents end*****"
   
   # diff .org-list.txt .new-list.txt >.diff.txt 
