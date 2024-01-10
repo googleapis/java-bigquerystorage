@@ -81,7 +81,9 @@ function completenessCheck() {
       msg "Success. No diff!"
   else
     msg "Diff found. See below: "
+    echo "*************** the diff result starts ***************"
     echo "$diff_result"
+    echo "*************** the diff result ends ***************"
     msg "You can also check .diff.txt file located in $1."
     cat .diff.txt
     return 1
