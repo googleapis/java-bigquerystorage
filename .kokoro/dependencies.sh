@@ -67,24 +67,19 @@ function completenessCheck() {
   # Only dependencies with 'compile' or 'runtime' scope are included from original dependency list.
   msg "Generating dependency list using original pom..."
   mvn dependency:list -f pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore,protobuf-java-util,google-http-client,annotations -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' | sed -e 's/ --.*//' >.org-list.txt
-  # mvn dependency:tree -f pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore,protobuf-java-util,google-http-client -Dsort=true >.org-list-tree.txt
 
   # Output dep list generated using the flattened pom (only 'compile' and 'runtime' scopes)
   msg "Generating dependency list using flattened pom..."
   mvn dependency:list -f .flattened-pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore,protobuf-java-util,google-http-client,annotations -Dsort=true | grep '\[INFO]    .*:.*:.*:.*:.*' >.new-list.txt
-  # mvn dependency:tree -f .flattened-pom.xml -DincludeScope=runtime -DexcludeArtifactIds=gson,commons-codec,commons-logging,opencensus-api,opencensus-contrib-http-util,httpclient,httpcore,protobuf-java-util,google-http-client -Dsort=true >.new-list-tree.txt
-  
-  
-  diff .org-list.txt .new-list.txt >.diff.txt 
-  # diff_result=$(diff .org-list.txt .new-list.txt)
+
+  # Compare two dependency lists
+  msg "Comparing dependency lists..."
+  diff .org-list.txt .new-list.txt >.diff.txt
   if [[ $? == 0 ]]
     then
       msg "Success. No diff!"
   else
     msg "Diff found. See below: "
-    # echo "*************** the diff result starts ***************"
-    # echo "$diff_result"
-    # echo "*************** the diff result ends ***************"
     msg "You can also check .diff.txt file located in $1."
     cat .diff.txt
     return 1
