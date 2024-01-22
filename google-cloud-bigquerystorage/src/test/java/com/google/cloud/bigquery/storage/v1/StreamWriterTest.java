@@ -1410,6 +1410,7 @@ public class StreamWriterTest {
         .setMaxInflightRequests(10)
         .setLocation("US")
         .setMaxRetryDuration(java.time.Duration.ofMillis(100))
+        .setRetrySettings(retrySettings)
         .build();
   }
 
