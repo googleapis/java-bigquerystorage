@@ -1182,7 +1182,7 @@ class ConnectionWorker implements AutoCloseable {
                     <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
           log.info(
-              "Retriable error "
+              "Don't worry, connection is going to be reconnected. Retriable error "
                   + finalStatus.toString()
                   + " received, retry count "
                   + conectionRetryCountWithoutCallback
