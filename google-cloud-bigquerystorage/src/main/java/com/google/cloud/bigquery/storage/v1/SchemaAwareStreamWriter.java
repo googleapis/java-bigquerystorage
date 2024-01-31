@@ -97,11 +97,13 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
         builder.traceIdBase,
         builder.traceId,
         builder.compressorName,
-        builder.retrySettings);
+        builder.retrySettings,
+        builder.clientId);
     streamWriterBuilder.setEnableConnectionPool(builder.enableConnectionPool);
     streamWriterBuilder.setLocation(builder.location);
     streamWriterBuilder.setDefaultMissingValueInterpretation(
         builder.defaultMissingValueInterpretation);
+    streamWriterBuilder.setClientId(clientId);
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
@@ -282,10 +284,10 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
       @Nullable ExecutorProvider executorProvider,
       @Nullable String endpoint,
       @Nullable FlowControlSettings flowControlSettings,
-      @Nullable String traceIdBase,
       @Nullable String traceId,
       @Nullable String compressorName,
-      @Nullable RetrySettings retrySettings) {
+      @Nullable RetrySettings retrySettings,
+      @Nullable String clientId) {
     if (channelProvider != null) {
       streamWriterBuilder.setChannelProvider(channelProvider);
     }
@@ -298,18 +300,11 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     if (endpoint != null) {
       streamWriterBuilder.setEndpoint(endpoint);
     }
-    if (traceIdBase != null) {
-      if (traceId != null) {
-        streamWriterBuilder.setTraceId(traceIdBase + "_" + traceId);
-      } else {
-        streamWriterBuilder.setTraceId(traceIdBase + ":null");
-      }
-    } else {
-      if (traceId != null) {
-        streamWriterBuilder.setTraceId("SchemaAwareStreamWriter_" + traceId);
-      } else {
-        streamWriterBuilder.setTraceId("SchemaAwareStreamWriter:null");
-      }
+    if (traceId != null) {
+      streamWriterBuilder.setTraceId(traceId);
+    }
+    if (clientId != null) {
+      streamWriterBuilder.setClientId(clientId);
     }
     if (flowControlSettings != null) {
       if (flowControlSettings.getMaxOutstandingRequestBytes() != null) {
@@ -330,6 +325,9 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
     if (retrySettings != null) {
       streamWriterBuilder.setRetrySettings(retrySettings);
+    }
+    if (clientId != null) {
+      streamWriterBuilder.setClientId(clientId);
     }
   }
 
@@ -581,14 +579,8 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
       return this;
     }
 
-    /**
-     * Setter for a traceIdBase to help identify traffic origin.
-     *
-     * @param traceIdBase
-     * @return Builder
-     */
-    public Builder<T> setTraceIdBase(String traceIdBase) {
-      this.traceIdBase = Preconditions.checkNotNull(traceIdBase, "TraceIdBase is null.");
+    Builder<T> setClientId(String clientId) {
+      this.traceId = Preconditions.checkNotNull(traceId, "ClientId is null.");
       return this;
     }
 

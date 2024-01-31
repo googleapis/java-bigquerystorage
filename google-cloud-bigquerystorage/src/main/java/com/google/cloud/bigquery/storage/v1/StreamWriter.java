@@ -19,6 +19,7 @@ import com.google.api.core.ApiFuture;
 import com.google.api.gax.batching.FlowController;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
+import com.google.api.gax.core.GaxProperties;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auto.value.AutoOneOf;
@@ -27,6 +28,7 @@ import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterp
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.AppendRequestAndResponse;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
 import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
+import com.google.cloud.bigquery.storage.v1.stub.BigQueryWriteStubSettings;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import io.grpc.Status;
@@ -83,6 +85,10 @@ public class StreamWriter implements AutoCloseable {
   private final String location;
 
   /*
+   * TraceId of this Writer.
+   */
+  private final String traceId;
+  /*
    * If user has closed the StreamWriter.
    */
   private AtomicBoolean userClosed = new AtomicBoolean(false);
@@ -92,6 +98,7 @@ public class StreamWriter implements AutoCloseable {
    */
   private final String writerId = UUID.randomUUID().toString();
 
+  private String clientId = "java-streamwriter";
   /**
    * The default missing value interpretation if the column has default value defined but not
    * presented in the missing value map.
@@ -211,6 +218,11 @@ public class StreamWriter implements AutoCloseable {
     this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
     this.defaultMissingValueInterpretation = builder.defaultMissingValueInterpretation;
+    if (builder.traceId.isEmpty()) {
+      this.traceId = builder.clientId;
+    } else {
+      this.traceId = builder.clientId + " " + builder.traceId;
+    }
     BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
     if (!builder.enableConnectionPool) {
       this.location = builder.location;
@@ -224,7 +236,7 @@ public class StreamWriter implements AutoCloseable {
                   builder.maxInflightBytes,
                   builder.maxRetryDuration,
                   builder.limitExceededBehavior,
-                  builder.traceId,
+                  this.traceId,
                   builder.compressorName,
                   clientSettings,
                   builder.retrySettings));
@@ -287,7 +299,7 @@ public class StreamWriter implements AutoCloseable {
                         builder.maxInflightBytes,
                         builder.maxRetryDuration,
                         builder.limitExceededBehavior,
-                        builder.traceId,
+                        this.traceId,
                         builder.compressorName,
                         client.getSettings(),
                         builder.retrySettings);
@@ -616,6 +628,8 @@ public class StreamWriter implements AutoCloseable {
 
     private String traceId = null;
 
+    private String clientId = "java-streamwriter";
+
     private TableSchema updatedTableSchema = null;
 
     private String location = null;
@@ -632,14 +646,25 @@ public class StreamWriter implements AutoCloseable {
 
     private RetrySettings retrySettings = null;
 
+    private String GetTraceId() {
+      String version = GaxProperties.getLibraryVersion(
+          StreamWriter.class);
+      if (version.isEmpty()) {
+        return clientId;
+      } else {
+        return clientId + ":" + version;
+      }
+    }
     private Builder(String streamName) {
       this.streamName = Preconditions.checkNotNull(streamName);
       this.client = null;
+      this.traceId = GetTraceId();
     }
 
     private Builder(String streamName, BigQueryWriteClient client) {
       this.streamName = Preconditions.checkNotNull(streamName);
       this.client = Preconditions.checkNotNull(client);
+      this.traceId = GetTraceId();
     }
 
     /** Sets the proto schema of the rows. */
@@ -714,6 +739,14 @@ public class StreamWriter implements AutoCloseable {
             "TraceId must follow the format of A:B. Actual:" + traceId);
       }
       this.traceId = traceId;
+      return this;
+    }
+
+    /**
+     * Sets the client id of the writer, for example, JsonStreamWriter has the client id of "java-jsonwriter".
+     */
+    Builder setClientId(String clientId) {
+      this.clientId = clientId;
       return this;
     }
 
