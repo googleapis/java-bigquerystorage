@@ -215,7 +215,6 @@ public class StreamWriter implements AutoCloseable {
     this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
     this.defaultMissingValueInterpretation = builder.defaultMissingValueInterpretation;
-    log.info("client id:" + builder.clientId + " trace id:" + builder.traceId);
     this.traceId = builder.getFullTraceId();
     BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
     if (!builder.enableConnectionPool) {
