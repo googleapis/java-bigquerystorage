@@ -83,10 +83,6 @@ public class StreamWriter implements AutoCloseable {
   private final String location;
 
   /*
-   * TraceId of this Writer.
-   */
-  private final String traceId;
-  /*
    * If user has closed the StreamWriter.
    */
   private AtomicBoolean userClosed = new AtomicBoolean(false);
@@ -215,7 +211,6 @@ public class StreamWriter implements AutoCloseable {
     this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
     this.defaultMissingValueInterpretation = builder.defaultMissingValueInterpretation;
-    this.traceId = builder.getFullTraceId();
     BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
     if (!builder.enableConnectionPool) {
       this.location = builder.location;
@@ -229,7 +224,7 @@ public class StreamWriter implements AutoCloseable {
                   builder.maxInflightBytes,
                   builder.maxRetryDuration,
                   builder.limitExceededBehavior,
-                  this.traceId,
+                  builder.getFullTraceId(),
                   builder.compressorName,
                   clientSettings,
                   builder.retrySettings));
@@ -292,7 +287,7 @@ public class StreamWriter implements AutoCloseable {
                         builder.maxInflightBytes,
                         builder.maxRetryDuration,
                         builder.limitExceededBehavior,
-                        this.traceId,
+                        builder.getFullTraceId(),
                         builder.compressorName,
                         client.getSettings(),
                         builder.retrySettings);
