@@ -94,16 +94,14 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
         builder.executorProvider,
         builder.endpoint,
         builder.flowControlSettings,
-        builder.traceIdBase,
         builder.traceId,
         builder.compressorName,
-        builder.retrySettings,
-        builder.clientId);
+        builder.retrySettings);
     streamWriterBuilder.setEnableConnectionPool(builder.enableConnectionPool);
     streamWriterBuilder.setLocation(builder.location);
     streamWriterBuilder.setDefaultMissingValueInterpretation(
         builder.defaultMissingValueInterpretation);
-    streamWriterBuilder.setClientId(clientId);
+    streamWriterBuilder.setClientId(builder.clientId);
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
@@ -286,8 +284,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
       @Nullable FlowControlSettings flowControlSettings,
       @Nullable String traceId,
       @Nullable String compressorName,
-      @Nullable RetrySettings retrySettings,
-      @Nullable String clientId) {
+      @Nullable RetrySettings retrySettings) {
     if (channelProvider != null) {
       streamWriterBuilder.setChannelProvider(channelProvider);
     }
@@ -302,9 +299,6 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
     if (traceId != null) {
       streamWriterBuilder.setTraceId(traceId);
-    }
-    if (clientId != null) {
-      streamWriterBuilder.setClientId(clientId);
     }
     if (flowControlSettings != null) {
       if (flowControlSettings.getMaxOutstandingRequestBytes() != null) {
@@ -325,9 +319,6 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
     if (retrySettings != null) {
       streamWriterBuilder.setRetrySettings(retrySettings);
-    }
-    if (clientId != null) {
-      streamWriterBuilder.setClientId(clientId);
     }
   }
 
@@ -443,6 +434,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
 
     private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
         MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
+    private String clientId;
 
     private static final String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
@@ -580,7 +572,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
 
     Builder<T> setClientId(String clientId) {
-      this.traceId = Preconditions.checkNotNull(traceId, "ClientId is null.");
+      this.clientId = Preconditions.checkNotNull(clientId, "ClientId is null.");
       return this;
     }
 
