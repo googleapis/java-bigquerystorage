@@ -37,6 +37,7 @@ import org.json.JSONArray;
  */
 public class JsonStreamWriter implements AutoCloseable {
   private final SchemaAwareStreamWriter<Object> schemaAwareStreamWriter;
+  static private final String CLIENT_ID = "java-jsonwriter";
 
   /**
    * Constructs the JsonStreamWriter
@@ -228,7 +229,7 @@ public class JsonStreamWriter implements AutoCloseable {
 
     private Builder(SchemaAwareStreamWriter.Builder<Object> schemaAwareStreamWriterBuilder) {
       this.schemaAwareStreamWriterBuilder =
-          schemaAwareStreamWriterBuilder.setClientId("java-jsonwriter");
+          schemaAwareStreamWriterBuilder.setClientId(CLIENT_ID);
     }
 
     /**
