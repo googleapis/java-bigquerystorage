@@ -22,6 +22,7 @@ import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
 import com.google.api.gax.core.FixedExecutorProvider;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.BigQueryOptions;
 import com.google.cloud.bigquery.QueryJobConfiguration;
@@ -49,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.threeten.bp.Duration;
 
 public class WriteToDefaultStream {
 
@@ -62,7 +64,7 @@ public class WriteToDefaultStream {
   }
 
   private static ByteString buildByteString() {
-    byte[] bytes = new byte[] {1, 2, 3, 4, 5};
+    byte[] bytes = new byte[]{1, 2, 3, 4, 5};
     return ByteString.copyFrom(bytes);
   }
 
@@ -163,6 +165,15 @@ public class WriteToDefaultStream {
 
     public void initialize(TableName parentTable)
         throws DescriptorValidationException, IOException, InterruptedException {
+      // Configure in-stream automatic retry settings.
+      RetrySettings retrySettings =
+          RetrySettings.newBuilder()
+              .setInitialRetryDelay(Duration.ofMillis(500))
+              .setRetryDelayMultiplier(1.1)
+              .setMaxAttempts(5)
+              .setMaxRetryDelay(Duration.ofMinutes(1))
+              .build();
+
       // Use the JSON stream writer to send records in JSON format. Specify the table name to write
       // to the default stream.
       // For more information about JsonStreamWriter, see:
@@ -183,6 +194,7 @@ public class WriteToDefaultStream {
               // column, apply the default value to the missing value field.
               .setDefaultMissingValueInterpretation(
                   AppendRowsRequest.MissingValueInterpretation.DEFAULT_VALUE)
+              .setRetrySettings(retrySettings)
               .build();
     }
 

@@ -21,6 +21,7 @@ package com.example.bigquerystorage;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.BatchCommitWriteStreamsRequest;
 import com.google.cloud.bigquery.storage.v1.BatchCommitWriteStreamsResponse;
@@ -41,6 +42,7 @@ import java.util.concurrent.Phaser;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.threeten.bp.Duration;
 
 public class WritePendingStream {
 
@@ -129,6 +131,15 @@ public class WritePendingStream {
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/WriteStream.Type.html
       WriteStream stream = WriteStream.newBuilder().setType(WriteStream.Type.PENDING).build();
 
+      // Configure in-stream automatic retry settings.
+      RetrySettings retrySettings =
+          RetrySettings.newBuilder()
+              .setInitialRetryDelay(Duration.ofMillis(500))
+              .setRetryDelayMultiplier(1.1)
+              .setMaxAttempts(5)
+              .setMaxRetryDelay(Duration.ofMinutes(1))
+              .build();
+
       CreateWriteStreamRequest createWriteStreamRequest =
           CreateWriteStreamRequest.newBuilder()
               .setParent(parentTable.toString())
@@ -140,7 +151,8 @@ public class WritePendingStream {
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter.html
       streamWriter =
-          JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build();
+          JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
+              .setRetrySettings(retrySettings).build();
     }
 
     public void append(JSONArray data, long offset)

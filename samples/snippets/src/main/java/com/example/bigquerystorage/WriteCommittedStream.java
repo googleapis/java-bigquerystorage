@@ -17,9 +17,11 @@
 package com.example.bigquerystorage;
 
 // [START bigquerystorage_jsonstreamwriter_committed]
+
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;
 import com.google.cloud.bigquery.storage.v1.BigQueryWriteClient;
 import com.google.cloud.bigquery.storage.v1.CreateWriteStreamRequest;
@@ -37,6 +39,7 @@ import java.util.concurrent.Phaser;
 import javax.annotation.concurrent.GuardedBy;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.threeten.bp.Duration;
 
 public class WriteCommittedStream {
 
@@ -113,11 +116,21 @@ public class WriteCommittedStream {
               .build();
       WriteStream writeStream = client.createWriteStream(createWriteStreamRequest);
 
+      // Configure in-stream automatic retry settings.
+      RetrySettings retrySettings =
+          RetrySettings.newBuilder()
+              .setInitialRetryDelay(Duration.ofMillis(500))
+              .setRetryDelayMultiplier(1.1)
+              .setMaxAttempts(5)
+              .setMaxRetryDelay(Duration.ofMinutes(1))
+              .build();
+
       // Use the JSON stream writer to send records in JSON format.
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
       streamWriter =
           JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema(), client)
+              .setRetrySettings(retrySettings)
               .build();
     }
 
