@@ -155,7 +155,8 @@ public class WritePendingStream {
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1beta2/JsonStreamWriter.html
       streamWriter =
           JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema())
-              .setRetrySettings(retrySettings).build();
+              .setRetrySettings(retrySettings)
+              .build();
     }
 
     public void append(JSONArray data, long offset)

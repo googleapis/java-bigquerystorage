@@ -174,7 +174,8 @@ public class JsonWriterStreamCdc {
     TableName parentTable = TableName.of(projectId, datasetName, tableName);
     try (JsonStreamWriter writer =
         JsonStreamWriter.newBuilder(parentTable.toString(), tableSchema)
-            .setRetrySettings(retrySettings).build()) {
+            .setRetrySettings(retrySettings)
+            .build()) {
 
       ApiFuture<AppendRowsResponse> future = writer.append(data);
       // The append method is asynchronous. Rather than waiting for the method to complete,

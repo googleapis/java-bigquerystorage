@@ -35,12 +35,9 @@ import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.Exceptions.StorageException;
 import com.google.cloud.bigquery.storage.v1.JsonStreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableName;
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
-import io.grpc.Status;
-import io.grpc.Status.Code;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -63,7 +60,7 @@ public class WriteToDefaultStream {
   }
 
   private static ByteString buildByteString() {
-    byte[] bytes = new byte[]{1, 2, 3, 4, 5};
+    byte[] bytes = new byte[] {1, 2, 3, 4, 5};
     return ByteString.copyFrom(bytes);
   }
 
