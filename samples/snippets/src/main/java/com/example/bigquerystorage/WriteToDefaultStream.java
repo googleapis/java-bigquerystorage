@@ -99,7 +99,7 @@ public class WriteToDefaultStream {
         jsonArr.put(record);
       }
 
-      writer.append(new AppendContext(jsonArr, 0));
+      writer.append(new AppendContext(jsonArr));
     }
 
     // Final cleanup for the stream during worker teardown.
@@ -132,26 +132,15 @@ public class WriteToDefaultStream {
   private static class AppendContext {
 
     JSONArray data;
-    int retryCount = 0;
 
-    AppendContext(JSONArray data, int retryCount) {
+    AppendContext(JSONArray data) {
       this.data = data;
-      this.retryCount = retryCount;
     }
   }
 
   private static class DataWriter {
 
-    private static final int MAX_RETRY_COUNT = 3;
     private static final int MAX_RECREATE_COUNT = 3;
-    private static final ImmutableList<Code> RETRIABLE_ERROR_CODES =
-        ImmutableList.of(
-            Code.INTERNAL,
-            Code.ABORTED,
-            Code.CANCELLED,
-            Code.FAILED_PRECONDITION,
-            Code.DEADLINE_EXCEEDED,
-            Code.UNAVAILABLE);
 
     // Track the number of in-flight requests to wait for all responses before shutting down.
     private final Phaser inflightRequestCount = new Phaser(1);
@@ -166,6 +155,10 @@ public class WriteToDefaultStream {
     public void initialize(TableName parentTable)
         throws DescriptorValidationException, IOException, InterruptedException {
       // Configure in-stream automatic retry settings.
+      // Error codes that are immediately retried:
+      // * ABORTED, UNAVAILABLE, CANCELLED, INTERNAL, DEADLINE_EXCEEDED
+      // Error codes that are retried with exponential backoff:
+      // * RESOURCE_EXHAUSTED
       RetrySettings retrySettings =
           RetrySettings.newBuilder()
               .setInitialRetryDelay(Duration.ofMillis(500))
@@ -256,26 +249,6 @@ public class WriteToDefaultStream {
       }
 
       public void onFailure(Throwable throwable) {
-        // If the wrapped exception is a StatusRuntimeException, check the state of the operation.
-        // If the state is INTERNAL, CANCELLED, or ABORTED, you can retry. For more information,
-        // see: https://grpc.github.io/grpc-java/javadoc/io/grpc/StatusRuntimeException.html
-        Status status = Status.fromThrowable(throwable);
-        if (appendContext.retryCount < MAX_RETRY_COUNT
-            && RETRIABLE_ERROR_CODES.contains(status.getCode())) {
-          appendContext.retryCount++;
-          try {
-            // Since default stream appends are not ordered, we can simply retry the appends.
-            // Retrying with exclusive streams requires more careful consideration.
-            this.parent.append(appendContext);
-            // Mark the existing attempt as done since it's being retried.
-            done();
-            return;
-          } catch (Exception e) {
-            // Fall through to return error.
-            System.out.format("Failed to retry append: %s\n", e);
-          }
-        }
-
         if (throwable instanceof AppendSerializationError) {
           AppendSerializationError ase = (AppendSerializationError) throwable;
           Map<Integer, String> rowIndexToErrorMessage = ase.getRowIndexToErrorMessage();
@@ -294,7 +267,7 @@ public class WriteToDefaultStream {
             // avoid potentially blocking while we are in a callback.
             if (dataNew.length() > 0) {
               try {
-                this.parent.append(new AppendContext(dataNew, 0));
+                this.parent.append(new AppendContext(dataNew));
               } catch (DescriptorValidationException e) {
                 throw new RuntimeException(e);
               } catch (IOException e) {

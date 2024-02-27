@@ -132,6 +132,10 @@ public class WritePendingStream {
       WriteStream stream = WriteStream.newBuilder().setType(WriteStream.Type.PENDING).build();
 
       // Configure in-stream automatic retry settings.
+      // Error codes that are immediately retried:
+      // * ABORTED, UNAVAILABLE, CANCELLED, INTERNAL, DEADLINE_EXCEEDED
+      // Error codes that are retried with exponential backoff:
+      // * RESOURCE_EXHAUSTED
       RetrySettings retrySettings =
           RetrySettings.newBuilder()
               .setInitialRetryDelay(Duration.ofMillis(500))

@@ -65,6 +65,10 @@ public class WriteBufferedStream {
       WriteStream writeStream = client.createWriteStream(createWriteStreamRequest);
 
       // Configure in-stream automatic retry settings.
+      // Error codes that are immediately retried:
+      // * ABORTED, UNAVAILABLE, CANCELLED, INTERNAL, DEADLINE_EXCEEDED
+      // Error codes that are retried with exponential backoff:
+      // * RESOURCE_EXHAUSTED
       RetrySettings retrySettings =
           RetrySettings.newBuilder()
               .setInitialRetryDelay(Duration.ofMillis(500))
