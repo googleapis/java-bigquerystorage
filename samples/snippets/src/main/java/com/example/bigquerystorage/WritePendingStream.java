@@ -17,7 +17,6 @@
 package com.example.bigquerystorage;
 
 // [START bigquerystorage_jsonstreamwriter_pending]
-
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;

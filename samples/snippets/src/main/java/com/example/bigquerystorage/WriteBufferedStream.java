@@ -17,7 +17,6 @@
 package com.example.bigquerystorage;
 
 // [START bigquerystorage_jsonstreamwriter_buffered]
-
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.bigquery.storage.v1.AppendRowsResponse;

@@ -269,8 +269,8 @@ public class ParallelWriteCommittedStream {
                   + metricsTimeMillis
                   + "ms. Successful MB Per Second: "
                   + (double) (successCountInIteration * BATCH_SIZE * ROW_SIZE)
-                  / metricsTimeMillis
-                  / 1000
+                      / metricsTimeMillis
+                      / 1000
                   + " Current inflight: "
                   + parent.inflightCount);
           parent.lastMetricsTimeMillis = System.currentTimeMillis();

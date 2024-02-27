@@ -199,7 +199,6 @@ public class JsonWriterStreamCdc {
   }
 
   static class AppendCompleteCallback implements ApiFutureCallback<AppendRowsResponse> {
-
     private static final Object lock = new Object();
     private static int batchCount = 0;
 
