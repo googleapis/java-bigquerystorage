@@ -31,6 +31,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.RetryOption;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.Field.Mode;
 import com.google.cloud.bigquery.Job;
@@ -168,12 +169,12 @@ public class ITBigQueryStorageTest {
             "%s tests running with parent project: %s",
             ITBigQueryStorageTest.class.getSimpleName(), parentProjectId));
 
-    // RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
-    // bigquery = bigqueryHelper.getOptions().getService();
-    // DatasetInfo datasetInfo =
-    //     DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
-    // bigquery.create(datasetInfo);
-    // LOG.info("Created test dataset: " + DATASET);
+    RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
+    bigquery = bigqueryHelper.getOptions().getService();
+    DatasetInfo datasetInfo =
+        DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
+    bigquery.create(datasetInfo);
+    LOG.info("Created test dataset: " + DATASET);
   }
 
   @AfterClass
@@ -923,6 +924,7 @@ public class ITBigQueryStorageTest {
                   .contains("does not match the universe domain found in the credentials")))
           .isTrue();
     }
+    localClient.close();
   }
 
   @Test
@@ -956,6 +958,7 @@ public class ITBigQueryStorageTest {
                   .contains("does not match the universe domain found in the credentials")))
           .isTrue();
     }
+    localClient.close();
   }
 
   @Test
@@ -998,6 +1001,7 @@ public class ITBigQueryStorageTest {
     }
 
     assertEquals(164_656, rowCount);
+    localClient.close();
   }
 
   public void testUniverseDomain() throws IOException {
@@ -1034,6 +1038,7 @@ public class ITBigQueryStorageTest {
     }
 
     assertEquals(1, rowCount);
+    localClient.close();
   }
 
   /**
