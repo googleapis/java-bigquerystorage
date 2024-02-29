@@ -33,7 +33,6 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.RetryOption;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.BigQuery;
-import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.Field.Mode;
 import com.google.cloud.bigquery.Job;
@@ -167,12 +166,12 @@ public class ITBigQueryStorageTest {
             "%s tests running with parent project: %s",
             ITBigQueryStorageTest.class.getSimpleName(), parentProjectId));
 
-    RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
-    bigquery = bigqueryHelper.getOptions().getService();
-    DatasetInfo datasetInfo =
-        DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
-    bigquery.create(datasetInfo);
-    LOG.info("Created test dataset: " + DATASET);
+    // RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
+    // bigquery = bigqueryHelper.getOptions().getService();
+    // DatasetInfo datasetInfo =
+    //     DatasetInfo.newBuilder(/* datasetId = */ DATASET).setDescription(DESCRIPTION).build();
+    // bigquery.create(datasetInfo);
+    // LOG.info("Created test dataset: " + DATASET);
   }
 
   @AfterClass
@@ -1025,6 +1024,41 @@ public class ITBigQueryStorageTest {
     }
 
     assertEquals(164_656, rowCount);
+  }
+
+  public void testUniverseDomain() throws IOException {
+    // This test is not yet part presubmit integration test as it requires the apis-tpclp.goog
+    // universe domain credentials.
+    // Test a valid read session in the universe domain gdutst.
+    BigQueryReadSettings bigQueryReadSettings =
+        BigQueryReadSettings.newBuilder().setUniverseDomain("apis-tpclp.goog").build();
+    BigQueryReadClient localClient = BigQueryReadClient.create(bigQueryReadSettings);
+
+    String table =
+        BigQueryResource.FormatTableResource(
+            /* projectId = */ "google-tpc-testing-environment:cloudsdk-test-project",
+            /* datasetId = */ "tpc_demo_dataset",
+            /* tableId = */ "new_table");
+
+    ReadSession session =
+        localClient.createReadSession(
+            /* parent = */ parentProjectId,
+            /* readSession = */ ReadSession.newBuilder()
+                .setTable(table)
+                .setDataFormat(DataFormat.AVRO)
+                .build(),
+            /* maxStreamCount = */ 1);
+
+    ReadRowsRequest readRowsRequest =
+        ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
+
+    long rowCount = 0;
+    ServerStream<ReadRowsResponse> stream = localClient.readRowsCallable().call(readRowsRequest);
+    for (ReadRowsResponse response : stream) {
+      rowCount += response.getRowCount();
+    }
+
+    assertEquals(1, rowCount);
   }
 
   /**
