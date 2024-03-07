@@ -199,10 +199,7 @@ public class WriteToDefaultStream {
         if (!streamWriter.isUserClosed()
             && streamWriter.isClosed()
             && recreateCount.getAndIncrement() < MAX_RECREATE_COUNT) {
-          streamWriter =
-              JsonStreamWriter.newBuilder(
-                      streamWriter.getStreamName(), client)
-                  .build();
+          streamWriter = JsonStreamWriter.newBuilder(streamWriter.getStreamName(), client).build();
           this.error = null;
         }
         // If earlier appends have failed, we need to reset before continuing.
