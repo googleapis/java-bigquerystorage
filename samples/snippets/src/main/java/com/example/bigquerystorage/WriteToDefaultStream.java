@@ -171,24 +171,22 @@ public class WriteToDefaultStream {
       // to the default stream.
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
-      return
-          JsonStreamWriter.newBuilder(tableName, client)
-              .setExecutorProvider(
-                  FixedExecutorProvider.create(Executors.newScheduledThreadPool(100)))
-              .setChannelProvider(
-                  BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
-                      .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))
-                      .setKeepAliveTimeout(org.threeten.bp.Duration.ofMinutes(1))
-                      .setKeepAliveWithoutCalls(true)
-                      .setChannelsPerCpu(2)
-                      .build())
-              .setEnableConnectionPool(true)
-              // If value is missing in json and there is a default value configured on bigquery
-              // column, apply the default value to the missing value field.
-              .setDefaultMissingValueInterpretation(
-                  AppendRowsRequest.MissingValueInterpretation.DEFAULT_VALUE)
-              .setRetrySettings(retrySettings)
-              .build();
+      return JsonStreamWriter.newBuilder(tableName, client)
+          .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(100)))
+          .setChannelProvider(
+              BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
+                  .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))
+                  .setKeepAliveTimeout(org.threeten.bp.Duration.ofMinutes(1))
+                  .setKeepAliveWithoutCalls(true)
+                  .setChannelsPerCpu(2)
+                  .build())
+          .setEnableConnectionPool(true)
+          // If value is missing in json and there is a default value configured on bigquery
+          // column, apply the default value to the missing value field.
+          .setDefaultMissingValueInterpretation(
+              AppendRowsRequest.MissingValueInterpretation.DEFAULT_VALUE)
+          .setRetrySettings(retrySettings)
+          .build();
     }
 
     public void initialize(TableName parentTable)
