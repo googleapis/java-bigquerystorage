@@ -825,11 +825,14 @@ public class StreamWriter implements AutoCloseable {
     }
 
     String getFullTraceId() {
-      String version = GaxProperties.getLibraryVersion(StreamWriter.class);
-      if (traceId == null) {
-        return clientId + ":" + version;
+      String clientWithVersion =
+          GaxProperties.getLibraryVersion(StreamWriter.class).isEmpty()
+              ? clientId
+              : clientId + ":" + GaxProperties.getLibraryVersion(StreamWriter.class);
+      if (traceId == null || traceId.isEmpty()) {
+        return clientWithVersion;
       } else {
-        return clientId + ":" + version + " " + traceId;
+        return clientWithVersion + " " + traceId;
       }
     }
   }
