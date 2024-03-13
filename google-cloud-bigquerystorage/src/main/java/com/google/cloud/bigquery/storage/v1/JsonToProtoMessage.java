@@ -650,7 +650,10 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         if (val instanceof String) {
           protoMsg.setField(fieldDescriptor, val);
           return;
-        } else if (val instanceof Short || val instanceof Integer || val instanceof Long || val instanceof Boolean) {
+        } else if (val instanceof Short
+            || val instanceof Integer
+            || val instanceof Long
+            || val instanceof Boolean) {
           protoMsg.setField(fieldDescriptor, String.valueOf(val));
           return;
         }
@@ -913,7 +916,10 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         case STRING:
           if (val instanceof String) {
             protoMsg.addRepeatedField(fieldDescriptor, val);
-          } else if (val instanceof Short || val instanceof Integer || val instanceof Long || val instanceof Boolean) {
+          } else if (val instanceof Short
+              || val instanceof Integer
+              || val instanceof Long
+              || val instanceof Boolean) {
             protoMsg.addRepeatedField(fieldDescriptor, String.valueOf(val));
             return;
           } else {

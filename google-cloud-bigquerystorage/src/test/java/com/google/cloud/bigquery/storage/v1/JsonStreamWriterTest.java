@@ -1427,10 +1427,10 @@ public class JsonStreamWriterTest {
         Map<Integer, String> rowIndexToErrorMessage =
             appendSerializationError.getRowIndexToErrorMessage();
         assertEquals(
-          ImmutableMap.of(
-                  0, "The source object has fields unknown to BigQuery: root.not_foo.",
-                  2, "The source object has fields unknown to BigQuery: root.not_bar."
-        ), rowIndexToErrorMessage);
+            ImmutableMap.of(
+                0, "The source object has fields unknown to BigQuery: root.not_foo.",
+                2, "The source object has fields unknown to BigQuery: root.not_bar."),
+            rowIndexToErrorMessage);
       }
     }
   }

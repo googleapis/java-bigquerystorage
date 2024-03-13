@@ -933,7 +933,7 @@ public class JsonToProtoMessageTest {
       } else if (entry.getKey() == Int64Type.getDescriptor()
           || entry.getKey() == BytesType.getDescriptor()) {
         assertEquals(entry.getKey().getFullName(), 2, success);
-      } else if(entry.getKey() == StringType.getDescriptor()) {
+      } else if (entry.getKey() == StringType.getDescriptor()) {
         assertEquals(entry.getKey().getFullName(), 4, success);
       } else {
         assertEquals(entry.getKey().getFullName(), 1, success);
@@ -1019,14 +1019,14 @@ public class JsonToProtoMessageTest {
     }
   }
 
-    @Test
-    public void testStructSimple() throws Exception {
-        structSimple("test", "test");
-        structSimple(true, "true");
-        structSimple(1, "1");
-        structSimple((short) 1, "1");
-        structSimple((long) 1, "1");
-    }
+  @Test
+  public void testStructSimple() throws Exception {
+    structSimple("test", "test");
+    structSimple(true, "true");
+    structSimple(1, "1");
+    structSimple((short) 1, "1");
+    structSimple((long) 1, "1");
+  }
 
   private void structSimple(Object value, String expected) throws Exception {
     MessageType expectedProto =
