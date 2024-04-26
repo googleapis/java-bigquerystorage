@@ -45,6 +45,8 @@ import com.google.cloud.bigquery.StandardTableDefinition;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
 import com.google.cloud.bigquery.TimePartitioning;
+import com.google.cloud.bigquery.storage.v1.ArrowRecordBatch;
+import com.google.cloud.bigquery.storage.v1.ArrowSchema;
 import com.google.cloud.bigquery.storage.v1.BigQueryReadClient;
 import com.google.cloud.bigquery.storage.v1.BigQueryReadSettings;
 import com.google.cloud.bigquery.storage.v1.CreateReadSessionRequest;
@@ -55,7 +57,7 @@ import com.google.cloud.bigquery.storage.v1.ReadSession;
 import com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers;
 import com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions;
 import com.google.cloud.bigquery.storage.v1.ReadStream;
-import com.google.cloud.bigquery.storage.v1.it.SimpleRowReader.AvroRowConsumer;
+import com.google.cloud.bigquery.storage.v1.it.SimpleRowReaderAvro.AvroRowConsumer;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Timestamp;
@@ -70,6 +72,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.VectorLoader;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ReadChannel;
+import org.apache.arrow.vector.ipc.message.MessageSerializer;
+import org.apache.arrow.vector.util.ByteArrayReadableSeekableByteChannel;
 import org.apache.avro.Conversions;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
@@ -188,7 +198,7 @@ public class ITBigQueryStorageTest {
   }
 
   @Test
-  public void testSimpleRead() {
+  public void testSimpleReadAvro() {
     String table =
         BigQueryResource.FormatTableResource(
             /* projectId = */ "bigquery-public-data",
@@ -220,6 +230,56 @@ public class ITBigQueryStorageTest {
     }
 
     assertEquals(164_656, rowCount);
+  }
+
+    @Test
+  public void testSimpleReadArrow() throws IOException {
+    String table =
+        BigQueryResource.FormatTableResource(
+            /* projectId = */ "bigquery-public-data",
+            /* datasetId = */ "samples",
+            /* tableId = */ "shakespeare");
+
+    ReadSession session =
+        client.createReadSession(
+            /* parent = */ parentProjectId,
+            /* readSession = */ ReadSession.newBuilder()
+                .setTable(table)
+                .setDataFormat(DataFormat.ARROW)
+                .build(),
+            /* maxStreamCount = */ 1);
+    assertEquals(
+        String.format(
+            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            table, session.toString()),
+        1,
+        session.getStreamsCount());
+
+    // Set up a simple reader and start a read session.
+    try (SimpleRowReaderArrow reader = new SimpleRowReaderArrow(session.getArrowSchema())) {
+
+      // Assert that there are streams available in the session.  An empty table may not have
+      // data available.  If no sessions are available for an anonymous (cached) table, consider
+      // writing results of a query to a named table rather than consuming cached results
+      // directly.
+      Preconditions.checkState(session.getStreamsCount() > 0);
+
+      // Use the first stream to perform reading.
+      String streamName = session.getStreams(0).getName();
+
+      ReadRowsRequest readRowsRequest =
+          ReadRowsRequest.newBuilder().setReadStream(streamName).build();
+
+      long rowCount = 0;
+      // Process each block of rows as they arrive and decode using our simple row reader.
+      ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
+      for (ReadRowsResponse response : stream) {
+        Preconditions.checkState(response.hasArrowRecordBatch());
+        reader.processRows(response.getArrowRecordBatch());
+        rowCount += response.getRowCount();
+      }
+      assertEquals(164_656, rowCount);
+    }
   }
 
   @Test
@@ -300,8 +360,8 @@ public class ITBigQueryStorageTest {
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
 
-    SimpleRowReader reader =
-        new SimpleRowReader(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
+    SimpleRowReaderAvro reader =
+        new SimpleRowReaderAvro(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
 
     long rowCount = 0;
 
@@ -378,7 +438,7 @@ public class ITBigQueryStorageTest {
         Schema.Type.LONG,
         avroSchema.getField("word_count").schema().getType());
 
-    SimpleRowReader reader = new SimpleRowReader(avroSchema);
+    SimpleRowReaderAvro reader = new SimpleRowReaderAvro(avroSchema);
 
     long rowCount = 0;
     ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
@@ -1147,8 +1207,8 @@ public class ITBigQueryStorageTest {
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
 
-    SimpleRowReader reader =
-        new SimpleRowReader(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
+    SimpleRowReaderAvro reader =
+        new SimpleRowReaderAvro(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
 
     ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
     for (ReadRowsResponse response : stream) {
