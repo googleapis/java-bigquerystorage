@@ -59,8 +59,7 @@ import com.google.cloud.bigquery.storage.v1.ReadSession;
 import com.google.cloud.bigquery.storage.v1.ReadSession.TableModifiers;
 import com.google.cloud.bigquery.storage.v1.ReadSession.TableReadOptions;
 import com.google.cloud.bigquery.storage.v1.ReadStream;
-import com.google.cloud.bigquery.storage.v1.it.SimpleRowReaderArrow.ArrowRangeBatchConsumer;
-import com.google.cloud.bigquery.storage.v1.it.SimpleRowReaderAvro.AvroRowConsumer;
+import com.google.cloud.bigquery.storage.v1.it.SimpleRowReader.AvroRowConsumer;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -217,39 +216,6 @@ public class ITBigQueryStorageTest {
                   .build())
           .build();
 
-  // dates are returned as days since epoch
-  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_EXPECTED_DATES =
-      new ImmutableMap.Builder<String, Range>()
-          .put(
-              "bounded",
-              Range.newBuilder()
-                  .setStart("18262")
-                  .setEnd("18627")
-                  .setType(FieldElementType.newBuilder().setType("DATE").build())
-                  .build())
-          .put(
-              "unboundedStart",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd("18627")
-                  .setType(FieldElementType.newBuilder().setType("DATE").build())
-                  .build())
-          .put(
-              "unboundedEnd",
-              Range.newBuilder()
-                  .setStart("18262")
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("DATE").build())
-                  .build())
-          .put(
-              "unbounded",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("DATE").build())
-                  .build())
-          .build();
-
   private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_DATETIME =
       new ImmutableMap.Builder<String, Range>()
           .put(
@@ -282,39 +248,6 @@ public class ITBigQueryStorageTest {
                   .build())
           .build();
 
-  // datetime are returned as up to millisecond precision instead of microsecond input value
-  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_EXPECTED_DATETIME =
-      new ImmutableMap.Builder<String, Range>()
-          .put(
-              "bounded",
-              Range.newBuilder()
-                  .setStart("2014-08-19T05:41:35.220")
-                  .setEnd("2015-09-20T06:41:35.220")
-                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
-                  .build())
-          .put(
-              "unboundedStart",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd("2015-09-20T06:41:35.220")
-                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
-                  .build())
-          .put(
-              "unboundedEnd",
-              Range.newBuilder()
-                  .setStart("2014-08-19T05:41:35.220")
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
-                  .build())
-          .put(
-              "unbounded",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
-                  .build())
-          .build();
-
   private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_TIMESTAMP =
       new ImmutableMap.Builder<String, Range>()
           .put(
@@ -335,39 +268,6 @@ public class ITBigQueryStorageTest {
               "unboundedEnd",
               Range.newBuilder()
                   .setStart("2014-08-19 12:41:35.220000+00:00")
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
-                  .build())
-          .put(
-              "unbounded",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
-                  .build())
-          .build();
-
-  // timestamps are returned as seconds since epoch
-  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_EXPECTED_TIMESTAMP =
-      new ImmutableMap.Builder<String, Range>()
-          .put(
-              "bounded",
-              Range.newBuilder()
-                  .setStart("1408452095220000")
-                  .setEnd("1442752895220000")
-                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
-                  .build())
-          .put(
-              "unboundedStart",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd("1442752895220000")
-                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
-                  .build())
-          .put(
-              "unboundedEnd",
-              Range.newBuilder()
-                  .setStart("1408452095220000")
                   .setEnd(null)
                   .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
                   .build())
@@ -448,7 +348,7 @@ public class ITBigQueryStorageTest {
   }
 
   @Test
-  public void testSimpleReadArrow() throws IOException {
+  public void testSimpleReadArrow() {
     String table =
         BigQueryResource.FormatTableResource(
             /* projectId = */ "bigquery-public-data",
@@ -470,34 +370,30 @@ public class ITBigQueryStorageTest {
         1,
         session.getStreamsCount());
 
-    // Set up a simple reader and start a read session.
-    try (SimpleRowReaderArrow reader = new SimpleRowReaderArrow(session.getArrowSchema())) {
+    // Assert that there are streams available in the session.  An empty table may not have
+    // data available.  If no sessions are available for an anonymous (cached) table, consider
+    // writing results of a query to a named table rather than consuming cached results
+    // directly.
+    Preconditions.checkState(session.getStreamsCount() > 0);
 
-      // Assert that there are streams available in the session.  An empty table may not have
-      // data available.  If no sessions are available for an anonymous (cached) table, consider
-      // writing results of a query to a named table rather than consuming cached results
-      // directly.
-      Preconditions.checkState(session.getStreamsCount() > 0);
+    // Use the first stream to perform reading.
+    String streamName = session.getStreams(0).getName();
 
-      // Use the first stream to perform reading.
-      String streamName = session.getStreams(0).getName();
+    ReadRowsRequest readRowsRequest =
+        ReadRowsRequest.newBuilder().setReadStream(streamName).build();
 
-      ReadRowsRequest readRowsRequest =
-          ReadRowsRequest.newBuilder().setReadStream(streamName).build();
-
-      long rowCount = 0;
-      // Process each block of rows as they arrive and decode using our simple row reader.
-      ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
-      for (ReadRowsResponse response : stream) {
-        Preconditions.checkState(response.hasArrowRecordBatch());
-        rowCount += response.getRowCount();
-      }
-      assertEquals(164_656, rowCount);
+    long rowCount = 0;
+    // Process each block of rows as they arrive and decode using our simple row reader.
+    ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
+    for (ReadRowsResponse response : stream) {
+      Preconditions.checkState(response.hasArrowRecordBatch());
+      rowCount += response.getRowCount();
     }
+    assertEquals(164_656, rowCount);
   }
 
   @Test
-  public void testRangeType() throws IOException {
+  public void testRangeType() {
     // Create table with Range values.
     String tableName = "test_range_type";
     TableId tableId = TableId.of(DATASET, tableName);
@@ -536,36 +432,25 @@ public class ITBigQueryStorageTest {
         1,
         session.getStreamsCount());
 
-    // Set up a simple reader and start a read session.
-    try (SimpleRowReaderArrow reader = new SimpleRowReaderArrow(session.getArrowSchema())) {
+    // Assert that there are streams available in the session.  An empty table may not have
+    // data available.  If no sessions are available for an anonymous (cached) table, consider
+    // writing results of a query to a named table rather than consuming cached results
+    // directly.
+    Preconditions.checkState(session.getStreamsCount() > 0);
 
-      // Assert that there are streams available in the session.  An empty table may not have
-      // data available.  If no sessions are available for an anonymous (cached) table, consider
-      // writing results of a query to a named table rather than consuming cached results
-      // directly.
-      Preconditions.checkState(session.getStreamsCount() > 0);
+    // Use the first stream to perform reading.
+    String streamName = session.getStreams(0).getName();
 
-      // Use the first stream to perform reading.
-      String streamName = session.getStreams(0).getName();
+    ReadRowsRequest readRowsRequest =
+        ReadRowsRequest.newBuilder().setReadStream(streamName).build();
 
-      ReadRowsRequest readRowsRequest =
-          ReadRowsRequest.newBuilder().setReadStream(streamName).build();
-
-      long rowCount = 0;
-      // Process each block of rows as they arrive and decode using our simple row reader.
-      ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
-      for (ReadRowsResponse response : stream) {
-        Preconditions.checkState(response.hasArrowRecordBatch());
-        reader.processRows(
-            response.getArrowRecordBatch(),
-            new ArrowRangeBatchConsumer(
-                RANGE_TEST_VALUES_EXPECTED_DATES,
-                RANGE_TEST_VALUES_EXPECTED_DATETIME,
-                RANGE_TEST_VALUES_EXPECTED_TIMESTAMP));
-        rowCount += response.getRowCount();
-      }
-      assertEquals(RANGE_TEST_VALUES_DATES.size(), rowCount);
+    long rowCount = 0;
+    ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
+    for (ReadRowsResponse response : stream) {
+      Preconditions.checkState(response.hasArrowRecordBatch());
+      rowCount += response.getRowCount();
     }
+    assertEquals(RANGE_TEST_VALUES_DATES.size(), rowCount);
   }
 
   @Test
@@ -646,8 +531,8 @@ public class ITBigQueryStorageTest {
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
 
-    SimpleRowReaderAvro reader =
-        new SimpleRowReaderAvro(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
+    SimpleRowReader reader =
+        new SimpleRowReader(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
 
     long rowCount = 0;
 
@@ -724,7 +609,7 @@ public class ITBigQueryStorageTest {
         Schema.Type.LONG,
         avroSchema.getField("word_count").schema().getType());
 
-    SimpleRowReaderAvro reader = new SimpleRowReaderAvro(avroSchema);
+    SimpleRowReader reader = new SimpleRowReader(avroSchema);
 
     long rowCount = 0;
     ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
@@ -1493,8 +1378,8 @@ public class ITBigQueryStorageTest {
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
 
-    SimpleRowReaderAvro reader =
-        new SimpleRowReaderAvro(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
+    SimpleRowReader reader =
+        new SimpleRowReader(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
 
     ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
     for (ReadRowsResponse response : stream) {
