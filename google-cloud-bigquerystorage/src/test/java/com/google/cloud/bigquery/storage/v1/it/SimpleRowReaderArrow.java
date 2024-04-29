@@ -125,7 +125,6 @@ public class SimpleRowReaderArrow implements AutoCloseable {
     private static FieldElementType toFieldElementType(Field field) {
       switch (field.getType().getTypeID()) {
         case Date:
-          // Check that Day unit is in days instead of MILLISECOND.
           return FieldElementType.newBuilder().setType("DATE").build();
         case Timestamp:
           String timezone = ((ArrowType.Timestamp) field.getType()).getTimezone();
