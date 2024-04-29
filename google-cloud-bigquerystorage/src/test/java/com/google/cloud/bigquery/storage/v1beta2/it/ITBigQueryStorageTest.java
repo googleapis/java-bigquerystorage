@@ -34,11 +34,15 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.Field.Mode;
+import com.google.cloud.bigquery.FieldElementType;
+import com.google.cloud.bigquery.InsertAllRequest;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.JobInfo.WriteDisposition;
 import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.QueryJobConfiguration;
+import com.google.cloud.bigquery.Range;
+import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.StandardTableDefinition;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
@@ -56,6 +60,7 @@ import com.google.cloud.bigquery.storage.v1beta2.ReadStream;
 import com.google.cloud.bigquery.storage.v1beta2.it.SimpleRowReader.AvroRowConsumer;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Timestamp;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -156,6 +161,124 @@ public class ITBigQueryStorageTest {
           + "  \"universe_domain\": \"fake.domain\"\n"
           + "}";
 
+  private static final com.google.cloud.bigquery.Schema RANGE_SCHEMA =
+      com.google.cloud.bigquery.Schema.of(
+          Field.newBuilder("name", StandardSQLTypeName.STRING)
+              .setMode(Field.Mode.NULLABLE)
+              .setDescription("Name of the row")
+              .build(),
+          Field.newBuilder("date", StandardSQLTypeName.RANGE)
+              .setMode(Field.Mode.NULLABLE)
+              .setDescription("Range field with DATE")
+              .setRangeElementType(FieldElementType.newBuilder().setType("DATE").build())
+              .build(),
+          Field.newBuilder("datetime", StandardSQLTypeName.RANGE)
+              .setMode(Field.Mode.NULLABLE)
+              .setDescription("Range field with DATETIME")
+              .setRangeElementType(FieldElementType.newBuilder().setType("DATETIME").build())
+              .build(),
+          Field.newBuilder("timestamp", StandardSQLTypeName.RANGE)
+              .setMode(Field.Mode.NULLABLE)
+              .setDescription("Range field with TIMESTAMP")
+              .setRangeElementType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+              .build());
+
+  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_DATES =
+      new ImmutableMap.Builder<String, Range>()
+          .put(
+              "bounded",
+              Range.newBuilder()
+                  .setStart("2020-01-01")
+                  .setEnd("2020-12-31")
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .put(
+              "unboundedStart",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd("2020-12-31")
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .put(
+              "unboundedEnd",
+              Range.newBuilder()
+                  .setStart("2020-01-01")
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .put(
+              "unbounded",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .build();
+
+  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_DATETIME =
+      new ImmutableMap.Builder<String, Range>()
+          .put(
+              "bounded",
+              Range.newBuilder()
+                  .setStart("2014-08-19T05:41:35.220000")
+                  .setEnd("2015-09-20T06:41:35.220000")
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .put(
+              "unboundedStart",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd("2015-09-20T06:41:35.220000")
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .put(
+              "unboundedEnd",
+              Range.newBuilder()
+                  .setStart("2014-08-19T05:41:35.220000")
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .put(
+              "unbounded",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .build();
+
+  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_TIMESTAMP =
+      new ImmutableMap.Builder<String, Range>()
+          .put(
+              "bounded",
+              Range.newBuilder()
+                  .setStart("2014-08-19 12:41:35.220000+00:00")
+                  .setEnd("2015-09-20 13:41:35.220000+01:00")
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .put(
+              "unboundedStart",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd("2015-09-20 13:41:35.220000+01:00")
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .put(
+              "unboundedEnd",
+              Range.newBuilder()
+                  .setStart("2014-08-19 12:41:35.220000+00:00")
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .put(
+              "unbounded",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .build();
+
   @BeforeClass
   public static void beforeClass() throws IOException {
     client = BigQueryReadClient.create();
@@ -219,6 +342,112 @@ public class ITBigQueryStorageTest {
     }
 
     assertEquals(164_656, rowCount);
+  }
+
+  @Test
+  public void testSimpleReadArrow() {
+    String table =
+        com.google.cloud.bigquery.storage.v1.it.BigQueryResource.FormatTableResource(
+            /* projectId = */ "bigquery-public-data",
+            /* datasetId = */ "samples",
+            /* tableId = */ "shakespeare");
+
+    ReadSession session =
+        client.createReadSession(
+            /* parent = */ parentProjectId,
+            /* readSession = */ ReadSession.newBuilder()
+                .setTable(table)
+                .setDataFormat(DataFormat.ARROW)
+                .build(),
+            /* maxStreamCount = */ 1);
+    assertEquals(
+        String.format(
+            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            table, session.toString()),
+        1,
+        session.getStreamsCount());
+
+    // Assert that there are streams available in the session.  An empty table may not have
+    // data available.  If no sessions are available for an anonymous (cached) table, consider
+    // writing results of a query to a named table rather than consuming cached results
+    // directly.
+    Preconditions.checkState(session.getStreamsCount() > 0);
+
+    // Use the first stream to perform reading.
+    String streamName = session.getStreams(0).getName();
+
+    ReadRowsRequest readRowsRequest =
+        ReadRowsRequest.newBuilder().setReadStream(streamName).build();
+
+    long rowCount = 0;
+    // Process each block of rows as they arrive and decode using our simple row reader.
+    ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
+    for (ReadRowsResponse response : stream) {
+      Preconditions.checkState(response.hasArrowRecordBatch());
+      rowCount += response.getRowCount();
+    }
+    assertEquals(164_656, rowCount);
+  }
+
+  @Test
+  public void testRangeType() {
+    // Create table with Range values.
+    String tableName = "test_range_type";
+    TableId tableId = TableId.of(DATASET, tableName);
+    bigquery.create(TableInfo.of(tableId, StandardTableDefinition.of(RANGE_SCHEMA)));
+
+    // Insert values.
+    InsertAllRequest.Builder request = InsertAllRequest.newBuilder(tableId);
+    for (String name : RANGE_TEST_VALUES_DATES.keySet()) {
+      ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
+      builder.put("name", name);
+      builder.put("date", RANGE_TEST_VALUES_DATES.get(name).getValues());
+      builder.put("datetime", RANGE_TEST_VALUES_DATETIME.get(name).getValues());
+      builder.put("timestamp", RANGE_TEST_VALUES_TIMESTAMP.get(name).getValues());
+      request.addRow(builder.build());
+    }
+    bigquery.insertAll(request.build());
+
+    String table =
+        com.google.cloud.bigquery.storage.v1.it.BigQueryResource.FormatTableResource(
+            /* projectId = */ ServiceOptions.getDefaultProjectId(),
+            /* datasetId = */ DATASET,
+            /* tableId = */ tableId.getTable());
+
+    ReadSession session =
+        client.createReadSession(
+            /* parent = */ parentProjectId,
+            /* readSession = */ ReadSession.newBuilder()
+                .setTable(table)
+                .setDataFormat(DataFormat.ARROW)
+                .build(),
+            /* maxStreamCount = */ 1);
+    assertEquals(
+        String.format(
+            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            table, session.toString()),
+        1,
+        session.getStreamsCount());
+
+    // Assert that there are streams available in the session.  An empty table may not have
+    // data available.  If no sessions are available for an anonymous (cached) table, consider
+    // writing results of a query to a named table rather than consuming cached results
+    // directly.
+    Preconditions.checkState(session.getStreamsCount() > 0);
+
+    // Use the first stream to perform reading.
+    String streamName = session.getStreams(0).getName();
+
+    ReadRowsRequest readRowsRequest =
+        ReadRowsRequest.newBuilder().setReadStream(streamName).build();
+
+    long rowCount = 0;
+    ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
+    for (ReadRowsResponse response : stream) {
+      Preconditions.checkState(response.hasArrowRecordBatch());
+      rowCount += response.getRowCount();
+    }
+    assertEquals(RANGE_TEST_VALUES_DATES.size(), rowCount);
   }
 
   @Test
