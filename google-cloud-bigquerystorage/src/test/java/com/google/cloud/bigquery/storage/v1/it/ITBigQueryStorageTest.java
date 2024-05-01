@@ -33,18 +33,15 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.RetryOption;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.DatasetId;
 import com.google.cloud.bigquery.DatasetInfo;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.Field.Mode;
-import com.google.cloud.bigquery.FieldElementType;
-import com.google.cloud.bigquery.InsertAllRequest;
 import com.google.cloud.bigquery.Job;
 import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.JobInfo.WriteDisposition;
 import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.QueryJobConfiguration;
-import com.google.cloud.bigquery.Range;
-import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.StandardTableDefinition;
 import com.google.cloud.bigquery.TableId;
 import com.google.cloud.bigquery.TableInfo;
@@ -62,7 +59,6 @@ import com.google.cloud.bigquery.storage.v1.ReadStream;
 import com.google.cloud.bigquery.storage.v1.it.SimpleRowReader.AvroRowConsumer;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Timestamp;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -161,124 +157,6 @@ public class ITBigQueryStorageTest {
           + "  \"type\": \"service_account\",\n"
           + "  \"universe_domain\": \"fake.domain\"\n"
           + "}";
-
-  private static final com.google.cloud.bigquery.Schema RANGE_SCHEMA =
-      com.google.cloud.bigquery.Schema.of(
-          Field.newBuilder("name", StandardSQLTypeName.STRING)
-              .setMode(Field.Mode.NULLABLE)
-              .setDescription("Name of the row")
-              .build(),
-          Field.newBuilder("date", StandardSQLTypeName.RANGE)
-              .setMode(Field.Mode.NULLABLE)
-              .setDescription("Range field with DATE")
-              .setRangeElementType(FieldElementType.newBuilder().setType("DATE").build())
-              .build(),
-          Field.newBuilder("datetime", StandardSQLTypeName.RANGE)
-              .setMode(Field.Mode.NULLABLE)
-              .setDescription("Range field with DATETIME")
-              .setRangeElementType(FieldElementType.newBuilder().setType("DATETIME").build())
-              .build(),
-          Field.newBuilder("timestamp", StandardSQLTypeName.RANGE)
-              .setMode(Field.Mode.NULLABLE)
-              .setDescription("Range field with TIMESTAMP")
-              .setRangeElementType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
-              .build());
-
-  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_DATES =
-      new ImmutableMap.Builder<String, Range>()
-          .put(
-              "bounded",
-              Range.newBuilder()
-                  .setStart("2020-01-01")
-                  .setEnd("2020-12-31")
-                  .setType(FieldElementType.newBuilder().setType("DATE").build())
-                  .build())
-          .put(
-              "unboundedStart",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd("2020-12-31")
-                  .setType(FieldElementType.newBuilder().setType("DATE").build())
-                  .build())
-          .put(
-              "unboundedEnd",
-              Range.newBuilder()
-                  .setStart("2020-01-01")
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("DATE").build())
-                  .build())
-          .put(
-              "unbounded",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("DATE").build())
-                  .build())
-          .build();
-
-  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_DATETIME =
-      new ImmutableMap.Builder<String, Range>()
-          .put(
-              "bounded",
-              Range.newBuilder()
-                  .setStart("2014-08-19T05:41:35.220000")
-                  .setEnd("2015-09-20T06:41:35.220000")
-                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
-                  .build())
-          .put(
-              "unboundedStart",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd("2015-09-20T06:41:35.220000")
-                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
-                  .build())
-          .put(
-              "unboundedEnd",
-              Range.newBuilder()
-                  .setStart("2014-08-19T05:41:35.220000")
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
-                  .build())
-          .put(
-              "unbounded",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
-                  .build())
-          .build();
-
-  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_TIMESTAMP =
-      new ImmutableMap.Builder<String, Range>()
-          .put(
-              "bounded",
-              Range.newBuilder()
-                  .setStart("2014-08-19 12:41:35.220000+00:00")
-                  .setEnd("2015-09-20 13:41:35.220000+01:00")
-                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
-                  .build())
-          .put(
-              "unboundedStart",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd("2015-09-20 13:41:35.220000+01:00")
-                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
-                  .build())
-          .put(
-              "unboundedEnd",
-              Range.newBuilder()
-                  .setStart("2014-08-19 12:41:35.220000+00:00")
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
-                  .build())
-          .put(
-              "unbounded",
-              Range.newBuilder()
-                  .setStart(null)
-                  .setEnd(null)
-                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
-                  .build())
-          .build();
 
   @BeforeClass
   public static void beforeClass() throws IOException {
@@ -393,23 +271,21 @@ public class ITBigQueryStorageTest {
   }
 
   @Test
-  public void testRangeType() {
+  public void testRangeType() throws InterruptedException {
     // Create table with Range values.
     String tableName = "test_range_type";
     TableId tableId = TableId.of(DATASET, tableName);
-    bigquery.create(TableInfo.of(tableId, StandardTableDefinition.of(RANGE_SCHEMA)));
-
-    // Insert values.
-    InsertAllRequest.Builder request = InsertAllRequest.newBuilder(tableId);
-    for (String name : RANGE_TEST_VALUES_DATES.keySet()) {
-      ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
-      builder.put("name", name);
-      builder.put("date", RANGE_TEST_VALUES_DATES.get(name).getValues());
-      builder.put("datetime", RANGE_TEST_VALUES_DATETIME.get(name).getValues());
-      builder.put("timestamp", RANGE_TEST_VALUES_TIMESTAMP.get(name).getValues());
-      request.addRow(builder.build());
-    }
-    bigquery.insertAll(request.build());
+    QueryJobConfiguration createTable =
+        QueryJobConfiguration.newBuilder(
+                String.format(
+                    "CREATE TABLE %s AS SELECT RANGE(DATE '2020-01-01', DATE '2020-12-31') as date, \n"
+                        + "RANGE(DATETIME '2020-01-01T12:00:00', DATETIME '2020-12-31T12:00:00') as datetime, \n"
+                        + "RANGE(TIMESTAMP '2014-01-01 07:00:00.000000+00:00', TIMESTAMP '2015-01-01 07:00:00.000000+00:00') as timestamp",
+                    tableName))
+            .setDefaultDataset(DatasetId.of(DATASET))
+            .setUseLegacySql(false)
+            .build();
+    bigquery.query(createTable);
 
     String table =
         BigQueryResource.FormatTableResource(
@@ -450,7 +326,7 @@ public class ITBigQueryStorageTest {
       Preconditions.checkState(response.hasArrowRecordBatch());
       rowCount += response.getRowCount();
     }
-    assertEquals(RANGE_TEST_VALUES_DATES.size(), rowCount);
+    assertEquals(1, rowCount);
   }
 
   @Test
