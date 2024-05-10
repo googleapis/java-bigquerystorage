@@ -1020,6 +1020,76 @@ public class JsonToProtoMessageTest {
   }
 
   @Test
+  public void testRange() throws Exception {
+    TableSchema tableSchema =
+        TableSchema.newBuilder()
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("range_date")
+                    .setType(TableFieldSchema.Type.RANGE)
+                    .setRangeElementType(
+                        TableFieldSchema.FieldElementType.newBuilder()
+                            .setType(TableFieldSchema.Type.DATE)
+                            .build())
+                    .setMode(TableFieldSchema.Mode.NULLABLE)
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("range_datetime")
+                    .setType(TableFieldSchema.Type.RANGE)
+                    .setRangeElementType(
+                        TableFieldSchema.FieldElementType.newBuilder()
+                            .setType(TableFieldSchema.Type.DATETIME)
+                            .build())
+                    .setMode(TableFieldSchema.Mode.NULLABLE)
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("range_timestamp")
+                    .setType(TableFieldSchema.Type.RANGE)
+                    .setRangeElementType(
+                        TableFieldSchema.FieldElementType.newBuilder()
+                            .setType(TableFieldSchema.Type.TIMESTAMP)
+                            .build())
+                    .setMode(TableFieldSchema.Mode.NULLABLE)
+                    .build())
+            .build();
+
+    TestRange expectedProto =
+        TestRange.newBuilder()
+            .setRangeDate(TestRangeDate.newBuilder().setStart(18262).setEnd(18627))
+            .setRangeDatetime(
+                TestRangeDatetime.newBuilder().setStart(1715360343).setEnd(1715446743))
+            .setRangeTimestamp(
+                TestRangeTimestamp.newBuilder().setStart(1715360343).setEnd(1715446743))
+            .build();
+
+    JSONArray data = new JSONArray();
+    JSONObject row = new JSONObject();
+
+    JSONObject rangeDate = new JSONObject();
+    rangeDate.put("start", 18262);
+    rangeDate.put("end", 18627);
+    row.put("range_date", rangeDate);
+
+    JSONObject rangeDatetime = new JSONObject();
+    rangeDatetime.put("start", 1715360343);
+    rangeDatetime.put("end", 1715446743);
+    row.put("range_datetime", rangeDatetime);
+
+    JSONObject rangeTimestamp = new JSONObject();
+    rangeTimestamp.put("start", 1715360343);
+    rangeTimestamp.put("end", 1715446743);
+    row.put("range_timestamp", rangeTimestamp);
+
+    data.put(row);
+    List<DynamicMessage> protoMsg =
+        JsonToProtoMessage.INSTANCE.convertToProtoMessage(
+            TestRange.getDescriptor(), tableSchema, data, false);
+    assertEquals(expectedProto, protoMsg.get(0));
+  }
+
+  @Test
   public void testStructSimple() throws Exception {
     structSimple("test", "test");
     structSimple(true, "true");
