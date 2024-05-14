@@ -335,7 +335,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testJsonStreamWriterCommittedStream()
       throws IOException, InterruptedException, ExecutionException,
-      Descriptors.DescriptorValidationException {
+          Descriptors.DescriptorValidationException {
     String tableName = "JsonTable";
     TableInfo tableInfo =
         TableInfo.newBuilder(
@@ -371,10 +371,10 @@ public class ITBigQueryWriteManualClientTest {
           "test_numerics",
           new JSONArray(
               new byte[][] {
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
-                      .toByteArray(),
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
-                      .toByteArray()
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
+                    .toByteArray(),
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
+                    .toByteArray()
               }));
       row1.put(
           "test_datetime",
@@ -423,7 +423,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testRowErrors()
       throws IOException, InterruptedException, ExecutionException,
-      Descriptors.DescriptorValidationException {
+          Descriptors.DescriptorValidationException {
     String tableName = "TestBadRowsTable";
     TableInfo tableInfo =
         TableInfo.newBuilder(
@@ -447,9 +447,9 @@ public class ITBigQueryWriteManualClientTest {
 
     LOG.info("Sending three messages");
     StringWithSecondsNanos[] myBadList = {
-        new StringWithSecondsNanos("aaabbbcccddd", 1663821424, 0),
-        new StringWithSecondsNanos("bbb", Long.MIN_VALUE, 0),
-        new StringWithSecondsNanos("cccdddeeefffggg", 1663621424, 0)
+      new StringWithSecondsNanos("aaabbbcccddd", 1663821424, 0),
+      new StringWithSecondsNanos("bbb", Long.MIN_VALUE, 0),
+      new StringWithSecondsNanos("cccdddeeefffggg", 1663621424, 0)
     };
     ApiFuture<AppendRowsResponse> futureResponse =
         streamWriter.append(CreateProtoRowsMixed(myBadList), -1);
@@ -481,9 +481,9 @@ public class ITBigQueryWriteManualClientTest {
 
     LOG.info("Resending with three good messages");
     StringWithSecondsNanos[] myGoodList = {
-        new StringWithSecondsNanos("aaa", 1664821424, 0),
-        new StringWithSecondsNanos("bbb", 1663821424, 0),
-        new StringWithSecondsNanos("ccc", 1664801424, 0)
+      new StringWithSecondsNanos("aaa", 1664821424, 0),
+      new StringWithSecondsNanos("bbb", 1663821424, 0),
+      new StringWithSecondsNanos("ccc", 1664801424, 0)
     };
     ApiFuture<AppendRowsResponse> futureResponse1 =
         streamWriter.append(CreateProtoRowsMixed(myGoodList), -1);
@@ -515,7 +515,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testJsonStreamWriterWithDefaultSchema()
       throws IOException, InterruptedException, ExecutionException,
-      Descriptors.DescriptorValidationException {
+          Descriptors.DescriptorValidationException {
     String tableName = "JsonTableDefaultSchema";
     TableInfo tableInfo =
         TableInfo.newBuilder(
@@ -559,10 +559,10 @@ public class ITBigQueryWriteManualClientTest {
           "test_numerics",
           new JSONArray(
               new byte[][] {
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
-                      .toByteArray(),
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
-                      .toByteArray()
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
+                    .toByteArray(),
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
+                    .toByteArray()
               }));
       row1.put("unknown_field", "a");
       row1.put(
@@ -572,8 +572,8 @@ public class ITBigQueryWriteManualClientTest {
           "test_bytestring_repeated",
           new JSONArray(
               new byte[][] {
-                  ByteString.copyFromUtf8("a").toByteArray(),
-                  ByteString.copyFromUtf8("b").toByteArray()
+                ByteString.copyFromUtf8("a").toByteArray(),
+                ByteString.copyFromUtf8("b").toByteArray()
               }));
       row1.put("test_timestamp", "2022-02-06 07:24:47.84");
       row1.put("test_json", "{}");
@@ -654,7 +654,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testJsonStreamWriterWithDefaultStream()
       throws IOException, InterruptedException, ExecutionException,
-      Descriptors.DescriptorValidationException {
+          Descriptors.DescriptorValidationException {
     String tableName = "JsonTableDefaultStream";
     TableFieldSchema TEST_STRING =
         TableFieldSchema.newBuilder()
@@ -731,10 +731,10 @@ public class ITBigQueryWriteManualClientTest {
           "test_numerics",
           new JSONArray(
               new byte[][] {
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
-                      .toByteArray(),
-                  BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
-                      .toByteArray()
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("123.4"))
+                    .toByteArray(),
+                BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("-9000000"))
+                    .toByteArray()
               }));
       row1.put("unknown_field", "a");
       row1.put(
@@ -744,8 +744,8 @@ public class ITBigQueryWriteManualClientTest {
           "test_bytestring_repeated",
           new JSONArray(
               new byte[][] {
-                  ByteString.copyFromUtf8("a").toByteArray(),
-                  ByteString.copyFromUtf8("b").toByteArray()
+                ByteString.copyFromUtf8("a").toByteArray(),
+                ByteString.copyFromUtf8("b").toByteArray()
               }));
       row1.put("test_timestamp", "2022-02-06 07:24:47.84");
       JSONArray jsonArr1 = new JSONArray(new JSONObject[] {row1});
@@ -798,10 +798,10 @@ public class ITBigQueryWriteManualClientTest {
       assertEquals("Yg==", currentRow.get(3).getRepeatedValue().get(1).getStringValue());
       assertEquals(
           Timestamp.valueOf("2022-02-06 07:24:47.84")
-              .toLocalDateTime()
-              .atZone(ZoneId.of("UTC"))
-              .toInstant()
-              .toEpochMilli()
+                  .toLocalDateTime()
+                  .atZone(ZoneId.of("UTC"))
+                  .toInstant()
+                  .toEpochMilli()
               * 1000,
           currentRow.get(4).getTimestampValue()); // timestamp long of "2022-02-06 07:24:47.84"
       assertEquals("bbb", iter.next().get(0).getStringValue());
@@ -817,7 +817,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testJsonDefaultStreamOnTableWithDefaultValue_SchemaNotGiven()
       throws IOException, InterruptedException, ExecutionException,
-      Descriptors.DescriptorValidationException, ParseException {
+          Descriptors.DescriptorValidationException, ParseException {
     String tableName = "defaultStreamDefaultValue";
     String defaultTableId =
         String.format(
@@ -837,7 +837,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testJsonExclusiveStreamOnTableWithDefaultValue_GiveTableSchema()
       throws IOException, InterruptedException, ExecutionException,
-      Descriptors.DescriptorValidationException, ParseException {
+          Descriptors.DescriptorValidationException, ParseException {
     String tableName = "exclusiveStreamDefaultValue";
     String exclusiveTableId =
         String.format(
@@ -863,7 +863,7 @@ public class ITBigQueryWriteManualClientTest {
 
   private void testJsonStreamWriterForDefaultValue(JsonStreamWriter jsonStreamWriter)
       throws DescriptorValidationException, IOException, ExecutionException, InterruptedException,
-      ParseException {
+          ParseException {
     // 1. row has both fields set.
     JSONArray jsonArr1 = new JSONArray();
     JSONObject row1 = new JSONObject();
@@ -989,7 +989,7 @@ public class ITBigQueryWriteManualClientTest {
   @Test
   public void testJsonStreamWriterWithMessagesOver10M()
       throws IOException, InterruptedException, ExecutionException,
-      Descriptors.DescriptorValidationException {
+          Descriptors.DescriptorValidationException {
     String tableName = "TableLarge";
     TableId tableId = TableId.of(DATASET, tableName);
     Field col1 = Field.newBuilder("col1", StandardSQLTypeName.STRING).build();
@@ -1862,7 +1862,7 @@ public class ITBigQueryWriteManualClientTest {
             streamWriter.append(
                 CreateProtoRows(
                     new String[] {
-                        new String(new char[size]).replace('\u0000', (char) (r.nextInt(26) + 'a'))
+                      new String(new char[size]).replace('\u0000', (char) (r.nextInt(26) + 'a'))
                     })));
       }
       for (int i = 0; i < 50; i++) {
