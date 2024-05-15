@@ -1369,11 +1369,9 @@ public class ITBigQueryWriteManualClientTest {
       LOG.info("Sending one message");
       JSONObject row1 = new JSONObject();
       row1.put("test-str列", "aaa");
-      // JSONArray jsonArr = new JSONArray();
       JSONObject record1 = new JSONObject();
       record1.put("nested-str列", "nested-str1");
       record1.put("nested-int列", 10);
-      // jsonArr.put(record);
       row1.put("test-record列", new JSONArray(new JSONObject[] {record1}));
       JSONArray jsonArr1 = new JSONArray(new JSONObject[] {row1});
 
@@ -1444,7 +1442,7 @@ public class ITBigQueryWriteManualClientTest {
                     WriteStream.newBuilder().setType(WriteStream.Type.COMMITTED).build())
                 .build());
     try (JsonStreamWriter jsonStreamWriter =
-        JsonStreamWriter.newBuilder(writeStream.getName(), writeStream.getTableSchema()).build()) {
+        JsonStreamWriter.newBuilder(writeStream.getName(), client).build()) {
       // write the 1st row
       JSONObject foo = new JSONObject();
       foo.put("col1-列", "aaa");
