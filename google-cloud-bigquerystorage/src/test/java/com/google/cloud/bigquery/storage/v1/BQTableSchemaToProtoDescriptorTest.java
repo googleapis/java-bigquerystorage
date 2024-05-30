@@ -139,6 +139,36 @@ public class BQTableSchemaToProtoDescriptorTest {
                             .setType(TableFieldSchema.Type.TIMESTAMP)
                             .build())
                     .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("range_date_mixed_case")
+                    .setType(TableFieldSchema.Type.RANGE)
+                    .setMode(TableFieldSchema.Mode.NULLABLE)
+                    .setRangeElementType(
+                        TableFieldSchema.FieldElementType.newBuilder()
+                            .setType(TableFieldSchema.Type.DATE)
+                            .build())
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("range_datetime_mixed_case")
+                    .setType(TableFieldSchema.Type.RANGE)
+                    .setMode(TableFieldSchema.Mode.NULLABLE)
+                    .setRangeElementType(
+                        TableFieldSchema.FieldElementType.newBuilder()
+                            .setType(TableFieldSchema.Type.DATETIME)
+                            .build())
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("range_timestamp_mixed_case")
+                    .setType(TableFieldSchema.Type.RANGE)
+                    .setMode(TableFieldSchema.Mode.NULLABLE)
+                    .setRangeElementType(
+                        TableFieldSchema.FieldElementType.newBuilder()
+                            .setType(TableFieldSchema.Type.TIMESTAMP)
+                            .build())
+                    .build())
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
