@@ -216,6 +216,9 @@ message TestRange {
   optional TestRangeDate range_date = 1;
   optional TestRangeDatetime range_datetime = 2;
   optional TestRangeTimestamp range_timestamp = 3;
+  optional TestRangeDate range_date_mixed_case = 4;
+  optional TestRangeDatetime range_datetime_mixed_case = 5;
+  optional TestRangeTimestamp range_timestamp_mixed_case = 6;
 }
 
 message TestRangeDate {

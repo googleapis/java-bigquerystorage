@@ -83,7 +83,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import org.apache.avro.Conversions;
 import org.apache.avro.LogicalTypes;
@@ -459,16 +458,16 @@ public class ITBigQueryStorageTest {
 
       JSONObject row3 = new JSONObject();
       JSONObject rangeDate3 = new JSONObject();
-      rangeDate3.put("start", 18262);
-      rangeDate3.put("end", 18627);
+      rangeDate3.put("start", "1970-01-02");
+      rangeDate3.put("end", "1970-01-03");
       row3.put("date", rangeDate0);
       JSONObject rangeDatetime3 = new JSONObject();
       rangeDatetime3.put("start", "2014-08-19T05:41:35.220000");
       rangeDatetime3.put("end", "2015-08-19T05:41:35.220000");
       row3.put("datetime", rangeDatetime1);
       JSONObject rangeTimestamp3 = new JSONObject();
-      rangeTimestamp3.put("start", 1715360343);
-      rangeTimestamp3.put("end", 1715446743);
+      rangeTimestamp3.put("start", "1970-01-01 00:00:00.000010");
+      rangeTimestamp3.put("end", "2022-04-05 09:06:11 PST");
       row3.put("timestamp", rangeTimestamp1);
       data.put(row3);
 
