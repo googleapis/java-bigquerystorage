@@ -59,6 +59,7 @@ import com.google.cloud.bigquery.storage.v1.ReadStream;
 import com.google.cloud.bigquery.storage.v1.it.SimpleRowReader.AvroRowConsumer;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Timestamp;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -545,6 +546,7 @@ public class ITBigQueryStorageTest {
         /* table = */ table,
         /* snapshotInMillis = */ firstJob.getStatistics().getEndTime(),
         /* filter = */ null,
+        /* selectedFields = */ null,
         /* consumer = */ new AvroRowConsumer() {
           @Override
           public void accept(GenericData.Record record) {
@@ -558,6 +560,7 @@ public class ITBigQueryStorageTest {
         /* table = */ table,
         /* snapshotInMillis = */ secondJob.getStatistics().getEndTime(),
         /* filter = */ null,
+        /* selectedFields = */ null,
         /* consumer = */ new AvroRowConsumer() {
           @Override
           public void accept(GenericData.Record record) {
@@ -686,7 +689,7 @@ public class ITBigQueryStorageTest {
             /* datasetId = */ DATASET,
             /* tableId = */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> rows = ReadAllRows(table);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -785,7 +788,7 @@ public class ITBigQueryStorageTest {
             /* datasetId = */ DATASET,
             /* tableId = */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> rows = ReadAllRows(table);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -885,7 +888,7 @@ public class ITBigQueryStorageTest {
             /* datasetId = */ DATASET,
             /* tableId = */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> rows = ReadAllRows(table);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -918,14 +921,16 @@ public class ITBigQueryStorageTest {
         String.format(
             " CREATE TABLE %s.%s "
                 + " (array_field ARRAY<INT64>,"
-                + "  struct_field STRUCT<int_field INT64 NOT NULL, str_field STRING NOT NULL> NOT NULL)"
+                + "  struct_field STRUCT<int_field INT64 NOT NULL, str_field STRING NOT NULL> NOT NULL,"
+                + "  struct_field_opt STRUCT<int_field INT64 NOT NULL, str_field STRING NOT NULL>)"
                 + " OPTIONS( "
                 + "   description=\"a table with array and time column types\" "
                 + " ) "
                 + "AS "
                 + "   SELECT "
                 + "     [1, 2, 3],"
-                + "     (10, 'abc')",
+                + "     (10, 'abc'),"
+                + "     null",
             DATASET, tableName);
 
     RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
@@ -936,7 +941,11 @@ public class ITBigQueryStorageTest {
             /* datasetId = */ DATASET,
             /* tableId = */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> rows = ReadAllRows(
+            /* table = */ table,
+            /* filter = */ null,
+            /* selectedFields = */ ImmutableList.of("array_field", "struct_field", "struct_field_opt.int_field")
+    );
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -945,11 +954,11 @@ public class ITBigQueryStorageTest {
     String actualSchemaMessage =
         String.format(
             "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty = */ true));
-    String rowAssertMessage = String.format("Row not matching expectations: %s", record.toString());
+    String rowAssertMessage = String.format("Row not matching expectations: %s", record);
 
     assertEquals(actualSchemaMessage, Schema.Type.RECORD, avroSchema.getType());
     assertEquals(actualSchemaMessage, "__root__", avroSchema.getName());
-    assertEquals(actualSchemaMessage, 2, avroSchema.getFields().size());
+    assertEquals(actualSchemaMessage, 3, avroSchema.getFields().size());
 
     assertEquals(
         actualSchemaMessage,
@@ -966,6 +975,7 @@ public class ITBigQueryStorageTest {
 
     // Validate the STRUCT field and its members.
     Schema structSchema = avroSchema.getField("struct_field").schema();
+    assertEquals(actualSchemaMessage, 2, structSchema.getFields().size());
     assertEquals(actualSchemaMessage, Schema.Type.RECORD, structSchema.getType());
     GenericData.Record structRecord = (GenericData.Record) record.get("struct_field");
 
@@ -980,6 +990,16 @@ public class ITBigQueryStorageTest {
         Schema.Type.STRING,
         structSchema.getField("str_field").schema().getType());
     assertEquals(rowAssertMessage, new Utf8("abc"), structRecord.get("str_field"));
+
+    // Validate the projected STRUCT field and its members.
+    Schema unionSchema = avroSchema.getField("struct_field_opt").schema();
+    Schema structOpSchema = unionSchema.getTypes().get(1);
+    assertEquals(actualSchemaMessage, 1, structOpSchema.getFields().size());
+    assertEquals(
+            actualSchemaMessage,
+            Schema.Type.LONG,
+            structSchema.getField("int_field").schema().getType());
+    assertNull(rowAssertMessage, record.get("struct_field_opt"));
   }
 
   @Test
@@ -1213,7 +1233,7 @@ public class ITBigQueryStorageTest {
    * @throws IOException
    */
   private void ProcessRowsAtSnapshot(
-      String table, Long snapshotInMillis, String filter, AvroRowConsumer consumer)
+      String table, Long snapshotInMillis, String filter, List<String> selectedFields, AvroRowConsumer consumer)
       throws IOException {
     Preconditions.checkNotNull(table);
     Preconditions.checkNotNull(consumer);
@@ -1237,11 +1257,14 @@ public class ITBigQueryStorageTest {
               TableModifiers.newBuilder().setSnapshotTime(snapshotTimestamp).build());
     }
 
+    TableReadOptions.Builder tableReadOptionsBuilder = TableReadOptions.newBuilder();
     if (filter != null && !filter.isEmpty()) {
-      createSessionRequestBuilder
-          .getReadSessionBuilder()
-          .setReadOptions(TableReadOptions.newBuilder().setRowRestriction(filter).build());
+      tableReadOptionsBuilder.setRowRestriction(filter);
     }
+    if (selectedFields != null && !selectedFields.isEmpty()) {
+      tableReadOptionsBuilder.addAllSelectedFields(selectedFields);
+    }
+    createSessionRequestBuilder.getReadSessionBuilder().setReadOptions(tableReadOptionsBuilder.build());
 
     ReadSession session = client.createReadSession(createSessionRequestBuilder.build());
     assertEquals(
@@ -1267,15 +1290,38 @@ public class ITBigQueryStorageTest {
    * Reads all the rows from the specified table and returns a list as generic Avro records.
    *
    * @param table
+   * @return
+   */
+  List<GenericData.Record> ReadAllRows(String table) throws IOException {
+    return ReadAllRows(table, /* filter = */ null);
+  }
+
+  /**
+   * Reads all the rows from the specified table and returns a list as generic Avro records.
+   *
+   * @param table
    * @param filter Optional. If specified, it will be used to restrict returned data.
    * @return
    */
   List<GenericData.Record> ReadAllRows(String table, String filter) throws IOException {
+    return ReadAllRows(table, filter);
+  }
+
+  /**
+   * Reads all the rows from the specified table and returns a list as generic Avro records.
+   *
+   * @param table
+   * @param filter Optional. If specified, it will be used to restrict returned data.
+   * @param selectedFields Optional. If specified, it will be used to project data.
+   * @return
+   */
+  List<GenericData.Record> ReadAllRows(String table, String filter, List<String> selectedFields) throws IOException {
     final List<GenericData.Record> rows = new ArrayList<>();
     ProcessRowsAtSnapshot(
         /* table = */ table,
         /* snapshotInMillis = */ null,
         /* filter = */ filter,
+        /* selectedFields = */ selectedFields,
         new AvroRowConsumer() {
           @Override
           public void accept(GenericData.Record record) {
