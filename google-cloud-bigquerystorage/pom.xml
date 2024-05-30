@@ -202,7 +202,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-netty</artifactId>
+      <artifactId>arrow-memory-core</artifactId>
       <version>${arrow.version}</version>
       <scope>test</scope>
     </dependency>
