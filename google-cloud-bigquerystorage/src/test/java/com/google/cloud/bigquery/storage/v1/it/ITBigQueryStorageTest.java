@@ -47,6 +47,7 @@ import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.JobInfo.WriteDisposition;
 import com.google.cloud.bigquery.LegacySQLTypeName;
 import com.google.cloud.bigquery.QueryJobConfiguration;
+import com.google.cloud.bigquery.Range;
 import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.StandardTableDefinition;
 import com.google.cloud.bigquery.TableId;
@@ -67,9 +68,11 @@ import com.google.cloud.bigquery.storage.v1.ReadStream;
 import com.google.cloud.bigquery.storage.v1.TableFieldSchema;
 import com.google.cloud.bigquery.storage.v1.TableName;
 import com.google.cloud.bigquery.storage.v1.TableSchema;
-import com.google.cloud.bigquery.storage.v1.it.SimpleRowReader.AvroRowConsumer;
+import com.google.cloud.bigquery.storage.v1.it.SimpleRowReaderArrow.ArrowRangeBatchConsumer;
+import com.google.cloud.bigquery.storage.v1.it.SimpleRowReaderAvro.AvroRowConsumer;
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Timestamp;
@@ -176,6 +179,10 @@ public class ITBigQueryStorageTest {
 
   private static final com.google.cloud.bigquery.Schema RANGE_SCHEMA =
       com.google.cloud.bigquery.Schema.of(
+          Field.newBuilder("name", StandardSQLTypeName.STRING)
+              .setMode(Field.Mode.NULLABLE)
+              .setDescription("Name of the row")
+              .build(),
           Field.newBuilder("date", StandardSQLTypeName.RANGE)
               .setMode(Field.Mode.NULLABLE)
               .setDescription("Range field with DATE")
@@ -195,6 +202,12 @@ public class ITBigQueryStorageTest {
   // storage.v1.TableSchema of RANGE_SCHEMA
   private static final TableSchema RANGE_TABLE_SCHEMA =
       TableSchema.newBuilder()
+          .addFields(
+              TableFieldSchema.newBuilder()
+                  .setName("name")
+                  .setType(TableFieldSchema.Type.STRING)
+                  .setMode(TableFieldSchema.Mode.NULLABLE)
+                  .build())
           .addFields(
               TableFieldSchema.newBuilder()
                   .setName("date")
@@ -224,6 +237,201 @@ public class ITBigQueryStorageTest {
                           .setType(TableFieldSchema.Type.TIMESTAMP)
                           .build())
                   .setMode(TableFieldSchema.Mode.NULLABLE)
+                  .build())
+          .build();
+
+  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_DATES =
+      new ImmutableMap.Builder<String, Range>()
+          .put(
+              "bounded",
+              Range.newBuilder()
+                  .setStart("2020-01-01")
+                  .setEnd("2020-12-31")
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .put(
+              "unboundedStart",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd("2020-12-31")
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .put(
+              "unboundedEnd",
+              Range.newBuilder()
+                  .setStart("2020-01-01")
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .put(
+              "unbounded",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .build();
+
+  // dates are returned as days since epoch
+  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_EXPECTED_DATES =
+      new ImmutableMap.Builder<String, Range>()
+          .put(
+              "bounded",
+              Range.newBuilder()
+                  .setStart("18262")
+                  .setEnd("18627")
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .put(
+              "unboundedStart",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd("18627")
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .put(
+              "unboundedEnd",
+              Range.newBuilder()
+                  .setStart("18262")
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .put(
+              "unbounded",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATE").build())
+                  .build())
+          .build();
+
+  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_DATETIME =
+      new ImmutableMap.Builder<String, Range>()
+          .put(
+              "bounded",
+              Range.newBuilder()
+                  .setStart("2014-08-19T05:41:35.220000")
+                  .setEnd("2015-09-20T06:41:35.220000")
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .put(
+              "unboundedStart",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd("2015-09-20T06:41:35.220000")
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .put(
+              "unboundedEnd",
+              Range.newBuilder()
+                  .setStart("2014-08-19T05:41:35.220000")
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .put(
+              "unbounded",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .build();
+
+  // datetime are returned as up to millisecond precision instead of microsecond input value
+  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_EXPECTED_DATETIME =
+      new ImmutableMap.Builder<String, Range>()
+          .put(
+              "bounded",
+              Range.newBuilder()
+                  .setStart("2014-08-19T05:41:35.220")
+                  .setEnd("2015-09-20T06:41:35.220")
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .put(
+              "unboundedStart",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd("2015-09-20T06:41:35.220")
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .put(
+              "unboundedEnd",
+              Range.newBuilder()
+                  .setStart("2014-08-19T05:41:35.220")
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .put(
+              "unbounded",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("DATETIME").build())
+                  .build())
+          .build();
+
+  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_TIMESTAMP =
+      new ImmutableMap.Builder<String, Range>()
+          .put(
+              "bounded",
+              Range.newBuilder()
+                  .setStart("2014-08-19 12:41:35.220000+00:00")
+                  .setEnd("2015-09-20 13:41:35.220000+01:00")
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .put(
+              "unboundedStart",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd("2015-09-20 13:41:35.220000+01:00")
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .put(
+              "unboundedEnd",
+              Range.newBuilder()
+                  .setStart("2014-08-19 12:41:35.220000+00:00")
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .put(
+              "unbounded",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .build();
+
+  // timestamps are returned as seconds since epoch
+  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_EXPECTED_TIMESTAMP =
+      new ImmutableMap.Builder<String, Range>()
+          .put(
+              "bounded",
+              Range.newBuilder()
+                  .setStart("1408452095220000")
+                  .setEnd("1442752895220000")
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .put(
+              "unboundedStart",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd("1442752895220000")
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .put(
+              "unboundedEnd",
+              Range.newBuilder()
+                  .setStart("1408452095220000")
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
+                  .build())
+          .put(
+              "unbounded",
+              Range.newBuilder()
+                  .setStart(null)
+                  .setEnd(null)
+                  .setType(FieldElementType.newBuilder().setType("TIMESTAMP").build())
                   .build())
           .build();
 
@@ -341,7 +549,7 @@ public class ITBigQueryStorageTest {
   }
 
   @Test
-  public void testRangeTypeRead() throws InterruptedException {
+  public void testRangeTypeSimple() throws InterruptedException {
     // Create table with Range values.
     String tableName = "test_range_type_read";
     TableId tableId = TableId.of(DATASET, tableName);
@@ -422,54 +630,42 @@ public class ITBigQueryStorageTest {
 
       // Write 4 rows of data to the table with and without unbounded values.
       JSONArray data = new JSONArray();
+      for (String name : RANGE_TEST_VALUES_DATES.keySet()) {
+        JSONObject row = new JSONObject();
+        row.put("name", name);
 
-      JSONObject row0 = new JSONObject();
-      JSONObject rangeDate0 = new JSONObject();
-      row0.put("date", rangeDate0);
-      JSONObject rangeDatetime0 = new JSONObject();
-      row0.put("datetime", rangeDatetime0);
-      JSONObject rangeTimestamp0 = new JSONObject();
-      row0.put("timestamp", rangeTimestamp0);
-      data.put(row0);
+        JSONObject dateColumn = new JSONObject();
+        Range date = RANGE_TEST_VALUES_DATES.get(name);
+        if ((!date.getStart().isNull()) && (date.getStart().getStringValue() != null)) {
+          dateColumn.put("start", date.getStart().getStringValue());
+        }
+        if ((!date.getEnd().isNull()) && (date.getEnd().getStringValue() != null)) {
+          dateColumn.put("end", date.getEnd().getStringValue());
+        }
+        row.put("date", dateColumn);
 
-      JSONObject row1 = new JSONObject();
-      JSONObject rangeDate1 = new JSONObject();
-      rangeDate1.put("end", 18627);
-      row1.put("date", rangeDate0);
-      JSONObject rangeDatetime1 = new JSONObject();
-      rangeDatetime1.put("end", "2015-08-19T05:41:35.220000");
-      row1.put("datetime", rangeDatetime1);
-      JSONObject rangeTimestamp1 = new JSONObject();
-      rangeTimestamp1.put("end", 1715446743);
-      row1.put("timestamp", rangeTimestamp1);
-      data.put(row1);
+        JSONObject datetimeColumn = new JSONObject();
+        Range datetime = RANGE_TEST_VALUES_DATETIME.get(name);
+        if ((!datetime.getStart().isNull()) && (datetime.getStart().getStringValue() != null)) {
+          datetimeColumn.put("start", datetime.getStart().getStringValue());
+        }
+        if ((!datetime.getEnd().isNull()) && (datetime.getEnd().getStringValue() != null)) {
+          datetimeColumn.put("end", datetime.getEnd().getStringValue());
+        }
+        row.put("datetime", datetimeColumn);
 
-      JSONObject row2 = new JSONObject();
-      JSONObject rangeDate2 = new JSONObject();
-      rangeDate2.put("start", 18262);
-      row2.put("date", rangeDate0);
-      JSONObject rangeDatetime2 = new JSONObject();
-      rangeDatetime2.put("start", "2014-08-19T05:41:35.220000");
-      row2.put("datetime", rangeDatetime1);
-      JSONObject rangeTimestamp2 = new JSONObject();
-      rangeTimestamp2.put("start", 1715360343);
-      row2.put("timestamp", rangeTimestamp1);
-      data.put(row2);
+        JSONObject timestampColumn = new JSONObject();
+        Range timestamp = RANGE_TEST_VALUES_TIMESTAMP.get(name);
+        if ((!timestamp.getStart().isNull()) && (timestamp.getStart().getStringValue() != null)) {
+          timestampColumn.put("start", timestamp.getStart().getStringValue());
+        }
+        if ((!timestamp.getEnd().isNull()) && (timestamp.getEnd().getStringValue() != null)) {
+          timestampColumn.put("end", timestamp.getEnd().getStringValue());
+        }
+        row.put("timestamp", timestampColumn);
 
-      JSONObject row3 = new JSONObject();
-      JSONObject rangeDate3 = new JSONObject();
-      rangeDate3.put("start", "1970-01-02");
-      rangeDate3.put("end", "1970-01-03");
-      row3.put("date", rangeDate0);
-      JSONObject rangeDatetime3 = new JSONObject();
-      rangeDatetime3.put("start", "2014-08-19T05:41:35.220000");
-      rangeDatetime3.put("end", "2015-08-19T05:41:35.220000");
-      row3.put("datetime", rangeDatetime1);
-      JSONObject rangeTimestamp3 = new JSONObject();
-      rangeTimestamp3.put("start", "1970-01-01 00:00:00.000010");
-      rangeTimestamp3.put("end", "2022-04-05 09:06:11 PST");
-      row3.put("timestamp", rangeTimestamp1);
-      data.put(row3);
+        data.put(row);
+      }
 
       ApiFuture<AppendRowsResponse> future = writer.append(data);
       // The append method is asynchronous. Rather than waiting for the method to complete,
@@ -503,19 +699,36 @@ public class ITBigQueryStorageTest {
     // directly.
     Preconditions.checkState(session.getStreamsCount() > 0);
 
-    // Use the first stream to perform reading.
-    String streamName = session.getStreams(0).getName();
+    // Set up a simple reader and start a read session.
+    try (SimpleRowReaderArrow reader = new SimpleRowReaderArrow(session.getArrowSchema())) {
 
-    ReadRowsRequest readRowsRequest =
-        ReadRowsRequest.newBuilder().setReadStream(streamName).build();
+      // Assert that there are streams available in the session.  An empty table may not have
+      // data available.  If no sessions are available for an anonymous (cached) table, consider
+      // writing results of a query to a named table rather than consuming cached results
+      // directly.
+      Preconditions.checkState(session.getStreamsCount() > 0);
 
-    long rowCount = 0;
-    ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
-    for (ReadRowsResponse response : stream) {
-      Preconditions.checkState(response.hasArrowRecordBatch());
-      rowCount += response.getRowCount();
+      // Use the first stream to perform reading.
+      String streamName = session.getStreams(0).getName();
+
+      ReadRowsRequest readRowsRequest =
+          ReadRowsRequest.newBuilder().setReadStream(streamName).build();
+
+      long rowCount = 0;
+      // Process each block of rows as they arrive and decode using our simple row reader.
+      ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
+      for (ReadRowsResponse response : stream) {
+        Preconditions.checkState(response.hasArrowRecordBatch());
+        reader.processRows(
+            response.getArrowRecordBatch(),
+            new ArrowRangeBatchConsumer(
+                RANGE_TEST_VALUES_EXPECTED_DATES,
+                RANGE_TEST_VALUES_EXPECTED_DATETIME,
+                RANGE_TEST_VALUES_EXPECTED_TIMESTAMP));
+        rowCount += response.getRowCount();
+      }
+      assertEquals(RANGE_TEST_VALUES_DATES.size(), rowCount);
     }
-    assertEquals(4, rowCount);
   }
 
   @Test
@@ -596,8 +809,8 @@ public class ITBigQueryStorageTest {
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
 
-    SimpleRowReader reader =
-        new SimpleRowReader(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
+    SimpleRowReaderAvro reader =
+        new SimpleRowReaderAvro(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
 
     long rowCount = 0;
 
@@ -674,7 +887,7 @@ public class ITBigQueryStorageTest {
         Schema.Type.LONG,
         avroSchema.getField("word_count").schema().getType());
 
-    SimpleRowReader reader = new SimpleRowReader(avroSchema);
+    SimpleRowReaderAvro reader = new SimpleRowReaderAvro(avroSchema);
 
     long rowCount = 0;
     ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
@@ -1435,8 +1648,8 @@ public class ITBigQueryStorageTest {
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
 
-    SimpleRowReader reader =
-        new SimpleRowReader(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
+    SimpleRowReaderAvro reader =
+        new SimpleRowReaderAvro(new Schema.Parser().parse(session.getAvroSchema().getSchema()));
 
     ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
     for (ReadRowsResponse response : stream) {
