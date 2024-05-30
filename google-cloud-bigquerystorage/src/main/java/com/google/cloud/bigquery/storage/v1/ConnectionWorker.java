@@ -31,6 +31,7 @@ import com.google.cloud.bigquery.storage.v1.StreamConnection.DoneCallback;
 import com.google.cloud.bigquery.storage.v1.StreamConnection.RequestCallback;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.Int64Value;
 import io.grpc.Status;
@@ -40,6 +41,7 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.api.metrics.LongHistogram;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.metrics.MeterProvider;
 import java.io.IOException;
@@ -264,6 +266,8 @@ class ConnectionWorker implements AutoCloseable {
   private static String tableMatching = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/";
   private static Pattern streamPatternTable = Pattern.compile(tableMatching);
   private Meter writeMeter;
+  static Duration METRICS_UPDATE_INTERVAL = Duration.ofSeconds(1);
+  private Instant instantLastSentMetrics = Instant.now();
   static AttributeKey<String> telemetryKeyTableId = AttributeKey.stringKey("table_id");
   private static String dataflowPrefix = "dataflow:";
   static List<AttributeKey<String>> telemetryKeysTraceId =
@@ -274,10 +278,36 @@ class ConnectionWorker implements AutoCloseable {
           add(AttributeKey.stringKey("trace_field_3"));
         }
       };
+  static AttributeKey<String> telemetryKeyErrorCode = AttributeKey.stringKey("error_code");
   private Attributes telemetryAttributes;
+  private long incomingRequestCountBuffered;
   private LongCounter instrumentIncomingRequestCount;
+  private long incomingRequestSizeBuffered;
   private LongCounter instrumentIncomingRequestSize;
+  private long incomingRequestRowsBuffered;
   private LongCounter instrumentIncomingRequestRows;
+  private long sentRequestCountBuffered;
+  private LongCounter instrumentSentRequestCount;
+  private long sentRequestSizeBuffered;
+  private LongCounter instrumentSentRequestSize;
+  private long sentRequestRowsBuffered;
+  private LongCounter instrumentSentRequestRows;
+  private long ackedRequestCountBuffered;
+  private LongCounter instrumentAckedRequestCount;
+  private long ackedRequestSizeBuffered;
+  private LongCounter instrumentAckedRequestSize;
+  private long ackedRequestRowsBuffered;
+  private LongCounter instrumentAckedRequestRows;
+  private LongCounter instrumentErrorRequestCount;
+  private LongCounter instrumentErrorRequestSize;
+  private LongCounter instrumentErrorRequestRows;
+  private static final List<Long> METRICS_LATENCY_BUCKETS =
+      ImmutableList.of(0L, 50L, 100L, 500L, 1000L, 5000L, 10000L, 20000L, 30000L, 60000L, 120000L);
+  private LongHistogram instrumentNetworkResponseLatency;
+  private long connectionEstablishCountBuffered;
+  private LongCounter instrumentConnectionEstablishCount;
+  private long connectionRetryCountBuffered;
+  private LongCounter instrumentConnectionRetryCount;
 
   public static Boolean isDefaultStreamName(String streamName) {
     Matcher matcher = DEFAULT_STREAM_PATTERN.matcher(streamName);
@@ -353,9 +383,69 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
+  private Attributes augmentAttributesWithErrorCode(Attributes attributes, String errorCode) {
+    AttributesBuilder builder = attributes.toBuilder();
+    if ((errorCode != null) && !errorCode.isEmpty()) {
+      builder.put(telemetryKeyErrorCode, errorCode);
+    }
+    return builder.build();
+  }
+
   @VisibleForTesting
   Attributes getTelemetryAttributes() {
     return telemetryAttributes;
+  }
+
+  private void periodicallyReportOpenTelemetryMetrics() {
+    Duration durationSinceLastRefresh = Duration.between(instantLastSentMetrics, Instant.now());
+    if (durationSinceLastRefresh.compareTo(METRICS_UPDATE_INTERVAL) > 0) {
+      instantLastSentMetrics = Instant.now();
+      Attributes attributes = getTelemetryAttributes();
+      if (incomingRequestCountBuffered > 0) {
+        instrumentIncomingRequestCount.add(incomingRequestCountBuffered, attributes);
+        incomingRequestCountBuffered = 0;
+      }
+      if (incomingRequestSizeBuffered > 0) {
+        instrumentIncomingRequestSize.add(incomingRequestSizeBuffered, attributes);
+        incomingRequestSizeBuffered = 0;
+      }
+      if (incomingRequestRowsBuffered > 0) {
+        instrumentIncomingRequestRows.add(incomingRequestRowsBuffered, attributes);
+        incomingRequestRowsBuffered = 0;
+      }
+      if (sentRequestCountBuffered > 0) {
+        instrumentSentRequestCount.add(sentRequestCountBuffered, attributes);
+        sentRequestCountBuffered = 0;
+      }
+      if (sentRequestSizeBuffered > 0) {
+        instrumentSentRequestSize.add(sentRequestSizeBuffered, attributes);
+        sentRequestSizeBuffered = 0;
+      }
+      if (sentRequestRowsBuffered > 0) {
+        instrumentSentRequestRows.add(sentRequestRowsBuffered, attributes);
+        sentRequestRowsBuffered = 0;
+      }
+      if (ackedRequestCountBuffered > 0) {
+        instrumentAckedRequestCount.add(ackedRequestCountBuffered, attributes);
+        ackedRequestCountBuffered = 0;
+      }
+      if (ackedRequestSizeBuffered > 0) {
+        instrumentAckedRequestSize.add(ackedRequestSizeBuffered, attributes);
+        ackedRequestSizeBuffered = 0;
+      }
+      if (ackedRequestRowsBuffered > 0) {
+        instrumentAckedRequestRows.add(ackedRequestRowsBuffered, attributes);
+        ackedRequestRowsBuffered = 0;
+      }
+      if (connectionEstablishCountBuffered > 0) {
+        instrumentConnectionEstablishCount.add(connectionEstablishCountBuffered, attributes);
+        connectionEstablishCountBuffered = 0;
+      }
+      if (connectionRetryCountBuffered > 0) {
+        instrumentConnectionRetryCount.add(connectionRetryCountBuffered, attributes);
+        connectionRetryCountBuffered = 0;
+      }
+    }
   }
 
   private void registerOpenTelemetryMetrics() {
@@ -380,6 +470,103 @@ class ConnectionWorker implements AutoCloseable {
         writeMeter
             .counterBuilder("append_rows")
             .setDescription("Counts number of incoming request rows")
+            .build();
+    instrumentSentRequestCount =
+        writeMeter
+            .counterBuilder("append_requests_sent")
+            .setDescription("Counts number of requests sent over the network")
+            .build();
+    instrumentSentRequestSize =
+        writeMeter
+            .counterBuilder("append_request_bytes_sent")
+            .setDescription("Counts byte size of requests sent over the network")
+            .build();
+    instrumentSentRequestRows =
+        writeMeter
+            .counterBuilder("append_rows_sent")
+            .setDescription("Counts number of request rows sent over the network")
+            .build();
+    instrumentAckedRequestCount =
+        writeMeter
+            .counterBuilder("append_requests_acked")
+            .setDescription("Counts number of requests acked by the server")
+            .build();
+    instrumentAckedRequestSize =
+        writeMeter
+            .counterBuilder("append_request_bytes_acked")
+            .setDescription("Counts byte size of requests acked by the server")
+            .build();
+    instrumentAckedRequestRows =
+        writeMeter
+            .counterBuilder("append_rows_acked")
+            .setDescription("Counts number of request rows acked by the server")
+            .build();
+    instrumentErrorRequestCount =
+        writeMeter
+            .counterBuilder("append_requests_error")
+            .setDescription("Counts number of requests returned by the server with an error")
+            .build();
+    instrumentErrorRequestSize =
+        writeMeter
+            .counterBuilder("append_request_bytes_error")
+            .setDescription("Counts byte size of requests returned by the server with an error")
+            .build();
+    instrumentErrorRequestRows =
+        writeMeter
+            .counterBuilder("append_rows_error")
+            .setDescription(
+                "Counts number of rows in requests returned by the server with an error")
+            .build();
+    writeMeter
+        .gaugeBuilder("waiting_queue_length")
+        .ofLongs()
+        .setDescription(
+            "Reports length of waiting queue. This queue contains requests buffered in the client and not yet sent to the server.")
+        .buildWithCallback(
+            measurement -> {
+              int length = 0;
+              this.lock.lock();
+              try {
+                length = waitingRequestQueue.size();
+              } finally {
+                this.lock.unlock();
+              }
+              measurement.record(length, getTelemetryAttributes());
+            });
+    writeMeter
+        .gaugeBuilder("inflight_queue_length")
+        .ofLongs()
+        .setDescription(
+            "Reports length of inflight queue. This queue contains sent append requests waiting for response from the server.")
+        .buildWithCallback(
+            measurement -> {
+              int length = 0;
+              this.lock.lock();
+              try {
+                length = inflightRequestQueue.size();
+              } finally {
+                this.lock.unlock();
+              }
+              measurement.record(length, getTelemetryAttributes());
+            });
+    instrumentNetworkResponseLatency =
+        writeMeter
+            .histogramBuilder("network_response_latency")
+            .ofLongs()
+            .setDescription(
+                "Reports time taken in milliseconds for a response to arrive once a message has been sent over the network.")
+            .setExplicitBucketBoundariesAdvice(METRICS_LATENCY_BUCKETS)
+            .build();
+    instrumentConnectionEstablishCount =
+        writeMeter
+            .counterBuilder("connection_establish_count")
+            .setDescription(
+                "Counts number of connection attempts made, regardless of whether these are initial or retry.")
+            .build();
+    instrumentConnectionRetryCount =
+        writeMeter
+            .counterBuilder("connection_retry_count")
+            .setDescription("Counts number of connection retry attempts made.")
             .build();
   }
 
@@ -469,6 +656,7 @@ class ConnectionWorker implements AutoCloseable {
 
   private void resetConnection() {
     log.info("Start connecting stream: " + streamName + " id: " + writerId);
+    connectionEstablishCountBuffered++;
     if (this.streamConnection != null) {
       // It's safe to directly close the previous connection as the in flight messages
       // will be picked up by the next connection.
@@ -615,9 +803,9 @@ class ConnectionWorker implements AutoCloseable {
                           + requestWrapper.messageSize)));
       return requestWrapper.appendResult;
     }
-    instrumentIncomingRequestCount.add(1, getTelemetryAttributes());
-    instrumentIncomingRequestSize.add(requestWrapper.messageSize, getTelemetryAttributes());
-    instrumentIncomingRequestRows.add(message.getProtoRows().getRows().getSerializedRowsCount());
+    incomingRequestCountBuffered++;
+    incomingRequestSizeBuffered += requestWrapper.messageSize;
+    incomingRequestRowsBuffered += message.getProtoRows().getRows().getSerializedRowsCount();
     this.lock.lock();
     try {
       if (userClosed) {
@@ -815,6 +1003,7 @@ class ConnectionWorker implements AutoCloseable {
             throwIfWaitCallbackTooLong(sendInstant);
           }
         }
+        periodicallyReportOpenTelemetryMetrics();
 
         // Copy the streamConnectionIsConnected guarded by lock to a local variable.
         // In addition, only reconnect if there is a retriable error.
@@ -876,7 +1065,8 @@ class ConnectionWorker implements AutoCloseable {
       }
       while (!localQueue.isEmpty()) {
         localQueue.peekFirst().setRequestSendQueueTime();
-        AppendRowsRequest originalRequest = localQueue.pollFirst().message;
+        AppendRequestAndResponse requestWrapper = localQueue.pollFirst();
+        AppendRowsRequest originalRequest = requestWrapper.message;
         AppendRowsRequest.Builder originalRequestBuilder = originalRequest.toBuilder();
         // Always respect the first writer schema seen by the loop.
         if (writerSchema == null) {
@@ -928,6 +1118,10 @@ class ConnectionWorker implements AutoCloseable {
         // In the close case, the request is in the inflight queue, and will either be returned
         // to the user with an error, or will be resent.
         this.streamConnection.send(originalRequestBuilder.build());
+        sentRequestCountBuffered++;
+        sentRequestSizeBuffered += requestWrapper.messageSize;
+        sentRequestRowsBuffered +=
+            originalRequest.getProtoRows().getRows().getSerializedRowsCount();
       }
     }
     cleanupConnectionAndRequests(/* avoidBlocking= */ false);
@@ -1195,6 +1389,13 @@ class ConnectionWorker implements AutoCloseable {
         connectionRetryStartTime = 0;
       }
       if (!this.inflightRequestQueue.isEmpty()) {
+        Instant sendInstant = inflightRequestQueue.getFirst().requestSendTimeStamp;
+        if (sendInstant != null) {
+          Duration durationLatency = Duration.between(sendInstant, Instant.now());
+          instrumentNetworkResponseLatency.record(
+              durationLatency.toMillis(), getTelemetryAttributes());
+        }
+
         requestWrapper = pollFirstInflightRequestQueue();
       } else if (inflightCleanuped) {
         // It is possible when requestCallback is called, the inflight queue is already drained
@@ -1208,6 +1409,17 @@ class ConnectionWorker implements AutoCloseable {
                 Status.fromCode(Code.FAILED_PRECONDITION)
                     .withDescription("Request callback called on an empty inflight queue."));
         return;
+      }
+
+      if (response.hasError()) {
+        Attributes augmentedTelemetryAttributes =
+            augmentAttributesWithErrorCode(
+                getTelemetryAttributes(), Code.values()[response.getError().getCode()].toString());
+        instrumentErrorRequestCount.add(1, augmentedTelemetryAttributes);
+        instrumentErrorRequestSize.add(requestWrapper.messageSize, augmentedTelemetryAttributes);
+        instrumentErrorRequestRows.add(
+            requestWrapper.message.getProtoRows().getRows().getSerializedRowsCount(),
+            augmentedTelemetryAttributes);
       }
     } finally {
       this.lock.unlock();
@@ -1256,6 +1468,10 @@ class ConnectionWorker implements AutoCloseable {
             }
           } else {
             requestWrapper.appendResult.set(response);
+            ackedRequestCountBuffered++;
+            ackedRequestSizeBuffered += requestWrapper.messageSize;
+            ackedRequestRowsBuffered +=
+                requestWrapper.message.getProtoRows().getRows().getSerializedRowsCount();
           }
         });
   }
@@ -1301,6 +1517,7 @@ class ConnectionWorker implements AutoCloseable {
                 || System.currentTimeMillis() - connectionRetryStartTime
                     <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
+          this.connectionRetryCountBuffered++;
           log.info(
               "Connection is going to be reestablished with the next request. Retriable error "
                   + finalStatus.toString()
