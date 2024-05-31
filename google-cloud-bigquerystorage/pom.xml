@@ -15,7 +15,7 @@
   </parent>
   <properties>
     <site.installationModule>google-cloud-bigquerystorage</site.installationModule>
-    <arrow.version>15.0.2</arrow.version>
+    <arrow.version>16.1.0</arrow.version>
   </properties>
   <build>
     <extensions>
