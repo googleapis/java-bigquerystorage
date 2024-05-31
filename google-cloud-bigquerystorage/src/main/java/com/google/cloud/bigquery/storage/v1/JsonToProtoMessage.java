@@ -281,7 +281,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     JSONArray jsonArray = new JSONArray();
     jsonArray.put(jsonObject);
     return convertToProtoMessage(
-            protoSchema, tableSchema, jsonArray, jsonScope, ignoreUnknownFields)
+        protoSchema, tableSchema, jsonArray, jsonScope, ignoreUnknownFields)
         .get(0);
   }
 
@@ -433,6 +433,40 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     if (tableFieldSchemaList != null) {
       // protoSchema is generated from tableSchema so their field ordering should match.
       fieldSchema = tableFieldSchemaList.get(field.getIndex());
+      // For RANGE type, expliclitly add the fields start and end of the same FieldElementType as it
+      // is not expliclity defined in the TableFieldSchema.
+      if (fieldSchema.getType() == TableFieldSchema.Type.RANGE) {
+        switch (fieldSchema.getRangeElementType().getType()) {
+          case DATE:
+          case DATETIME:
+          case TIMESTAMP:
+            fieldSchema =
+                fieldSchema
+                    .toBuilder()
+                    .addFields(
+                        TableFieldSchema.newBuilder()
+                            .setName("start")
+                            .setType(fieldSchema.getRangeElementType().getType())
+                            .build())
+                    .addFields(
+                        TableFieldSchema.newBuilder()
+                            .setName("end")
+                            .setType(fieldSchema.getRangeElementType().getType())
+                            .build())
+                    .build();
+            break;
+          default:
+            throw new ValidationException(
+                "Field at index "
+                    + field.getIndex()
+                    + " with name ("
+                    + fieldSchema.getName()
+                    + ") with type (RANGE) has an unsupported range element type ("
+                    + fieldSchema.getRangeElementType()
+                    + ")");
+        }
+      }
+
       if (!fieldSchema.getName().toLowerCase().equals(BigQuerySchemaUtil.getFieldName(field))) {
         throw new ValidationException(
             "Field at index "
@@ -483,7 +517,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         }
         if (val instanceof String
             && ("true".equalsIgnoreCase(((String) val))
-                || "false".equalsIgnoreCase(((String) val)))) {
+            || "false".equalsIgnoreCase(((String) val)))) {
           protoMsg.setField(fieldDescriptor, Boolean.parseBoolean((String) val));
           return;
         }
@@ -735,7 +769,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             protoMsg.addRepeatedField(fieldDescriptor, val);
           } else if (val instanceof String
               && ("true".equalsIgnoreCase(((String) val))
-                  || "false".equalsIgnoreCase(((String) val)))) {
+              || "false".equalsIgnoreCase(((String) val)))) {
             protoMsg.addRepeatedField(fieldDescriptor, Boolean.parseBoolean((String) val));
           } else {
             throwWrongFieldType(fieldDescriptor, currentScope, index);
