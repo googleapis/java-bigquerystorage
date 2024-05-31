@@ -642,7 +642,7 @@ public class ITBigQueryStorageTest {
         if ((!date.getEnd().isNull()) && (date.getEnd().getStringValue() != null)) {
           dateColumn.put("end", date.getEnd().getStringValue());
         }
-        row.put("date", dateColumn);
+        row.put("daTE", dateColumn);
 
         JSONObject datetimeColumn = new JSONObject();
         Range datetime = RANGE_TEST_VALUES_DATETIME.get(name);
@@ -652,7 +652,7 @@ public class ITBigQueryStorageTest {
         if ((!datetime.getEnd().isNull()) && (datetime.getEnd().getStringValue() != null)) {
           datetimeColumn.put("end", datetime.getEnd().getStringValue());
         }
-        row.put("dateTime", datetimeColumn);
+        row.put("daTEtiME", datetimeColumn);
 
         JSONObject timestampColumn = new JSONObject();
         Range timestamp = RANGE_TEST_VALUES_TIMESTAMP.get(name);
@@ -662,7 +662,7 @@ public class ITBigQueryStorageTest {
         if ((!timestamp.getEnd().isNull()) && (timestamp.getEnd().getStringValue() != null)) {
           timestampColumn.put("end", timestamp.getEnd().getStringValue());
         }
-        row.put("timestamp", timestampColumn);
+        row.put("tiMEstAMp", timestampColumn);
 
         data.put(row);
       }
