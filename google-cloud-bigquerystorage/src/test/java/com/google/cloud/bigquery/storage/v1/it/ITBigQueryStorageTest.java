@@ -652,7 +652,7 @@ public class ITBigQueryStorageTest {
         if ((!datetime.getEnd().isNull()) && (datetime.getEnd().getStringValue() != null)) {
           datetimeColumn.put("end", datetime.getEnd().getStringValue());
         }
-        row.put("datetime", datetimeColumn);
+        row.put("dateTime", datetimeColumn);
 
         JSONObject timestampColumn = new JSONObject();
         Range timestamp = RANGE_TEST_VALUES_TIMESTAMP.get(name);

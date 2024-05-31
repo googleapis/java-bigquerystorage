@@ -1055,7 +1055,7 @@ public class JsonToProtoMessageTest {
                     .build())
             .addFields(
                 TableFieldSchema.newBuilder()
-                    .setName("range_date_mixed_case")
+                    .setName("raNGe_daTE_miXEd_caSE")
                     .setType(TableFieldSchema.Type.RANGE)
                     .setRangeElementType(
                         TableFieldSchema.FieldElementType.newBuilder()
@@ -1065,7 +1065,7 @@ public class JsonToProtoMessageTest {
                     .build())
             .addFields(
                 TableFieldSchema.newBuilder()
-                    .setName("range_datetime_mixed_case")
+                    .setName("ranGE_daTEtiME_miXEd_caSE")
                     .setType(TableFieldSchema.Type.RANGE)
                     .setRangeElementType(
                         TableFieldSchema.FieldElementType.newBuilder()
@@ -1075,7 +1075,7 @@ public class JsonToProtoMessageTest {
                     .build())
             .addFields(
                 TableFieldSchema.newBuilder()
-                    .setName("range_timestamp_mixed_case")
+                    .setName("raNGe_tiMEstAMp_miXEd_caSE")
                     .setType(TableFieldSchema.Type.RANGE)
                     .setRangeElementType(
                         TableFieldSchema.FieldElementType.newBuilder()
