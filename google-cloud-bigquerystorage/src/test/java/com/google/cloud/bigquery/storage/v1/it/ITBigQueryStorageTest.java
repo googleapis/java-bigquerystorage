@@ -160,6 +160,7 @@ public class ITBigQueryStorageTest {
 
   @BeforeClass
   public static void beforeClass() throws IOException {
+    // TODO: DO NOT MERGE.
     client = BigQueryReadClient.create();
     parentProjectId = String.format("projects/%s", ServiceOptions.getDefaultProjectId());
 
