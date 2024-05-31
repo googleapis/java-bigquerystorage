@@ -15,7 +15,7 @@
   </parent>
   <properties>
     <site.installationModule>google-cloud-bigquerystorage</site.installationModule>
-<!--    <arrow.version>15.0.2</arrow.version>-->
+    <arrow.version>15.0.2</arrow.version>
   </properties>
   <build>
     <extensions>
@@ -197,21 +197,13 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
-      <version>15.0.2</version>
-<!--      <version>${arrow.version}</version>-->
+      <version>${arrow.version}</version>
       <scope>test</scope>
     </dependency>
-<!--    <dependency>-->
-<!--      <groupId>org.apache.arrow</groupId>-->
-<!--      <artifactId>arrow-memory-core</artifactId>-->
-<!--      <version>${arrow.version}</version>-->
-<!--      <scope>test</scope>-->
-<!--    </dependency>-->
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-memory-netty</artifactId>
-<!--      <version>${arrow.version}</version>-->
-      <version>15.0.2</version>
+      <version>${arrow.version}</version>
       <scope>test</scope>
     </dependency>
 
