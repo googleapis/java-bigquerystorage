@@ -141,7 +141,7 @@ public class BQTableSchemaToProtoDescriptorTest {
                     .build())
             .addFields(
                 TableFieldSchema.newBuilder()
-                    .setName("range_date_mixed_case")
+                    .setName("range_date_miXEd_caSE")
                     .setType(TableFieldSchema.Type.RANGE)
                     .setMode(TableFieldSchema.Mode.NULLABLE)
                     .setRangeElementType(
@@ -151,7 +151,7 @@ public class BQTableSchemaToProtoDescriptorTest {
                     .build())
             .addFields(
                 TableFieldSchema.newBuilder()
-                    .setName("range_datetime_mixed_case")
+                    .setName("range_datetime_miXEd_caSE")
                     .setType(TableFieldSchema.Type.RANGE)
                     .setMode(TableFieldSchema.Mode.NULLABLE)
                     .setRangeElementType(
@@ -161,7 +161,7 @@ public class BQTableSchemaToProtoDescriptorTest {
                     .build())
             .addFields(
                 TableFieldSchema.newBuilder()
-                    .setName("range_timestamp_mixed_case")
+                    .setName("range_timestamp_miXEd_caSE")
                     .setType(TableFieldSchema.Type.RANGE)
                     .setMode(TableFieldSchema.Mode.NULLABLE)
                     .setRangeElementType(
