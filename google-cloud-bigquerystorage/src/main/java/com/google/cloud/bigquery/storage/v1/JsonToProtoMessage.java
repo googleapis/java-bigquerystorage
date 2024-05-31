@@ -51,6 +51,7 @@ import org.threeten.bp.temporal.TemporalAccessor;
  * The Protobuf descriptor must have all fields lowercased.
  */
 public class JsonToProtoMessage implements ToProtoConverter<Object> {
+  // TODO(NOW)
   public static final JsonToProtoMessage INSTANCE = new JsonToProtoMessage();
   private static final int NUMERIC_SCALE = 9;
   private static final ImmutableMap<FieldDescriptor.Type, String> FIELD_TYPE_TO_DEBUG_MESSAGE =

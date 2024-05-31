@@ -36,6 +36,7 @@ import java.util.List;
  * shown in the ImmutableMaps below.
  */
 public class BQTableSchemaToProtoDescriptor {
+  // TODO(NOW)
   private static ImmutableMap<TableFieldSchema.Mode, FieldDescriptorProto.Label>
       BQTableSchemaModeMap =
           ImmutableMap.of(
