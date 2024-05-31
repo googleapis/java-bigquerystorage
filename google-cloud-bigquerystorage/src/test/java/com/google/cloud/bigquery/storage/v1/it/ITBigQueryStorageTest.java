@@ -227,6 +227,8 @@ public class ITBigQueryStorageTest {
 
   @Test
   public void testSimpleReadArrow() {
+    // TODO: DO NOT MERGE
+
     String table =
         BigQueryResource.FormatTableResource(
             /* projectId = */ "bigquery-public-data",
