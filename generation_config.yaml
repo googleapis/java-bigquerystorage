@@ -1,25 +1,8 @@
 gapic_generator_version: 2.41.0
-protoc_version: '25.3'
 googleapis_commitish: 6f289d775912966eb0cf04bda91e5e355c998d30
 libraries_bom_version: 26.38.0
-template_excludes:
-    - renovate.json
-    - .kokoro/build.sh
-    - .kokoro/nightly/retry_non_quota.cfg
-    - .kokoro/nightly/retry_quota.cfg
-    - .kokoro/nightly/samples.cfg
-    - .kokoro/presubmit/samples.cfg
-    - .kokoro/presubmit/graalvm-native-17.cfg
-    - .kokoro/presubmit/graalvm-native.cfg
-    - .kokoro/dependencies.sh
-    - .github/workflows/approve-readme.yaml
-    - .github/workflows/auto-release.yaml
-    - .github/workflows/ci.yaml
-    - .github/workflows/samples.yaml
-    - .kokoro/requirements.in
-    - .kokoro/requirements.txt
 libraries:
-    - api_shortname: "bigquerystorage"
+    - api_shortname: bigquerystorage
       name_pretty: "BigQuery Storage"
       product_documentation: "https://cloud.google.com/bigquery/docs/reference/storage/"
       client_documentation: "https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/history"
