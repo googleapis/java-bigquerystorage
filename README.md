@@ -93,7 +93,7 @@ to add `google-cloud-bigquerystorage` as a dependency in your code.
 ## About BigQuery Storage
 
 
-[BigQuery Storage][product-docs] is an API for reading data stored in BigQuery. This API provides direct, high-throughput read\naccess to existing BigQuery tables, supports parallel access with automatic liquid sharding, and allows fine-grained\ncontrol over what data is returned.
+[BigQuery Storage][product-docs] is an API for reading data stored in BigQuery. This API provides direct, high-throughput read access to existing BigQuery tables, supports parallel access with automatic liquid sharding, and allows fine-grained control over what data is returned.
 
 See the [BigQuery Storage client library docs][javadocs] to learn how to
 use this BigQuery Storage Client Library.
