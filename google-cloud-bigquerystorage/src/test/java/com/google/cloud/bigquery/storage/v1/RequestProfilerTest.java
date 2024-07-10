@@ -1,3 +1,18 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.google.cloud.bigquery.storage.v1;
 
 import static org.junit.Assert.assertTrue;
@@ -24,17 +39,17 @@ public class RequestProfilerTest {
   @Test
   public void testNormalCase() throws Exception {
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-        OperationName.TOTAL_REQUEST, "request_1");
+        OperationName.TOTAL_LATENCY, "request_1");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
         OperationName.JSON_TO_PROTO_CONVERSION, "request_1");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
         OperationName.JSON_TO_PROTO_CONVERSION, "request_1");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-        OperationName.BACKEND_LATENCY, "request_1");
+        OperationName.RESPONSE_LATENCY, "request_1");
 
     // Another request starts in the middle
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-        OperationName.TOTAL_REQUEST, "request_2");
+        OperationName.TOTAL_LATENCY, "request_2");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
         OperationName.JSON_TO_PROTO_CONVERSION, "request_2");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
@@ -42,25 +57,25 @@ public class RequestProfilerTest {
 
     // Continue request 1
     RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-        OperationName.BACKEND_LATENCY, "request_1");
+        OperationName.RESPONSE_LATENCY, "request_1");
 
     // Continue request 2
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-        OperationName.BACKEND_LATENCY, "request_2");
+        OperationName.RESPONSE_LATENCY, "request_2");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-        OperationName.BACKEND_LATENCY, "request_2");
+        OperationName.RESPONSE_LATENCY, "request_2");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-        OperationName.TOTAL_REQUEST, "request_2");
+        OperationName.TOTAL_LATENCY, "request_2");
 
     // Continue request 1
     RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-        OperationName.TOTAL_REQUEST, "request_1");
+        OperationName.TOTAL_LATENCY, "request_1");
 
     // Test the report generated.
     String reportText = RequestProfiler.REQUEST_PROFILER_SINGLETON.flushAndGenerateReportText();
     assertTrue(reportText.contains("Request uuid: request_1 with total time"));
     assertTrue(reportText.contains("Operation name json_to_proto_conversion starts at"));
-    assertTrue(reportText.contains("Operation name backend_latency starts at"));
+    assertTrue(reportText.contains("Operation name response_latency starts at"));
     assertTrue(reportText.contains("Request uuid: request_2 with total time"));
 
     // Second time flush is called, it should generate empty report.
@@ -72,17 +87,17 @@ public class RequestProfilerTest {
   public void mixFinishedAndUnfinishedRequest() throws Exception {
     // Start request 1.
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-        OperationName.TOTAL_REQUEST, "request_1");
+        OperationName.TOTAL_LATENCY, "request_1");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
         OperationName.JSON_TO_PROTO_CONVERSION, "request_1");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
         OperationName.JSON_TO_PROTO_CONVERSION, "request_1");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-        OperationName.BACKEND_LATENCY, "request_1");
+        OperationName.RESPONSE_LATENCY, "request_1");
 
     // Another request starts in the middle
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-        OperationName.TOTAL_REQUEST, "request_2");
+        OperationName.TOTAL_LATENCY, "request_2");
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
         OperationName.JSON_TO_PROTO_CONVERSION, "request_2");
 
@@ -92,13 +107,13 @@ public class RequestProfilerTest {
 
     // End one of them.
     RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-        OperationName.TOTAL_REQUEST, "request_1");
+        OperationName.TOTAL_LATENCY, "request_1");
     reportText = RequestProfiler.REQUEST_PROFILER_SINGLETON.flushAndGenerateReportText();
     assertTrue(reportText.contains("Request uuid: request_1 with total time"));
 
     // End another, expect the first request's log not showing up.
     RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-        OperationName.TOTAL_REQUEST, "request_2");
+        OperationName.TOTAL_LATENCY, "request_2");
     reportText = RequestProfiler.REQUEST_PROFILER_SINGLETON.flushAndGenerateReportText();
     assertTrue(!reportText.contains("Request uuid: request_1 with total time"));
     assertTrue(reportText.contains("Request uuid: request_2 with total time"));
@@ -126,7 +141,7 @@ public class RequestProfilerTest {
               () -> {
                 String uuid = String.format("request_%s", finalI);
                 RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-                    OperationName.TOTAL_REQUEST, uuid);
+                    OperationName.TOTAL_LATENCY, uuid);
                 RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
                     OperationName.JSON_TO_PROTO_CONVERSION, uuid);
                 if (slowRequestIndex.contains(finalI)) {
@@ -147,7 +162,7 @@ public class RequestProfilerTest {
                 RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
                     OperationName.WAIT_QUEUE, uuid);
                 RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-                    OperationName.TOTAL_REQUEST, uuid);
+                    OperationName.TOTAL_LATENCY, uuid);
               }));
     }
 
@@ -156,7 +171,8 @@ public class RequestProfilerTest {
       futures.get(i).get();
     }
     String reportText = RequestProfiler.REQUEST_PROFILER_SINGLETON.flushAndGenerateReportText();
-    assertTrue(reportText.contains("in total 1000 finished during the last 60000 milliseconds"));
+    assertTrue(reportText.contains("During the last 60000 milliseconds at system time"));
+    assertTrue(reportText.contains("in total 1000 requests finished"));
     assertTrue(reportText.contains("Request uuid: request_50 with total time"));
     assertTrue(reportText.contains("Request uuid: request_40 with total time"));
     assertTrue(reportText.contains("Request uuid: request_30 with total time"));
@@ -183,7 +199,7 @@ public class RequestProfilerTest {
                 try {
                   String uuid = String.format("request_%s", finalI);
                   RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-                      OperationName.TOTAL_REQUEST, uuid);
+                      OperationName.TOTAL_LATENCY, uuid);
                   RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
                       OperationName.JSON_TO_PROTO_CONVERSION, uuid);
                   if (slowRequestIndex.contains(finalI)) {
@@ -200,7 +216,7 @@ public class RequestProfilerTest {
                   RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
                       OperationName.WAIT_QUEUE, uuid);
                   RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-                      OperationName.TOTAL_REQUEST, uuid);
+                      OperationName.TOTAL_LATENCY, uuid);
                   String unused =
                       RequestProfiler.REQUEST_PROFILER_SINGLETON.flushAndGenerateReportText();
                 } catch (InterruptedException e) {
