@@ -1,3 +1,18 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.google.cloud.bigquery.storage.v1;
 
 import static org.junit.Assert.assertTrue;
@@ -156,7 +171,8 @@ public class RequestProfilerTest {
       futures.get(i).get();
     }
     String reportText = RequestProfiler.REQUEST_PROFILER_SINGLETON.flushAndGenerateReportText();
-    assertTrue(reportText.contains("in total 1000 finished during the last 60000 milliseconds"));
+    assertTrue(
+        reportText.contains("in total 1000 requests finished during the last 60000 milliseconds"));
     assertTrue(reportText.contains("Request uuid: request_50 with total time"));
     assertTrue(reportText.contains("Request uuid: request_40 with total time"));
     assertTrue(reportText.contains("Request uuid: request_30 with total time"));

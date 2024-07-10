@@ -1,3 +1,18 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.google.cloud.bigquery.storage.v1;
 
 import java.time.Duration;
@@ -19,16 +34,20 @@ import java.util.logging.Logger;
  * A profiler that would periodically generate a report for the past period with the latency report
  * for the slowest requests. This is used for debugging only.
  *
- * <p>The report will contain the execution details of the TOP_K slowest requests, one example: ```
- * INFO: At system time 1720566109971, in total 2 finished during the last 60000 milliseconds, the
- * top 10 long latency requests details report: ----------------------------- Request uuid:
- * request_1 with total time 1000 milliseconds Operation name json_to_proto_conversion starts at:
- * 1720566109971, ends at: 1720566109971, total time: 200 milliseconds Operation name
- * backend_latency starts at: 1720566109971, ends at: 1720566109971, total time: 800 milliseconds
- * ----------------------------- Request uuid: request_2 with total time 500 milliseconds Operation
- * name json_to_proto_conversion starts at: 1720566109971, ends at: 1720566109971, total time: 250
- * milliseconds Operation name backend_latency starts at: 1720566109971, ends at: 1720566109971,
- * total time: 250 milliseconds ```
+ * <pre>
+ * The report will contain the execution details of the TOP_K slowest requests, one example:
+ *
+ * INFO: At system time 1720566109971, in total 2 finished during the last 60000 milliseconds, the top 10 long latency requests details report:
+ * -----------------------------
+ * 	Request uuid: request_1 with total time 1000 milliseconds
+ * 		Operation name json_to_proto_conversion starts at: 1720566109971, ends at: 1720566109971, total time: 200 milliseconds
+ * 		Operation name backend_latency starts at: 1720566109971, ends at: 1720566109971, total time: 800 milliseconds
+ * -----------------------------
+ * 	Request uuid: request_2 with total time 500 milliseconds
+ * 		Operation name json_to_proto_conversion starts at: 1720566109971, ends at: 1720566109971, total time: 250 milliseconds
+ * 		Operation name backend_latency starts at: 1720566109971, ends at: 1720566109971, total time: 250 milliseconds
+ * ...
+ * </pre>
  */
 public class RequestProfiler {
   enum OperationName {
@@ -51,6 +70,14 @@ public class RequestProfiler {
 
   private static final Logger log = Logger.getLogger(RequestProfiler.class.getName());
 
+  // Control per how many requests we log one time for a dropped operation.
+  // An operation can be dropped if we are caching too many requests (by default 100000) in memory. If we are at that
+  // state, any new operation for new requests would be dropped.
+  private static final int LOG_PER_DROPPED_OPERATION = 50;
+
+  // Discard the requests if we are caching too many requests.
+  private static final int MAX_CACHED_REQUEST = 100000;
+
   // Singleton for easier access.
   public static final RequestProfiler REQUEST_PROFILER_SINGLETON = new RequestProfiler();
 
@@ -66,15 +93,43 @@ public class RequestProfiler {
 
   private Thread flushThread;
 
+  // Count the total number of dropped operations.
+  long droppedOperationCount = 0;
+
   // Mark an operation for a given request id to be start.
   void startOperation(OperationName operationName, String requestUniqueId) {
-    idToIndividualOperation.putIfAbsent(
-        requestUniqueId, new IndividualRequestProfiler(requestUniqueId));
+    if (!idToIndividualOperation.containsKey(requestUniqueId)) {
+      if (idToIndividualOperation.size() > MAX_CACHED_REQUEST) {
+        if (droppedOperationCount % LOG_PER_DROPPED_OPERATION == 0) {
+          log.warning(
+              String.format(
+                  "startOperation is triggered for request_id: %s that's hasn't "
+                      + "seen before, this is possible when "
+                      + "we are recording too much ongoing requests.",
+                  requestUniqueId));
+        }
+        droppedOperationCount++;
+        return;
+      }
+      idToIndividualOperation.put(requestUniqueId, new IndividualRequestProfiler(requestUniqueId));
+    }
     idToIndividualOperation.get(requestUniqueId).startOperation(operationName);
   }
 
   // Mark an operation for a given request id to be end.
   void endOperation(OperationName operationName, String requestUniqueId) {
+    if (!idToIndividualOperation.containsKey(requestUniqueId)) {
+      if (droppedOperationCount % LOG_PER_DROPPED_OPERATION == 0) {
+        log.warning(
+            String.format(
+                "endOperation is triggered for request_id: %s that's hasn't "
+                    + "seen before, this is possible when "
+                    + "we are recording too much ongoing requests.",
+                requestUniqueId));
+      }
+      droppedOperationCount++;
+      return;
+    }
     idToIndividualOperation.get(requestUniqueId).endOperation(operationName);
   }
 
@@ -82,6 +137,7 @@ public class RequestProfiler {
     log.info(flushAndGenerateReportText());
   }
 
+  // Periodically trigger the report generation.
   void startPeriodicalReportFlushing() {
     this.flushThread =
         new Thread(
@@ -111,6 +167,9 @@ public class RequestProfiler {
     Iterator<Entry<String, IndividualRequestProfiler>> iterator =
         idToIndividualOperation.entrySet().iterator();
     int finishedRequestCount = 0;
+    // Iterate through all the requests stats, add to min heap if that's a finished request and has
+    // longer total
+    // latency than the least amount of latency in the min heap.
     while (iterator.hasNext()) {
       Entry<String, IndividualRequestProfiler> individualRequestProfiler = iterator.next();
       if (!individualRequestProfiler.getValue().finalized) {
@@ -128,9 +187,10 @@ public class RequestProfiler {
       iterator.remove();
     }
 
+    // Generate report for the TOP_K longest requests.
     String reportText =
         String.format(
-            "At system time %s, in total %s finished during the "
+            "At system time %s, in total %s requests finished during the "
                 + "last %s milliseconds, the top %s long latency requests details report:\n",
             System.currentTimeMillis(), finishedRequestCount, FLUSH_PERIOD.toMillis(), TOP_K);
     if (minHeap.isEmpty()) {
