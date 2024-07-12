@@ -166,6 +166,9 @@ public class StreamWriterTest {
         .setLocation("US")
         .setEnableConnectionPool(true)
         .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
+        // We won't test profiler behavior in this test, it's a sanity check.
+        .setEnableLatencyProfiler(true)
+        .setLatencyProfilerFlushPeriod(java.time.Duration.ofSeconds(4))
         .build();
   }
 

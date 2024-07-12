@@ -25,6 +25,8 @@ import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.UUID;
+
 import org.json.JSONArray;
 
 /**
@@ -380,6 +382,33 @@ public class JsonStreamWriter implements AutoCloseable {
      */
     public Builder setRetrySettings(RetrySettings retrySettings) {
       this.schemaAwareStreamWriterBuilder.setRetrySettings(retrySettings);
+      return this;
+    }
+
+    /**
+     * Sets how many top k requests we print for each periodical latency profiling report.
+     * Default to 1 minute if not set. This flag is only effective when `enableLatencyProfiler()` is called.
+     */
+    public Builder setLatencyProfilerFlushPeriod(Duration flushPeriod) {
+      RequestProfiler.setReportPeriod(flushPeriod);
+      return this;
+    }
+
+    /**
+     * Sets how many top k requests we print for each periodical latency profiling report. Default to 20 if not set.
+     * This flag is only effective when `enableLatencyProfiler()` is called.
+     */
+    public Builder setLatencyProfilerTopK(int topK) {
+      RequestProfiler.setTopKRequestsToLog(topK);
+      return this;
+    }
+
+    /**
+     * Enable a latency profiler that would periodically generate a detailed latency report for the top latency
+     * requests.
+     */
+    public Builder setEnableLatencyProfiler(boolean enableLatencyProfiler) {
+      this.schemaAwareStreamWriterBuilder.setEnableLatencyProfiler(enableLatencyProfiler);
       return this;
     }
 

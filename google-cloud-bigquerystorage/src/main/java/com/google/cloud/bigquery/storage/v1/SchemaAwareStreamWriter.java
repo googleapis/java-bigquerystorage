@@ -30,9 +30,11 @@ import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.DynamicMessage;
 import com.google.rpc.Code;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -102,6 +104,9 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     streamWriterBuilder.setDefaultMissingValueInterpretation(
         builder.defaultMissingValueInterpretation);
     streamWriterBuilder.setClientId(builder.clientId);
+    if (builder.enableRequestProfiler) {
+      streamWriterBuilder.setEnableLatencyProfiler(builder.enableRequestProfiler);
+    }
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
@@ -122,7 +127,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
    */
   public ApiFuture<AppendRowsResponse> append(Iterable<T> items)
       throws IOException, DescriptorValidationException {
-    return append(items, -1);
+    return appendWithUniqueId(items, -1, generateRequestUniqueId());
   }
 
   private void refreshWriter(TableSchema updatedSchema)
@@ -183,38 +188,52 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
    */
   public ApiFuture<AppendRowsResponse> append(Iterable<T> items, long offset)
       throws IOException, DescriptorValidationException {
+    String requestUniqueId = generateRequestUniqueId();
+    RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+            RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
+    return appendWithUniqueId(items, offset, requestUniqueId);
+  }
+
+  ApiFuture<AppendRowsResponse> appendWithUniqueId(Iterable<T> items, long offset, String requestUniqueId)
+          throws DescriptorValidationException, IOException {
     // Handle schema updates in a Thread-safe way by locking down the operation
     synchronized (this) {
-      // Create a new stream writer internally if a new updated schema is reported from backend.
-      if (!this.skipRefreshStreamWriter && this.streamWriter.getUpdatedSchema() != null) {
-        refreshWriter(this.streamWriter.getUpdatedSchema());
-      }
+      RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+              RequestProfiler.OperationName.JSON_TO_PROTO_CONVERSION, requestUniqueId);
       ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
-      // Any error in convertToProtoMessage will throw an
-      // IllegalArgumentException/IllegalStateException/NullPointerException.
-      // IllegalArgumentException will be collected into a Map of row indexes to error messages.
-      // After the conversion is finished an AppendSerializtionError exception that contains all the
-      // conversion errors will be thrown.
-      Map<Integer, String> rowIndexToErrorMessage = new HashMap<>();
       try {
-        List<DynamicMessage> protoMessages = buildMessage(items);
-        for (DynamicMessage dynamicMessage : protoMessages) {
-          rowsBuilder.addSerializedRows(dynamicMessage.toByteString());
+        // Create a new stream writer internally if a new updated schema is reported from backend.
+        if (!this.skipRefreshStreamWriter && this.streamWriter.getUpdatedSchema() != null) {
+          refreshWriter(this.streamWriter.getUpdatedSchema());
         }
-      } catch (RowIndexToErrorException exception) {
-        rowIndexToErrorMessage = exception.rowIndexToErrorMessage;
-      } catch (InterruptedException ex) {
-        throw new RuntimeException(ex);
+        // Any error in convertToProtoMessage will throw an
+        // IllegalArgumentException/IllegalStateException/NullPointerException.
+        // IllegalArgumentException will be collected into a Map of row indexes to error messages.
+        // After the conversion is finished an AppendSerializtionError exception that contains all the
+        // conversion errors will be thrown.
+        Map<Integer, String> rowIndexToErrorMessage = new HashMap<>();
+        try {
+          List<DynamicMessage> protoMessages = buildMessage(items);
+          for (DynamicMessage dynamicMessage : protoMessages) {
+            rowsBuilder.addSerializedRows(dynamicMessage.toByteString());
+          }
+        } catch (RowIndexToErrorException exception) {
+          rowIndexToErrorMessage = exception.rowIndexToErrorMessage;
+        } catch (InterruptedException ex) {
+          throw new RuntimeException(ex);
+        }
+        if (!rowIndexToErrorMessage.isEmpty()) {
+          throw new AppendSerializationError(
+                  Code.INVALID_ARGUMENT.getNumber(),
+                  "Append serialization failed for writer: " + streamName,
+                  streamName,
+                  rowIndexToErrorMessage);
+        }
+      } finally {
+        RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+                RequestProfiler.OperationName.JSON_TO_PROTO_CONVERSION, requestUniqueId);
       }
-
-      if (!rowIndexToErrorMessage.isEmpty()) {
-        throw new AppendSerializationError(
-            Code.INVALID_ARGUMENT.getNumber(),
-            "Append serialization failed for writer: " + streamName,
-            streamName,
-            rowIndexToErrorMessage);
-      }
-      return this.streamWriter.append(rowsBuilder.build(), offset);
+      return this.streamWriter.appendWithUniqueId(rowsBuilder.build(), offset, requestUniqueId);
     }
   }
 
@@ -436,6 +455,8 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
         MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
     private String clientId;
 
+    private boolean enableRequestProfiler = false;
+
     private static final String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
     private static final String tablePatternString = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)";
@@ -492,6 +513,9 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
         this.skipRefreshStreamWriter = true;
       }
       this.toProtoConverter = toProtoConverter;
+      if (this.enableRequestProfiler) {
+        RequestProfiler.REQUEST_PROFILER_SINGLETON.startPeriodicalReportFlushing();
+      }
     }
 
     /**
@@ -652,6 +676,33 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Sets how many top k requests we print for each periodical latency profiling report.
+     * Default to 1 minute if not set. This flag is only effective when `enableLatencyProfiler()` is called.
+     */
+    public Builder setLatencyProfilerFlushPeriod(Duration flushPeriod) {
+      RequestProfiler.setReportPeriod(flushPeriod);
+      return this;
+    }
+
+    /**
+     * Sets how many top k requests we print for each periodical latency profiling report. Default to 20 if not set.
+     * This flag is only effective when `enableLatencyProfiler()` is called.
+     */
+    public Builder setLatencyProfilerTopK(int topK) {
+      RequestProfiler.setTopKRequestsToLog(topK);
+      return this;
+    }
+
+    /**
+     * Enable a latency profiler that would periodically generate a detailed latency report for the top latency
+     * requests.
+     */
+    public Builder setEnableLatencyProfiler(boolean enableLatencyProfiler) {
+      this.enableRequestProfiler = enableLatencyProfiler;
+      return this;
+    }
+
+    /**
      * Builds SchemaAwareStreamWriter
      *
      * @return SchemaAwareStreamWriter
@@ -661,5 +712,9 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
             InterruptedException {
       return new SchemaAwareStreamWriter<>(this);
     }
+  }
+
+  private String generateRequestUniqueId() {
+    return getStreamName() + "-" + UUID.randomUUID().toString();
   }
 }
