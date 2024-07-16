@@ -276,7 +276,7 @@ public class ConnectionWorkerPool {
 
   /** Distributes the writing of a message to an underlying connection. */
   ApiFuture<AppendRowsResponse> append(
-          StreamWriter streamWriter, ProtoRows rows, long offset, String uniqueRequestId) {
+      StreamWriter streamWriter, ProtoRows rows, long offset, String uniqueRequestId) {
     // We are in multiplexing mode after entering the following logic.
     ConnectionWorker connectionWorker = getConnectionWorker(streamWriter);
     Stopwatch stopwatch = Stopwatch.createStarted();

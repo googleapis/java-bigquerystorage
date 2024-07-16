@@ -503,6 +503,8 @@ class ConnectionWorker implements AutoCloseable {
 
   private void waitForBackoffIfNecessary(AppendRequestAndResponse requestWrapper) {
     lock.lock();
+    RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+        RequestProfiler.OperationName.RETRY_BACKOFF, requestWrapper.requestUniqueId);
     try {
       Condition condition = lock.newCondition();
       while (shouldWaitForBackoff(requestWrapper)) {
@@ -511,6 +513,8 @@ class ConnectionWorker implements AutoCloseable {
     } catch (InterruptedException e) {
       throw new IllegalStateException(e);
     } finally {
+      RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+          RequestProfiler.OperationName.RETRY_BACKOFF, requestWrapper.requestUniqueId);
       lock.unlock();
     }
   }
@@ -532,7 +536,7 @@ class ConnectionWorker implements AutoCloseable {
     this.inflightBytes += requestWrapper.messageSize;
     hasMessageInWaitingQueue.signal();
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-            RequestProfiler.OperationName.WAIT_QUEUE, requestWrapper.requestUniqueId);
+        RequestProfiler.OperationName.WAIT_QUEUE, requestWrapper.requestUniqueId);
     if (addToFront) {
       waitingRequestQueue.addFirst(requestWrapper);
     } else {
@@ -542,7 +546,7 @@ class ConnectionWorker implements AutoCloseable {
 
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(
-          StreamWriter streamWriter, ProtoRows rows, long offset, String requestUniqueId) {
+      StreamWriter streamWriter, ProtoRows rows, long offset, String requestUniqueId) {
     if (this.location != null && !this.location.equals(streamWriter.getLocation())) {
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
@@ -579,10 +583,7 @@ class ConnectionWorker implements AutoCloseable {
       requestBuilder.setDefaultMissingValueInterpretation(
           streamWriter.getDefaultValueInterpretation());
     }
-    return appendInternal(
-            streamWriter,
-            requestBuilder.build(),
-            requestUniqueId);
+    return appendInternal(streamWriter, requestBuilder.build(), requestUniqueId);
   }
 
   Boolean isUserClosed() {
@@ -649,13 +650,13 @@ class ConnectionWorker implements AutoCloseable {
         return requestWrapper.appendResult;
       }
       RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-              RequestProfiler.OperationName.WAIT_QUEUE, requestUniqueId);
+          RequestProfiler.OperationName.WAIT_QUEUE, requestUniqueId);
       ++this.inflightRequests;
       this.inflightBytes += requestWrapper.messageSize;
       waitingRequestQueue.addLast(requestWrapper);
       hasMessageInWaitingQueue.signal();
       RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-              RequestProfiler.OperationName.WAIT_INFLIGHT_QUOTA, requestUniqueId);
+          RequestProfiler.OperationName.WAIT_INFLIGHT_QUOTA, requestUniqueId);
       try {
         maybeWaitForInflightQuota();
       } catch (StatusRuntimeException ex) {
@@ -665,7 +666,7 @@ class ConnectionWorker implements AutoCloseable {
         throw ex;
       }
       RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-              RequestProfiler.OperationName.WAIT_INFLIGHT_QUOTA, requestUniqueId);
+          RequestProfiler.OperationName.WAIT_INFLIGHT_QUOTA, requestUniqueId);
       return requestWrapper.appendResult;
     } finally {
       this.lock.unlock();
@@ -829,9 +830,12 @@ class ConnectionWorker implements AutoCloseable {
           // prepended as they need to be sent before new requests.
           while (!inflightRequestQueue.isEmpty()) {
             AppendRequestAndResponse requestWrapper = inflightRequestQueue.pollLast();
+            // Consider the backend latency as completed for the current request.
+            RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+                RequestProfiler.OperationName.RESPONSE_LATENCY, requestWrapper.requestUniqueId);
             requestWrapper.requestSendTimeStamp = null;
             RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-                    RequestProfiler.OperationName.WAIT_QUEUE, requestWrapper.requestUniqueId);
+                RequestProfiler.OperationName.WAIT_QUEUE, requestWrapper.requestUniqueId);
             waitingRequestQueue.addFirst(requestWrapper);
           }
 
@@ -842,7 +846,7 @@ class ConnectionWorker implements AutoCloseable {
         while (!this.waitingRequestQueue.isEmpty()) {
           AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
           RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-                  RequestProfiler.OperationName.WAIT_QUEUE, requestWrapper.requestUniqueId);
+              RequestProfiler.OperationName.WAIT_QUEUE, requestWrapper.requestUniqueId);
           waitForBackoffIfNecessary(requestWrapper);
           this.inflightRequestQueue.add(requestWrapper);
           localQueue.addLast(requestWrapper);
@@ -928,7 +932,7 @@ class ConnectionWorker implements AutoCloseable {
         firstRequestForTableOrSchemaSwitch = false;
 
         RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-                RequestProfiler.OperationName.RESPONSE_LATENCY, requestUniqueId);
+            RequestProfiler.OperationName.RESPONSE_LATENCY, requestUniqueId);
 
         // Send should only throw an exception if there is a problem with the request. The catch
         // block will handle this case, and return the exception with the result.
@@ -1209,7 +1213,7 @@ class ConnectionWorker implements AutoCloseable {
       if (!this.inflightRequestQueue.isEmpty()) {
         requestWrapper = pollFirstInflightRequestQueue();
         RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-                RequestProfiler.OperationName.RESPONSE_LATENCY, requestWrapper.requestUniqueId);
+            RequestProfiler.OperationName.RESPONSE_LATENCY, requestWrapper.requestUniqueId);
       } else if (inflightCleanuped) {
         // It is possible when requestCallback is called, the inflight queue is already drained
         // because we timed out waiting for done.
@@ -1244,7 +1248,7 @@ class ConnectionWorker implements AutoCloseable {
           try {
             if (response.hasError()) {
               Exceptions.StorageException storageException =
-                      Exceptions.toStorageException(response.getError(), null);
+                  Exceptions.toStorageException(response.getError(), null);
               log.fine(String.format("Got error message: %s", response.toString()));
               if (storageException != null) {
                 requestWrapper.appendResult.setException(storageException);
@@ -1253,20 +1257,20 @@ class ConnectionWorker implements AutoCloseable {
                 for (int i = 0; i < response.getRowErrorsCount(); i++) {
                   RowError rowError = response.getRowErrors(i);
                   rowIndexToErrorMessage.put(
-                          Math.toIntExact(rowError.getIndex()), rowError.getMessage());
+                      Math.toIntExact(rowError.getIndex()), rowError.getMessage());
                 }
                 AppendSerializationError exception =
-                        new AppendSerializationError(
-                                response.getError().getCode(),
-                                response.getError().getMessage(),
-                                streamName,
-                                rowIndexToErrorMessage);
+                    new AppendSerializationError(
+                        response.getError().getCode(),
+                        response.getError().getMessage(),
+                        streamName,
+                        rowIndexToErrorMessage);
                 requestWrapper.appendResult.setException(exception);
               } else {
                 StatusRuntimeException exception =
-                        new StatusRuntimeException(
-                                Status.fromCodeValue(response.getError().getCode())
-                                        .withDescription(response.getError().getMessage()));
+                    new StatusRuntimeException(
+                        Status.fromCodeValue(response.getError().getCode())
+                            .withDescription(response.getError().getMessage()));
                 requestWrapper.appendResult.setException(exception);
               }
             } else {
@@ -1274,7 +1278,7 @@ class ConnectionWorker implements AutoCloseable {
             }
           } finally {
             RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-                    RequestProfiler.OperationName.TOTAL_LATENCY, requestWrapper.requestUniqueId);
+                RequestProfiler.OperationName.TOTAL_LATENCY, requestWrapper.requestUniqueId);
           }
         });
   }
@@ -1401,7 +1405,9 @@ class ConnectionWorker implements AutoCloseable {
     Instant requestSendTimeStamp;
 
     AppendRequestAndResponse(
-        AppendRowsRequest message, StreamWriter streamWriter, RetrySettings retrySettings,
+        AppendRowsRequest message,
+        StreamWriter streamWriter,
+        RetrySettings retrySettings,
         String requestUniqueId) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;

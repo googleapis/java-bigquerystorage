@@ -167,8 +167,7 @@ public class StreamWriter implements AutoCloseable {
     ApiFuture<AppendRowsResponse> append(
         StreamWriter streamWriter, ProtoRows protoRows, long offset, String requestUniqueId) {
       if (getKind() == Kind.CONNECTION_WORKER) {
-        return connectionWorker().append(
-                streamWriter, protoRows, offset, requestUniqueId);
+        return connectionWorker().append(streamWriter, protoRows, offset, requestUniqueId);
       } else {
         return connectionWorkerPool().append(streamWriter, protoRows, offset, requestUniqueId);
       }
@@ -217,8 +216,7 @@ public class StreamWriter implements AutoCloseable {
       return AutoOneOf_StreamWriter_SingleConnectionOrConnectionPool.connectionWorker(connection);
     }
 
-    static SingleConnectionOrConnectionPool ofConnectionPool(
-        ConnectionWorkerPool connectionPool) {
+    static SingleConnectionOrConnectionPool ofConnectionPool(ConnectionWorkerPool connectionPool) {
       return AutoOneOf_StreamWriter_SingleConnectionOrConnectionPool.connectionWorkerPool(
           connectionPool);
     }
@@ -230,7 +228,8 @@ public class StreamWriter implements AutoCloseable {
     this.defaultMissingValueInterpretation = builder.defaultMissingValueInterpretation;
     BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
     if (builder.enableRequestProfiler) {
-      // Request profiler is enabled on singleton level, from now on a periodical flush will happen to generate
+      // Request profiler is enabled on singleton level, from now on a periodical flush will happen
+      // to generate
       // detailed latency reports for requests latency.
       RequestProfiler.REQUEST_PROFILER_SINGLETON.startPeriodicalReportFlushing();
     }
@@ -463,32 +462,33 @@ public class StreamWriter implements AutoCloseable {
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
     String requestUniqueId = generateRequestUniqueId();
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-            RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
+        RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
     try {
       return appendWithUniqueId(rows, offset, requestUniqueId);
     } catch (Exception ex) {
       RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-              RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
+          RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
       throw ex;
     }
   }
 
-  ApiFuture<AppendRowsResponse> appendWithUniqueId(ProtoRows rows, long offset, String requestUniqueId) {
+  ApiFuture<AppendRowsResponse> appendWithUniqueId(
+      ProtoRows rows, long offset, String requestUniqueId) {
     if (userClosed.get()) {
       AppendRequestAndResponse requestWrapper =
-              new AppendRequestAndResponse(
-                      AppendRowsRequest.newBuilder().build(),
-                      /*StreamWriter=*/this,
-                      /*RetrySettings=*/null,
-                      requestUniqueId);
+          new AppendRequestAndResponse(
+              AppendRowsRequest.newBuilder().build(),
+              /*StreamWriter=*/ this,
+              /*RetrySettings=*/ null,
+              requestUniqueId);
       requestWrapper.appendResult.setException(
-              new Exceptions.StreamWriterClosedException(
-                      Status.fromCode(Status.Code.FAILED_PRECONDITION)
-                              .withDescription("User closed StreamWriter"),
-                      streamName,
-                      getWriterId()));
+          new Exceptions.StreamWriterClosedException(
+              Status.fromCode(Status.Code.FAILED_PRECONDITION)
+                  .withDescription("User closed StreamWriter"),
+              streamName,
+              getWriterId()));
       RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-              RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
+          RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
       return requestWrapper.appendResult;
     }
     return this.singleConnectionOrConnectionPool.append(this, rows, offset, requestUniqueId);
@@ -842,26 +842,8 @@ public class StreamWriter implements AutoCloseable {
     }
 
     /**
-     * Sets how many top k requests we print for each periodical latency profiling report.
-     * Default to 1 minute if not set. This flag is only effective when `enableLatencyProfiler()` is called.
-     */
-    public Builder setLatencyProfilerFlushPeriod(Duration flushPeriod) {
-      RequestProfiler.setReportPeriod(flushPeriod);
-      return this;
-    }
-
-    /**
-     * Sets how many top k requests we print for each periodical latency profiling report. Default to 20 if not set.
-     * This flag is only effective when `enableLatencyProfiler()` is called.
-     */
-    public Builder setLatencyProfilerTopK(int topK) {
-      RequestProfiler.setTopKRequestsToLog(topK);
-      return this;
-    }
-
-    /**
-     * Enable a latency profiler that would periodically generate a detailed latency report for the top latency
-     * requests.
+     * Enable a latency profiler that would periodically generate a detailed latency report for the
+     * top latency requests. This is currently an experimental API.
      */
     public Builder setEnableLatencyProfiler(boolean enableLatencyProfiler) {
       this.enableRequestProfiler = enableLatencyProfiler;

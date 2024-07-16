@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,7 +40,13 @@ public class RequestProfilerTest {
 
   @Before
   public void setup() {
+    RequestProfiler.REQUEST_PROFILER_SINGLETON.disableAndClearProfiler();
     RequestProfiler.REQUEST_PROFILER_SINGLETON.enableProfiler();
+  }
+
+  @After
+  public void cleanup() {
+    RequestProfiler.REQUEST_PROFILER_SINGLETON.disableAndClearProfiler();
   }
 
   @Test

@@ -30,7 +30,6 @@ import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.DynamicMessage;
 import com.google.rpc.Code;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +126,16 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
    */
   public ApiFuture<AppendRowsResponse> append(Iterable<T> items)
       throws IOException, DescriptorValidationException {
-    return appendWithUniqueId(items, -1, generateRequestUniqueId());
+    String requestUniqueId = generateRequestUniqueId();
+    RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+        RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
+    try {
+      return appendWithUniqueId(items, -1, requestUniqueId);
+    } catch (Exception ex) {
+      RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+          RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
+      throw ex;
+    }
   }
 
   private void refreshWriter(TableSchema updatedSchema)
@@ -190,16 +198,23 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
       throws IOException, DescriptorValidationException {
     String requestUniqueId = generateRequestUniqueId();
     RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-            RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
-    return appendWithUniqueId(items, offset, requestUniqueId);
+        RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
+    try {
+      return appendWithUniqueId(items, offset, requestUniqueId);
+    } catch (Exception ex) {
+      RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+          RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
+      throw ex;
+    }
   }
 
-  ApiFuture<AppendRowsResponse> appendWithUniqueId(Iterable<T> items, long offset, String requestUniqueId)
-          throws DescriptorValidationException, IOException {
+  ApiFuture<AppendRowsResponse> appendWithUniqueId(
+      Iterable<T> items, long offset, String requestUniqueId)
+      throws DescriptorValidationException, IOException {
     // Handle schema updates in a Thread-safe way by locking down the operation
     synchronized (this) {
       RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-              RequestProfiler.OperationName.JSON_TO_PROTO_CONVERSION, requestUniqueId);
+          RequestProfiler.OperationName.JSON_TO_PROTO_CONVERSION, requestUniqueId);
       ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
       try {
         // Create a new stream writer internally if a new updated schema is reported from backend.
@@ -209,7 +224,8 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
         // Any error in convertToProtoMessage will throw an
         // IllegalArgumentException/IllegalStateException/NullPointerException.
         // IllegalArgumentException will be collected into a Map of row indexes to error messages.
-        // After the conversion is finished an AppendSerializtionError exception that contains all the
+        // After the conversion is finished an AppendSerializtionError exception that contains all
+        // the
         // conversion errors will be thrown.
         Map<Integer, String> rowIndexToErrorMessage = new HashMap<>();
         try {
@@ -224,14 +240,14 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
         }
         if (!rowIndexToErrorMessage.isEmpty()) {
           throw new AppendSerializationError(
-                  Code.INVALID_ARGUMENT.getNumber(),
-                  "Append serialization failed for writer: " + streamName,
-                  streamName,
-                  rowIndexToErrorMessage);
+              Code.INVALID_ARGUMENT.getNumber(),
+              "Append serialization failed for writer: " + streamName,
+              streamName,
+              rowIndexToErrorMessage);
         }
       } finally {
         RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
-                RequestProfiler.OperationName.JSON_TO_PROTO_CONVERSION, requestUniqueId);
+            RequestProfiler.OperationName.JSON_TO_PROTO_CONVERSION, requestUniqueId);
       }
       return this.streamWriter.appendWithUniqueId(rowsBuilder.build(), offset, requestUniqueId);
     }
@@ -604,7 +620,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
 
     /**
      * Setter for a ignoreUnknownFields, if true, unknown fields to BigQuery will be ignored instead
-     * of error out.
+     * of error out. 1
      *
      * @param ignoreUnknownFields
      * @return Builder
@@ -676,26 +692,8 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
 
     /**
-     * Sets how many top k requests we print for each periodical latency profiling report.
-     * Default to 1 minute if not set. This flag is only effective when `enableLatencyProfiler()` is called.
-     */
-    public Builder setLatencyProfilerFlushPeriod(Duration flushPeriod) {
-      RequestProfiler.setReportPeriod(flushPeriod);
-      return this;
-    }
-
-    /**
-     * Sets how many top k requests we print for each periodical latency profiling report. Default to 20 if not set.
-     * This flag is only effective when `enableLatencyProfiler()` is called.
-     */
-    public Builder setLatencyProfilerTopK(int topK) {
-      RequestProfiler.setTopKRequestsToLog(topK);
-      return this;
-    }
-
-    /**
-     * Enable a latency profiler that would periodically generate a detailed latency report for the top latency
-     * requests.
+     * Enable a latency profiler that would periodically generate a detailed latency report for the
+     * top latency requests. This is currently an experimental API.
      */
     public Builder setEnableLatencyProfiler(boolean enableLatencyProfiler) {
       this.enableRequestProfiler = enableLatencyProfiler;
