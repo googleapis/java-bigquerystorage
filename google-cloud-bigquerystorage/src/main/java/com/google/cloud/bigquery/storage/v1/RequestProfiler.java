@@ -83,10 +83,12 @@ public class RequestProfiler {
   static final RequestProfiler REQUEST_PROFILER_SINGLETON = new RequestProfiler();
 
   // Tunable static variable indicate how many top longest latency requests we should consider.
-  private static int TOP_K = 20;
+  private static final int DEFAULT_TOP_K = 20;
+  private static int TOP_K = DEFAULT_TOP_K;
 
   // Tunable static variable indicate how often the report should be generated.
-  private static Duration FLUSH_PERIOD = Duration.ofMinutes(1);
+  private static final Duration DEFAULT_FLUSH_PERIOD = Duration.ofMinutes(1);
+  private static Duration FLUSH_PERIOD = DEFAULT_FLUSH_PERIOD;
 
   // From request uuid to the profiler of individual request. This will be cleaned up periodically.
   private final Map<String, IndividualRequestProfiler> idToIndividualOperation =
@@ -394,6 +396,10 @@ public class RequestProfiler {
     }
     this.idToIndividualOperation.clear();
     this.droppedOperationCount.set(0);
+
+    // Set back to default value.
+    TOP_K = DEFAULT_TOP_K;
+    FLUSH_PERIOD = DEFAULT_FLUSH_PERIOD;
   }
 
   public static void disableAndClearProfiler() {
