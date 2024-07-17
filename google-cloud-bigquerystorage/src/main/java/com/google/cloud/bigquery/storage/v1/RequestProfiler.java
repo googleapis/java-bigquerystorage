@@ -32,8 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-
-// New code in use_profiler
 /**
  * A profiler that would periodically generate a report for the past period with the latency report
  * for the slowest requests. This is used for debugging only. A request id would be generated for
