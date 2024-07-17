@@ -567,6 +567,7 @@ public class ConnectionWorkerPoolTest {
         TEST_TRACE_ID,
         null,
         clientSettings,
-        retrySettings);
+        retrySettings,
+        /*enableRequestProfiler=*/ false);
   }
 }

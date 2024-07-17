@@ -344,7 +344,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            /*enableRequestProfiler=*/ false);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -401,7 +402,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            /*enableRequestProfiler=*/ false);
     testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -470,7 +472,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            /*enableRequestProfiler=*/ false);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -502,7 +505,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            /*enableRequestProfiler=*/ false);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -555,7 +559,8 @@ public class ConnectionWorkerTest {
         TEST_TRACE_ID,
         null,
         client.getSettings(),
-        retrySettings);
+        retrySettings,
+        /*enableRequestProfiler=*/ false);
   }
 
   private ProtoSchema createProtoSchema(String protoName) {
@@ -650,7 +655,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            /*enableRequestProfiler=*/ false);
     org.threeten.bp.Duration durationSleep = org.threeten.bp.Duration.ofSeconds(2);
     testBigQueryWrite.setResponseSleep(durationSleep);
 
@@ -725,7 +731,8 @@ public class ConnectionWorkerTest {
             TEST_TRACE_ID,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            /*enableRequestProfiler=*/ false);
 
     long appendCount = 10;
     for (int i = 0; i < appendCount * 2; i++) {
@@ -770,7 +777,8 @@ public class ConnectionWorkerTest {
             null,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            /*enableRequestProfiler=*/ false);
 
     Attributes attributes = connectionWorker.getTelemetryAttributes();
     String attributesTableId = attributes.get(ConnectionWorker.telemetryKeyTableId);
@@ -810,7 +818,8 @@ public class ConnectionWorkerTest {
             traceId,
             null,
             client.getSettings(),
-            retrySettings);
+            retrySettings,
+            /*enableRequestProfiler=*/ false);
 
     Attributes attributes = connectionWorker.getTelemetryAttributes();
     checkOpenTelemetryTraceIdAttribute(attributes, 0, expectedField1);

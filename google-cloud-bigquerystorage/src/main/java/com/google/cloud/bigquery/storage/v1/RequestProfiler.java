@@ -80,7 +80,7 @@ public class RequestProfiler {
   private static final int MAX_CACHED_REQUEST = 100000;
 
   // Singleton for easier access.
-  static final RequestProfiler REQUEST_PROFILER_SINGLETON = new RequestProfiler();
+  private static final RequestProfiler REQUEST_PROFILER_SINGLETON = new RequestProfiler();
 
   // Tunable static variable indicate how many top longest latency requests we should consider.
   private static final int DEFAULT_TOP_K = 20;
@@ -171,6 +171,10 @@ public class RequestProfiler {
 
   // Periodically trigger the report generation.
   void startPeriodicalReportFlushing() {
+    // If already enabled, skip all the operations.
+    if (enableProfiiler) {
+      return;
+    }
     this.enableProfiiler = true;
     this.flushThread =
         new Thread(
@@ -404,5 +408,46 @@ public class RequestProfiler {
 
   public static void disableAndClearProfiler() {
     REQUEST_PROFILER_SINGLETON.internalDisableAndClearProfiler();
+  }
+
+  /**
+   * A hook for easier access to request profiler. Otherwise we have to trigger an if clause to
+   * check whether profiler is enabled before every caller's trigger of the request profiler. This
+   * is because profiler is shared statically across instances.
+   */
+  static class RequestProfilerHook {
+    private boolean enableRequestProfiler = false;
+
+    RequestProfilerHook(boolean enableRequestProfiler) {
+      this.enableRequestProfiler = enableRequestProfiler;
+    }
+
+    // Mimic the api exposed by the main request profiler.
+    void startOperation(OperationName operationName, String requestUniqueId) {
+      if (this.enableRequestProfiler) {
+        RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(operationName, requestUniqueId);
+      }
+    }
+
+    // Mimic the api exposed by the main request profiler.
+    void endOperation(OperationName operationName, String requestUniqueId) {
+      if (this.enableRequestProfiler) {
+        RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(operationName, requestUniqueId);
+      }
+    }
+
+    void startPeriodicalReportFlushing() {
+      if (this.enableRequestProfiler) {
+        RequestProfiler.REQUEST_PROFILER_SINGLETON.startPeriodicalReportFlushing();
+      }
+    }
+
+    String flushAndGenerateReportText() {
+      return RequestProfiler.REQUEST_PROFILER_SINGLETON.flushAndGenerateReportText();
+    }
+
+    void enableProfiler() {
+      REQUEST_PROFILER_SINGLETON.enableProfiler();
+    }
   }
 }
