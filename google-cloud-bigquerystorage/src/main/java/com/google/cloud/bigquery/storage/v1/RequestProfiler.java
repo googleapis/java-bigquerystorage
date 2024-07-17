@@ -16,7 +16,6 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,13 +32,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-
-// New code in use_profiler
 /**
  * A profiler that would periodically generate a report for the past period with the latency report
- * for the slowest requests. This is used for debugging only. A request id would be generated for each request at
- * runtime. Certain part of the code would be wrapped with startOperation(...) and endOperation(...) to measure the
- * latency of operations of individual request.
+ * for the slowest requests. This is used for debugging only. A request id would be generated for
+ * each request at runtime. Certain part of the code would be wrapped with startOperation(...) and
+ * endOperation(...) to measure the latency of operations of individual request.
  *
  * <pre>
  * The report will contain the execution details of the TOP_K slowest requests, one example:
@@ -56,7 +53,7 @@ import java.util.logging.Logger;
  * ...
  * </pre>
  */
-class RequestProfiler {
+public class RequestProfiler {
   enum OperationName {
     // The total end to end latency for a request.
     TOTAL_LATENCY("append_request_total_latency"),
@@ -64,6 +61,8 @@ class RequestProfiler {
     JSON_TO_PROTO_CONVERSION("json_to_proto_conversion"),
     // Time spent within wait queue before it get picked up.
     WAIT_QUEUE("wait_queue"),
+    // Time spent during retry backoff.
+    RETRY_BACKOFF("retry_backoff"),
     // Time spent within backend + the time spent over network.
     RESPONSE_LATENCY("response_latency"),
     // Time spent to wait wait queue to have vacancy.
@@ -84,10 +83,12 @@ class RequestProfiler {
   static final RequestProfiler REQUEST_PROFILER_SINGLETON = new RequestProfiler();
 
   // Tunable static variable indicate how many top longest latency requests we should consider.
-  private static int TOP_K = 20;
+  private static final int DEFAULT_TOP_K = 20;
+  private static int TOP_K = DEFAULT_TOP_K;
 
   // Tunable static variable indicate how often the report should be generated.
-  private static Duration FLUSH_PERIOD = Duration.ofMinutes(1);
+  private static final Duration DEFAULT_FLUSH_PERIOD = Duration.ofMinutes(1);
+  private static Duration FLUSH_PERIOD = DEFAULT_FLUSH_PERIOD;
 
   // From request uuid to the profiler of individual request. This will be cleaned up periodically.
   private final Map<String, IndividualRequestProfiler> idToIndividualOperation =
@@ -111,21 +112,25 @@ class RequestProfiler {
       if (!idToIndividualOperation.containsKey(requestUniqueId)) {
         if (idToIndividualOperation.size() > MAX_CACHED_REQUEST) {
           log.warning(
-                  String.format(
-                          "startOperation is triggered for request_id: %s that's hasn't "
-                                  + "seen before, this is possible when "
-                                  + "we are recording too much ongoing requests. So far we has dropped %s operations.",
-                          requestUniqueId, droppedOperationCount));
+              String.format(
+                  "startOperation is triggered for request_id: %s that's hasn't "
+                      + "seen before, this is possible when "
+                      + "we are recording too much ongoing requests. So far we has dropped %s operations.",
+                  requestUniqueId, droppedOperationCount));
           droppedOperationCount.incrementAndGet();
           return;
         }
-        idToIndividualOperation.put(requestUniqueId, new IndividualRequestProfiler(requestUniqueId));
+        idToIndividualOperation.put(
+            requestUniqueId, new IndividualRequestProfiler(requestUniqueId));
       }
       idToIndividualOperation.get(requestUniqueId).startOperation(operationName);
     } catch (Exception ex) {
-      // Mute any exception thrown from profiler process as we don't want to interrupt normal operations.
-      log.warning("Exception thrown request profiler ignored, this is suggesting faulty implementation of " +
-              "RequestProfiler, exception context: " + ex.toString());
+      // Mute any exception thrown from profiler process as we don't want to interrupt normal
+      // operations.
+      log.warning(
+          "Exception thrown request profiler ignored, this is suggesting faulty implementation of "
+              + "RequestProfiler, exception context: "
+              + ex.toString());
     }
   }
 
@@ -138,22 +143,29 @@ class RequestProfiler {
       }
       if (!idToIndividualOperation.containsKey(requestUniqueId)) {
         log.warning(
-                String.format(
-                        "endOperation is triggered for request_id: %s that's hasn't "
-                                + "seen before, this is possible when "
-                                + "we are recording too much ongoing requests. So far we has dropped %s operations.",
-                        requestUniqueId, droppedOperationCount));
+            String.format(
+                "endOperation is triggered for request_id: %s that's hasn't "
+                    + "seen before, this is possible when "
+                    + "we are recording too much ongoing requests. So far we has dropped %s operations.",
+                requestUniqueId, droppedOperationCount));
         return;
       }
       idToIndividualOperation.get(requestUniqueId).endOperation(operationName);
     } catch (Exception ex) {
-      // Mute any exception thrown from profiler process as we don't want to interrupt normal operations.
-      log.warning("Exception thrown request profiler ignored, this is suggesting faulty implementation of " +
-              "RequestProfiler, exception context: " + ex.toString());
+      // Mute any exception thrown from profiler process as we don't want to interrupt normal
+      // operations.
+      log.warning(
+          "Exception thrown request profiler ignored, this is suggesting faulty implementation of "
+              + "RequestProfiler, exception context: "
+              + ex.toString());
     }
   }
 
   void flushAndPrintReport() {
+    if (!enableProfiiler) {
+      // Only do work when enabled.
+      return;
+    }
     log.info(flushAndGenerateReportText());
   }
 
@@ -178,9 +190,11 @@ class RequestProfiler {
                 } catch (Exception ex) {
                   // Mute any exception thrown from profiler process as we don't want to
                   // interrupt normal operations.
-                  log.warning("Exception thrown request profiler ignored, this is suggesting faulty " +
-                          "implementation of " +
-                          "RequestProfiler, exception context: " + ex.toString());
+                  log.warning(
+                      "Exception thrown request profiler ignored, this is suggesting faulty "
+                          + "implementation of "
+                          + "RequestProfiler, exception context: "
+                          + ex.toString());
                 }
               }
             });
@@ -299,10 +313,10 @@ class RequestProfiler {
       }
       if (timeRecorderMap.get(operationName).isEmpty()) {
         String warningMessage =
-                String.format(
-                        "Operation %s ignored for request %s due to no previous startOperation() triggered for " +
-                                "this operation",
-                        operationName, requestUniqueId);
+            String.format(
+                "Operation %s ignored for request %s due to no previous startOperation() triggered for "
+                    + "this operation",
+                operationName, requestUniqueId);
         log.warning(warningMessage);
         return;
       }
@@ -360,18 +374,35 @@ class RequestProfiler {
     }
   }
 
-  // Sets how many top latency requests to log during every reportss period.
-  static void setTopKRequestsToLog(int topK) {
+  // Sets how many top latency requests to log during every report period.
+  public static void setTopKRequestsToLog(int topK) {
     TOP_K = topK;
   }
 
   // Sets the report period of the profiler.
-  static void setReportPeriod(Duration flushPeriod) {
+  public static void setReportPeriod(Duration flushPeriod) {
     FLUSH_PERIOD = flushPeriod;
   }
 
   @VisibleForTesting
   void enableProfiler() {
     this.enableProfiiler = true;
+  }
+
+  void internalDisableAndClearProfiler() {
+    this.enableProfiiler = false;
+    if (this.flushThread != null) {
+      this.flushThread.interrupt();
+    }
+    this.idToIndividualOperation.clear();
+    this.droppedOperationCount.set(0);
+
+    // Set back to default value.
+    TOP_K = DEFAULT_TOP_K;
+    FLUSH_PERIOD = DEFAULT_FLUSH_PERIOD;
+  }
+
+  public static void disableAndClearProfiler() {
+    REQUEST_PROFILER_SINGLETON.internalDisableAndClearProfiler();
   }
 }
