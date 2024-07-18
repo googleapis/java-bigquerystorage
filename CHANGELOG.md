@@ -1,5 +1,48 @@
 # Changelog
 
+## [3.6.1](https://github.com/googleapis/java-bigquerystorage/compare/v3.6.0...v3.6.1) (2024-06-25)
+
+
+### Dependencies
+
+* Update actions/checkout digest to 692973e ([#2530](https://github.com/googleapis/java-bigquerystorage/issues/2530)) ([3f2e689](https://github.com/googleapis/java-bigquerystorage/commit/3f2e6896ec208bcc850af7b9e54804637e214206))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.40.3 ([#2528](https://github.com/googleapis/java-bigquerystorage/issues/2528)) ([952af9e](https://github.com/googleapis/java-bigquerystorage/commit/952af9ef73253fc7f77c8700a06b9df446c3e981))
+* Update dependency com.google.cloud:sdk-platform-java-config to v3.32.0 ([#2535](https://github.com/googleapis/java-bigquerystorage/issues/2535)) ([0a9a0c0](https://github.com/googleapis/java-bigquerystorage/commit/0a9a0c01834c3a4e0f6bedc437c0cdb6f38362c1))
+
+## [3.6.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.5.2...v3.6.0) (2024-06-11)
+
+
+### Features
+
+* Add ability to write Range values with JSONStreamWriter ([#2498](https://github.com/googleapis/java-bigquerystorage/issues/2498)) ([a5e62be](https://github.com/googleapis/java-bigquerystorage/commit/a5e62bedf35238f440f7b52dc3e1d3c972e4acdd))
+* Add instrumentation for a couple of OpenTelemetry metrics ([#2501](https://github.com/googleapis/java-bigquerystorage/issues/2501)) ([195ea96](https://github.com/googleapis/java-bigquerystorage/commit/195ea96a68cc117974a8a74ae1c031ca30a6ae21))
+
+
+### Dependencies
+
+* Update actions/checkout digest to a5ac7e5 ([#2508](https://github.com/googleapis/java-bigquerystorage/issues/2508)) ([e84e877](https://github.com/googleapis/java-bigquerystorage/commit/e84e877f45e76c14102910d35b5818b49f2b9405))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.40.2 ([#2513](https://github.com/googleapis/java-bigquerystorage/issues/2513)) ([09e3b2f](https://github.com/googleapis/java-bigquerystorage/commit/09e3b2fa5792d5c88239e6713f826ff44a6293fc))
+* Update dependency com.google.cloud:sdk-platform-java-config to v3.31.0 ([#2522](https://github.com/googleapis/java-bigquerystorage/issues/2522)) ([72e1450](https://github.com/googleapis/java-bigquerystorage/commit/72e14509bc8f672af082d1dbd3f69e44e259b75c))
+* Update dependency io.opentelemetry:opentelemetry-bom to v1.39.0 ([#2524](https://github.com/googleapis/java-bigquerystorage/issues/2524)) ([25341d2](https://github.com/googleapis/java-bigquerystorage/commit/25341d20fa95feb164ae60d854d026a23882763c))
+
+## [3.5.2](https://github.com/googleapis/java-bigquerystorage/compare/v3.5.1...v3.5.2) (2024-05-24)
+
+
+### Bug Fixes
+
+* Reset send timestamp each time a request is sent ([#2499](https://github.com/googleapis/java-bigquerystorage/issues/2499)) ([b1b62b1](https://github.com/googleapis/java-bigquerystorage/commit/b1b62b1a8b89e8b5b950e0f5e35f385c35bae2da))
+
+
+### Dependencies
+
+* Update actions/checkout digest to 0ad4b8f ([#2496](https://github.com/googleapis/java-bigquerystorage/issues/2496)) ([22e8f62](https://github.com/googleapis/java-bigquerystorage/commit/22e8f62940cedfa051b77383773324bbcc79bb95))
+* Update actions/checkout digest to 44c2b7a ([#2494](https://github.com/googleapis/java-bigquerystorage/issues/2494)) ([87b435a](https://github.com/googleapis/java-bigquerystorage/commit/87b435a5add55ba7f0cad52c59df5c67bc0dfb70))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.40.0 ([#2488](https://github.com/googleapis/java-bigquerystorage/issues/2488)) ([85f7f05](https://github.com/googleapis/java-bigquerystorage/commit/85f7f05a249b9be3ab29bff0e4bba26032543423))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.40.1 ([#2492](https://github.com/googleapis/java-bigquerystorage/issues/2492)) ([f6c6f02](https://github.com/googleapis/java-bigquerystorage/commit/f6c6f027d63d0d3d74d7791affd98e7ee359aabc))
+* Update dependency com.google.cloud:sdk-platform-java-config to v3.30.1 ([#2502](https://github.com/googleapis/java-bigquerystorage/issues/2502)) ([ed4d1a3](https://github.com/googleapis/java-bigquerystorage/commit/ed4d1a38adee35450b73aefa21e25d13e8bf8469))
+* Update dependency com.google.http-client:google-http-client to v1.44.2 ([#2503](https://github.com/googleapis/java-bigquerystorage/issues/2503)) ([66840e6](https://github.com/googleapis/java-bigquerystorage/commit/66840e6acd832702157d434762eef66e00c4c5df))
+* Update dependency org.graalvm.buildtools:native-maven-plugin to v0.10.2 ([#2504](https://github.com/googleapis/java-bigquerystorage/issues/2504)) ([bebbd21](https://github.com/googleapis/java-bigquerystorage/commit/bebbd218623554bae32eeeda81e3c9f166d31b93))
+
 ## [3.5.1](https://github.com/googleapis/java-bigquerystorage/compare/v3.5.0...v3.5.1) (2024-05-06)
 
 

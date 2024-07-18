@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.cloud</groupId>
   <artifactId>google-cloud-bigquerystorage</artifactId>
-  <version>3.5.2-SNAPSHOT</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
+  <version>3.6.2-SNAPSHOT</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
   <packaging>jar</packaging>
   <name>BigQuery Storage</name>
   <url>https://github.com/googleapis/java-bigquerystorage</url>
@@ -11,10 +11,11 @@
   <parent>
     <groupId>com.google.cloud</groupId>
     <artifactId>google-cloud-bigquerystorage-parent</artifactId>
-    <version>3.5.2-SNAPSHOT</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
+    <version>3.6.2-SNAPSHOT</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
   </parent>
   <properties>
     <site.installationModule>google-cloud-bigquerystorage</site.installationModule>
+    <arrow.version>15.0.2</arrow.version>
   </properties>
   <build>
     <extensions>
@@ -154,8 +155,12 @@
   <dependency>
     <groupId>com.google.auth</groupId>
     <artifactId>google-auth-library-credentials</artifactId>
-    <version>1.23.0</version>
+    <version>1.24.0</version>
   </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -166,13 +171,13 @@
     <dependency>
       <groupId>com.google.http-client</groupId>
       <artifactId>google-http-client</artifactId>
-      <version>1.44.1</version>
+      <version>1.44.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.truth</groupId>
       <artifactId>truth</artifactId>
-      <version>1.4.2</version>
+      <version>1.4.4</version>
       <scope>test</scope>
       <exclusions>
           <exclusion>
@@ -193,6 +198,18 @@
       <version>1.11.3</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-vector</artifactId>
+      <version>${arrow.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-core</artifactId>
+      <version>${arrow.version}</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>io.grpc</groupId>
@@ -207,7 +224,7 @@
     <dependency>
       <groupId>com.google.auth</groupId>
       <artifactId>google-auth-library-oauth2-http</artifactId>
-      <version>1.23.0</version>
+      <version>1.24.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
