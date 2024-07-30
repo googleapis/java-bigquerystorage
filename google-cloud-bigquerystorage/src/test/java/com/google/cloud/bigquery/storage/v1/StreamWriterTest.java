@@ -1607,7 +1607,8 @@ public class StreamWriterTest {
       assertEquals(0, responseFuture.get().getAppendResult().getOffset().getValue());
 
       verifyAppendRequests(1);
-      assertTrue(testBigQueryWrite.getAppendRequests().get(0).getMissingValueInterpretations().isEmpty());
+      assertTrue(
+          testBigQueryWrite.getAppendRequests().get(0).getMissingValueInterpretations().isEmpty());
     }
   }
 
