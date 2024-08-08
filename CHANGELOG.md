@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.8.1](https://github.com/googleapis/java-bigquerystorage/compare/v3.8.0...v3.8.1) (2024-08-07)
+
+
+### Bug Fixes
+
+* RequestProfilerTest.java regex in deep-preserve list ([#2589](https://github.com/googleapis/java-bigquerystorage/issues/2589)) ([e62ac66](https://github.com/googleapis/java-bigquerystorage/commit/e62ac664fb8e7056481ad29547bb33ae73ad2ef0))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.42.0 ([#2586](https://github.com/googleapis/java-bigquerystorage/issues/2586)) ([8893d43](https://github.com/googleapis/java-bigquerystorage/commit/8893d435597dd393f39225eaa186bfb637240816))
+
 ## [3.8.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.7.0...v3.8.0) (2024-07-26)
 
 
