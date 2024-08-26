@@ -19,38 +19,47 @@
 // Protobuf Java Version: 3.25.4
 package com.google.cloud.bigquery.storage.v1alpha;
 
-public interface StreamMetastorePartitionsResponseOrBuilder
+public interface BatchSizeTooLargeErrorOrBuilder
     extends
-    // @@protoc_insertion_point(interface_extends:google.cloud.bigquery.storage.v1alpha.StreamMetastorePartitionsResponse)
+    // @@protoc_insertion_point(interface_extends:google.cloud.bigquery.storage.v1alpha.BatchSizeTooLargeError)
     com.google.protobuf.MessageOrBuilder {
 
   /**
    *
    *
    * <pre>
-   * Total count of partitions streamed by the client during the lifetime of the
-   * stream. This is only set in the final response message before closing the
-   * stream.
+   * The maximum number of items that are supported in a single batch. This is
+   * returned as a hint to the client to adjust the batch size.
    * </pre>
    *
-   * <code>int64 total_partitions_streamed_count = 2;</code>
+   * <code>int64 max_batch_size = 1;</code>
    *
-   * @return The totalPartitionsStreamedCount.
+   * @return The maxBatchSize.
    */
-  long getTotalPartitionsStreamedCount();
+  long getMaxBatchSize();
 
   /**
    *
    *
    * <pre>
-   * Total count of partitions inserted by the server during the lifetime of the
-   * stream. This is only set in the final response message before closing the
-   * stream.
+   * Optional. The error message that is returned to the client.
    * </pre>
    *
-   * <code>int64 total_partitions_inserted_count = 3;</code>
+   * <code>string error_message = 2 [(.google.api.field_behavior) = OPTIONAL];</code>
    *
-   * @return The totalPartitionsInsertedCount.
+   * @return The errorMessage.
    */
-  long getTotalPartitionsInsertedCount();
+  java.lang.String getErrorMessage();
+  /**
+   *
+   *
+   * <pre>
+   * Optional. The error message that is returned to the client.
+   * </pre>
+   *
+   * <code>string error_message = 2 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The bytes for errorMessage.
+   */
+  com.google.protobuf.ByteString getErrorMessageBytes();
 }
