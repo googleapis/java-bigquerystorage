@@ -53,6 +53,7 @@ jobs:
       with:
         distribution: temurin
         java-version: 17
+    - run: git config --system core.longpaths true
     - run: java -version
     - run: .kokoro/build.bat
       env:
