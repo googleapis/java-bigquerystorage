@@ -299,6 +299,12 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     return streamWriter.getInflightWaitSeconds();
   }
 
+  /** @return the missing value interpretation map used for the writer. */
+  public Map<String, AppendRowsRequest.MissingValueInterpretation>
+      getMissingValueInterpretationMap() {
+    return streamWriter.getMissingValueInterpretationMap();
+  }
+
   /** Sets all StreamWriter settings. */
   private void setStreamWriterSettings(
       @Nullable TransportChannelProvider channelProvider,

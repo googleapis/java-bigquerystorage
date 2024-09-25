@@ -893,6 +893,8 @@ public class JsonStreamWriterTest {
               .setUpdatedSchema(UPDATED_TABLE_SCHEMA)
               .build());
       testBigQueryWrite.addResponse(createAppendResponse(1));
+      // Verify the map before the writer is refreshed
+      assertEquals(missingValueMap, writer.getMissingValueInterpretationMap());
       testBigQueryWrite.addResponse(createAppendResponse(2));
       testBigQueryWrite.addResponse(createAppendResponse(3));
 
@@ -944,6 +946,8 @@ public class JsonStreamWriterTest {
           testBigQueryWrite.getAppendRequests().get(2).getProtoRows().hasWriterSchema()
               || testBigQueryWrite.getAppendRequests().get(3).getProtoRows().hasWriterSchema());
 
+      // Verify the map after the writer is refreshed
+      assertEquals(missingValueMap, writer.getMissingValueInterpretationMap());
       assertEquals(
           testBigQueryWrite.getAppendRequests().get(3).getDefaultMissingValueInterpretation(),
           MissingValueInterpretation.DEFAULT_VALUE);
@@ -1617,6 +1621,8 @@ public class JsonStreamWriterTest {
             .setMissingValueInterpretationMap(missingValueMap)
             .setTraceId("test:empty")
             .build()) {
+
+      assertEquals(missingValueMap, writer.getMissingValueInterpretationMap());
 
       testBigQueryWrite.addResponse(
           AppendRowsResponse.newBuilder()

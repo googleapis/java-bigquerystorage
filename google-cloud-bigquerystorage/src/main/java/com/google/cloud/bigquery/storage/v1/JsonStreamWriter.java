@@ -119,6 +119,12 @@ public class JsonStreamWriter implements AutoCloseable {
     return this.schemaAwareStreamWriter.getInflightWaitSeconds();
   }
 
+  /** @return the missing value interpretation map used for the writer. */
+  public Map<String, AppendRowsRequest.MissingValueInterpretation>
+      getMissingValueInterpretationMap() {
+    return this.schemaAwareStreamWriter.getMissingValueInterpretationMap();
+  }
+
   /**
    * newBuilder that constructs a JsonStreamWriter builder with BigQuery client being initialized by
    * StreamWriter by default.
