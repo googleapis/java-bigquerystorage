@@ -157,6 +157,11 @@
       <artifactId>json</artifactId>
   </dependency>
   <dependency>
+    <groupId>org.apache.avro</groupId>
+    <artifactId>avro</artifactId>
+    <version>1.11.3</version>
+  </dependency>
+  <dependency>
     <groupId>com.google.auth</groupId>
     <artifactId>google-auth-library-credentials</artifactId>
     <version>1.27.0</version>
@@ -194,12 +199,6 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <version>3.12.4</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.avro</groupId>
-      <artifactId>avro</artifactId>
-      <version>1.11.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -258,7 +257,7 @@
       <groupId>com.google.api.grpc</groupId>
       <artifactId>grpc-google-cloud-bigquerystorage-v1</artifactId>
     </dependency>
-    
+
     <!-- Need testing utility classes for generated gRPC clients tests -->
     <dependency>
       <groupId>com.google.api</groupId>
