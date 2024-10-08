@@ -234,8 +234,7 @@ public class StreamWriter implements AutoCloseable {
         new RequestProfiler.RequestProfilerHook(builder.enableRequestProfiler);
     if (builder.enableRequestProfiler) {
       // Request profiler is enabled on singleton level, from now on a periodical flush will be
-      // started
-      // to generate detailed latency reports for requests latency.
+      // started to generate detailed latency reports for requests latency.
       requestProfilerHook.startPeriodicalReportFlushing();
     }
     if (!builder.enableConnectionPool) {
@@ -254,7 +253,8 @@ public class StreamWriter implements AutoCloseable {
                   builder.compressorName,
                   clientSettings,
                   builder.retrySettings,
-                  builder.enableRequestProfiler));
+                  builder.enableRequestProfiler,
+                  /*isMultuplexing=*/ false));
     } else {
       if (!isDefaultStream(streamName)) {
         log.warning(

@@ -219,6 +219,9 @@ class ConnectionWorker implements AutoCloseable {
    */
   private Thread appendThread;
 
+  /** Indicate whether this connection is created in multiplexing mode. */
+  private final Boolean isMultiplexing;
+
   /*
    * The inflight wait time for the previous sent request.
    */
@@ -389,7 +392,8 @@ class ConnectionWorker implements AutoCloseable {
       @Nullable String compressorName,
       BigQueryWriteSettings clientSettings,
       RetrySettings retrySettings,
-      boolean enableRequestProfiler)
+      boolean enableRequestProfiler,
+      boolean isMultiplexing)
       throws IOException {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
@@ -414,6 +418,7 @@ class ConnectionWorker implements AutoCloseable {
     this.retrySettings = retrySettings;
     this.telemetryAttributes = buildOpenTelemetryAttributes();
     this.requestProfilerHook = new RequestProfiler.RequestProfilerHook(enableRequestProfiler);
+    this.isMultiplexing = isMultiplexing;
     registerOpenTelemetryMetrics();
 
     // Always recreate a client for connection worker.
@@ -808,8 +813,6 @@ class ConnectionWorker implements AutoCloseable {
     // Indicate whether we are at the first request after switching destination.
     // True means the schema and other metadata are needed.
     boolean firstRequestForTableOrSchemaSwitch = true;
-    // Represent whether we have entered multiplexing.
-    boolean isMultiplexing = false;
 
     while (!waitingQueueDrained()) {
       this.lock.lock();
@@ -912,7 +915,6 @@ class ConnectionWorker implements AutoCloseable {
           streamName = originalRequest.getWriteStream();
           refreshOpenTelemetryTableNameAttributes();
           writerSchema = originalRequest.getProtoRows().getWriterSchema();
-          isMultiplexing = true;
           firstRequestForTableOrSchemaSwitch = true;
         }
 

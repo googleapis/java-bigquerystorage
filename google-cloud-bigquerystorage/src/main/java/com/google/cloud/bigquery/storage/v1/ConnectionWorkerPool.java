@@ -409,7 +409,8 @@ public class ConnectionWorkerPool {
             compressorName,
             clientSettings,
             retrySettings,
-            enableRequestProfiler);
+            enableRequestProfiler,
+            /*isMultiplexing=*/ true);
     connectionWorkerPool.add(connectionWorker);
     log.info(
         String.format(
