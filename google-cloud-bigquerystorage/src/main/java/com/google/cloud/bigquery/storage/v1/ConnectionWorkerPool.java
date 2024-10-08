@@ -205,6 +205,9 @@ public class ConnectionWorkerPool {
   /** Static setting for connection pool. */
   private static Settings settings = Settings.builder().build();
 
+  private final boolean enableRequestProfiler;
+  private final boolean enableOpenTelemetry;
+
   ConnectionWorkerPool(
       long maxInflightRequests,
       long maxInflightBytes,
@@ -213,7 +216,9 @@ public class ConnectionWorkerPool {
       String traceId,
       @Nullable String comperssorName,
       BigQueryWriteSettings clientSettings,
-      RetrySettings retrySettings) {
+      RetrySettings retrySettings,
+      boolean enableRequestProfiler,
+      boolean enableOpenTelemetry) {
     this.maxInflightRequests = maxInflightRequests;
     this.maxInflightBytes = maxInflightBytes;
     this.maxRetryDuration = maxRetryDuration;
@@ -223,6 +228,8 @@ public class ConnectionWorkerPool {
     this.clientSettings = clientSettings;
     this.currentMaxConnectionCount = settings.minConnectionsPerRegion();
     this.retrySettings = retrySettings;
+    this.enableRequestProfiler = enableRequestProfiler;
+    this.enableOpenTelemetry = enableOpenTelemetry;
   }
 
   /**
@@ -404,7 +411,9 @@ public class ConnectionWorkerPool {
             traceId,
             compressorName,
             clientSettings,
-            retrySettings);
+            retrySettings,
+            enableRequestProfiler,
+            enableOpenTelemetry);
     connectionWorkerPool.add(connectionWorker);
     log.info(
         String.format(

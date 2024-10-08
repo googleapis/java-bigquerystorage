@@ -68,11 +68,6 @@ public class StreamWriter implements AutoCloseable {
   // Cache of location info for a given dataset.
   private static Map<String, String> projectAndDatasetToLocation = new ConcurrentHashMap<>();
 
-  // Map of fields to their MissingValueInterpretation, which dictates how a field should be
-  // populated when it is missing from an input user row.
-  private Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap =
-      new HashMap();
-
   /*
    * The identifier of stream to write to.
    */
@@ -103,6 +98,11 @@ public class StreamWriter implements AutoCloseable {
   private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
       MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
 
+  // Map of fields to their MissingValueInterpretation, which dictates how a field should be
+  // populated when it is missing from an input user row.
+  private Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap =
+      new HashMap();
+
   /**
    * Stream can access a single connection or a pool of connection depending on whether multiplexing
    * is enabled.
@@ -121,6 +121,9 @@ public class StreamWriter implements AutoCloseable {
 
   /** Creation timestamp of this streamwriter */
   private final long creationTimestamp;
+
+  /** Provide access to the request profiler tool. */
+  private final RequestProfiler.RequestProfilerHook requestProfilerHook;
 
   private Lock lock;
 
@@ -226,12 +229,15 @@ public class StreamWriter implements AutoCloseable {
     this.streamName = builder.streamName;
     this.writerSchema = builder.writerSchema;
     this.defaultMissingValueInterpretation = builder.defaultMissingValueInterpretation;
+    this.missingValueInterpretationMap = builder.missingValueInterpretationMap;
     BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
+    this.requestProfilerHook =
+        new RequestProfiler.RequestProfilerHook(builder.enableRequestProfiler);
     if (builder.enableRequestProfiler) {
-      // Request profiler is enabled on singleton level, from now on a periodical flush will happen
-      // to generate
-      // detailed latency reports for requests latency.
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.startPeriodicalReportFlushing();
+      // Request profiler is enabled on singleton level, from now on a periodical flush will be
+      // started
+      // to generate detailed latency reports for requests latency.
+      requestProfilerHook.startPeriodicalReportFlushing();
     }
     if (!builder.enableConnectionPool) {
       this.location = builder.location;
@@ -248,7 +254,9 @@ public class StreamWriter implements AutoCloseable {
                   builder.getFullTraceId(),
                   builder.compressorName,
                   clientSettings,
-                  builder.retrySettings));
+                  builder.retrySettings,
+                  builder.enableRequestProfiler,
+                  builder.enableOpenTelemetry));
     } else {
       if (!isDefaultStream(streamName)) {
         log.warning(
@@ -314,7 +322,9 @@ public class StreamWriter implements AutoCloseable {
                         builder.getFullTraceId(),
                         builder.compressorName,
                         client.getSettings(),
-                        builder.retrySettings);
+                        builder.retrySettings,
+                        builder.enableRequestProfiler,
+                        builder.enableOpenTelemetry);
                   }));
       validateFetchedConnectonPool(builder);
       // If the client is not from outside, then shutdown the client we created.
@@ -412,18 +422,6 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
-   * Sets the missing value interpretation map for the stream writer. The input
-   * missingValueInterpretationMap is used for all write requests unless otherwise changed.
-   *
-   * @param missingValueInterpretationMap the missing value interpretation map used by stream
-   *     writer.
-   */
-  public void setMissingValueInterpretationMap(
-      Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap) {
-    this.missingValueInterpretationMap = missingValueInterpretationMap;
-  }
-
-  /**
    * Schedules the writing of rows at the end of current stream.
    *
    * @param rows the rows in serialized format to write to BigQuery.
@@ -461,12 +459,12 @@ public class StreamWriter implements AutoCloseable {
    */
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
     String requestUniqueId = generateRequestUniqueId();
-    RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+    requestProfilerHook.startOperation(
         RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
     try {
       return appendWithUniqueId(rows, offset, requestUniqueId);
     } catch (Exception ex) {
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+      requestProfilerHook.endOperation(
           RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
       throw ex;
     }
@@ -487,7 +485,7 @@ public class StreamWriter implements AutoCloseable {
                   .withDescription("User closed StreamWriter"),
               streamName,
               getWriterId()));
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+      requestProfilerHook.endOperation(
           RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
       return requestWrapper.appendResult;
     }
@@ -691,7 +689,11 @@ public class StreamWriter implements AutoCloseable {
     private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
         MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
 
+    private Map<String, AppendRowsRequest.MissingValueInterpretation>
+        missingValueInterpretationMap = new HashMap();
+
     private boolean enableRequestProfiler = false;
+    private boolean enableOpenTelemetry = false;
 
     private RetrySettings retrySettings = null;
 
@@ -842,11 +844,31 @@ public class StreamWriter implements AutoCloseable {
     }
 
     /**
+     * Sets the missing value interpretation map for the stream writer. The input
+     * missingValueInterpretationMap is used for all write requests unless otherwise changed.
+     *
+     * @param missingValueInterpretationMap the missing value interpretation map used by stream
+     *     writer.
+     * @return Builder
+     */
+    public Builder setMissingValueInterpretationMap(
+        Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap) {
+      this.missingValueInterpretationMap = missingValueInterpretationMap;
+      return this;
+    }
+
+    /**
      * Enable a latency profiler that would periodically generate a detailed latency report for the
      * top latency requests. This is currently an experimental API.
      */
     public Builder setEnableLatencyProfiler(boolean enableLatencyProfiler) {
       this.enableRequestProfiler = enableLatencyProfiler;
+      return this;
+    }
+
+    /** Enable generation of metrics for OpenTelemetry. */
+    public Builder setEnableOpenTelemetry(boolean enableOpenTelemetry) {
+      this.enableOpenTelemetry = enableOpenTelemetry;
       return this;
     }
 

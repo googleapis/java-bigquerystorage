@@ -71,6 +71,9 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
   // the user provides the table schema, we should always use that schema.
   private final boolean skipRefreshStreamWriter;
 
+  // Provide access to the request profiler.
+  private final RequestProfiler.RequestProfilerHook requestProfilerHook;
+
   /**
    * Constructs the SchemaAwareStreamWriter
    *
@@ -102,10 +105,14 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     streamWriterBuilder.setLocation(builder.location);
     streamWriterBuilder.setDefaultMissingValueInterpretation(
         builder.defaultMissingValueInterpretation);
+    streamWriterBuilder.setMissingValueInterpretationMap(builder.missingValueInterpretationMap);
     streamWriterBuilder.setClientId(builder.clientId);
+    streamWriterBuilder.setEnableLatencyProfiler(builder.enableRequestProfiler);
+    requestProfilerHook = new RequestProfiler.RequestProfilerHook(builder.enableRequestProfiler);
     if (builder.enableRequestProfiler) {
-      streamWriterBuilder.setEnableLatencyProfiler(builder.enableRequestProfiler);
+      requestProfilerHook.startPeriodicalReportFlushing();
     }
+    streamWriterBuilder.setEnableOpenTelemetry(builder.enableOpenTelemetry);
     this.streamWriter = streamWriterBuilder.build();
     this.streamName = builder.streamName;
     this.tableSchema = builder.tableSchema;
@@ -127,12 +134,12 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
   public ApiFuture<AppendRowsResponse> append(Iterable<T> items)
       throws IOException, DescriptorValidationException {
     String requestUniqueId = generateRequestUniqueId();
-    RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+    requestProfilerHook.startOperation(
         RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
     try {
       return appendWithUniqueId(items, -1, requestUniqueId);
     } catch (Exception ex) {
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+      requestProfilerHook.endOperation(
           RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
       throw ex;
     }
@@ -197,12 +204,12 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
   public ApiFuture<AppendRowsResponse> append(Iterable<T> items, long offset)
       throws IOException, DescriptorValidationException {
     String requestUniqueId = generateRequestUniqueId();
-    RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+    requestProfilerHook.startOperation(
         RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
     try {
       return appendWithUniqueId(items, offset, requestUniqueId);
     } catch (Exception ex) {
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+      requestProfilerHook.endOperation(
           RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
       throw ex;
     }
@@ -213,7 +220,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
       throws DescriptorValidationException, IOException {
     // Handle schema updates in a Thread-safe way by locking down the operation
     synchronized (this) {
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+      requestProfilerHook.startOperation(
           RequestProfiler.OperationName.JSON_TO_PROTO_CONVERSION, requestUniqueId);
       ProtoRows.Builder rowsBuilder = ProtoRows.newBuilder();
       try {
@@ -246,7 +253,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
               rowIndexToErrorMessage);
         }
       } finally {
-        RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+        requestProfilerHook.endOperation(
             RequestProfiler.OperationName.JSON_TO_PROTO_CONVERSION, requestUniqueId);
       }
       return this.streamWriter.appendWithUniqueId(rowsBuilder.build(), offset, requestUniqueId);
@@ -290,18 +297,6 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
    */
   public long getInflightWaitSeconds() {
     return streamWriter.getInflightWaitSeconds();
-  }
-
-  /**
-   * Sets the missing value interpretation map for the SchemaAwareStreamWriter. The input
-   * missingValueInterpretationMap is used for all append requests unless otherwise changed.
-   *
-   * @param missingValueInterpretationMap the missing value interpretation map used by the
-   *     SchemaAwareStreamWriter.
-   */
-  public void setMissingValueInterpretationMap(
-      Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap) {
-    streamWriter.setMissingValueInterpretationMap(missingValueInterpretationMap);
   }
 
   /** @return the missing value interpretation map used for the writer. */
@@ -469,9 +464,12 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
 
     private AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation =
         MissingValueInterpretation.MISSING_VALUE_INTERPRETATION_UNSPECIFIED;
+    private Map<String, AppendRowsRequest.MissingValueInterpretation>
+        missingValueInterpretationMap = new HashMap();
     private String clientId;
 
     private boolean enableRequestProfiler = false;
+    private boolean enableOpenTelemetry = false;
 
     private static final String streamPatternString =
         "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/streams/[^/]+";
@@ -529,9 +527,6 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
         this.skipRefreshStreamWriter = true;
       }
       this.toProtoConverter = toProtoConverter;
-      if (this.enableRequestProfiler) {
-        RequestProfiler.REQUEST_PROFILER_SINGLETON.startPeriodicalReportFlushing();
-      }
     }
 
     /**
@@ -681,6 +676,20 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
 
     /**
+     * Sets the missing value interpretation map for the SchemaAwareStreamWriter. The input
+     * missingValueInterpretationMap is used for all append requests unless otherwise changed.
+     *
+     * @param missingValueInterpretationMap the missing value interpretation map used by the
+     *     SchemaAwareStreamWriter.
+     * @return Builder
+     */
+    public Builder setMissingValueInterpretationMap(
+        Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap) {
+      this.missingValueInterpretationMap = missingValueInterpretationMap;
+      return this;
+    }
+
+    /**
      * Sets the RetrySettings to use for in-stream error retry.
      *
      * @param retrySettings
@@ -697,6 +706,12 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
      */
     public Builder setEnableLatencyProfiler(boolean enableLatencyProfiler) {
       this.enableRequestProfiler = enableLatencyProfiler;
+      return this;
+    }
+
+    /** Enable generation of metrics for OpenTelemetry. */
+    public Builder setEnableOpenTelemetry(boolean enableOpenTelemetry) {
+      this.enableOpenTelemetry = enableOpenTelemetry;
       return this;
     }
 

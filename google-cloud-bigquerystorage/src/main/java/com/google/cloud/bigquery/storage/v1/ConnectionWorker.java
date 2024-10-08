@@ -36,12 +36,7 @@ import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
-import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.common.AttributesBuilder;
-import io.opentelemetry.api.metrics.LongCounter;
-import io.opentelemetry.api.metrics.Meter;
-import io.opentelemetry.api.metrics.MeterProvider;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -247,6 +242,9 @@ class ConnectionWorker implements AutoCloseable {
    */
   private final RetrySettings retrySettings;
 
+  private final RequestProfiler.RequestProfilerHook requestProfilerHook;
+  private final TelemetryMetrics telemetryMetrics;
+
   private static String projectMatching = "projects/[^/]+/";
   private static Pattern streamPatternProject = Pattern.compile(projectMatching);
 
@@ -255,21 +253,7 @@ class ConnectionWorker implements AutoCloseable {
 
   private static String tableMatching = "(projects/[^/]+/datasets/[^/]+/tables/[^/]+)/";
   private static Pattern streamPatternTable = Pattern.compile(tableMatching);
-  private Meter writeMeter;
-  static AttributeKey<String> telemetryKeyTableId = AttributeKey.stringKey("table_id");
-  private static String dataflowPrefix = "dataflow:";
-  static List<AttributeKey<String>> telemetryKeysTraceId =
-      new ArrayList<AttributeKey<String>>() {
-        {
-          add(AttributeKey.stringKey("trace_field_1"));
-          add(AttributeKey.stringKey("trace_field_2"));
-          add(AttributeKey.stringKey("trace_field_3"));
-        }
-      };
-  private Attributes telemetryAttributes;
-  private LongCounter instrumentIncomingRequestCount;
-  private LongCounter instrumentIncomingRequestSize;
-  private LongCounter instrumentIncomingRequestRows;
+  // Latency buckets are based on a list of 1.5 ^ n
 
   public static Boolean isDefaultStreamName(String streamName) {
     Matcher matcher = DEFAULT_STREAM_PATTERN.matcher(streamName);
@@ -301,78 +285,33 @@ class ConnectionWorker implements AutoCloseable {
     return tableMatcher.find() ? tableMatcher.group(1) : "";
   }
 
-  private void setTraceIdAttributesPart(
-      AttributesBuilder builder,
-      String[] traceIdParts,
-      int indexPartsToCheck,
-      int indexTelemetryKeysToUse) {
-    if ((indexPartsToCheck < traceIdParts.length) && !traceIdParts[indexPartsToCheck].isEmpty()) {
-      builder.put(
-          telemetryKeysTraceId.get(indexTelemetryKeysToUse), traceIdParts[indexPartsToCheck]);
-    }
-  }
-
-  private void setTraceIdAttributes(AttributesBuilder builder) {
-    if ((this.traceId != null) && !this.traceId.isEmpty()) {
-      int indexDataflow = this.traceId.toLowerCase().indexOf(dataflowPrefix);
-      if (indexDataflow >= 0) {
-        String[] traceIdParts =
-            this.traceId.substring(indexDataflow + dataflowPrefix.length()).split(":", 8);
-        setTraceIdAttributesPart(builder, traceIdParts, 0, 0);
-        setTraceIdAttributesPart(builder, traceIdParts, 1, 1);
-        setTraceIdAttributesPart(builder, traceIdParts, 2, 2);
+  public boolean hasActiveConnection() {
+    boolean isConnected = false;
+    this.lock.lock();
+    try {
+      if (streamConnectionIsConnected) {
+        isConnected = true;
       }
+    } finally {
+      this.lock.unlock();
     }
+    return isConnected;
   }
 
-  private Attributes buildOpenTelemetryAttributes() {
-    AttributesBuilder builder = Attributes.builder();
-    String tableName = getTableName();
-    if (!tableName.isEmpty()) {
-      builder.put(telemetryKeyTableId, tableName);
+  public int getInflightRequestQueueLength() {
+    int length = 0;
+    this.lock.lock();
+    try {
+      length = inflightRequestQueue.size();
+    } finally {
+      this.lock.unlock();
     }
-    setTraceIdAttributes(builder);
-    return builder.build();
-  }
-
-  private void refreshOpenTelemetryTableNameAttributes() {
-    String tableName = getTableName();
-    if (!tableName.isEmpty()
-        && !tableName.equals(getTelemetryAttributes().get(telemetryKeyTableId))) {
-      AttributesBuilder builder = getTelemetryAttributes().toBuilder();
-      builder.put(telemetryKeyTableId, tableName);
-      this.telemetryAttributes = builder.build();
-    }
+    return length;
   }
 
   @VisibleForTesting
   Attributes getTelemetryAttributes() {
-    return telemetryAttributes;
-  }
-
-  private void registerOpenTelemetryMetrics() {
-    MeterProvider meterProvider = Singletons.getOpenTelemetry().getMeterProvider();
-    writeMeter =
-        meterProvider
-            .meterBuilder("com.google.cloud.bigquery.storage.v1.write")
-            .setInstrumentationVersion(
-                ConnectionWorker.class.getPackage().getImplementationVersion())
-            .build();
-    instrumentIncomingRequestCount =
-        writeMeter
-            .counterBuilder("append_requests")
-            .setDescription("Counts number of incoming requests")
-            .build();
-    instrumentIncomingRequestSize =
-        writeMeter
-            .counterBuilder("append_request_bytes")
-            .setDescription("Counts byte size of incoming requests")
-            .build();
-    instrumentIncomingRequestRows =
-        writeMeter
-            .counterBuilder("append_rows")
-            .setDescription("Counts number of incoming request rows")
-            .build();
+    return telemetryMetrics.getTelemetryAttributes();
   }
 
   public ConnectionWorker(
@@ -386,7 +325,9 @@ class ConnectionWorker implements AutoCloseable {
       String traceId,
       @Nullable String compressorName,
       BigQueryWriteSettings clientSettings,
-      RetrySettings retrySettings)
+      RetrySettings retrySettings,
+      boolean enableRequestProfiler,
+      boolean enableOpenTelemetry)
       throws IOException {
     this.lock = new ReentrantLock();
     this.hasMessageInWaitingQueue = lock.newCondition();
@@ -409,8 +350,9 @@ class ConnectionWorker implements AutoCloseable {
     this.inflightRequestQueue = new LinkedList<AppendRequestAndResponse>();
     this.compressorName = compressorName;
     this.retrySettings = retrySettings;
-    this.telemetryAttributes = buildOpenTelemetryAttributes();
-    registerOpenTelemetryMetrics();
+    this.requestProfilerHook = new RequestProfiler.RequestProfilerHook(enableRequestProfiler);
+    this.telemetryMetrics =
+        new TelemetryMetrics(this, enableOpenTelemetry, getTableName(), writerId, traceId);
 
     // Always recreate a client for connection worker.
     HashMap<String, String> newHeaders = new HashMap<>();
@@ -461,6 +403,7 @@ class ConnectionWorker implements AutoCloseable {
 
   private void resetConnection() {
     log.info("Start connecting stream: " + streamName + " id: " + writerId);
+    telemetryMetrics.recordConnectionStart();
     if (this.streamConnection != null) {
       // It's safe to directly close the previous connection as the in flight messages
       // will be picked up by the next connection.
@@ -503,7 +446,7 @@ class ConnectionWorker implements AutoCloseable {
 
   private void waitForBackoffIfNecessary(AppendRequestAndResponse requestWrapper) {
     lock.lock();
-    RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+    requestProfilerHook.startOperation(
         RequestProfiler.OperationName.RETRY_BACKOFF, requestWrapper.requestUniqueId);
     try {
       Condition condition = lock.newCondition();
@@ -513,7 +456,7 @@ class ConnectionWorker implements AutoCloseable {
     } catch (InterruptedException e) {
       throw new IllegalStateException(e);
     } finally {
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+      requestProfilerHook.endOperation(
           RequestProfiler.OperationName.RETRY_BACKOFF, requestWrapper.requestUniqueId);
       lock.unlock();
     }
@@ -535,7 +478,7 @@ class ConnectionWorker implements AutoCloseable {
     ++this.inflightRequests;
     this.inflightBytes += requestWrapper.messageSize;
     hasMessageInWaitingQueue.signal();
-    RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+    requestProfilerHook.startOperation(
         RequestProfiler.OperationName.WAIT_QUEUE, requestWrapper.requestUniqueId);
     if (addToFront) {
       waitingRequestQueue.addFirst(requestWrapper);
@@ -614,9 +557,6 @@ class ConnectionWorker implements AutoCloseable {
                           + requestWrapper.messageSize)));
       return requestWrapper.appendResult;
     }
-    instrumentIncomingRequestCount.add(1, getTelemetryAttributes());
-    instrumentIncomingRequestSize.add(requestWrapper.messageSize, getTelemetryAttributes());
-    instrumentIncomingRequestRows.add(message.getProtoRows().getRows().getSerializedRowsCount());
     this.lock.lock();
     try {
       if (userClosed) {
@@ -649,13 +589,12 @@ class ConnectionWorker implements AutoCloseable {
                 writerId));
         return requestWrapper.appendResult;
       }
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
-          RequestProfiler.OperationName.WAIT_QUEUE, requestUniqueId);
+      requestProfilerHook.startOperation(RequestProfiler.OperationName.WAIT_QUEUE, requestUniqueId);
       ++this.inflightRequests;
       this.inflightBytes += requestWrapper.messageSize;
       waitingRequestQueue.addLast(requestWrapper);
       hasMessageInWaitingQueue.signal();
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+      requestProfilerHook.startOperation(
           RequestProfiler.OperationName.WAIT_INFLIGHT_QUOTA, requestUniqueId);
       try {
         maybeWaitForInflightQuota();
@@ -665,7 +604,7 @@ class ConnectionWorker implements AutoCloseable {
         this.inflightBytes -= requestWrapper.messageSize;
         throw ex;
       }
-      RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+      requestProfilerHook.endOperation(
           RequestProfiler.OperationName.WAIT_INFLIGHT_QUOTA, requestUniqueId);
       return requestWrapper.appendResult;
     } finally {
@@ -831,10 +770,10 @@ class ConnectionWorker implements AutoCloseable {
           while (!inflightRequestQueue.isEmpty()) {
             AppendRequestAndResponse requestWrapper = inflightRequestQueue.pollLast();
             // Consider the backend latency as completed for the current request.
-            RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+            requestProfilerHook.endOperation(
                 RequestProfiler.OperationName.RESPONSE_LATENCY, requestWrapper.requestUniqueId);
             requestWrapper.requestSendTimeStamp = null;
-            RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+            requestProfilerHook.startOperation(
                 RequestProfiler.OperationName.WAIT_QUEUE, requestWrapper.requestUniqueId);
             waitingRequestQueue.addFirst(requestWrapper);
           }
@@ -845,7 +784,7 @@ class ConnectionWorker implements AutoCloseable {
         }
         while (!this.waitingRequestQueue.isEmpty()) {
           AppendRequestAndResponse requestWrapper = this.waitingRequestQueue.pollFirst();
-          RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+          requestProfilerHook.endOperation(
               RequestProfiler.OperationName.WAIT_QUEUE, requestWrapper.requestUniqueId);
           waitForBackoffIfNecessary(requestWrapper);
           this.inflightRequestQueue.add(requestWrapper);
@@ -907,7 +846,7 @@ class ConnectionWorker implements AutoCloseable {
             || (originalRequest.getProtoRows().hasWriterSchema()
                 && !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema))) {
           streamName = originalRequest.getWriteStream();
-          refreshOpenTelemetryTableNameAttributes();
+          telemetryMetrics.refreshOpenTelemetryTableNameAttributes(getTableName());
           writerSchema = originalRequest.getProtoRows().getWriterSchema();
           isMultiplexing = true;
           firstRequestForTableOrSchemaSwitch = true;
@@ -931,7 +870,7 @@ class ConnectionWorker implements AutoCloseable {
         }
         firstRequestForTableOrSchemaSwitch = false;
 
-        RequestProfiler.REQUEST_PROFILER_SINGLETON.startOperation(
+        requestProfilerHook.startOperation(
             RequestProfiler.OperationName.RESPONSE_LATENCY, requestUniqueId);
 
         // Send should only throw an exception if there is a problem with the request. The catch
@@ -1211,8 +1150,14 @@ class ConnectionWorker implements AutoCloseable {
         connectionRetryStartTime = 0;
       }
       if (!this.inflightRequestQueue.isEmpty()) {
+        Instant sendInstant = inflightRequestQueue.getFirst().requestSendTimeStamp;
+        if (sendInstant != null) {
+          Duration durationLatency = Duration.between(sendInstant, Instant.now());
+          telemetryMetrics.recordNetworkLatency(durationLatency);
+        }
+
         requestWrapper = pollFirstInflightRequestQueue();
-        RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+        requestProfilerHook.endOperation(
             RequestProfiler.OperationName.RESPONSE_LATENCY, requestWrapper.requestUniqueId);
       } else if (inflightCleanuped) {
         // It is possible when requestCallback is called, the inflight queue is already drained
@@ -1230,6 +1175,14 @@ class ConnectionWorker implements AutoCloseable {
     } finally {
       this.lock.unlock();
     }
+
+    telemetryMetrics.recordResponse(
+        requestWrapper.messageSize,
+        requestWrapper.message.getProtoRows().getRows().getSerializedRowsCount(),
+        Code.values()[
+            response.hasError() ? response.getError().getCode() : Status.Code.OK.ordinal()]
+            .toString(),
+        requestWrapper.retryCount > 0);
 
     // Retries need to happen on the same thread as queue locking may occur
     if (response.hasError()) {
@@ -1277,7 +1230,7 @@ class ConnectionWorker implements AutoCloseable {
               requestWrapper.appendResult.set(response);
             }
           } finally {
-            RequestProfiler.REQUEST_PROFILER_SINGLETON.endOperation(
+            requestProfilerHook.endOperation(
                 RequestProfiler.OperationName.TOTAL_LATENCY, requestWrapper.requestUniqueId);
           }
         });
@@ -1313,6 +1266,8 @@ class ConnectionWorker implements AutoCloseable {
     this.lock.lock();
     try {
       this.streamConnectionIsConnected = false;
+      this.telemetryMetrics.recordConnectionEnd(
+          Code.values()[Status.fromThrowable(finalStatus).getCode().ordinal()].toString());
       if (connectionFinalStatus == null) {
         if (connectionRetryStartTime == 0) {
           connectionRetryStartTime = System.currentTimeMillis();
@@ -1324,6 +1279,7 @@ class ConnectionWorker implements AutoCloseable {
                 || System.currentTimeMillis() - connectionRetryStartTime
                     <= maxRetryDuration.toMillis())) {
           this.conectionRetryCountWithoutCallback++;
+          this.telemetryMetrics.recordConnectionStartWithRetry();
           log.info(
               "Connection is going to be reestablished with the next request. Retriable error "
                   + finalStatus.toString()

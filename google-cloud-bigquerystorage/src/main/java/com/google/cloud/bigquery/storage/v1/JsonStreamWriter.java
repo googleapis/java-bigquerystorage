@@ -119,18 +119,6 @@ public class JsonStreamWriter implements AutoCloseable {
     return this.schemaAwareStreamWriter.getInflightWaitSeconds();
   }
 
-  /**
-   * Sets the missing value interpretation map for the JsonStreamWriter. The input
-   * missingValueInterpretationMap is used for all append requests unless otherwise changed.
-   *
-   * @param missingValueInterpretationMap the missing value interpretation map used by the
-   *     JsonStreamWriter.
-   */
-  public void setMissingValueInterpretationMap(
-      Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap) {
-    this.schemaAwareStreamWriter.setMissingValueInterpretationMap(missingValueInterpretationMap);
-  }
-
   /** @return the missing value interpretation map used for the writer. */
   public Map<String, AppendRowsRequest.MissingValueInterpretation>
       getMissingValueInterpretationMap() {
@@ -392,6 +380,12 @@ public class JsonStreamWriter implements AutoCloseable {
       return this;
     }
 
+    /** Enable generation of metrics for OpenTelemetry. */
+    public Builder setEnableOpenTelemetry(boolean enableOpenTelemetry) {
+      this.schemaAwareStreamWriterBuilder.setEnableOpenTelemetry(enableOpenTelemetry);
+      return this;
+    }
+
     /**
      * Sets the default missing value interpretation value if the column is not presented in the
      * missing_value_interpretations map.
@@ -405,6 +399,21 @@ public class JsonStreamWriter implements AutoCloseable {
         AppendRowsRequest.MissingValueInterpretation defaultMissingValueInterpretation) {
       this.schemaAwareStreamWriterBuilder.setDefaultMissingValueInterpretation(
           defaultMissingValueInterpretation);
+      return this;
+    }
+
+    /**
+     * Sets the missing value interpretation map for the JsonStreamWriter. The input
+     * missingValueInterpretationMap is used for all append requests unless otherwise changed.
+     *
+     * @param missingValueInterpretationMap the missing value interpretation map used by the
+     *     JsonStreamWriter.
+     * @return Builder
+     */
+    public Builder setMissingValueInterpretationMap(
+        Map<String, AppendRowsRequest.MissingValueInterpretation> missingValueInterpretationMap) {
+      this.schemaAwareStreamWriterBuilder.setMissingValueInterpretationMap(
+          missingValueInterpretationMap);
       return this;
     }
 

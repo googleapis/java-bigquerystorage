@@ -1,6 +1,6 @@
-gapic_generator_version: 2.42.0
-googleapis_commitish: 19577edb4d439db98d2fb1f6f48f2e1b29fba099
-libraries_bom_version: 26.43.0
+gapic_generator_version: 2.47.0
+googleapis_commitish: 3effbf23b1a1d1fe1306356e94397e20d01d31a0
+libraries_bom_version: 26.48.0
 libraries:
     - api_shortname: bigquerystorage
       name_pretty: BigQuery Storage
@@ -21,5 +21,6 @@ libraries:
       recommended_package: com.google.cloud.bigquery.storage.v1
       GAPICs:
           - proto_path: google/cloud/bigquery/storage/v1
+          - proto_path: google/cloud/bigquery/storage/v1alpha
           - proto_path: google/cloud/bigquery/storage/v1beta1
           - proto_path: google/cloud/bigquery/storage/v1beta2
