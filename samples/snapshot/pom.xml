@@ -38,6 +38,17 @@
       <artifactId>google-cloud-bigquery</artifactId>
       <version>2.43.0</version>
     </dependency>
+
+    <!--
+      Explicitly set google-cloud-monitoring due to conflict with
+      com.google.cloud.opentelemetry.exporter-metrics.
+    -->
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-monitoring</artifactId>
+      <version>3.52.0</version>
+    </dependency>
+
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>
