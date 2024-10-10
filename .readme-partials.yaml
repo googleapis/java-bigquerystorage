@@ -1,5 +1,5 @@
 custom_content: |
-## OpenTelemetry support
+  ## OpenTelemetry support
 
   The client supports emitting metrics to OpenTelemetry. This is disabled by default. It can be enabled by calling
     
