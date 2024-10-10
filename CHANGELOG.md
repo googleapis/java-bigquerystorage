@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.9.4](https://github.com/googleapis/java-bigquerystorage/compare/v3.9.3...v3.9.4) (2024-10-10)
+
+
+### Bug Fixes
+
+* Add stream name to every request when connection is created during multiplexing ([#2699](https://github.com/googleapis/java-bigquerystorage/issues/2699)) ([c53a77c](https://github.com/googleapis/java-bigquerystorage/commit/c53a77c6e0d2d1a639033db98bacccedb3a226f7))
+
+
+### Dependencies
+
+* Update actions/checkout digest to eef6144 ([#2687](https://github.com/googleapis/java-bigquerystorage/issues/2687)) ([f3c5a7a](https://github.com/googleapis/java-bigquerystorage/commit/f3c5a7af4316ca5b3656aaa7c65bce12c5932503))
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.43.1 ([#2701](https://github.com/googleapis/java-bigquerystorage/issues/2701)) ([6ebed6d](https://github.com/googleapis/java-bigquerystorage/commit/6ebed6d7b450879ff61e4c3222c24709e2809cf9))
+* Update dependency com.google.cloud.opentelemetry:exporter-metrics to v0.33.0 ([#2696](https://github.com/googleapis/java-bigquerystorage/issues/2696)) ([19398db](https://github.com/googleapis/java-bigquerystorage/commit/19398db70f07ed7b2fe52e7aed221e481bee089d))
+* Update dependency org.apache.avro:avro to v1.11.4 [security] ([#2694](https://github.com/googleapis/java-bigquerystorage/issues/2694)) ([b0498ba](https://github.com/googleapis/java-bigquerystorage/commit/b0498ba15ef87a703801f4c56867ab744f7c3902))
+
 ## [3.9.3](https://github.com/googleapis/java-bigquerystorage/compare/v3.9.2...v3.9.3) (2024-10-07)
 
 
