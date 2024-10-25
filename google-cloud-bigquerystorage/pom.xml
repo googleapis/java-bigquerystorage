@@ -41,6 +41,28 @@
         </executions>
       </plugin>
       <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <classpathDependencyExcludes>
+            <classpathDependencyExclude>com.google.protobuf:protobuf-java</classpathDependencyExclude>
+            <classpathDependencyExclude>com.google.protobuf:protobuf-java-util</classpathDependencyExclude>
+          </classpathDependencyExcludes>
+          <additionalClasspathDependencies>
+            <additionalClasspathDependency>
+              <groupId>com.google.protobuf</groupId>
+              <artifactId>protobuf-java</artifactId>
+              <version>4.28.2</version>
+            </additionalClasspathDependency>
+            <additionalClasspathDependency>
+              <groupId>com.google.protobuf</groupId>
+              <artifactId>protobuf-java-util</artifactId>
+              <version>4.28.2</version>
+            </additionalClasspathDependency>
+          </additionalClasspathDependencies>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
       </plugin>
