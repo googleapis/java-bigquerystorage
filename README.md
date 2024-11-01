@@ -277,3 +277,28 @@ Java is a registered trademark of Oracle and/or its affiliates.
 [apilibs]: https://cloud.google.com/apis/docs/client-libraries-explained#google_api_client_libraries
 [oracle]: https://www.oracle.com/java/technologies/java-se-support-roadmap.html
 [g-c-j]: http://github.com/googleapis/google-cloud-java
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>libraries-bom</artifactId>
+      <version>26.49.0</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-bom</artifactId>
+      <version>1.43.0</version>
+      <type>pom</type>
+      <scope>import</scope>
+     </dependency>
+  </dependencies>
+</dependencyManagement>
+
+<dependencies>
+  <dependency>
+    <groupId>com.google.cloud</groupId>
+    <artifactId>google-cloud-bigquerystorage</artifactId>
+  </dependency>
+  
