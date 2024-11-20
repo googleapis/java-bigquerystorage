@@ -164,7 +164,8 @@ public final class CivilTimeEncoder {
   }
 
   /**
-   * Decodes {@code bitFieldTimeMicros} as a {@link LocalTime} with microseconds precision.
+   * Decodes {@code bitFieldTimeMicros} as a {@link java.time.LocalTime} with microseconds
+   * precision.
    *
    * <p>Encoding is as the following:
    *
@@ -292,7 +293,8 @@ public final class CivilTimeEncoder {
   }
 
   /**
-   * Decodes {@code bitFieldDatetimeMicros} as a {@link LocalDateTime} with microseconds precision.
+   * Decodes {@code bitFieldDatetimeMicros} as a {@link java.time.LocalDateTime} with microseconds
+   * precision.
    *
    * <p>Encoding is as the following:
    *
