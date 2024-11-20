@@ -30,6 +30,14 @@ import com.google.protobuf.UninitializedMessageException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,14 +45,6 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.threeten.bp.LocalDateTime;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.format.DateTimeFormatter;
-import org.threeten.bp.format.DateTimeFormatterBuilder;
-import org.threeten.bp.format.TextStyle;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.TemporalAccessor;
 
 /**
  * Converts JSON data to Protobuf messages given the Protobuf descriptor and BigQuery table schema.
@@ -604,7 +604,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               protoMsg.setField(
                   fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64DatetimeMicros(
+                  CivilTimeEncoder.encodePacked64DatetimeMicrosLocalDateTime(
                       LocalDateTime.parse((String) val, DATETIME_FORMATTER)));
               return;
             } else if (val instanceof Long) {
@@ -615,7 +615,8 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               protoMsg.setField(
                   fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
+                  CivilTimeEncoder.encodePacked64TimeMicrosLocalTime(
+                      LocalTime.parse((String) val)));
               return;
             } else if (val instanceof Long) {
               protoMsg.setField(fieldDescriptor, val);
@@ -872,7 +873,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               protoMsg.addRepeatedField(
                   fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64DatetimeMicros(
+                  CivilTimeEncoder.encodePacked64DatetimeMicrosLocalDateTime(
                       LocalDateTime.parse((String) val, DATETIME_FORMATTER)));
             } else if (val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, val);
@@ -883,7 +884,8 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               protoMsg.addRepeatedField(
                   fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
+                  CivilTimeEncoder.encodePacked64TimeMicrosLocalTime(
+                      LocalTime.parse((String) val)));
             } else if (val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, val);
             } else {
