@@ -16,6 +16,14 @@
 
 package com.google.cloud.bigquery.storage.util;
 
+import com.google.api.core.InternalApi;
+
+/**
+ * Convenience methods for conversions between {@link java.time} and {@link org.threeten.bp}
+ * objects. This will be kept until <a
+ * href="https://github.com/googleapis/sdk-platform-java/issues/3412">this issue</a> is solved.
+ */
+@InternalApi("https://github.com/googleapis/sdk-platform-java/issues/3412")
 public class TimeConversionUtils {
   public static java.time.LocalDateTime toJavaTimeLocalDateTime(
       org.threeten.bp.LocalDateTime result) {
