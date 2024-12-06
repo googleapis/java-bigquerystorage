@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.11.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.10.3...v3.11.0) (2024-12-06)
+
+
+### Features
+
+* Add support for byte and short ([#2789](https://github.com/googleapis/java-bigquerystorage/issues/2789)) ([98a714f](https://github.com/googleapis/java-bigquerystorage/commit/98a714fbdd409632c000e01c2ada9565e483eecc))
+* Introduce `java.time` methods and variables ([#2780](https://github.com/googleapis/java-bigquerystorage/issues/2780)) ([8dd66d5](https://github.com/googleapis/java-bigquerystorage/commit/8dd66d56ae9a0cb25171e466dcd8dc1e78660872))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.44.0 ([#2778](https://github.com/googleapis/java-bigquerystorage/issues/2778)) ([91be63a](https://github.com/googleapis/java-bigquerystorage/commit/91be63a273441ee50610545c4acce9ae2b86639c))
+* Update dependency org.graalvm.buildtools:native-maven-plugin to v0.10.4 ([#2787](https://github.com/googleapis/java-bigquerystorage/issues/2787)) ([b85f01d](https://github.com/googleapis/java-bigquerystorage/commit/b85f01d809aa3e9e84c81ab4af8cf8c0eba98c0b))
+
 ## [3.10.3](https://github.com/googleapis/java-bigquerystorage/compare/v3.10.2...v3.10.3) (2024-11-17)
 
 
