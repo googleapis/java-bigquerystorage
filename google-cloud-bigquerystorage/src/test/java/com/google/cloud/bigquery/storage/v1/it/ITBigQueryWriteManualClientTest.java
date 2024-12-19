@@ -1755,6 +1755,9 @@ public class ITBigQueryWriteManualClientTest {
             QueryJobConfiguration.newBuilder("SELECT * from " + DATASET + '.' + TABLE2).build());
     Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
     assertTrue(queryIter.hasNext());
+    System.out.println("CHUONGPH: " + queryIter.next().get(1).getRepeatedValue().toString());
+    System.out.println("CHUONGPH: " + queryIter.next().get(1).getRepeatedValue().toString());
+    // Should fail.
     assertEquals(
         "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa},"
             + " FieldValue{attribute=PRIMITIVE, value=aaa}]}]",
