@@ -1755,24 +1755,16 @@ public class ITBigQueryWriteManualClientTest {
             QueryJobConfiguration.newBuilder("SELECT * from " + DATASET + '.' + TABLE2).build());
     Iterator<FieldValueList> queryIter = queryResult.getValues().iterator();
     assertTrue(queryIter.hasNext());
-    // SHOULD FAIL.
-    // System.out.println("CHUONGPH: " + queryIter.next().get(1).getRepeatedValue().toString());
     assertEquals(
-        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa, useInt64Timestamps=false}, FieldValue{attribute=PRIMITIVE, value=aaa, useInt64Timestamps=false}], useInt64Timestamps=false}]",
+        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa,"
+            + " useInt64Timestamps=false}, FieldValue{attribute=PRIMITIVE, value=aaa,"
+            + " useInt64Timestamps=false}], useInt64Timestamps=false}]",
         queryIter.next().get(1).getRepeatedValue().toString());
     assertEquals(
-        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb, useInt64Timestamps=false}, FieldValue{attribute=PRIMITIVE, value=bbb, useInt64Timestamps=false}], useInt64Timestamps=false}]",
+        "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb,"
+            + " useInt64Timestamps=false}, FieldValue{attribute=PRIMITIVE, value=bbb,"
+            + " useInt64Timestamps=false}], useInt64Timestamps=false}]",
         queryIter.next().get(1).getRepeatedValue().toString());
-    // assertEquals(
-    //     "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=aaa,"
-    //         + " useInt64Timestamps=false}, FieldValue{attribute=PRIMITIVE, value=aaa,"
-    //         + " useInt64Timestamps=false}]}]",
-    //     queryIter.next().get(1).getRepeatedValue().toString());
-    // assertEquals(
-    //     "[FieldValue{attribute=REPEATED, value=[FieldValue{attribute=PRIMITIVE, value=bbb,"
-    //         + " useInt64Timestamps=false}, FieldValue{attribute=PRIMITIVE, value=bbb,"
-    //         + " useInt64Timestamps=false}]}]",
-    //     queryIter.next().get(1).getRepeatedValue().toString());
     assertFalse(queryIter.hasNext());
   }
 
