@@ -97,11 +97,13 @@ public class ConnectionWorkerTest {
           StreamWriter.newBuilder(TEST_STREAM_1, client)
               .setWriterSchema(createProtoSchema("foo"))
               .setLocation("us")
+              .setTraceId("some_head:trace_id_1")
               .build();
       StreamWriter sw2 =
           StreamWriter.newBuilder(TEST_STREAM_2, client)
               .setWriterSchema(createProtoSchema("complicate"))
               .setLocation("us")
+              .setTraceId("some_head:trace_id_2")
               .build();
       // We do a pattern of:
       // send to stream1, string1
@@ -161,12 +163,14 @@ public class ConnectionWorkerTest {
             assertThat(
                     serverRequest.getProtoRows().getWriterSchema().getProtoDescriptor().getName())
                 .isEqualTo("foo");
+            assertThat(serverRequest.getTraceId()).isEqualTo(sw1.getFullTraceId());
             break;
           case 1:
             // The write stream is empty until we enter multiplexing.
             assertThat(serverRequest.getWriteStream()).isEqualTo(TEST_STREAM_1);
             // Schema is empty if not at the first request after table switch.
             assertThat(serverRequest.getProtoRows().hasWriterSchema()).isFalse();
+            assertThat(serverRequest.getTraceId()).isEmpty();
             break;
           case 2:
             // Stream name is always populated after multiplexing.
@@ -175,12 +179,14 @@ public class ConnectionWorkerTest {
             assertThat(
                     serverRequest.getProtoRows().getWriterSchema().getProtoDescriptor().getName())
                 .isEqualTo("complicate");
+            assertThat(serverRequest.getTraceId()).isEqualTo(sw2.getFullTraceId());
             break;
           case 3:
             // Schema is empty if not at the first request after table switch.
             assertThat(serverRequest.getProtoRows().hasWriterSchema()).isFalse();
             // Stream name is always populated after multiplexing.
             assertThat(serverRequest.getWriteStream()).isEqualTo(TEST_STREAM_2);
+            assertThat(serverRequest.getTraceId()).isEmpty();
             break;
           default: // fall out
             break;
