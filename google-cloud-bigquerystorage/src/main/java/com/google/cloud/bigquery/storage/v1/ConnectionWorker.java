@@ -550,7 +550,12 @@ class ConnectionWorker implements AutoCloseable {
   private ApiFuture<AppendRowsResponse> appendInternal(
       StreamWriter streamWriter, AppendRowsRequest message, String requestUniqueId) {
     AppendRequestAndResponse requestWrapper =
-        new AppendRequestAndResponse(message, streamWriter, this.retrySettings, requestUniqueId);
+        new AppendRequestAndResponse(
+            message,
+            streamWriter,
+            this.retrySettings,
+            requestUniqueId,
+            streamWriter.getFullTraceId());
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
@@ -868,9 +873,7 @@ class ConnectionWorker implements AutoCloseable {
           // If we are at the first request for every table switch, including the first request in
           // the connection, we will attach both stream name and table schema to the request.
           destinationSet.add(streamName);
-          if (this.traceId != null) {
-            originalRequestBuilder.setTraceId(this.traceId);
-          }
+          originalRequestBuilder.setTraceId(wrapper.fullTraceId);
         } else if (!isMultiplexing) {
           // If we are not in multiplexing and not in the first request, clear the stream name.
           originalRequestBuilder.clearWriteStream();
@@ -1372,16 +1375,21 @@ class ConnectionWorker implements AutoCloseable {
     // If a response is no longer expected this is set back to null.
     Instant requestSendTimeStamp;
 
+    // Mark where the traffic coming from. Used for internal logging purpose.
+    String fullTraceId;
+
     AppendRequestAndResponse(
         AppendRowsRequest message,
         StreamWriter streamWriter,
         RetrySettings retrySettings,
-        String requestUniqueId) {
+        String requestUniqueId,
+        String fullTraceId) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
       this.messageSize = message.getProtoRows().getSerializedSize();
       this.streamWriter = streamWriter;
       this.requestUniqueId = requestUniqueId;
+      this.fullTraceId = fullTraceId;
       this.blockMessageSendDeadline = Instant.now();
       this.retryCount = 0;
       // To be set after first retry
