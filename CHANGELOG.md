@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.11.3](https://github.com/googleapis/java-bigquerystorage/compare/v3.11.2...v3.11.3) (2025-02-06)
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.47.0 ([#2845](https://github.com/googleapis/java-bigquerystorage/issues/2845)) ([b089788](https://github.com/googleapis/java-bigquerystorage/commit/b08978808987dbb4b317d492e2306d24b6427669))
+* Update dependency org.graalvm.buildtools:native-maven-plugin to v0.10.5 ([#2851](https://github.com/googleapis/java-bigquerystorage/issues/2851)) ([2ff6112](https://github.com/googleapis/java-bigquerystorage/commit/2ff6112a7f7d7a938d2267e60a4fdfe1fb5baaea))
+
 ## [3.11.2](https://github.com/googleapis/java-bigquerystorage/compare/v3.11.1...v3.11.2) (2025-01-28)
 
 
