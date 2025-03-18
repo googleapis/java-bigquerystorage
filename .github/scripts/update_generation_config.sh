@@ -15,21 +15,12 @@ set -e
 function get_latest_released_version() {
     local group_id=$1
     local artifact_id=$2
-    local latest
     json_content=$(curl -s "https://search.maven.org/solrsearch/select?q=g:${group_id}+AND+a:${artifact_id}&core=gav&rows=500&wt=json")
-    status=$(jq -r '.responseHeader.status' <<< "${json_content}")
-    num_of_rows=$(jq -r '.response.numFound' <<< "${json_content}")
-    if [[ "${status}" == "0" ]]; then
-        if [[ "${num_of_rows}" == "0" ]]; then
-            echo "The number of artifact found is 0."
-            exit 1
-        fi
-        latest=$(jq -r '.response.docs[] | select(.v | test("^[0-9]+(\\.[0-9]+)*$")) | .v' <<< "${json_content}" | sort -V | tail -n 1)
-    else
-      echo "Error: the response status from maven.org is ${status}."
-      exit 1
-    fi
-
+    # the jq command will fail if one of the scenario happens:
+    # .response.docs doesn't exist.
+    # .response.docs is an empty array.
+    # .response.docs[].v doesn't exist or no qualified one is found.
+    latest=$(jq 'if .response.docs then if (.response.docs | length) > 0 then .response.docs[] | if (.v | type == "string" and length > 0 and test("^[0-9]+(\\.[0-9]+)*$")) then .v else error("error: .v is invalid in response.docs") end else error("response.docs is empty") end else error("response.docs not found") end' <<< "$json_content")
     echo "${latest}"
 }
 
