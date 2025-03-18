@@ -16,15 +16,14 @@ function get_latest_released_version() {
     local group_id=$1
     local artifact_id=$2
     json_content=$(curl -s "https://search.maven.org/solrsearch/select?q=g:${group_id}+AND+a:${artifact_id}&core=gav&rows=500&wt=json")
-    # the jq command will fail if one of the scenario happens:
-    # .response.docs doesn't exist.
-    # .response.docs is an empty array.
-    # .response.docs[].v doesn't exist or no qualified one is found.
-    latest=$(jq 'if .response.docs then if (.response.docs | length) > 0 then .response.docs[] | if (.v | type == "string" and length > 0 and test("^[0-9]+(\\.[0-9]+)*$")) then .v else error("error: .v is invalid in response.docs") end else error("response.docs is empty") end else error("response.docs not found") end' <<< "$json_content" | \
-      sort -V | \
-      tail -n 1 | \
-      sed 's/^"//;s/"$//') # remove leading and tailing double quote.
-    echo "${latest}"
+    latest=$(jq -r '.response.docs[] | select(.v | test("^[0-9]+(\\.[0-9]+)*$")) | .v' <<< "${json_content}" | sort -V | tail -n 1)
+    if [[ -z "${latest}" ]]; then
+        echo "The latest version of ${group_id}:${artifact_id} is empty."
+        echo "The returned json from maven.org is invalid: ${json_content}"
+        exit 1
+    else
+        echo "${latest}"
+    fi
 }
 
 # Update a key to a new value in the generation config.
