@@ -20,7 +20,9 @@ function get_latest_released_version() {
     # .response.docs doesn't exist.
     # .response.docs is an empty array.
     # .response.docs[].v doesn't exist or no qualified one is found.
-    latest=$(jq 'if .response.docs then if (.response.docs | length) > 0 then .response.docs[] | if (.v | type == "string" and length > 0 and test("^[0-9]+(\\.[0-9]+)*$")) then .v else error("error: .v is invalid in response.docs") end else error("response.docs is empty") end else error("response.docs not found") end' <<< "$json_content")
+    latest=$(jq 'if .response.docs then if (.response.docs | length) > 0 then .response.docs[] | if (.v | type == "string" and length > 0 and test("^[0-9]+(\\.[0-9]+)*$")) then .v else error("error: .v is invalid in response.docs") end else error("response.docs is empty") end else error("response.docs not found") end' <<< "$json_content" \
+      | sort -V \
+      | tail -n 1)
     echo "${latest}"
 }
 
