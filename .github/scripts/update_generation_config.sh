@@ -15,7 +15,21 @@ set -e
 function get_latest_released_version() {
     local group_id=$1
     local artifact_id=$2
-    latest=$(curl -s "https://search.maven.org/solrsearch/select?q=g:${group_id}+AND+a:${artifact_id}&core=gav&rows=500&wt=json" | jq -r '.response.docs[] | select(.v | test("^[0-9]+(\\.[0-9]+)*$")) | .v' | sort -V | tail -n 1)
+    local latest
+    json_content=$(curl -s "https://search.maven.org/solrsearch/select?q=g:${group_id}+AND+a:${artifact_id}&core=gav&rows=500&wt=json")
+    status=$(jq -r '.responseHeader.status' <<< "${json_content}")
+    num_of_rows=$(jq -r '.response.numFound' <<< "${json_content}")
+    if [[ "${status}" == "0" ]]; then
+        if [[ "${num_of_rows}" == "0" ]]; then
+            echo "The number of artifact found is 0."
+            exit 1
+        fi
+        latest=$(jq -r '.response.docs[] | select(.v | test("^[0-9]+(\\.[0-9]+)*$")) | .v' <<< "${json_content}" | sort -V | tail -n 1)
+    else
+      echo "Error: the response status from maven.org is ${status}."
+      exit 1
+    fi
+
     echo "${latest}"
 }
 
