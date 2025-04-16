@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.13.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.12.0...v3.13.0) (2025-04-16)
+
+
+### Features
+
+* Increased the number of partitions can be written in a single request ([f5c01da](https://github.com/googleapis/java-bigquerystorage/commit/f5c01da9c8a96122130cfc5a240dd52fc00441cd))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.49.0 ([#2922](https://github.com/googleapis/java-bigquerystorage/issues/2922)) ([d2b0bef](https://github.com/googleapis/java-bigquerystorage/commit/d2b0bef9fcccfa6b5ff71868e69e0db82d20faa0))
+* Update dependency io.opentelemetry:opentelemetry-bom to v1.49.0 ([#2935](https://github.com/googleapis/java-bigquerystorage/issues/2935)) ([85e6f0e](https://github.com/googleapis/java-bigquerystorage/commit/85e6f0e17ec57f2c791f3397817fe418252a87b7))
+* Update dependency io.opentelemetry:opentelemetry-exporter-logging to v1.49.0 ([#2936](https://github.com/googleapis/java-bigquerystorage/issues/2936)) ([3049ccc](https://github.com/googleapis/java-bigquerystorage/commit/3049ccca040ffd3ecfcb3ee6634a2888b39b3739))
+* Update dependency org.junit.vintage:junit-vintage-engine to v5.12.2 ([#2939](https://github.com/googleapis/java-bigquerystorage/issues/2939)) ([b682c72](https://github.com/googleapis/java-bigquerystorage/commit/b682c728226254e652824652fedc9aec63e1bf36))
+
 ## [3.12.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.11.4...v3.12.0) (2025-03-19)
 
 
