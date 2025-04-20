@@ -120,26 +120,34 @@ public class ITBigQueryStorageTest {
   private static final String FAKE_JSON_CRED_WITH_GOOGLE_DOMAIN =
       "{\n"
           + "  \"private_key_id\": \"somekeyid\",\n"
-          + "  \"private_key\": \"-----BEGIN PRIVATE KEY-----\\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggS"
-          + "kAgEAAoIBAQC+K2hSuFpAdrJI\\nnCgcDz2M7t7bjdlsadsasad+fvRSW6TjNQZ3p5LLQY1kSZRqBqylRkzteMOyHg"
-          + "aR\\n0Pmxh3ILCND5men43j3h4eDbrhQBuxfEMalkG92sL+PNQSETY2tnvXryOvmBRwa/\\nQP/9dJfIkIDJ9Fw9N4"
-          + "Bhhhp6mCcRpdQjV38H7JsyJ7lih/oNjECgYAt\\nknddadwkwewcVxHFhcZJO+XWf6ofLUXpRwiTZakGMn8EE1uVa2"
-          + "LgczOjwWHGi99MFjxSer5m9\\n1tCa3/KEGKiS/YL71JvjwX3mb+cewlkcmweBKZHM2JPTk0ZednFSpVZMtycjkbLa"
-          + "\\ndYOS8V85AgMBewECggEBAKksaldajfDZDV6nGqbFjMiizAKJolr/M3OQw16K6o3/\\n0S31xIe3sSlgW0+UbYlF"
-          + "4U8KifhManD1apVSC3csafaspP4RZUHFhtBywLO9pR5c\\nr6S5aLp+gPWFyIp1pfXbWGvc5VY/v9x7ya1VEa6rXvL"
-          + "sKupSeWAW4tMj3eo/64ge\\nsdaceaLYw52KeBYiT6+vpsnYrEkAHO1fF/LavbLLOFJmFTMxmsNaG0tuiJHgjshB\\"
-          + "n82DpMCbXG9YcCgI/DbzuIjsdj2JC1cascSP//3PmefWysucBQe7Jryb6NQtASmnv\\nCdDw/0jmZTEjpe4S1lxfHp"
-          + "lAhHFtdgYTvyYtaLZiVVkCgYEA8eVpof2rceecw/I6\\n5ng1q3Hl2usdWV/4mZMvR0fOemacLLfocX6IYxT1zA1FF"
-          + "JlbXSRsJMf/Qq39mOR2\\nSpW+hr4jCoHeRVYLgsbggtrevGmILAlNoqCMpGZ6vDmJpq6ECV9olliDvpPgWOP+\\nm"
-          + "YPDreFBGxWvQrADNbRt2dmGsrsCgYEAyUHqB2wvJHFqdmeBsaacewzV8x9WgmeX\\ngUIi9REwXlGDW0Mz50dxpxcK"
-          + "CAYn65+7TCnY5O/jmL0VRxU1J2mSWyWTo1C+17L0\\n3fUqjxL1pkefwecxwecvC+gFFYdJ4CQ/MHHXU81Lwl1iWdF"
-          + "Cd2UoGddYaOF+KNeM\\nHC7cmqra+JsCgYEAlUNywzq8nUg7282E+uICfCB0LfwejuymR93CtsFgb7cRd6ak\\nECR"
-          + "8FGfCpH8ruWJINllbQfcHVCX47ndLZwqv3oVFKh6pAS/vVI4dpOepP8++7y1u\\ncoOvtreXCX6XqfrWDtKIvv0vjl"
-          + "HBhhhp6mCcRpdQjV38H7JsyJ7lih/oNjECgYAt\\nkndj5uNl5SiuVxHFhcZJO+XWf6ofLUregtevZakGMn8EE1uVa"
-          + "2AY7eafmoU/nZPT\\n00YB0TBATdCbn/nBSuKDESkhSg9s2GEKQZG5hBmL5uCMfo09z3SfxZIhJdlerreP\\nJ7gSi"
-          + "dI12N+EZxYd4xIJh/HFDgp7RRO87f+WJkofMQKBgGTnClK1VMaCRbJZPriw\\nEfeFCoOX75MxKwXs6xgrw4W//AYG"
-          + "GUjDt83lD6AZP6tws7gJ2IwY/qP7+lyhjEqN\\nHtfPZRGFkGZsdaksdlaksd323423d+15/UvrlRSFPNj1tWQmNKk"
-          + "XyRDW4IG1Oa2p\\nrALStNBx5Y9t0/LQnFI4w3aG\\n-----END PRIVATE KEY-----\\n\",\n"
+          + "  \"private_key\": \"-----BEGIN PRIVATE KEY-----\\n"
+          + "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC+K2hSuFpAdrJI\\n"
+          + "nCgcDz2M7t7bjdlsadsasad+fvRSW6TjNQZ3p5LLQY1kSZRqBqylRkzteMOyHgaR\\n"
+          + "0Pmxh3ILCND5men43j3h4eDbrhQBuxfEMalkG92sL+PNQSETY2tnvXryOvmBRwa/\\n"
+          + "QP/9dJfIkIDJ9Fw9N4Bhhhp6mCcRpdQjV38H7JsyJ7lih/oNjECgYAt\\n"
+          + "knddadwkwewcVxHFhcZJO+XWf6ofLUXpRwiTZakGMn8EE1uVa2LgczOjwWHGi99MFjxSer5m9\\n"
+          + "1tCa3/KEGKiS/YL71JvjwX3mb+cewlkcmweBKZHM2JPTk0ZednFSpVZMtycjkbLa\\n"
+          + "dYOS8V85AgMBewECggEBAKksaldajfDZDV6nGqbFjMiizAKJolr/M3OQw16K6o3/\\n"
+          + "0S31xIe3sSlgW0+UbYlF4U8KifhManD1apVSC3csafaspP4RZUHFhtBywLO9pR5c\\n"
+          + "r6S5aLp+gPWFyIp1pfXbWGvc5VY/v9x7ya1VEa6rXvLsKupSeWAW4tMj3eo/64ge\\n"
+          + "sdaceaLYw52KeBYiT6+vpsnYrEkAHO1fF/LavbLLOFJmFTMxmsNaG0tuiJHgjshB\\n82DpMCbXG9YcCgI/DbzuIjsdj2JC1cascSP//3PmefWysucBQe7Jryb6NQtASmnv\\n"
+          + "CdDw/0jmZTEjpe4S1lxfHplAhHFtdgYTvyYtaLZiVVkCgYEA8eVpof2rceecw/I6\\n"
+          + "5ng1q3Hl2usdWV/4mZMvR0fOemacLLfocX6IYxT1zA1FFJlbXSRsJMf/Qq39mOR2\\n"
+          + "SpW+hr4jCoHeRVYLgsbggtrevGmILAlNoqCMpGZ6vDmJpq6ECV9olliDvpPgWOP+\\n"
+          + "mYPDreFBGxWvQrADNbRt2dmGsrsCgYEAyUHqB2wvJHFqdmeBsaacewzV8x9WgmeX\\n"
+          + "gUIi9REwXlGDW0Mz50dxpxcKCAYn65+7TCnY5O/jmL0VRxU1J2mSWyWTo1C+17L0\\n"
+          + "3fUqjxL1pkefwecxwecvC+gFFYdJ4CQ/MHHXU81Lwl1iWdFCd2UoGddYaOF+KNeM\\n"
+          + "HC7cmqra+JsCgYEAlUNywzq8nUg7282E+uICfCB0LfwejuymR93CtsFgb7cRd6ak\\n"
+          + "ECR8FGfCpH8ruWJINllbQfcHVCX47ndLZwqv3oVFKh6pAS/vVI4dpOepP8++7y1u\\n"
+          + "coOvtreXCX6XqfrWDtKIvv0vjlHBhhhp6mCcRpdQjV38H7JsyJ7lih/oNjECgYAt\\n"
+          + "kndj5uNl5SiuVxHFhcZJO+XWf6ofLUregtevZakGMn8EE1uVa2AY7eafmoU/nZPT\\n"
+          + "00YB0TBATdCbn/nBSuKDESkhSg9s2GEKQZG5hBmL5uCMfo09z3SfxZIhJdlerreP\\n"
+          + "J7gSidI12N+EZxYd4xIJh/HFDgp7RRO87f+WJkofMQKBgGTnClK1VMaCRbJZPriw\\n"
+          + "EfeFCoOX75MxKwXs6xgrw4W//AYGGUjDt83lD6AZP6tws7gJ2IwY/qP7+lyhjEqN\\n"
+          + "HtfPZRGFkGZsdaksdlaksd323423d+15/UvrlRSFPNj1tWQmNKkXyRDW4IG1Oa2p\\n"
+          + "rALStNBx5Y9t0/LQnFI4w3aG\\n"
+          + "-----END PRIVATE KEY-----\\n"
+          + "\",\n"
           + "  \"project_id\": \"someprojectid\",\n"
           + "  \"client_email\": \"someclientid@developer.gserviceaccount.com\",\n"
           + "  \"client_id\": \"someclientid.apps.googleusercontent.com\",\n"
@@ -150,26 +158,34 @@ public class ITBigQueryStorageTest {
   private static final String FAKE_JSON_CRED_WITH_INVALID_DOMAIN =
       "{\n"
           + "  \"private_key_id\": \"somekeyid\",\n"
-          + "  \"private_key\": \"-----BEGIN PRIVATE KEY-----\\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggS"
-          + "kAgEAAoIBAQC+K2hSuFpAdrJI\\nnCgcDz2M7t7bjdlsadsasad+fvRSW6TjNQZ3p5LLQY1kSZRqBqylRkzteMOyHg"
-          + "aR\\n0Pmxh3ILCND5men43j3h4eDbrhQBuxfEMalkG92sL+PNQSETY2tnvXryOvmBRwa/\\nQP/9dJfIkIDJ9Fw9N4"
-          + "Bhhhp6mCcRpdQjV38H7JsyJ7lih/oNjECgYAt\\nknddadwkwewcVxHFhcZJO+XWf6ofLUXpRwiTZakGMn8EE1uVa2"
-          + "LgczOjwWHGi99MFjxSer5m9\\n1tCa3/KEGKiS/YL71JvjwX3mb+cewlkcmweBKZHM2JPTk0ZednFSpVZMtycjkbLa"
-          + "\\ndYOS8V85AgMBewECggEBAKksaldajfDZDV6nGqbFjMiizAKJolr/M3OQw16K6o3/\\n0S31xIe3sSlgW0+UbYlF"
-          + "4U8KifhManD1apVSC3csafaspP4RZUHFhtBywLO9pR5c\\nr6S5aLp+gPWFyIp1pfXbWGvc5VY/v9x7ya1VEa6rXvL"
-          + "sKupSeWAW4tMj3eo/64ge\\nsdaceaLYw52KeBYiT6+vpsnYrEkAHO1fF/LavbLLOFJmFTMxmsNaG0tuiJHgjshB\\"
-          + "n82DpMCbXG9YcCgI/DbzuIjsdj2JC1cascSP//3PmefWysucBQe7Jryb6NQtASmnv\\nCdDw/0jmZTEjpe4S1lxfHp"
-          + "lAhHFtdgYTvyYtaLZiVVkCgYEA8eVpof2rceecw/I6\\n5ng1q3Hl2usdWV/4mZMvR0fOemacLLfocX6IYxT1zA1FF"
-          + "JlbXSRsJMf/Qq39mOR2\\nSpW+hr4jCoHeRVYLgsbggtrevGmILAlNoqCMpGZ6vDmJpq6ECV9olliDvpPgWOP+\\nm"
-          + "YPDreFBGxWvQrADNbRt2dmGsrsCgYEAyUHqB2wvJHFqdmeBsaacewzV8x9WgmeX\\ngUIi9REwXlGDW0Mz50dxpxcK"
-          + "CAYn65+7TCnY5O/jmL0VRxU1J2mSWyWTo1C+17L0\\n3fUqjxL1pkefwecxwecvC+gFFYdJ4CQ/MHHXU81Lwl1iWdF"
-          + "Cd2UoGddYaOF+KNeM\\nHC7cmqra+JsCgYEAlUNywzq8nUg7282E+uICfCB0LfwejuymR93CtsFgb7cRd6ak\\nECR"
-          + "8FGfCpH8ruWJINllbQfcHVCX47ndLZwqv3oVFKh6pAS/vVI4dpOepP8++7y1u\\ncoOvtreXCX6XqfrWDtKIvv0vjl"
-          + "HBhhhp6mCcRpdQjV38H7JsyJ7lih/oNjECgYAt\\nkndj5uNl5SiuVxHFhcZJO+XWf6ofLUregtevZakGMn8EE1uVa"
-          + "2AY7eafmoU/nZPT\\n00YB0TBATdCbn/nBSuKDESkhSg9s2GEKQZG5hBmL5uCMfo09z3SfxZIhJdlerreP\\nJ7gSi"
-          + "dI12N+EZxYd4xIJh/HFDgp7RRO87f+WJkofMQKBgGTnClK1VMaCRbJZPriw\\nEfeFCoOX75MxKwXs6xgrw4W//AYG"
-          + "GUjDt83lD6AZP6tws7gJ2IwY/qP7+lyhjEqN\\nHtfPZRGFkGZsdaksdlaksd323423d+15/UvrlRSFPNj1tWQmNKk"
-          + "XyRDW4IG1Oa2p\\nrALStNBx5Y9t0/LQnFI4w3aG\\n-----END PRIVATE KEY-----\\n\",\n"
+          + "  \"private_key\": \"-----BEGIN PRIVATE KEY-----\\n"
+          + "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC+K2hSuFpAdrJI\\n"
+          + "nCgcDz2M7t7bjdlsadsasad+fvRSW6TjNQZ3p5LLQY1kSZRqBqylRkzteMOyHgaR\\n"
+          + "0Pmxh3ILCND5men43j3h4eDbrhQBuxfEMalkG92sL+PNQSETY2tnvXryOvmBRwa/\\n"
+          + "QP/9dJfIkIDJ9Fw9N4Bhhhp6mCcRpdQjV38H7JsyJ7lih/oNjECgYAt\\n"
+          + "knddadwkwewcVxHFhcZJO+XWf6ofLUXpRwiTZakGMn8EE1uVa2LgczOjwWHGi99MFjxSer5m9\\n"
+          + "1tCa3/KEGKiS/YL71JvjwX3mb+cewlkcmweBKZHM2JPTk0ZednFSpVZMtycjkbLa\\n"
+          + "dYOS8V85AgMBewECggEBAKksaldajfDZDV6nGqbFjMiizAKJolr/M3OQw16K6o3/\\n"
+          + "0S31xIe3sSlgW0+UbYlF4U8KifhManD1apVSC3csafaspP4RZUHFhtBywLO9pR5c\\n"
+          + "r6S5aLp+gPWFyIp1pfXbWGvc5VY/v9x7ya1VEa6rXvLsKupSeWAW4tMj3eo/64ge\\n"
+          + "sdaceaLYw52KeBYiT6+vpsnYrEkAHO1fF/LavbLLOFJmFTMxmsNaG0tuiJHgjshB\\n82DpMCbXG9YcCgI/DbzuIjsdj2JC1cascSP//3PmefWysucBQe7Jryb6NQtASmnv\\n"
+          + "CdDw/0jmZTEjpe4S1lxfHplAhHFtdgYTvyYtaLZiVVkCgYEA8eVpof2rceecw/I6\\n"
+          + "5ng1q3Hl2usdWV/4mZMvR0fOemacLLfocX6IYxT1zA1FFJlbXSRsJMf/Qq39mOR2\\n"
+          + "SpW+hr4jCoHeRVYLgsbggtrevGmILAlNoqCMpGZ6vDmJpq6ECV9olliDvpPgWOP+\\n"
+          + "mYPDreFBGxWvQrADNbRt2dmGsrsCgYEAyUHqB2wvJHFqdmeBsaacewzV8x9WgmeX\\n"
+          + "gUIi9REwXlGDW0Mz50dxpxcKCAYn65+7TCnY5O/jmL0VRxU1J2mSWyWTo1C+17L0\\n"
+          + "3fUqjxL1pkefwecxwecvC+gFFYdJ4CQ/MHHXU81Lwl1iWdFCd2UoGddYaOF+KNeM\\n"
+          + "HC7cmqra+JsCgYEAlUNywzq8nUg7282E+uICfCB0LfwejuymR93CtsFgb7cRd6ak\\n"
+          + "ECR8FGfCpH8ruWJINllbQfcHVCX47ndLZwqv3oVFKh6pAS/vVI4dpOepP8++7y1u\\n"
+          + "coOvtreXCX6XqfrWDtKIvv0vjlHBhhhp6mCcRpdQjV38H7JsyJ7lih/oNjECgYAt\\n"
+          + "kndj5uNl5SiuVxHFhcZJO+XWf6ofLUregtevZakGMn8EE1uVa2AY7eafmoU/nZPT\\n"
+          + "00YB0TBATdCbn/nBSuKDESkhSg9s2GEKQZG5hBmL5uCMfo09z3SfxZIhJdlerreP\\n"
+          + "J7gSidI12N+EZxYd4xIJh/HFDgp7RRO87f+WJkofMQKBgGTnClK1VMaCRbJZPriw\\n"
+          + "EfeFCoOX75MxKwXs6xgrw4W//AYGGUjDt83lD6AZP6tws7gJ2IwY/qP7+lyhjEqN\\n"
+          + "HtfPZRGFkGZsdaksdlaksd323423d+15/UvrlRSFPNj1tWQmNKkXyRDW4IG1Oa2p\\n"
+          + "rALStNBx5Y9t0/LQnFI4w3aG\\n"
+          + "-----END PRIVATE KEY-----\\n"
+          + "\",\n"
           + "  \"project_id\": \"someprojectid\",\n"
           + "  \"client_email\": \"someclientid@developer.gserviceaccount.com\",\n"
           + "  \"client_id\": \"someclientid.apps.googleusercontent.com\",\n"
@@ -472,21 +488,22 @@ public class ITBigQueryStorageTest {
   public void testSimpleReadAvro() {
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "bigquery-public-data",
-            /* datasetId = */ "samples",
-            /* tableId = */ "shakespeare");
+            /* projectId= */ "bigquery-public-data",
+            /* datasetId= */ "samples",
+            /* tableId= */ "shakespeare");
 
     ReadSession session =
         client.createReadSession(
-            /* parent = */ parentProjectId,
-            /* readSession = */ ReadSession.newBuilder()
+            /* parent= */ parentProjectId,
+            /* readSession= */ ReadSession.newBuilder()
                 .setTable(table)
                 .setDataFormat(DataFormat.AVRO)
                 .build(),
-            /* maxStreamCount = */ 1);
+            /* maxStreamCount= */ 1);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         1,
         session.getStreamsCount());
@@ -507,21 +524,22 @@ public class ITBigQueryStorageTest {
   public void testSimpleReadArrow() {
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "bigquery-public-data",
-            /* datasetId = */ "samples",
-            /* tableId = */ "shakespeare");
+            /* projectId= */ "bigquery-public-data",
+            /* datasetId= */ "samples",
+            /* tableId= */ "shakespeare");
 
     ReadSession session =
         client.createReadSession(
-            /* parent = */ parentProjectId,
-            /* readSession = */ ReadSession.newBuilder()
+            /* parent= */ parentProjectId,
+            /* readSession= */ ReadSession.newBuilder()
                 .setTable(table)
                 .setDataFormat(DataFormat.ARROW)
                 .build(),
-            /* maxStreamCount = */ 1);
+            /* maxStreamCount= */ 1);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         1,
         session.getStreamsCount());
@@ -556,9 +574,12 @@ public class ITBigQueryStorageTest {
     QueryJobConfiguration createTable =
         QueryJobConfiguration.newBuilder(
                 String.format(
-                    "CREATE TABLE %s AS SELECT RANGE(DATE '2020-01-01', DATE '2020-12-31') as date, \n"
-                        + "RANGE(DATETIME '2020-01-01T12:00:00', DATETIME '2020-12-31T12:00:00') as datetime, \n"
-                        + "RANGE(TIMESTAMP '2014-01-01 07:00:00.000000+00:00', TIMESTAMP '2015-01-01 07:00:00.000000+00:00') as timestamp",
+                    "CREATE TABLE %s AS SELECT RANGE(DATE '2020-01-01', DATE '2020-12-31') as date,"
+                        + " \n"
+                        + "RANGE(DATETIME '2020-01-01T12:00:00', DATETIME '2020-12-31T12:00:00') as"
+                        + " datetime, \n"
+                        + "RANGE(TIMESTAMP '2014-01-01 07:00:00.000000+00:00', TIMESTAMP"
+                        + " '2015-01-01 07:00:00.000000+00:00') as timestamp",
                     tableName))
             .setDefaultDataset(DatasetId.of(DATASET))
             .setUseLegacySql(false)
@@ -567,21 +588,22 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ ServiceOptions.getDefaultProjectId(),
-            /* datasetId = */ DATASET,
-            /* tableId = */ tableId.getTable());
+            /* projectId= */ ServiceOptions.getDefaultProjectId(),
+            /* datasetId= */ DATASET,
+            /* tableId= */ tableId.getTable());
 
     ReadSession session =
         client.createReadSession(
-            /* parent = */ parentProjectId,
-            /* readSession = */ ReadSession.newBuilder()
+            /* parent= */ parentProjectId,
+            /* readSession= */ ReadSession.newBuilder()
                 .setTable(table)
                 .setDataFormat(DataFormat.ARROW)
                 .build(),
-            /* maxStreamCount = */ 1);
+            /* maxStreamCount= */ 1);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         1,
         session.getStreamsCount());
@@ -675,20 +697,21 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ projectName,
-            /* datasetId = */ DATASET,
-            /* tableId = */ tableId.getTable());
+            /* projectId= */ projectName,
+            /* datasetId= */ DATASET,
+            /* tableId= */ tableId.getTable());
     ReadSession session =
         client.createReadSession(
-            /* parent = */ parentProjectId,
-            /* readSession = */ ReadSession.newBuilder()
+            /* parent= */ parentProjectId,
+            /* readSession= */ ReadSession.newBuilder()
                 .setTable(table)
                 .setDataFormat(DataFormat.ARROW)
                 .build(),
-            /* maxStreamCount = */ 1);
+            /* maxStreamCount= */ 1);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         1,
         session.getStreamsCount());
@@ -735,28 +758,29 @@ public class ITBigQueryStorageTest {
   public void testSimpleReadAndResume() {
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "bigquery-public-data",
-            /* datasetId = */ "samples",
-            /* tableId = */ "shakespeare");
+            /* projectId= */ "bigquery-public-data",
+            /* datasetId= */ "samples",
+            /* tableId= */ "shakespeare");
 
     ReadSession session =
         client.createReadSession(
-            /* parent = */ parentProjectId,
-            /* readSession = */ ReadSession.newBuilder()
+            /* parent= */ parentProjectId,
+            /* readSession= */ ReadSession.newBuilder()
                 .setTable(table)
                 .setDataFormat(DataFormat.AVRO)
                 .build(),
-            /* maxStreamCount = */ 1);
+            /* maxStreamCount= */ 1);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         1,
         session.getStreamsCount());
 
     // We have to read some number of rows in order to be able to resume. More details:
 
-    long rowCount = ReadStreamToOffset(session.getStreams(0), /* rowOffset = */ 34_846);
+    long rowCount = ReadStreamToOffset(session.getStreams(0), /* rowOffset= */ 34_846);
 
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder()
@@ -779,9 +803,9 @@ public class ITBigQueryStorageTest {
   public void testFilter() throws IOException {
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "bigquery-public-data",
-            /* datasetId = */ "samples",
-            /* tableId = */ "shakespeare");
+            /* projectId= */ "bigquery-public-data",
+            /* datasetId= */ "samples",
+            /* tableId= */ "shakespeare");
 
     TableReadOptions options =
         TableReadOptions.newBuilder().setRowRestriction("word_count > 100").build();
@@ -801,7 +825,8 @@ public class ITBigQueryStorageTest {
     ReadSession session = client.createReadSession(request);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         1,
         session.getStreamsCount());
@@ -837,9 +862,9 @@ public class ITBigQueryStorageTest {
   public void testColumnSelection() throws IOException {
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "bigquery-public-data",
-            /* datasetId = */ "samples",
-            /* tableId = */ "shakespeare");
+            /* projectId= */ "bigquery-public-data",
+            /* datasetId= */ "samples",
+            /* tableId= */ "shakespeare");
 
     TableReadOptions options =
         TableReadOptions.newBuilder()
@@ -863,7 +888,8 @@ public class ITBigQueryStorageTest {
     ReadSession session = client.createReadSession(request);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         1,
         session.getStreamsCount());
@@ -875,7 +901,7 @@ public class ITBigQueryStorageTest {
 
     String actualSchemaMessage =
         String.format(
-            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty = */ true));
+            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty= */ true));
     assertEquals(actualSchemaMessage, Schema.Type.RECORD, avroSchema.getType());
     assertEquals(actualSchemaMessage, "__root__", avroSchema.getName());
 
@@ -923,31 +949,31 @@ public class ITBigQueryStorageTest {
     com.google.cloud.bigquery.Schema tableSchema =
         com.google.cloud.bigquery.Schema.of(intFieldSchema);
 
-    TableId testTableId = TableId.of(/* dataset = */ DATASET, /* table = */ "test_read_snapshot");
+    TableId testTableId = TableId.of(/* dataset= */ DATASET, /* table= */ "test_read_snapshot");
     bigquery.create(TableInfo.of(testTableId, StandardTableDefinition.of(tableSchema)));
 
     testTableId.toString();
 
     Job firstJob =
         RunQueryAppendJobAndExpectSuccess(
-            /* destinationTableId = */ testTableId, /* query = */ "SELECT 1 AS col");
+            /* destinationTableId= */ testTableId, /* query= */ "SELECT 1 AS col");
 
     Job secondJob =
         RunQueryAppendJobAndExpectSuccess(
-            /* destinationTableId = */ testTableId, /* query = */ "SELECT 2 AS col");
+            /* destinationTableId= */ testTableId, /* query= */ "SELECT 2 AS col");
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ projectName,
-            /* datasetId = */ DATASET,
-            /* tableId = */ testTableId.getTable());
+            /* projectId= */ projectName,
+            /* datasetId= */ DATASET,
+            /* tableId= */ testTableId.getTable());
 
     final List<Long> rowsAfterFirstSnapshot = new ArrayList<>();
     ProcessRowsAtSnapshot(
-        /* table = */ table,
-        /* snapshotInMillis = */ firstJob.getStatistics().getEndTime(),
-        /* filter = */ null,
-        /* consumer = */ new AvroRowConsumer() {
+        /* table= */ table,
+        /* snapshotInMillis= */ firstJob.getStatistics().getEndTime(),
+        /* filter= */ null,
+        /* consumer= */ new AvroRowConsumer() {
           @Override
           public void accept(GenericData.Record record) {
             rowsAfterFirstSnapshot.add((Long) record.get("col"));
@@ -957,10 +983,10 @@ public class ITBigQueryStorageTest {
 
     final List<Long> rowsAfterSecondSnapshot = new ArrayList<>();
     ProcessRowsAtSnapshot(
-        /* table = */ table,
-        /* snapshotInMillis = */ secondJob.getStatistics().getEndTime(),
-        /* filter = */ null,
-        /* consumer = */ new AvroRowConsumer() {
+        /* table= */ table,
+        /* snapshotInMillis= */ secondJob.getStatistics().getEndTime(),
+        /* filter= */ null,
+        /* consumer= */ new AvroRowConsumer() {
           @Override
           public void accept(GenericData.Record record) {
             rowsAfterSecondSnapshot.add((Long) record.get("col"));
@@ -992,16 +1018,15 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ projectName,
-            /* datasetId = */ DATASET,
-            /* tableId = */ partitionedTableName);
+            /* projectId= */ projectName,
+            /* datasetId= */ DATASET,
+            /* tableId= */ partitionedTableName);
 
-    List<GenericData.Record> unfilteredRows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> unfilteredRows = ReadAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + unfilteredRows.toString(), 3, unfilteredRows.size());
 
     List<GenericData.Record> partitionFilteredRows =
-        ReadAllRows(
-            /* table = */ table, /* filter = */ "date_field = CAST(\"2019-01-02\" AS DATE)");
+        ReadAllRows(/* table= */ table, /* filter= */ "date_field = CAST(\"2019-01-02\" AS DATE)");
     assertEquals(
         "Actual rows read: " + partitionFilteredRows.toString(), 1, partitionFilteredRows.size());
     assertEquals(2L, partitionFilteredRows.get(0).get("num_field"));
@@ -1018,7 +1043,7 @@ public class ITBigQueryStorageTest {
         com.google.cloud.bigquery.Schema.of(intFieldSchema);
 
     TableId testTableId =
-        TableId.of(/* dataset = */ DATASET, /* table = */ "test_date_partitioned_table");
+        TableId.of(/* dataset= */ DATASET, /* table= */ "test_date_partitioned_table");
     bigquery.create(
         TableInfo.of(
             testTableId,
@@ -1029,27 +1054,27 @@ public class ITBigQueryStorageTest {
 
     // Simulate ingestion for 2019-01-01.
     RunQueryAppendJobAndExpectSuccess(
-        /* destinationTableId = */ TableId.of(
-            /* dataset = */ DATASET, /* table = */ testTableId.getTable() + "$20190101"),
-        /* query = */ "SELECT 1 AS num_field");
+        /* destinationTableId= */ TableId.of(
+            /* dataset= */ DATASET, /* table= */ testTableId.getTable() + "$20190101"),
+        /* query= */ "SELECT 1 AS num_field");
 
     // Simulate ingestion for 2019-01-02.
     RunQueryAppendJobAndExpectSuccess(
-        /* destinationTableId = */ TableId.of(
-            /* dataset = */ DATASET, /* table = */ testTableId.getTable() + "$20190102"),
-        /* query = */ "SELECT 2 AS num_field");
+        /* destinationTableId= */ TableId.of(
+            /* dataset= */ DATASET, /* table= */ testTableId.getTable() + "$20190102"),
+        /* query= */ "SELECT 2 AS num_field");
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ projectName,
-            /* datasetId = */ testTableId.getDataset(),
-            /* tableId = */ testTableId.getTable());
+            /* projectId= */ projectName,
+            /* datasetId= */ testTableId.getDataset(),
+            /* tableId= */ testTableId.getTable());
 
-    List<GenericData.Record> unfilteredRows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> unfilteredRows = ReadAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + unfilteredRows.toString(), 2, unfilteredRows.size());
 
     List<GenericData.Record> partitionFilteredRows =
-        ReadAllRows(/* table = */ table, /* filter = */ "_PARTITIONDATE > \"2019-01-01\"");
+        ReadAllRows(/* table= */ table, /* filter= */ "_PARTITIONDATE > \"2019-01-01\"");
     assertEquals(
         "Actual rows read: " + partitionFilteredRows.toString(), 1, partitionFilteredRows.size());
     assertEquals(2L, partitionFilteredRows.get(0).get("num_field"));
@@ -1084,9 +1109,9 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ projectName, /* datasetId = */ DATASET, /* tableId = */ tableName);
+            /* projectId= */ projectName, /* datasetId= */ DATASET, /* tableId= */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> rows = ReadAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -1094,7 +1119,7 @@ public class ITBigQueryStorageTest {
 
     String actualSchemaMessage =
         String.format(
-            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty = */ true));
+            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty= */ true));
     String rowAssertMessage = String.format("Row not matching expectations: %s", record.toString());
 
     assertEquals(actualSchemaMessage, Schema.Type.RECORD, avroSchema.getType());
@@ -1111,7 +1136,7 @@ public class ITBigQueryStorageTest {
         avroSchema.getField("num_field").schema().getType());
     assertEquals(
         actualSchemaMessage,
-        LogicalTypes.decimal(/* precision = */ 38, /* scale = */ 9),
+        LogicalTypes.decimal(/* precision= */ 38, /* scale= */ 9),
         avroSchema.getField("num_field").schema().getLogicalType());
     BigDecimal actual_num_field =
         new Conversions.DecimalConversion()
@@ -1121,7 +1146,7 @@ public class ITBigQueryStorageTest {
                 avroSchema.getField("num_field").schema().getLogicalType());
     assertEquals(
         rowAssertMessage,
-        BigDecimal.valueOf(/* unscaledVal = */ 1_234_560_000_000L, /* scale = */ 9),
+        BigDecimal.valueOf(/* unscaledVal= */ 1_234_560_000_000L, /* scale= */ 9),
         actual_num_field);
 
     assertEquals(
@@ -1130,9 +1155,9 @@ public class ITBigQueryStorageTest {
         avroSchema.getField("float_field").schema().getType());
     assertEquals(
         rowAssertMessage,
-        /* expected = */ 6.547678d,
-        /* actual = */ (double) record.get("float_field"),
-        /* delta = */ 0.0001);
+        /* expected= */ 6.547678d,
+        /* actual= */ (double) record.get("float_field"),
+        /* delta= */ 0.0001);
 
     assertEquals(
         actualSchemaMessage,
@@ -1181,9 +1206,9 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ projectName, /* datasetId = */ DATASET, /* tableId = */ tableName);
+            /* projectId= */ projectName, /* datasetId= */ DATASET, /* tableId= */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> rows = ReadAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -1191,7 +1216,7 @@ public class ITBigQueryStorageTest {
 
     String actualSchemaMessage =
         String.format(
-            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty = */ true));
+            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty= */ true));
     String rowAssertMessage = String.format("Row not matching expectations: %s", record.toString());
 
     assertEquals(actualSchemaMessage, Schema.Type.RECORD, avroSchema.getType());
@@ -1206,7 +1231,7 @@ public class ITBigQueryStorageTest {
         avroSchema.getField("date_field").schema().getLogicalType());
     assertEquals(
         rowAssertMessage,
-        LocalDate.of(/* year = */ 2019, /* month = */ 5, /* dayOfMonth = */ 31),
+        LocalDate.of(/* year= */ 2019, /* month= */ 5, /* dayOfMonth= */ 31),
         LocalDate.ofEpochDay((int) record.get("date_field")));
 
     assertEquals(
@@ -1233,10 +1258,7 @@ public class ITBigQueryStorageTest {
     assertEquals(
         rowAssertMessage,
         LocalTime.of(
-            /* hour = */ 21,
-            /* minute = */ 47,
-            /* second = */ 59,
-            /* nanoOfSecond = */ 999_999_000),
+            /* hour= */ 21, /* minute= */ 47, /* second= */ 59, /* nanoOfSecond= */ 999_999_000),
         LocalTime.ofNanoOfDay(1_000L * (long) record.get("time_field")));
 
     assertEquals(
@@ -1255,7 +1277,7 @@ public class ITBigQueryStorageTest {
     ZonedDateTime actual_timestamp =
         ZonedDateTime.ofInstant(
             Instant.ofEpochSecond(
-                /* epochSecond = */ actual_timestamp_micros / 1_000_000,
+                /* epochSecond= */ actual_timestamp_micros / 1_000_000,
                 (actual_timestamp_micros % 1_000_000) * 1_000),
             ZoneOffset.UTC);
     assertEquals(rowAssertMessage, expected_timestamp, actual_timestamp);
@@ -1279,9 +1301,9 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ projectName, /* datasetId = */ DATASET, /* tableId = */ tableName);
+            /* projectId= */ projectName, /* datasetId= */ DATASET, /* tableId= */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> rows = ReadAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -1289,7 +1311,7 @@ public class ITBigQueryStorageTest {
 
     String actualSchemaMessage =
         String.format(
-            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty = */ true));
+            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty= */ true));
     String rowAssertMessage = String.format("Row not matching expectations: %s", record.toString());
 
     assertEquals(actualSchemaMessage, Schema.Type.RECORD, avroSchema.getType());
@@ -1312,25 +1334,19 @@ public class ITBigQueryStorageTest {
     String tableName = "test_struct_and_array_sql_types";
     String createTableStatement =
         String.format(
-            " CREATE TABLE %s.%s "
-                + " (array_field ARRAY<INT64>,"
-                + "  struct_field STRUCT<int_field INT64 NOT NULL, str_field STRING NOT NULL> NOT NULL)"
-                + " OPTIONS( "
-                + "   description=\"a table with array and time column types\" "
-                + " ) "
-                + "AS "
-                + "   SELECT "
-                + "     [1, 2, 3],"
-                + "     (10, 'abc')",
+            " CREATE TABLE %s.%s  (array_field ARRAY<INT64>,  struct_field STRUCT<int_field INT64"
+                + " NOT NULL, str_field STRING NOT NULL> NOT NULL) OPTIONS(    description=\"a"
+                + " table with array and time column types\"  ) AS    SELECT      [1, 2, 3],    "
+                + " (10, 'abc')",
             DATASET, tableName);
 
     RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ projectName, /* datasetId = */ DATASET, /* tableId = */ tableName);
+            /* projectId= */ projectName, /* datasetId= */ DATASET, /* tableId= */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table = */ table, /* filter = */ null);
+    List<GenericData.Record> rows = ReadAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -1338,7 +1354,7 @@ public class ITBigQueryStorageTest {
 
     String actualSchemaMessage =
         String.format(
-            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty = */ true));
+            "Unexpected schema. Actual schema:%n%s", avroSchema.toString(/* pretty= */ true));
     String rowAssertMessage = String.format("Row not matching expectations: %s", record.toString());
 
     assertEquals(actualSchemaMessage, Schema.Type.RECORD, avroSchema.getType());
@@ -1395,21 +1411,22 @@ public class ITBigQueryStorageTest {
             .getExecutorThreadCount());
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "bigquery-public-data",
-            /* datasetId = */ "samples",
-            /* tableId = */ "shakespeare");
+            /* projectId= */ "bigquery-public-data",
+            /* datasetId= */ "samples",
+            /* tableId= */ "shakespeare");
 
     ReadSession session =
         client.createReadSession(
-            /* parent = */ parentProjectId,
-            /* readSession = */ ReadSession.newBuilder()
+            /* parent= */ parentProjectId,
+            /* readSession= */ ReadSession.newBuilder()
                 .setTable(table)
                 .setDataFormat(DataFormat.AVRO)
                 .build(),
-            /* maxStreamCount = */ 1);
+            /* maxStreamCount= */ 1);
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         1,
         session.getStreamsCount());
@@ -1438,18 +1455,18 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "bigquery-public-data",
-            /* datasetId = */ "samples",
-            /* tableId = */ "shakespeare");
+            /* projectId= */ "bigquery-public-data",
+            /* datasetId= */ "samples",
+            /* tableId= */ "shakespeare");
 
     try {
       localClient.createReadSession(
-          /* parent = */ parentProjectId,
-          /* readSession = */ ReadSession.newBuilder()
+          /* parent= */ parentProjectId,
+          /* readSession= */ ReadSession.newBuilder()
               .setTable(table)
               .setDataFormat(DataFormat.AVRO)
               .build(),
-          /* maxStreamCount = */ 1);
+          /* maxStreamCount= */ 1);
       fail("RPCs to invalid universe domain should fail");
     } catch (UnauthenticatedException e) {
       assertThat(
@@ -1473,19 +1490,19 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "bigquery-public-data",
-            /* datasetId = */ "samples",
-            /* tableId = */ "shakespeare");
+            /* projectId= */ "bigquery-public-data",
+            /* datasetId= */ "samples",
+            /* tableId= */ "shakespeare");
 
     try {
       ReadSession session =
           localClient.createReadSession(
-              /* parent = */ parentProjectId,
-              /* readSession = */ ReadSession.newBuilder()
+              /* parent= */ parentProjectId,
+              /* readSession= */ ReadSession.newBuilder()
                   .setTable(table)
                   .setDataFormat(DataFormat.AVRO)
                   .build(),
-              /* maxStreamCount = */ 1);
+              /* maxStreamCount= */ 1);
       fail("RPCs to invalid universe domain should fail");
     } catch (UnauthenticatedException e) {
       assertThat(
@@ -1505,18 +1522,18 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "bigquery-public-data",
-            /* datasetId = */ "samples",
-            /* tableId = */ "shakespeare");
+            /* projectId= */ "bigquery-public-data",
+            /* datasetId= */ "samples",
+            /* tableId= */ "shakespeare");
 
     ReadSession session =
         localClient.createReadSession(
-            /* parent = */ parentProjectId,
-            /* readSession = */ ReadSession.newBuilder()
+            /* parent= */ parentProjectId,
+            /* readSession= */ ReadSession.newBuilder()
                 .setTable(table)
                 .setDataFormat(DataFormat.AVRO)
                 .build(),
-            /* maxStreamCount = */ 1);
+            /* maxStreamCount= */ 1);
 
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
@@ -1541,18 +1558,18 @@ public class ITBigQueryStorageTest {
 
     String table =
         BigQueryResource.FormatTableResource(
-            /* projectId = */ "google-tpc-testing-environment:cloudsdk-test-project",
-            /* datasetId = */ "tpc_demo_dataset",
-            /* tableId = */ "new_table");
+            /* projectId= */ "google-tpc-testing-environment:cloudsdk-test-project",
+            /* datasetId= */ "tpc_demo_dataset",
+            /* tableId= */ "new_table");
 
     ReadSession session =
         localClient.createReadSession(
-            /* parent = */ parentProjectId,
-            /* readSession = */ ReadSession.newBuilder()
+            /* parent= */ parentProjectId,
+            /* readSession= */ ReadSession.newBuilder()
                 .setTable(table)
                 .setDataFormat(DataFormat.AVRO)
                 .build(),
-            /* maxStreamCount = */ 1);
+            /* maxStreamCount= */ 1);
 
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
@@ -1640,7 +1657,8 @@ public class ITBigQueryStorageTest {
     ReadSession session = client.createReadSession(createSessionRequestBuilder.build());
     assertEquals(
         String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession response:%n%s",
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
             table, session.toString()),
         1,
         session.getStreamsCount());
@@ -1667,9 +1685,9 @@ public class ITBigQueryStorageTest {
   List<GenericData.Record> ReadAllRows(String table, String filter) throws IOException {
     final List<GenericData.Record> rows = new ArrayList<>();
     ProcessRowsAtSnapshot(
-        /* table = */ table,
-        /* snapshotInMillis = */ null,
-        /* filter = */ filter,
+        /* table= */ table,
+        /* snapshotInMillis= */ null,
+        /* filter= */ filter,
         new AvroRowConsumer() {
           @Override
           public void accept(GenericData.Record record) {
@@ -1717,9 +1735,9 @@ public class ITBigQueryStorageTest {
 
     assertNotNull(completedJob);
     assertNull(
-        /* message = */ "Received a job status that is not a success: "
+        /* message= */ "Received a job status that is not a success: "
             + completedJob.getStatus().toString(),
-        /* object = */ completedJob.getStatus().getError());
+        /* object= */ completedJob.getStatus().getError());
 
     return completedJob;
   }

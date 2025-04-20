@@ -88,19 +88,19 @@ public class ConnectionWorkerTest {
   @Test
   public void testMultiplexedAppendSuccess_NonNullTraceId() throws Exception {
     testMultiplexedIngestion(
-        /*sw1TraceId=*/ "header_1:trailer_1",
-        /*sw2TraceId=*/ "header_2:trailer_2",
-        /*expectedSW1TraceId=*/ "java-streamwriter header_1:trailer_1",
-        /*expectedSW2TraceId=*/ "java-streamwriter header_2:trailer_2");
+        /* sw1TraceId= */ "header_1:trailer_1",
+        /* sw2TraceId= */ "header_2:trailer_2",
+        /* expectedSW1TraceId= */ "java-streamwriter header_1:trailer_1",
+        /* expectedSW2TraceId= */ "java-streamwriter header_2:trailer_2");
   }
 
   @Test
   public void testMultiplexedAppendSuccess_EmptyTraceId() throws Exception {
     testMultiplexedIngestion(
-        /*sw1TraceId=*/ "header_1:trailer_1",
-        /*sw2TraceId=*/ "",
-        /*expectedSW1TraceId=*/ "java-streamwriter header_1:trailer_1",
-        /*expectedSW2TraceId=*/ "java-streamwriter");
+        /* sw1TraceId= */ "header_1:trailer_1",
+        /* sw2TraceId= */ "",
+        /* expectedSW1TraceId= */ "java-streamwriter header_1:trailer_1",
+        /* expectedSW2TraceId= */ "java-streamwriter");
   }
 
   private void testMultiplexedIngestion(
@@ -369,9 +369,9 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
-            /*isMultiplexing=*/ false);
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
+            /* isMultiplexing= */ false);
     testBigQueryWrite.setResponseSleep(java.time.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -429,9 +429,9 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
-            /*isMultiplexing=*/ true);
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
+            /* isMultiplexing= */ true);
     testBigQueryWrite.setResponseSleep(java.time.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
@@ -501,9 +501,9 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
-            /*isMultiplexing=*/ true);
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
+            /* isMultiplexing= */ true);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -514,7 +514,8 @@ public class ConnectionWorkerTest {
                     createFooProtoRows(new String[] {String.valueOf(0)}),
                     0));
     assertEquals(
-        "INVALID_ARGUMENT: StreamWriter with location eu is scheduled to use a connection with location us",
+        "INVALID_ARGUMENT: StreamWriter with location eu is scheduled to use a connection with"
+            + " location us",
         ex.getMessage());
   }
 
@@ -536,9 +537,9 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
-            /*isMultiplexing=*/ true);
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
+            /* isMultiplexing= */ true);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -549,7 +550,9 @@ public class ConnectionWorkerTest {
                     createFooProtoRows(new String[] {String.valueOf(0)}),
                     0));
     assertEquals(
-        "INVALID_ARGUMENT: StreamWriter with stream name projects/p1/datasets/d1/tables/t1/streams/s1 is scheduled to use a connection with stream name projects/p2/datasets/d2/tables/t2/streams/s2",
+        "INVALID_ARGUMENT: StreamWriter with stream name"
+            + " projects/p1/datasets/d1/tables/t1/streams/s1 is scheduled to use a connection with"
+            + " stream name projects/p2/datasets/d2/tables/t2/streams/s2",
         ex.getMessage());
   }
 
@@ -592,9 +595,9 @@ public class ConnectionWorkerTest {
         null,
         client.getSettings(),
         retrySettings,
-        /*enableRequestProfiler=*/ false,
-        /*enableOpenTelemetry=*/ false,
-        /*isMultiplexing=*/ true);
+        /* enableRequestProfiler= */ false,
+        /* enableOpenTelemetry= */ false,
+        /* isMultiplexing= */ true);
   }
 
   private ProtoSchema createProtoSchema(String protoName) {
@@ -618,7 +621,7 @@ public class ConnectionWorkerTest {
       ProtoRows protoRows,
       long offset) {
     return connectionWorker.append(
-        streamWriter, protoRows, offset, /*requestUniqueId=*/ "request_" + offset);
+        streamWriter, protoRows, offset, /* requestUniqueId= */ "request_" + offset);
   }
 
   private ProtoRows createFooProtoRows(String[] messages) {
@@ -691,8 +694,8 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
             /*isMultiplexing*/ false);
     java.time.Duration durationSleep = java.time.Duration.ofSeconds(2);
     testBigQueryWrite.setResponseSleep(durationSleep);
@@ -769,8 +772,8 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
             /*isMultiplexing*/ false);
 
     long appendCount = 10;
@@ -817,8 +820,8 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ true,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ true,
             /*isMultiplexing*/ false);
 
     Attributes attributes = connectionWorker.getTelemetryAttributes();
@@ -860,8 +863,8 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ true,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ true,
             /*isMultiplexing*/ false);
 
     Attributes attributes = connectionWorker.getTelemetryAttributes();
@@ -875,7 +878,8 @@ public class ConnectionWorkerTest {
     exerciseOpenTelemetryAttributesWithTraceId(null, null, null, null);
     exerciseOpenTelemetryAttributesWithTraceId("a:b:c", null, null, null);
     exerciseOpenTelemetryAttributesWithTraceId(
-        "java-streamwriter:HEAD+20240508-1544 Dataflow:monorail-c-multi:2024-05-08_11_44_34-6968230696879535523:1972585693681960752",
+        "java-streamwriter:HEAD+20240508-1544"
+            + " Dataflow:monorail-c-multi:2024-05-08_11_44_34-6968230696879535523:1972585693681960752",
         "monorail-c-multi",
         "2024-05-08_11_44_34-6968230696879535523",
         "1972585693681960752");
@@ -890,7 +894,8 @@ public class ConnectionWorkerTest {
         "2024-04-03_03_49_33-845412829237675723",
         "63737042897365355");
     exerciseOpenTelemetryAttributesWithTraceId(
-        "java-streamwriter Dataflow:pubsub-to-bq-staging-tongruil-1024-static:2024-05-14_15_13_14-5530509399715326669:4531186922674871499",
+        "java-streamwriter"
+            + " Dataflow:pubsub-to-bq-staging-tongruil-1024-static:2024-05-14_15_13_14-5530509399715326669:4531186922674871499",
         "pubsub-to-bq-staging-tongruil-1024-static",
         "2024-05-14_15_13_14-5530509399715326669",
         "4531186922674871499");
