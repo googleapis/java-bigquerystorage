@@ -935,8 +935,8 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
             /*isMultiplexing*/ false);
 
     List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
