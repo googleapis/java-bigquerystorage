@@ -1632,7 +1632,26 @@ public class ITBigQueryStorageTest {
     assertNotNull(
         OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.createReadSession"));
     assertNotNull(
+        OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.createReadSessionCallable"));
+    assertNotNull(
+        OTEL_ATTRIBUTES.get(
+            "com.google.cloud.bigquery.storage.v1.read.stub.createReadSessionCallable"));
+    assertNotNull(
         OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.readRowsCallable"));
+    assertNotNull(
+        OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.stub.readRowsCallable"));
+
+    // createReadSession is the parent span of createReadSessionCallable
+    assertEquals(
+        OTEL_SPAN_IDS_TO_NAMES.get(
+            OTEL_PARENT_SPAN_IDS.get(
+                "com.google.cloud.bigquery.storage.v1.read.createReadSessionCallable")),
+        "com.google.cloud.bigquery.storage.v1.read.createReadSession");
+    assertEquals(
+        OTEL_ATTRIBUTES
+            .get("com.google.cloud.bigquery.storage.v1.read.createReadSession")
+            .get("bq.storage.read_session.request.max_stream_count"),
+        1);
     client.disableOpenTelemetryTracing();
   }
 

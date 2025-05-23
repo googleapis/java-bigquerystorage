@@ -238,14 +238,17 @@ public class BigQueryReadClient implements BackgroundResource {
           settings
               .getOpenTelemetryTracer()
               .spanBuilder("com.google.cloud.bigquery.storage.v1.read.createReadSession")
-              .setAttribute("bq.storage.read_session.request.parent", request.getParent())
               .setAttribute(
-                  "bq.storage.read_session.request.max_stream_count", request.getMaxStreamCount())
+                  "bq.storage.read_session.request.parent", getFieldAsString(request.getParent()))
+              .setAttribute(
+                  "bq.storage.read_session.request.max_stream_count",
+                  getFieldAsString(request.getMaxStreamCount()))
               .setAttribute(
                   "bq.storage.read_session.request.preferred_min_stream_count",
-                  request.getPreferredMinStreamCount())
+                  getFieldAsString(request.getPreferredMinStreamCount()))
               .setAttribute(
-                  "bq.storage.read_session.request.serialized_size", request.getSerializedSize())
+                  "bq.storage.read_session.request.serialized_size",
+                  getFieldAsString(request.getSerializedSize()))
               .setAllAttributes(otelAttributesFrom(request.getReadSession()))
               .startSpan();
     }
@@ -378,7 +381,7 @@ public class BigQueryReadClient implements BackgroundResource {
           settings
               .getOpenTelemetryTracer()
               .spanBuilder("com.google.cloud.bigquery.storage.v1.read.splitReadStream")
-              // TODO(liamhuffman): populate attributes
+              .setAllAttributes(otelAttributesFrom(request))
               .startSpan();
     }
     try (Scope splitReadStreamScope =
@@ -531,14 +534,46 @@ public class BigQueryReadClient implements BackgroundResource {
     settings.setEnableOpenTelemetryTracing(true);
   }
 
+  private static String getFieldAsString(Object field) {
+    return field == null ? "null" : field.toString();
+  }
+
   private Attributes otelAttributesFrom(ReadSession readSession) {
     return Attributes.builder()
-        .put("bq.storage.read_session.name", readSession.getName())
-        .put("bq.storage.read_session.data_format_value", readSession.getDataFormatValue())
-        .put("bq.storage.read_session.serialized_size", readSession.getSerializedSize())
-        .put("bq.storage.read_session.table", readSession.getTable())
-        .put("bq.storage.read_session.estimated_row_count", readSession.getEstimatedRowCount())
-        // TODO(liamhuffman): populate attributes
+        .put("bq.storage.read_session.name", getFieldAsString(readSession.getName()))
+        .put(
+            "bq.storage.read_session.data_format_value",
+            getFieldAsString(readSession.getDataFormatValue()))
+        .put(
+            "bq.storage.read_session.serialized_size",
+            getFieldAsString(readSession.getSerializedSize()))
+        .put("bq.storage.read_session.table", getFieldAsString(readSession.getTable()))
+        .put(
+            "bq.storage.read_session.estimated_row_count",
+            getFieldAsString(readSession.getEstimatedRowCount()))
+        .put(
+            "bq.storage.read_session.estimated_total_bytes_scanned",
+            getFieldAsString(readSession.getEstimatedTotalBytesScanned()))
+        .put(
+            "bq.storage.read_session.estimated_total_physical_bytes",
+            getFieldAsString(readSession.getEstimatedTotalPhysicalFileSize()))
+        .put(
+            "bq.storage.read_session.streams_count",
+            getFieldAsString(readSession.getStreamsCount()))
+        .put("bq.storage.read_session.trace_id", getFieldAsString(readSession.getTraceId()))
+        .put("bq.storage.read_session.expire_time", getFieldAsString(readSession.getExpireTime()))
+        .build();
+  }
+
+  private Attributes otelAttributesFrom(SplitReadStreamRequest request) {
+    return Attributes.builder()
+        .put("bq.storage.split_read_stream_request.name", getFieldAsString(request.getName()))
+        .put(
+            "bq.storage.split_read_stream_request.serialized_size",
+            getFieldAsString(request.getSerializedSize()))
+        .put(
+            "bq.storage.split_read_stream_request.fraction",
+            getFieldAsString(request.getFraction()))
         .build();
   }
 }
