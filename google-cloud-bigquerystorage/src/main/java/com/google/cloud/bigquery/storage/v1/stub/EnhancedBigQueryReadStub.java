@@ -36,12 +36,12 @@ import com.google.cloud.bigquery.storage.v1.CreateReadSessionRequest;
 import com.google.cloud.bigquery.storage.v1.ReadRowsRequest;
 import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
 import com.google.cloud.bigquery.storage.v1.ReadSession;
+import com.google.cloud.bigquery.storage.v1.Singletons;
 import com.google.cloud.bigquery.storage.v1.SplitReadStreamRequest;
 import com.google.cloud.bigquery.storage.v1.SplitReadStreamResponse;
 import com.google.cloud.bigquery.storage.v1.stub.readrows.ApiResultRetryAlgorithm;
 import com.google.cloud.bigquery.storage.v1.stub.readrows.ReadRowsRetryingCallable;
 import com.google.common.collect.ImmutableMap;
-import com.google.cloud.bigquery.storage.v1.Singletons;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
@@ -114,7 +114,11 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
     ClientContext clientContext = ClientContext.create(baseSettings);
     GrpcBigQueryReadStub stub = new GrpcBigQueryReadStub(baseSettings, clientContext);
     return new EnhancedBigQueryReadStub(
-        stub, baseSettings, readRowsRetryAttemptListener, clientContext, enableOpenTelemetryTracing);
+        stub,
+        baseSettings,
+        readRowsRetryAttemptListener,
+        clientContext,
+        enableOpenTelemetryTracing);
   }
 
   @InternalApi("Visible for testing")
@@ -130,20 +134,25 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
     this.context = context;
     this.enableOpenTelemetryTracing = enableOpenTelemetryTracing;
     if (enableOpenTelemetryTracing) {
-      this.openTelemetryTracer = Singletons.getOpenTelemetry().getTracerProvider()
-          .tracerBuilder("com.google.cloud.bigquery.storage.v1.read.stub")
-          .build();
+      this.openTelemetryTracer =
+          Singletons.getOpenTelemetry()
+              .getTracerProvider()
+              .tracerBuilder("com.google.cloud.bigquery.storage.v1.read.stub")
+              .build();
     }
   }
 
   public UnaryCallable<CreateReadSessionRequest, ReadSession> createReadSessionCallable() {
     Span createReadSessionCallable = null;
     if (enableOpenTelemetryTracing) {
-      createReadSessionCallable = openTelemetryTracer
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.createReadSessionCallable")
-          .startSpan();
+      createReadSessionCallable =
+          openTelemetryTracer
+              .spanBuilder(
+                  "com.google.cloud.bigquery.storage.v1.read.stub.createReadSessionCallable")
+              .startSpan();
     }
-    try (Scope createReadSessionCallableScope = createReadSessionCallable != null ? createReadSessionCallable.makeCurrent() : null) {
+    try (Scope createReadSessionCallableScope =
+        createReadSessionCallable != null ? createReadSessionCallable.makeCurrent() : null) {
       return stub.createReadSessionCallable();
     } finally {
       if (createReadSessionCallable != null) {
@@ -155,11 +164,13 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
   public ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> readRowsCallable() {
     Span readRowsCallable = null;
     if (enableOpenTelemetryTracing) {
-      readRowsCallable = openTelemetryTracer
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.readRowsCallable")
-          .startSpan();
+      readRowsCallable =
+          openTelemetryTracer
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.readRowsCallable")
+              .startSpan();
     }
-    try (Scope readRowsCallableScope = readRowsCallable != null ? readRowsCallable.makeCurrent() : null) {
+    try (Scope readRowsCallableScope =
+        readRowsCallable != null ? readRowsCallable.makeCurrent() : null) {
       ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> innerCallable =
           GrpcRawCallableFactory.createServerStreamingCallable(
               GrpcCallSettings.<ReadRowsRequest, ReadRowsResponse>newBuilder()
@@ -212,11 +223,13 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
   public UnaryCallable<SplitReadStreamRequest, SplitReadStreamResponse> splitReadStreamCallable() {
     Span splitReadStreamCallable = null;
     if (enableOpenTelemetryTracing) {
-      splitReadStreamCallable = openTelemetryTracer
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.splitReadStreamCallable")
-          .startSpan();
+      splitReadStreamCallable =
+          openTelemetryTracer
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.splitReadStreamCallable")
+              .startSpan();
     }
-    try (Scope readRowsCallableScope = splitReadStreamCallable != null ? splitReadStreamCallable.makeCurrent() : null) {
+    try (Scope readRowsCallableScope =
+        splitReadStreamCallable != null ? splitReadStreamCallable.makeCurrent() : null) {
       return stub.splitReadStreamCallable();
     } finally {
       if (splitReadStreamCallable != null) {
@@ -229,9 +242,10 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
   public void close() {
     Span close = null;
     if (enableOpenTelemetryTracing) {
-      close = openTelemetryTracer
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.close")
-          .startSpan();
+      close =
+          openTelemetryTracer
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.close")
+              .startSpan();
     }
     try (Scope closeScope = close != null ? close.makeCurrent() : null) {
       stub.close();
@@ -246,9 +260,10 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
   public void shutdown() {
     Span shutdown = null;
     if (enableOpenTelemetryTracing) {
-      shutdown = openTelemetryTracer
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.shutdown")
-          .startSpan();
+      shutdown =
+          openTelemetryTracer
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.shutdown")
+              .startSpan();
     }
     try (Scope shutdownScope = shutdown != null ? shutdown.makeCurrent() : null) {
       stub.shutdown();
@@ -273,9 +288,10 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
   public void shutdownNow() {
     Span shutdownNow = null;
     if (enableOpenTelemetryTracing) {
-      shutdownNow = openTelemetryTracer
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.shutdownNow")
-          .startSpan();
+      shutdownNow =
+          openTelemetryTracer
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.shutdownNow")
+              .startSpan();
     }
     try (Scope shutdownNowScope = shutdownNow != null ? shutdownNow.makeCurrent() : null) {
       stub.shutdownNow();
@@ -290,13 +306,15 @@ public class EnhancedBigQueryReadStub implements BackgroundResource {
   public boolean awaitTermination(long duration, TimeUnit unit) throws InterruptedException {
     Span awaitTermination = null;
     if (enableOpenTelemetryTracing) {
-      awaitTermination = openTelemetryTracer
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.awaitTermination")
-          .setAttribute("duration", duration)
-          .setAttribute("unit", unit.toString())
-          .startSpan();
+      awaitTermination =
+          openTelemetryTracer
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.stub.awaitTermination")
+              .setAttribute("duration", duration)
+              .setAttribute("unit", unit.toString())
+              .startSpan();
     }
-    try (Scope awaitTerminationScope = awaitTermination != null ? awaitTermination.makeCurrent() : null) {
+    try (Scope awaitTerminationScope =
+        awaitTermination != null ? awaitTermination.makeCurrent() : null) {
       return stub.awaitTermination(duration, unit);
     } finally {
       if (awaitTermination != null) {

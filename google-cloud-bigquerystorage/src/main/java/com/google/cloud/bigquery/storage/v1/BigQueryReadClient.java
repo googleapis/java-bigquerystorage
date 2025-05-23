@@ -20,9 +20,9 @@ import com.google.api.gax.core.BackgroundResource;
 import com.google.api.gax.rpc.ServerStreamingCallable;
 import com.google.api.gax.rpc.UnaryCallable;
 import com.google.cloud.bigquery.storage.v1.stub.EnhancedBigQueryReadStub;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.api.common.Attributes;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -234,16 +234,23 @@ public class BigQueryReadClient implements BackgroundResource {
   public final ReadSession createReadSession(CreateReadSessionRequest request) {
     Span createReadSession = null;
     if (settings.isOpenTelemetryEnabled()) {
-      createReadSession = settings.getOpenTelemetryTracer()
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.createReadSession")
-          .setAttribute("bq.storage.read_session.request.parent", request.getParent())
-          .setAttribute("bq.storage.read_session.request.max_stream_count", request.getMaxStreamCount())
-          .setAttribute("bq.storage.read_session.request.preferred_min_stream_count", request.getPreferredMinStreamCount())
-          .setAttribute("bq.storage.read_session.request.serialized_size", request.getSerializedSize())
-          .setAllAttributes(otelAttributesFrom(request.getReadSession()))
-          .startSpan();
+      createReadSession =
+          settings
+              .getOpenTelemetryTracer()
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.createReadSession")
+              .setAttribute("bq.storage.read_session.request.parent", request.getParent())
+              .setAttribute(
+                  "bq.storage.read_session.request.max_stream_count", request.getMaxStreamCount())
+              .setAttribute(
+                  "bq.storage.read_session.request.preferred_min_stream_count",
+                  request.getPreferredMinStreamCount())
+              .setAttribute(
+                  "bq.storage.read_session.request.serialized_size", request.getSerializedSize())
+              .setAllAttributes(otelAttributesFrom(request.getReadSession()))
+              .startSpan();
     }
-    try (Scope createReadSessionScope = createReadSession != null ? createReadSession.makeCurrent() : null) {
+    try (Scope createReadSessionScope =
+        createReadSession != null ? createReadSession.makeCurrent() : null) {
       return createReadSessionCallable().call(request);
     } finally {
       if (createReadSession != null) {
@@ -284,11 +291,14 @@ public class BigQueryReadClient implements BackgroundResource {
   public final UnaryCallable<CreateReadSessionRequest, ReadSession> createReadSessionCallable() {
     Span createReadSessionCallable = null;
     if (settings.isOpenTelemetryEnabled()) {
-      createReadSessionCallable = settings.getOpenTelemetryTracer()
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.createReadSessionCallable")
-          .startSpan();
+      createReadSessionCallable =
+          settings
+              .getOpenTelemetryTracer()
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.createReadSessionCallable")
+              .startSpan();
     }
-    try (Scope createReadSessionCallableScope = createReadSessionCallable != null ? createReadSessionCallable.makeCurrent() : null) {
+    try (Scope createReadSessionCallableScope =
+        createReadSessionCallable != null ? createReadSessionCallable.makeCurrent() : null) {
       return stub.createReadSessionCallable();
     } finally {
       if (createReadSessionCallable != null) {
@@ -321,11 +331,14 @@ public class BigQueryReadClient implements BackgroundResource {
   public final ServerStreamingCallable<ReadRowsRequest, ReadRowsResponse> readRowsCallable() {
     Span readRowsCallable = null;
     if (settings.isOpenTelemetryEnabled()) {
-      readRowsCallable = settings.getOpenTelemetryTracer()
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.readRowsCallable")
-          .startSpan();
+      readRowsCallable =
+          settings
+              .getOpenTelemetryTracer()
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.readRowsCallable")
+              .startSpan();
     }
-    try (Scope readRowsCallableScope = readRowsCallable != null ? readRowsCallable.makeCurrent() : null) {
+    try (Scope readRowsCallableScope =
+        readRowsCallable != null ? readRowsCallable.makeCurrent() : null) {
       return stub.readRowsCallable();
     } finally {
       if (readRowsCallable != null) {
@@ -361,12 +374,15 @@ public class BigQueryReadClient implements BackgroundResource {
   public final SplitReadStreamResponse splitReadStream(SplitReadStreamRequest request) {
     Span splitReadStream = null;
     if (settings.isOpenTelemetryEnabled()) {
-      splitReadStream = settings.getOpenTelemetryTracer()
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.splitReadStream")
-          // TODO(liamhuffman): populate attributes
-          .startSpan();
+      splitReadStream =
+          settings
+              .getOpenTelemetryTracer()
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.splitReadStream")
+              // TODO(liamhuffman): populate attributes
+              .startSpan();
     }
-    try (Scope splitReadStreamScope = splitReadStream != null ? splitReadStream.makeCurrent() : null) {
+    try (Scope splitReadStreamScope =
+        splitReadStream != null ? splitReadStream.makeCurrent() : null) {
       return splitReadStreamCallable().call(request);
     } finally {
       if (splitReadStream != null) {
@@ -402,11 +418,14 @@ public class BigQueryReadClient implements BackgroundResource {
       splitReadStreamCallable() {
     Span splitReadStreamCallable = null;
     if (settings.isOpenTelemetryEnabled()) {
-      splitReadStreamCallable = settings.getOpenTelemetryTracer()
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.splitReadStreamCallable")
-          .startSpan();
+      splitReadStreamCallable =
+          settings
+              .getOpenTelemetryTracer()
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.splitReadStreamCallable")
+              .startSpan();
     }
-    try (Scope readRowsCallableScope = splitReadStreamCallable != null ? splitReadStreamCallable.makeCurrent() : null) {
+    try (Scope readRowsCallableScope =
+        splitReadStreamCallable != null ? splitReadStreamCallable.makeCurrent() : null) {
       return stub.splitReadStreamCallable();
     } finally {
       if (splitReadStreamCallable != null) {
@@ -419,9 +438,11 @@ public class BigQueryReadClient implements BackgroundResource {
   public final void close() {
     Span close = null;
     if (settings.isOpenTelemetryEnabled()) {
-      close = settings.getOpenTelemetryTracer()
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.close")
-          .startSpan();
+      close =
+          settings
+              .getOpenTelemetryTracer()
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.close")
+              .startSpan();
     }
     try (Scope closeScope = close != null ? close.makeCurrent() : null) {
       stub.close();
@@ -436,9 +457,11 @@ public class BigQueryReadClient implements BackgroundResource {
   public void shutdown() {
     Span shutdown = null;
     if (settings.isOpenTelemetryEnabled()) {
-      shutdown = settings.getOpenTelemetryTracer()
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.shutdown")
-          .startSpan();
+      shutdown =
+          settings
+              .getOpenTelemetryTracer()
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.shutdown")
+              .startSpan();
     }
     try (Scope shutdownScope = shutdown != null ? shutdown.makeCurrent() : null) {
       stub.shutdown();
@@ -463,9 +486,11 @@ public class BigQueryReadClient implements BackgroundResource {
   public void shutdownNow() {
     Span shutdownNow = null;
     if (settings.isOpenTelemetryEnabled()) {
-      shutdownNow = settings.getOpenTelemetryTracer()
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.shutdownNow")
-          .startSpan();
+      shutdownNow =
+          settings
+              .getOpenTelemetryTracer()
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.shutdownNow")
+              .startSpan();
     }
     try (Scope shutdownNowScope = shutdownNow != null ? shutdownNow.makeCurrent() : null) {
       stub.shutdownNow();
@@ -480,13 +505,16 @@ public class BigQueryReadClient implements BackgroundResource {
   public boolean awaitTermination(long duration, TimeUnit unit) throws InterruptedException {
     Span awaitTermination = null;
     if (settings.isOpenTelemetryEnabled()) {
-      awaitTermination = settings.getOpenTelemetryTracer()
-          .spanBuilder("com.google.cloud.bigquery.storage.v1.read.awaitTermination")
-          .setAttribute("duration", duration)
-          .setAttribute("unit", unit.toString())
-          .startSpan();
+      awaitTermination =
+          settings
+              .getOpenTelemetryTracer()
+              .spanBuilder("com.google.cloud.bigquery.storage.v1.read.awaitTermination")
+              .setAttribute("duration", duration)
+              .setAttribute("unit", unit.toString())
+              .startSpan();
     }
-    try (Scope awaitTerminationScope = awaitTermination != null ? awaitTermination.makeCurrent() : null) {
+    try (Scope awaitTerminationScope =
+        awaitTermination != null ? awaitTermination.makeCurrent() : null) {
       return stub.awaitTermination(duration, unit);
     } finally {
       if (awaitTermination != null) {

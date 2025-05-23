@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -1630,8 +1629,10 @@ public class ITBigQueryStorageTest {
 
     ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
 
-    assertNotNull(OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.createReadSession"));
-    assertNotNull(OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.readRowsCallable"));
+    assertNotNull(
+        OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.createReadSession"));
+    assertNotNull(
+        OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.readRowsCallable"));
     client.disableOpenTelemetryTracing();
   }
 

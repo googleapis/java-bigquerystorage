@@ -93,11 +93,14 @@ public class BigQueryReadSettings extends ClientSettings<BigQueryReadSettings> {
   public void setEnableOpenTelemetryTracing(boolean enableOpenTelemetryTracing) {
     this.enableOpenTelemetryTracing = enableOpenTelemetryTracing;
     if (enableOpenTelemetryTracing) {
-      this.openTelemetryTracer = Singletons.getOpenTelemetry().getTracerProvider()
-          .tracerBuilder("com.google.cloud.bigquery.storage.v1.read")
-          .build();
+      this.openTelemetryTracer =
+          Singletons.getOpenTelemetry()
+              .getTracerProvider()
+              .tracerBuilder("com.google.cloud.bigquery.storage.v1.read")
+              .build();
     }
   }
+
   public RetryAttemptListener getReadRowsRetryAttemptListener() {
     return readRowsRetryAttemptListener;
   }
