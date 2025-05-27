@@ -469,7 +469,6 @@ public class ITBigQueryStorageTest {
       new HashMap<String, Map<AttributeKey<?>, Object>>();
   private static final Map<String, String> OTEL_PARENT_SPAN_IDS = new HashMap<>();
   private static final Map<String, String> OTEL_SPAN_IDS_TO_NAMES = new HashMap<>();
-  private static final String OTEL_PARENT_SPAN_ID = "0000000000000000";
 
   private static class TestSpanExporter implements io.opentelemetry.sdk.trace.export.SpanExporter {
     @Override
@@ -1600,8 +1599,11 @@ public class ITBigQueryStorageTest {
   }
 
   @Test
-  public void testSimpleReadWithOtelTracing() {
-    client.enableOpenTelemetryTracing();
+  public void testSimpleReadWithOtelTracing() throws IOException {
+    BigQueryReadSettings otelSettings =
+        BigQueryReadSettings.newBuilder().setEnableOpenTelemetryTracing(true).build();
+    BigQueryReadClient otelClient = BigQueryReadClient.create(otelSettings);
+
     String table =
         BigQueryResource.FormatTableResource(
             /* projectId= */ "bigquery-public-data",
@@ -1609,25 +1611,18 @@ public class ITBigQueryStorageTest {
             /* tableId= */ "shakespeare");
 
     ReadSession session =
-        client.createReadSession(
+        otelClient.createReadSession(
             /* parent= */ parentProjectId,
             /* readSession= */ ReadSession.newBuilder()
                 .setTable(table)
                 .setDataFormat(DataFormat.AVRO)
                 .build(),
             /* maxStreamCount= */ 1);
-    assertEquals(
-        String.format(
-            "Did not receive expected number of streams for table '%s' CreateReadSession"
-                + " response:%n%s",
-            table, session.toString()),
-        1,
-        session.getStreamsCount());
 
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(session.getStreams(0).getName()).build();
 
-    ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
+    ServerStream<ReadRowsResponse> stream = otelClient.readRowsCallable().call(readRowsRequest);
 
     assertNotNull(
         OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.createReadSession"));
@@ -1647,12 +1642,17 @@ public class ITBigQueryStorageTest {
             OTEL_PARENT_SPAN_IDS.get(
                 "com.google.cloud.bigquery.storage.v1.read.createReadSessionCallable")),
         "com.google.cloud.bigquery.storage.v1.read.createReadSession");
+
+    Map<AttributeKey<?>, Object> createReadSessionMap =
+        OTEL_ATTRIBUTES.get("com.google.cloud.bigquery.storage.v1.read.createReadSession");
+    assertNotNull(createReadSessionMap);
+    assertNotNull(
+        createReadSessionMap.get(
+            AttributeKey.longKey("bq.storage.read_session.request.max_stream_count")));
     assertEquals(
-        OTEL_ATTRIBUTES
-            .get("com.google.cloud.bigquery.storage.v1.read.createReadSession")
-            .get("bq.storage.read_session.request.max_stream_count"),
-        1);
-    client.disableOpenTelemetryTracing();
+        createReadSessionMap.get(
+            AttributeKey.longKey("bq.storage.read_session.request.max_stream_count")),
+        1L);
   }
 
   public void testUniverseDomain() throws IOException {

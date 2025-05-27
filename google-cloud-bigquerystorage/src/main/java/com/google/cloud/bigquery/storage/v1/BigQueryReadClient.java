@@ -131,7 +131,9 @@ public class BigQueryReadClient implements BackgroundResource {
     this.settings = settings;
     this.stub =
         EnhancedBigQueryReadStub.create(
-            settings.getTypedStubSettings(), settings.getReadRowsRetryAttemptListener());
+            settings.getTypedStubSettings(),
+            settings.getReadRowsRetryAttemptListener(),
+            settings.isOpenTelemetryEnabled());
   }
 
   @BetaApi("A restructuring of stub classes is planned, so this may break in the future")
@@ -241,14 +243,12 @@ public class BigQueryReadClient implements BackgroundResource {
               .setAttribute(
                   "bq.storage.read_session.request.parent", getFieldAsString(request.getParent()))
               .setAttribute(
-                  "bq.storage.read_session.request.max_stream_count",
-                  getFieldAsString(request.getMaxStreamCount()))
+                  "bq.storage.read_session.request.max_stream_count", request.getMaxStreamCount())
               .setAttribute(
                   "bq.storage.read_session.request.preferred_min_stream_count",
-                  getFieldAsString(request.getPreferredMinStreamCount()))
+                  request.getPreferredMinStreamCount())
               .setAttribute(
-                  "bq.storage.read_session.request.serialized_size",
-                  getFieldAsString(request.getSerializedSize()))
+                  "bq.storage.read_session.request.serialized_size", request.getSerializedSize())
               .setAllAttributes(otelAttributesFrom(request.getReadSession()))
               .startSpan();
     }
@@ -548,18 +548,14 @@ public class BigQueryReadClient implements BackgroundResource {
             "bq.storage.read_session.serialized_size",
             getFieldAsString(readSession.getSerializedSize()))
         .put("bq.storage.read_session.table", getFieldAsString(readSession.getTable()))
-        .put(
-            "bq.storage.read_session.estimated_row_count",
-            getFieldAsString(readSession.getEstimatedRowCount()))
+        .put("bq.storage.read_session.estimated_row_count", readSession.getEstimatedRowCount())
         .put(
             "bq.storage.read_session.estimated_total_bytes_scanned",
-            getFieldAsString(readSession.getEstimatedTotalBytesScanned()))
+            readSession.getEstimatedTotalBytesScanned())
         .put(
             "bq.storage.read_session.estimated_total_physical_bytes",
-            getFieldAsString(readSession.getEstimatedTotalPhysicalFileSize()))
-        .put(
-            "bq.storage.read_session.streams_count",
-            getFieldAsString(readSession.getStreamsCount()))
+            readSession.getEstimatedTotalPhysicalFileSize())
+        .put("bq.storage.read_session.streams_count", readSession.getStreamsCount())
         .put("bq.storage.read_session.trace_id", getFieldAsString(readSession.getTraceId()))
         .put("bq.storage.read_session.expire_time", getFieldAsString(readSession.getExpireTime()))
         .build();
