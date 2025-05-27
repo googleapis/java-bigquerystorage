@@ -679,9 +679,7 @@ class ConnectionWorker implements AutoCloseable {
     return inflightWaitSec.longValue();
   }
 
-  /**
-   * @return a unique Id for the writer.
-   */
+  /** @return a unique Id for the writer. */
   public String getWriterId() {
     return writerId;
   }

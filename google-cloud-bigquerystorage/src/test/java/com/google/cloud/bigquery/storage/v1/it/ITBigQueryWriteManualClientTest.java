@@ -343,9 +343,7 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testJsonStreamWriterCommittedStream()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
+      throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "JsonTable";
     TableInfo tableInfo =
@@ -434,9 +432,7 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testRowErrors()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
+      throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "TestBadRowsTable";
     TableInfo tableInfo =
@@ -581,9 +577,7 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testJsonStreamWriterWithDefaultSchema()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
+      throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "JsonTableDefaultSchema";
     TableInfo tableInfo =
@@ -723,9 +717,7 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testJsonStreamWriterWithDefaultStream()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
+      throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "JsonTableDefaultStream";
     TableFieldSchema TEST_STRING =
@@ -889,11 +881,8 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testJsonDefaultStreamOnTableWithDefaultValue_SchemaNotGiven()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
-          Descriptors.DescriptorValidationException,
-          ParseException {
+      throws IOException, InterruptedException, ExecutionException,
+          Descriptors.DescriptorValidationException, ParseException {
     String tableName = "defaultStreamDefaultValue";
     String defaultTableId =
         String.format(
@@ -912,11 +901,8 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testJsonExclusiveStreamOnTableWithDefaultValue_GiveTableSchema()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
-          Descriptors.DescriptorValidationException,
-          ParseException {
+      throws IOException, InterruptedException, ExecutionException,
+          Descriptors.DescriptorValidationException, ParseException {
     String tableName = "exclusiveStreamDefaultValue";
     String exclusiveTableId =
         String.format(
@@ -941,10 +927,7 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   private void testJsonStreamWriterForDefaultValue(JsonStreamWriter jsonStreamWriter)
-      throws DescriptorValidationException,
-          IOException,
-          ExecutionException,
-          InterruptedException,
+      throws DescriptorValidationException, IOException, ExecutionException, InterruptedException,
           ParseException {
     // 1. row has both fields set.
     JSONArray jsonArr1 = new JSONArray();
@@ -1070,9 +1053,7 @@ public class ITBigQueryWriteManualClientTest {
   // This test runs about 1 min.
   @Test
   public void testJsonStreamWriterWithMessagesOver10M()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
+      throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "TableLarge";
     TableId tableId = TableId.of(DATASET, tableName);
@@ -1330,10 +1311,7 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testJsonStreamWriterSchemaUpdateWithMissingValueInterpretationMap()
-      throws DescriptorValidationException,
-          ExecutionException,
-          IOException,
-          InterruptedException,
+      throws DescriptorValidationException, ExecutionException, IOException, InterruptedException,
           ParseException {
     String tableName = "SchemaUpdateMissingValueMapTestTable";
     TableId tableId = TableId.of(DATASET, tableName);
@@ -1456,9 +1434,7 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testJsonStreamWriterWithFlexibleColumnName()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
+      throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "FlexibleColumnTable";
     TableInfo tableInfo =
@@ -1547,9 +1523,7 @@ public class ITBigQueryWriteManualClientTest {
 
   @Test
   public void testJsonStreamWriterWithNestedFlexibleColumnName()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
+      throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     String tableName = "NestedFlexibleColumnTable";
     TableInfo tableInfo =

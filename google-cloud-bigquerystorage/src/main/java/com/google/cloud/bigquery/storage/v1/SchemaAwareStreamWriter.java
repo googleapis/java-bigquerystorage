@@ -261,16 +261,12 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     }
   }
 
-  /**
-   * @return The name of the write stream associated with this writer.
-   */
+  /** @return The name of the write stream associated with this writer. */
   public String getStreamName() {
     return this.streamName;
   }
 
-  /**
-   * @return A unique Id for this writer.
-   */
+  /** @return A unique Id for this writer. */
   public String getWriterId() {
     return streamWriter.getWriterId();
   }
@@ -304,9 +300,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     return streamWriter.getInflightWaitSeconds();
   }
 
-  /**
-   * @return the missing value interpretation map used for the writer.
-   */
+  /** @return the missing value interpretation map used for the writer. */
   public Map<String, AppendRowsRequest.MissingValueInterpretation>
       getMissingValueInterpretationMap() {
     return streamWriter.getMissingValueInterpretationMap();
@@ -442,9 +436,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
     return this.streamWriter.isClosed();
   }
 
-  /**
-   * @return if user explicitly closed the writer.
-   */
+  /** @return if user explicitly closed the writer. */
   public boolean isUserClosed() {
     return this.streamWriter.isUserClosed();
   }
@@ -730,9 +722,7 @@ public class SchemaAwareStreamWriter<T> implements AutoCloseable {
      * @return SchemaAwareStreamWriter
      */
     public SchemaAwareStreamWriter<T> build()
-        throws DescriptorValidationException,
-            IllegalArgumentException,
-            IOException,
+        throws DescriptorValidationException, IllegalArgumentException, IOException,
             InterruptedException {
       return new SchemaAwareStreamWriter<>(this);
     }

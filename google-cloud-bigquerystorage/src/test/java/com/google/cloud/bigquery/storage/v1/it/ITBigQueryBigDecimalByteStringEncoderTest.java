@@ -102,9 +102,7 @@ public class ITBigQueryBigDecimalByteStringEncoderTest {
 
   @Test
   public void TestBigDecimalEncoding()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
+      throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
     TableFieldSchema TEST_NUMERIC_ZERO =

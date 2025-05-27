@@ -109,9 +109,7 @@ public class ITBigQueryTimeEncoderTest {
 
   @Test
   public void TestTimeEncoding()
-      throws IOException,
-          InterruptedException,
-          ExecutionException,
+      throws IOException, InterruptedException, ExecutionException,
           Descriptors.DescriptorValidationException {
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, TABLE);
     TableFieldSchema TEST_STRING =
