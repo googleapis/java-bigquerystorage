@@ -464,7 +464,6 @@ public class ITBigQueryStorageTest {
                   .build())
           .build();
 
-  private static OpenTelemetry otel;
   private static final Map<String, Map<AttributeKey<?>, Object>> OTEL_ATTRIBUTES =
       new HashMap<String, Map<AttributeKey<?>, Object>>();
   private static final Map<String, String> OTEL_PARENT_SPAN_IDS = new HashMap<>();
@@ -500,12 +499,6 @@ public class ITBigQueryStorageTest {
     client = BigQueryReadClient.create();
     projectName = ServiceOptions.getDefaultProjectId();
     parentProjectId = String.format("projects/%s", projectName);
-    SdkTracerProvider tracerProvider =
-        SdkTracerProvider.builder()
-            .addSpanProcessor(SimpleSpanProcessor.create(new TestSpanExporter()))
-            .setSampler(Sampler.alwaysOn())
-            .build();
-    otel = OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).buildAndRegisterGlobal();
 
     LOG.info(
         String.format(
@@ -1600,6 +1593,14 @@ public class ITBigQueryStorageTest {
 
   @Test
   public void testSimpleReadWithOtelTracing() throws IOException {
+    SdkTracerProvider tracerProvider =
+        SdkTracerProvider.builder()
+            .addSpanProcessor(SimpleSpanProcessor.create(new TestSpanExporter()))
+            .setSampler(Sampler.alwaysOn())
+            .build();
+    OpenTelemetry otel =
+        OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).buildAndRegisterGlobal();
+
     BigQueryReadSettings otelSettings =
         BigQueryReadSettings.newBuilder().setEnableOpenTelemetryTracing(true).build();
     BigQueryReadClient otelClient = BigQueryReadClient.create(otelSettings);
