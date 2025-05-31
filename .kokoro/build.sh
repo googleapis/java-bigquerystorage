@@ -68,6 +68,7 @@ integration)
       -Dit.test=!ITBigQueryWrite*RetryTest \
       -Dsurefire.failIfNoSpecifiedTests=false \
       -Dfailsafe.failIfNoSpecifiedTests=false \
+      -Dprotobuf.version="4.27.4" \
       -fae \
       verify
     RETURN_CODE=$?
