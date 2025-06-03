@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ public interface BatchCommitWriteStreamsRequestOrBuilder
    * @return The parent.
    */
   java.lang.String getParent();
+
   /**
    *
    *
@@ -63,6 +64,7 @@ public interface BatchCommitWriteStreamsRequestOrBuilder
    * @return A list containing the writeStreams.
    */
   java.util.List<java.lang.String> getWriteStreamsList();
+
   /**
    *
    *
@@ -75,6 +77,7 @@ public interface BatchCommitWriteStreamsRequestOrBuilder
    * @return The count of writeStreams.
    */
   int getWriteStreamsCount();
+
   /**
    *
    *
@@ -88,6 +91,7 @@ public interface BatchCommitWriteStreamsRequestOrBuilder
    * @return The writeStreams at the given index.
    */
   java.lang.String getWriteStreams(int index);
+
   /**
    *
    *

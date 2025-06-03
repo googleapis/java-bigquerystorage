@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public interface BatchUpdateMetastorePartitionsRequestOrBuilder
    * @return The parent.
    */
   java.lang.String getParent();
+
   /**
    *
    *
@@ -70,6 +71,7 @@ public interface BatchUpdateMetastorePartitionsRequestOrBuilder
    */
   java.util.List<com.google.cloud.bigquery.storage.v1alpha.UpdateMetastorePartitionRequest>
       getRequestsList();
+
   /**
    *
    *
@@ -82,6 +84,7 @@ public interface BatchUpdateMetastorePartitionsRequestOrBuilder
    * </code>
    */
   com.google.cloud.bigquery.storage.v1alpha.UpdateMetastorePartitionRequest getRequests(int index);
+
   /**
    *
    *
@@ -94,6 +97,7 @@ public interface BatchUpdateMetastorePartitionsRequestOrBuilder
    * </code>
    */
   int getRequestsCount();
+
   /**
    *
    *
@@ -109,6 +113,7 @@ public interface BatchUpdateMetastorePartitionsRequestOrBuilder
           ? extends
               com.google.cloud.bigquery.storage.v1alpha.UpdateMetastorePartitionRequestOrBuilder>
       getRequestsOrBuilderList();
+
   /**
    *
    *
@@ -122,4 +127,38 @@ public interface BatchUpdateMetastorePartitionsRequestOrBuilder
    */
   com.google.cloud.bigquery.storage.v1alpha.UpdateMetastorePartitionRequestOrBuilder
       getRequestsOrBuilder(int index);
+
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Optional trace id to be used for debugging. It is expected that
+   * the client sets the same `trace_id` for all the batches in the same
+   * operation, so that it is possible to tie together the logs to all the
+   * batches in the same operation. This is expected, but not required, to be
+   * globally unique.
+   * </pre>
+   *
+   * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The traceId.
+   */
+  java.lang.String getTraceId();
+
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Optional trace id to be used for debugging. It is expected that
+   * the client sets the same `trace_id` for all the batches in the same
+   * operation, so that it is possible to tie together the logs to all the
+   * batches in the same operation. This is expected, but not required, to be
+   * globally unique.
+   * </pre>
+   *
+   * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The bytes for traceId.
+   */
+  com.google.protobuf.ByteString getTraceIdBytes();
 }

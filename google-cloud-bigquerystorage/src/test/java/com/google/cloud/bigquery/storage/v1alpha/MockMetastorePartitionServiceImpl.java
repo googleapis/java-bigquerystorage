@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,8 @@ public class MockMetastorePartitionServiceImpl extends MetastorePartitionService
       responseObserver.onError(
           new IllegalArgumentException(
               String.format(
-                  "Unrecognized response type %s for method BatchCreateMetastorePartitions, expected %s or %s",
+                  "Unrecognized response type %s for method BatchCreateMetastorePartitions,"
+                      + " expected %s or %s",
                   response == null ? "null" : response.getClass().getName(),
                   BatchCreateMetastorePartitionsResponse.class.getName(),
                   Exception.class.getName())));
@@ -95,7 +96,8 @@ public class MockMetastorePartitionServiceImpl extends MetastorePartitionService
       responseObserver.onError(
           new IllegalArgumentException(
               String.format(
-                  "Unrecognized response type %s for method BatchDeleteMetastorePartitions, expected %s or %s",
+                  "Unrecognized response type %s for method BatchDeleteMetastorePartitions,"
+                      + " expected %s or %s",
                   response == null ? "null" : response.getClass().getName(),
                   Empty.class.getName(),
                   Exception.class.getName())));
@@ -117,7 +119,8 @@ public class MockMetastorePartitionServiceImpl extends MetastorePartitionService
       responseObserver.onError(
           new IllegalArgumentException(
               String.format(
-                  "Unrecognized response type %s for method BatchUpdateMetastorePartitions, expected %s or %s",
+                  "Unrecognized response type %s for method BatchUpdateMetastorePartitions,"
+                      + " expected %s or %s",
                   response == null ? "null" : response.getClass().getName(),
                   BatchUpdateMetastorePartitionsResponse.class.getName(),
                   Exception.class.getName())));
@@ -139,7 +142,8 @@ public class MockMetastorePartitionServiceImpl extends MetastorePartitionService
       responseObserver.onError(
           new IllegalArgumentException(
               String.format(
-                  "Unrecognized response type %s for method ListMetastorePartitions, expected %s or %s",
+                  "Unrecognized response type %s for method ListMetastorePartitions, expected %s or"
+                      + " %s",
                   response == null ? "null" : response.getClass().getName(),
                   ListMetastorePartitionsResponse.class.getName(),
                   Exception.class.getName())));
@@ -163,7 +167,8 @@ public class MockMetastorePartitionServiceImpl extends MetastorePartitionService
               responseObserver.onError(
                   new IllegalArgumentException(
                       String.format(
-                          "Unrecognized response type %s for method StreamMetastorePartitions, expected %s or %s",
+                          "Unrecognized response type %s for method StreamMetastorePartitions,"
+                              + " expected %s or %s",
                           response == null ? "null" : response.getClass().getName(),
                           StreamMetastorePartitionsResponse.class.getName(),
                           Exception.class.getName())));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ public enum WriteStreamView implements com.google.protobuf.ProtocolMessageEnum {
    * <code>WRITE_STREAM_VIEW_UNSPECIFIED = 0;</code>
    */
   public static final int WRITE_STREAM_VIEW_UNSPECIFIED_VALUE = 0;
+
   /**
    *
    *
@@ -89,6 +90,7 @@ public enum WriteStreamView implements com.google.protobuf.ProtocolMessageEnum {
    * <code>BASIC = 1;</code>
    */
   public static final int BASIC_VALUE = 1;
+
   /**
    *
    *

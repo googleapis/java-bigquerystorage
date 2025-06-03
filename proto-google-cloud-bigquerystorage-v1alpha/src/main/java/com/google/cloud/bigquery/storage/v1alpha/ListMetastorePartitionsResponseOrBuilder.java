@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ public interface ListMetastorePartitionsResponseOrBuilder
    * @return Whether the partitions field is set.
    */
   boolean hasPartitions();
+
   /**
    *
    *
@@ -48,6 +49,7 @@ public interface ListMetastorePartitionsResponseOrBuilder
    * @return The partitions.
    */
   com.google.cloud.bigquery.storage.v1alpha.MetastorePartitionList getPartitions();
+
   /**
    *
    *
@@ -72,6 +74,7 @@ public interface ListMetastorePartitionsResponseOrBuilder
    * @return Whether the streams field is set.
    */
   boolean hasStreams();
+
   /**
    *
    *
@@ -84,6 +87,7 @@ public interface ListMetastorePartitionsResponseOrBuilder
    * @return The streams.
    */
   com.google.cloud.bigquery.storage.v1alpha.StreamList getStreams();
+
   /**
    *
    *

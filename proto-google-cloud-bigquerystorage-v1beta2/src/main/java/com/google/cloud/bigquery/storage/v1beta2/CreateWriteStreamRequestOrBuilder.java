@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ public interface CreateWriteStreamRequestOrBuilder
    * @return The parent.
    */
   java.lang.String getParent();
+
   /**
    *
    *
@@ -69,6 +70,7 @@ public interface CreateWriteStreamRequestOrBuilder
    * @return Whether the writeStream field is set.
    */
   boolean hasWriteStream();
+
   /**
    *
    *
@@ -83,6 +85,7 @@ public interface CreateWriteStreamRequestOrBuilder
    * @return The writeStream.
    */
   com.google.cloud.bigquery.storage.v1beta2.WriteStream getWriteStream();
+
   /**
    *
    *

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ public final class BatchUpdateMetastorePartitionsRequest
     // @@protoc_insertion_point(message_implements:google.cloud.bigquery.storage.v1alpha.BatchUpdateMetastorePartitionsRequest)
     BatchUpdateMetastorePartitionsRequestOrBuilder {
   private static final long serialVersionUID = 0L;
+
   // Use BatchUpdateMetastorePartitionsRequest.newBuilder() to construct.
   private BatchUpdateMetastorePartitionsRequest(
       com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
@@ -43,6 +44,7 @@ public final class BatchUpdateMetastorePartitionsRequest
   private BatchUpdateMetastorePartitionsRequest() {
     parent_ = "";
     requests_ = java.util.Collections.emptyList();
+    traceId_ = "";
   }
 
   @java.lang.Override
@@ -71,6 +73,7 @@ public final class BatchUpdateMetastorePartitionsRequest
 
   @SuppressWarnings("serial")
   private volatile java.lang.Object parent_ = "";
+
   /**
    *
    *
@@ -98,6 +101,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       return s;
     }
   }
+
   /**
    *
    *
@@ -131,6 +135,7 @@ public final class BatchUpdateMetastorePartitionsRequest
   @SuppressWarnings("serial")
   private java.util.List<com.google.cloud.bigquery.storage.v1alpha.UpdateMetastorePartitionRequest>
       requests_;
+
   /**
    *
    *
@@ -147,6 +152,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       getRequestsList() {
     return requests_;
   }
+
   /**
    *
    *
@@ -165,6 +171,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       getRequestsOrBuilderList() {
     return requests_;
   }
+
   /**
    *
    *
@@ -180,6 +187,7 @@ public final class BatchUpdateMetastorePartitionsRequest
   public int getRequestsCount() {
     return requests_.size();
   }
+
   /**
    *
    *
@@ -196,6 +204,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       int index) {
     return requests_.get(index);
   }
+
   /**
    *
    *
@@ -211,6 +220,67 @@ public final class BatchUpdateMetastorePartitionsRequest
   public com.google.cloud.bigquery.storage.v1alpha.UpdateMetastorePartitionRequestOrBuilder
       getRequestsOrBuilder(int index) {
     return requests_.get(index);
+  }
+
+  public static final int TRACE_ID_FIELD_NUMBER = 4;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object traceId_ = "";
+
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Optional trace id to be used for debugging. It is expected that
+   * the client sets the same `trace_id` for all the batches in the same
+   * operation, so that it is possible to tie together the logs to all the
+   * batches in the same operation. This is expected, but not required, to be
+   * globally unique.
+   * </pre>
+   *
+   * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The traceId.
+   */
+  @java.lang.Override
+  public java.lang.String getTraceId() {
+    java.lang.Object ref = traceId_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      traceId_ = s;
+      return s;
+    }
+  }
+
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Optional trace id to be used for debugging. It is expected that
+   * the client sets the same `trace_id` for all the batches in the same
+   * operation, so that it is possible to tie together the logs to all the
+   * batches in the same operation. This is expected, but not required, to be
+   * globally unique.
+   * </pre>
+   *
+   * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The bytes for traceId.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString getTraceIdBytes() {
+    java.lang.Object ref = traceId_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b =
+          com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+      traceId_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
   }
 
   private byte memoizedIsInitialized = -1;
@@ -233,6 +303,9 @@ public final class BatchUpdateMetastorePartitionsRequest
     for (int i = 0; i < requests_.size(); i++) {
       output.writeMessage(2, requests_.get(i));
     }
+    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(traceId_)) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 4, traceId_);
+    }
     getUnknownFields().writeTo(output);
   }
 
@@ -247,6 +320,9 @@ public final class BatchUpdateMetastorePartitionsRequest
     }
     for (int i = 0; i < requests_.size(); i++) {
       size += com.google.protobuf.CodedOutputStream.computeMessageSize(2, requests_.get(i));
+    }
+    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(traceId_)) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, traceId_);
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -268,6 +344,7 @@ public final class BatchUpdateMetastorePartitionsRequest
 
     if (!getParent().equals(other.getParent())) return false;
     if (!getRequestsList().equals(other.getRequestsList())) return false;
+    if (!getTraceId().equals(other.getTraceId())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -285,6 +362,8 @@ public final class BatchUpdateMetastorePartitionsRequest
       hash = (37 * hash) + REQUESTS_FIELD_NUMBER;
       hash = (53 * hash) + getRequestsList().hashCode();
     }
+    hash = (37 * hash) + TRACE_ID_FIELD_NUMBER;
+    hash = (53 * hash) + getTraceId().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -392,6 +471,7 @@ public final class BatchUpdateMetastorePartitionsRequest
     Builder builder = new Builder(parent);
     return builder;
   }
+
   /**
    *
    *
@@ -442,6 +522,7 @@ public final class BatchUpdateMetastorePartitionsRequest
         requestsBuilder_.clear();
       }
       bitField0_ = (bitField0_ & ~0x00000002);
+      traceId_ = "";
       return this;
     }
 
@@ -499,6 +580,9 @@ public final class BatchUpdateMetastorePartitionsRequest
       int from_bitField0_ = bitField0_;
       if (((from_bitField0_ & 0x00000001) != 0)) {
         result.parent_ = parent_;
+      }
+      if (((from_bitField0_ & 0x00000004) != 0)) {
+        result.traceId_ = traceId_;
       }
     }
 
@@ -586,6 +670,11 @@ public final class BatchUpdateMetastorePartitionsRequest
           }
         }
       }
+      if (!other.getTraceId().isEmpty()) {
+        traceId_ = other.traceId_;
+        bitField0_ |= 0x00000004;
+        onChanged();
+      }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
       return this;
@@ -633,6 +722,12 @@ public final class BatchUpdateMetastorePartitionsRequest
                 }
                 break;
               } // case 18
+            case 34:
+              {
+                traceId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 34
             default:
               {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
@@ -653,6 +748,7 @@ public final class BatchUpdateMetastorePartitionsRequest
     private int bitField0_;
 
     private java.lang.Object parent_ = "";
+
     /**
      *
      *
@@ -679,6 +775,7 @@ public final class BatchUpdateMetastorePartitionsRequest
         return (java.lang.String) ref;
       }
     }
+
     /**
      *
      *
@@ -705,6 +802,7 @@ public final class BatchUpdateMetastorePartitionsRequest
         return (com.google.protobuf.ByteString) ref;
       }
     }
+
     /**
      *
      *
@@ -730,6 +828,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       onChanged();
       return this;
     }
+
     /**
      *
      *
@@ -751,6 +850,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       onChanged();
       return this;
     }
+
     /**
      *
      *
@@ -817,6 +917,7 @@ public final class BatchUpdateMetastorePartitionsRequest
         return requestsBuilder_.getMessageList();
       }
     }
+
     /**
      *
      *
@@ -835,6 +936,7 @@ public final class BatchUpdateMetastorePartitionsRequest
         return requestsBuilder_.getCount();
       }
     }
+
     /**
      *
      *
@@ -854,6 +956,7 @@ public final class BatchUpdateMetastorePartitionsRequest
         return requestsBuilder_.getMessage(index);
       }
     }
+
     /**
      *
      *
@@ -880,6 +983,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
@@ -904,6 +1008,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
@@ -929,6 +1034,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
@@ -955,6 +1061,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
@@ -978,6 +1085,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
@@ -1002,6 +1110,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
@@ -1026,6 +1135,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
@@ -1047,6 +1157,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
@@ -1068,6 +1179,7 @@ public final class BatchUpdateMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
@@ -1083,6 +1195,7 @@ public final class BatchUpdateMetastorePartitionsRequest
         getRequestsBuilder(int index) {
       return getRequestsFieldBuilder().getBuilder(index);
     }
+
     /**
      *
      *
@@ -1102,6 +1215,7 @@ public final class BatchUpdateMetastorePartitionsRequest
         return requestsBuilder_.getMessageOrBuilder(index);
       }
     }
+
     /**
      *
      *
@@ -1123,6 +1237,7 @@ public final class BatchUpdateMetastorePartitionsRequest
         return java.util.Collections.unmodifiableList(requests_);
       }
     }
+
     /**
      *
      *
@@ -1141,6 +1256,7 @@ public final class BatchUpdateMetastorePartitionsRequest
               com.google.cloud.bigquery.storage.v1alpha.UpdateMetastorePartitionRequest
                   .getDefaultInstance());
     }
+
     /**
      *
      *
@@ -1160,6 +1276,7 @@ public final class BatchUpdateMetastorePartitionsRequest
               com.google.cloud.bigquery.storage.v1alpha.UpdateMetastorePartitionRequest
                   .getDefaultInstance());
     }
+
     /**
      *
      *
@@ -1192,6 +1309,137 @@ public final class BatchUpdateMetastorePartitionsRequest
         requests_ = null;
       }
       return requestsBuilder_;
+    }
+
+    private java.lang.Object traceId_ = "";
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return The traceId.
+     */
+    public java.lang.String getTraceId() {
+      java.lang.Object ref = traceId_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        traceId_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return The bytes for traceId.
+     */
+    public com.google.protobuf.ByteString getTraceIdBytes() {
+      java.lang.Object ref = traceId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+        traceId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @param value The traceId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setTraceId(java.lang.String value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      traceId_ = value;
+      bitField0_ |= 0x00000004;
+      onChanged();
+      return this;
+    }
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return This builder for chaining.
+     */
+    public Builder clearTraceId() {
+      traceId_ = getDefaultInstance().getTraceId();
+      bitField0_ = (bitField0_ & ~0x00000004);
+      onChanged();
+      return this;
+    }
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @param value The bytes for traceId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setTraceIdBytes(com.google.protobuf.ByteString value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      checkByteStringIsUtf8(value);
+      traceId_ = value;
+      bitField0_ |= 0x00000004;
+      onChanged();
+      return this;
     }
 
     @java.lang.Override

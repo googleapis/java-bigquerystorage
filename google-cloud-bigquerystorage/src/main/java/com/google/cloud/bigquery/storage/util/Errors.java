@@ -19,7 +19,7 @@ import com.google.rpc.RetryInfo;
 import io.grpc.Metadata;
 import io.grpc.Status;
 import io.grpc.protobuf.ProtoUtils;
-import org.threeten.bp.Duration;
+import java.time.Duration;
 
 /** Static utility methods for working with Errors returned from the service. */
 public class Errors {
@@ -77,7 +77,8 @@ public class Errors {
             || description.contains("Rst Stream")
             || description.contains("RST_STREAM")
             || description.contains(
-                "INTERNAL: A retriable error could not be retried due to Extensible Stubs memory limits for streams")
+                "INTERNAL: A retriable error could not be retried due to Extensible Stubs memory"
+                    + " limits for streams")
             || description.contains("Connection closed with unknown cause")
             || description.contains("HTTP/2 error code: INTERNAL_ERROR"));
   }

@@ -28,8 +28,11 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -39,7 +42,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.threeten.bp.LocalTime;
 
 @RunWith(JUnit4.class)
 public class JsonToProtoMessageTest {
@@ -579,13 +581,53 @@ public class JsonToProtoMessageTest {
     TestInt64 expectedProto =
         TestInt64.newBuilder().setByte(1).setShort(1).setInt(1).setLong(1).setString(1).build();
     JSONObject json = new JSONObject();
-    json.put("byte", (byte) 1);
-    json.put("short", (short) 1);
+    json.put("byte", (byte) 1); // This does NOT actually verify byte as it is converted to int
+    json.put("short", (short) 1); // This does NOT actually verify short as it is converted to int
     json.put("int", 1);
     json.put("long", 1L);
     json.put("string", "1");
     DynamicMessage protoMsg =
         JsonToProtoMessage.INSTANCE.convertToProtoMessage(TestInt64.getDescriptor(), json);
+    assertEquals(expectedProto, protoMsg);
+  }
+
+  @Test
+  public void testInt64Extended() throws Exception {
+    TestInt64 expectedProto =
+        TestInt64.newBuilder().setByte(1).setShort(1).setInt(1).setLong(1).setString(1).build();
+    Map map = new HashMap();
+    map.put("byte", (byte) 1);
+    map.put("short", (short) 1);
+    map.put("int", (int) 1);
+    map.put("long", (long) 1);
+    map.put("string", "1");
+    JSONObject json = new JSONObject(map);
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.INSTANCE.convertToProtoMessage(TestInt64.getDescriptor(), json);
+    assertEquals(expectedProto, protoMsg);
+  }
+
+  @Test
+  public void testInt64Repeated() throws Exception {
+    RepeatedInt64 expectedProto =
+        RepeatedInt64.newBuilder()
+            .addTestRepeated(1)
+            .addTestRepeated(1)
+            .addTestRepeated(1)
+            .addTestRepeated(1)
+            .addTestRepeated(1)
+            .build();
+    Collection collection = new ArrayList();
+    collection.add((byte) 1);
+    collection.add((short) 1);
+    collection.add((int) 1);
+    collection.add((long) 1);
+    collection.add("1");
+    JSONArray array = new JSONArray(collection);
+    JSONObject json = new JSONObject();
+    json.put("test_repeated", array);
+    DynamicMessage protoMsg =
+        JsonToProtoMessage.INSTANCE.convertToProtoMessage(RepeatedInt64.getDescriptor(), json);
     assertEquals(expectedProto, protoMsg);
   }
 
@@ -798,6 +840,8 @@ public class JsonToProtoMessageTest {
             .addFields(TableFieldSchema.newBuilder(TEST_TIMESTAMP).setName("test_int").build())
             .addFields(TableFieldSchema.newBuilder(TEST_TIMESTAMP).setName("test_float").build())
             .addFields(TableFieldSchema.newBuilder(TEST_TIMESTAMP).setName("test_offset").build())
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP).setName("test_zero_offset").build())
             .addFields(TableFieldSchema.newBuilder(TEST_TIMESTAMP).setName("test_timezone").build())
             .addFields(TableFieldSchema.newBuilder(TEST_TIMESTAMP).setName("test_saformat").build())
             .build();
@@ -809,6 +853,7 @@ public class JsonToProtoMessageTest {
             .setTestInt(153480695L)
             .setTestFloat(153468069500L)
             .setTestOffset(1649135171000000L)
+            .setTestZeroOffset(1648493279010000L)
             .setTestTimezone(1649174771000000L)
             .setTestSaformat(1534680660000000L)
             .build();
@@ -819,6 +864,7 @@ public class JsonToProtoMessageTest {
     json.put("test_int", 153480695);
     json.put("test_float", "1.534680695e11");
     json.put("test_offset", "2022-04-05T09:06:11+04:00");
+    json.put("test_zero_offset", "2022-03-28T18:47:59.01+00:00");
     json.put("test_timezone", "2022-04-05 09:06:11 PST");
     json.put("test_saformat", "2018/08/19 12:11");
     DynamicMessage protoMsg =
@@ -857,6 +903,10 @@ public class JsonToProtoMessageTest {
                     .build())
             .addFields(
                 TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
+                    .setName("test_zero_offset_repeated")
+                    .build())
+            .addFields(
+                TableFieldSchema.newBuilder(TEST_TIMESTAMP_REPEATED)
                     .setName("test_timezone_repeated")
                     .build())
             .addFields(
@@ -872,6 +922,7 @@ public class JsonToProtoMessageTest {
             .addTestIntRepeated(153480695L)
             .addTestFloatRepeated(153468069500L)
             .addTestOffsetRepeated(1649135171000000L)
+            .addTestZeroOffsetRepeated(1648493279010000L)
             .addTestTimezoneRepeated(1649174771000000L)
             .addTestSaformatRepeated(1534680660000000L)
             .build();
@@ -882,6 +933,8 @@ public class JsonToProtoMessageTest {
     json.put("test_int_repeated", new JSONArray(new Integer[] {153480695}));
     json.put("test_float_repeated", new JSONArray(new String[] {"1.534680695e11"}));
     json.put("test_offset_repeated", new JSONArray(new String[] {"2022-04-05T09:06:11+04:00"}));
+    json.put(
+        "test_zero_offset_repeated", new JSONArray(new String[] {"2022-03-28T18:47:59.01+00:00"}));
     json.put("test_timezone_repeated", new JSONArray(new String[] {"2022-04-05 09:06:11 PST"}));
     json.put("test_saformat_repeated", new JSONArray(new String[] {"2018/08/19 12:11"}));
     DynamicMessage protoMsg =
@@ -1177,7 +1230,8 @@ public class JsonToProtoMessageTest {
       assertTrue(
           e.getMessage()
               .contains(
-                  "JSONObject does not have a string field at root.test_field_type.test_field_type."));
+                  "JSONObject does not have a string field at"
+                      + " root.test_field_type.test_field_type."));
     }
   }
 
@@ -1212,7 +1266,7 @@ public class JsonToProtoMessageTest {
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("1.23456")))
             .setTestGeo("POINT(1,1)")
             .setTestTimestamp(12345678L)
-            .setTestTime(CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(1, 0, 1)))
+            .setTestTime(CivilTimeEncoder.encodePacked64TimeMicrosLocalTime(LocalTime.of(1, 0, 1)))
             .setTestTimeStr(89332507144L)
             .addTestNumericRepeated(
                 BigDecimalByteStringEncoder.encodeToNumericByteString(new BigDecimal("0")))
@@ -1297,7 +1351,8 @@ public class JsonToProtoMessageTest {
             }));
     json.put("test_geo", "POINT(1,1)");
     json.put("test_timestamp", 12345678);
-    json.put("test_time", CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(1, 0, 1)));
+    json.put(
+        "test_time", CivilTimeEncoder.encodePacked64TimeMicrosLocalTime(LocalTime.of(1, 0, 1)));
     json.put("test_time_str", "20:51:10.1234");
     json.put("test_numeric_str", "12.4");
     json.put("test_numeric_short", 1);
@@ -1426,7 +1481,8 @@ public class JsonToProtoMessageTest {
       assertTrue(
           e.getMessage()
               .contains(
-                  "JSONObject does not have a string field at root.repeated_string.test_repeated[0]."));
+                  "JSONObject does not have a string field at"
+                      + " root.repeated_string.test_repeated[0]."));
     }
   }
 

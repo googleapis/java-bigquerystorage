@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ public final class BatchUpdateMetastorePartitionsResponse
     // @@protoc_insertion_point(message_implements:google.cloud.bigquery.storage.v1alpha.BatchUpdateMetastorePartitionsResponse)
     BatchUpdateMetastorePartitionsResponseOrBuilder {
   private static final long serialVersionUID = 0L;
+
   // Use BatchUpdateMetastorePartitionsResponse.newBuilder() to construct.
   private BatchUpdateMetastorePartitionsResponse(
       com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
@@ -71,11 +72,13 @@ public final class BatchUpdateMetastorePartitionsResponse
 
   @SuppressWarnings("serial")
   private java.util.List<com.google.cloud.bigquery.storage.v1alpha.MetastorePartition> partitions_;
+
   /**
    *
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>
@@ -85,11 +88,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       getPartitionsList() {
     return partitions_;
   }
+
   /**
    *
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>
@@ -100,11 +105,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       getPartitionsOrBuilderList() {
     return partitions_;
   }
+
   /**
    *
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>
@@ -113,11 +120,13 @@ public final class BatchUpdateMetastorePartitionsResponse
   public int getPartitionsCount() {
     return partitions_.size();
   }
+
   /**
    *
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>
@@ -126,11 +135,13 @@ public final class BatchUpdateMetastorePartitionsResponse
   public com.google.cloud.bigquery.storage.v1alpha.MetastorePartition getPartitions(int index) {
     return partitions_.get(index);
   }
+
   /**
    *
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>
@@ -311,6 +322,7 @@ public final class BatchUpdateMetastorePartitionsResponse
     Builder builder = new Builder(parent);
     return builder;
   }
+
   /**
    *
    *
@@ -581,6 +593,7 @@ public final class BatchUpdateMetastorePartitionsResponse
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -594,11 +607,13 @@ public final class BatchUpdateMetastorePartitionsResponse
         return partitionsBuilder_.getMessageList();
       }
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -611,11 +626,13 @@ public final class BatchUpdateMetastorePartitionsResponse
         return partitionsBuilder_.getCount();
       }
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -628,11 +645,13 @@ public final class BatchUpdateMetastorePartitionsResponse
         return partitionsBuilder_.getMessage(index);
       }
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -652,11 +671,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -674,11 +695,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -698,11 +721,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -722,11 +747,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -743,11 +770,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -765,11 +794,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -787,11 +818,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -807,11 +840,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -827,11 +862,13 @@ public final class BatchUpdateMetastorePartitionsResponse
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -841,11 +878,13 @@ public final class BatchUpdateMetastorePartitionsResponse
         getPartitionsBuilder(int index) {
       return getPartitionsFieldBuilder().getBuilder(index);
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -859,11 +898,13 @@ public final class BatchUpdateMetastorePartitionsResponse
         return partitionsBuilder_.getMessageOrBuilder(index);
       }
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -878,11 +919,13 @@ public final class BatchUpdateMetastorePartitionsResponse
         return java.util.Collections.unmodifiableList(partitions_);
       }
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -894,11 +937,13 @@ public final class BatchUpdateMetastorePartitionsResponse
           .addBuilder(
               com.google.cloud.bigquery.storage.v1alpha.MetastorePartition.getDefaultInstance());
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;
@@ -911,11 +956,13 @@ public final class BatchUpdateMetastorePartitionsResponse
               index,
               com.google.cloud.bigquery.storage.v1alpha.MetastorePartition.getDefaultInstance());
     }
+
     /**
      *
      *
      * <pre>
      * The list of metastore partitions that have been updated.
+     * A maximum of 900 partitions can be updated in a batch.
      * </pre>
      *
      * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,47 +29,56 @@ public interface BatchUpdateMetastorePartitionsResponseOrBuilder
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>
    */
   java.util.List<com.google.cloud.bigquery.storage.v1alpha.MetastorePartition> getPartitionsList();
+
   /**
    *
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>
    */
   com.google.cloud.bigquery.storage.v1alpha.MetastorePartition getPartitions(int index);
+
   /**
    *
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>
    */
   int getPartitionsCount();
+
   /**
    *
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>
    */
   java.util.List<? extends com.google.cloud.bigquery.storage.v1alpha.MetastorePartitionOrBuilder>
       getPartitionsOrBuilderList();
+
   /**
    *
    *
    * <pre>
    * The list of metastore partitions that have been updated.
+   * A maximum of 900 partitions can be updated in a batch.
    * </pre>
    *
    * <code>repeated .google.cloud.bigquery.storage.v1alpha.MetastorePartition partitions = 1;</code>

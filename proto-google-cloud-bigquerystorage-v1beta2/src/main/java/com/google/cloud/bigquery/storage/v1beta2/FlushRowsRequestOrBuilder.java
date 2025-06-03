@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public interface FlushRowsRequestOrBuilder
    * @return The writeStream.
    */
   java.lang.String getWriteStream();
+
   /**
    *
    *
@@ -66,6 +67,7 @@ public interface FlushRowsRequestOrBuilder
    * @return Whether the offset field is set.
    */
   boolean hasOffset();
+
   /**
    *
    *
@@ -79,6 +81,7 @@ public interface FlushRowsRequestOrBuilder
    * @return The offset.
    */
   com.google.protobuf.Int64Value getOffset();
+
   /**
    *
    *

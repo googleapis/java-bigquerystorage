@@ -30,6 +30,14 @@ import com.google.protobuf.UninitializedMessageException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,14 +45,6 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.threeten.bp.LocalDateTime;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.format.DateTimeFormatter;
-import org.threeten.bp.format.DateTimeFormatterBuilder;
-import org.threeten.bp.format.TextStyle;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.TemporalAccessor;
 
 /**
  * Converts JSON data to Protobuf messages given the Protobuf descriptor and BigQuery table schema.
@@ -93,13 +93,10 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           .appendLiteral(' ')
           .optionalEnd()
           .optionalStart()
-          .appendOffset("+HH:MM", "+00:00")
+          .appendZoneOrOffsetId()
           .optionalEnd()
           .optionalStart()
           .appendZoneText(TextStyle.SHORT)
-          .optionalEnd()
-          .optionalStart()
-          .appendLiteral('Z')
           .optionalEnd()
           .toFormatter()
           .withZone(ZoneOffset.UTC);
@@ -441,8 +438,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           case DATETIME:
           case TIMESTAMP:
             fieldSchema =
-                fieldSchema
-                    .toBuilder()
+                fieldSchema.toBuilder()
                     .addFields(
                         TableFieldSchema.newBuilder()
                             .setName("start")
@@ -489,8 +485,9 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
    * Fills a non-repetaed protoField with the json data.
    *
    * @param protoMsg The protocol buffer message being constructed
-   * @param fieldDescriptor
-   * @param fieldSchema
+   * @param fieldDescriptor Proto format to be transmitted over the wire (derived from table schema
+   *     via BQTableSchemaToProtoDescriptor.BQTableSchemaModeMap)
+   * @param fieldSchema Actual table column schema type if available
    * @param json
    * @param exactJsonKeyName Exact key name in JSONObject instead of lowercased version
    * @param currentScope Debugging purposes
@@ -604,7 +601,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               protoMsg.setField(
                   fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64DatetimeMicros(
+                  CivilTimeEncoder.encodePacked64DatetimeMicrosLocalDateTime(
                       LocalDateTime.parse((String) val, DATETIME_FORMATTER)));
               return;
             } else if (val instanceof Long) {
@@ -615,7 +612,8 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               protoMsg.setField(
                   fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
+                  CivilTimeEncoder.encodePacked64TimeMicrosLocalTime(
+                      LocalTime.parse((String) val)));
               return;
             } else if (val instanceof Long) {
               protoMsg.setField(fieldDescriptor, val);
@@ -648,6 +646,12 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           return;
         } else if (val instanceof Long) {
           protoMsg.setField(fieldDescriptor, val);
+          return;
+        } else if (val instanceof Byte) {
+          protoMsg.setField(fieldDescriptor, Long.valueOf((Byte) val));
+          return;
+        } else if (val instanceof Short) {
+          protoMsg.setField(fieldDescriptor, Long.valueOf((Short) val));
           return;
         }
         if (val instanceof String) {
@@ -729,8 +733,9 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
    * Fills a repeated protoField with the json data.
    *
    * @param protoMsg The protocol buffer message being constructed
-   * @param fieldDescriptor
-   * @param fieldSchema
+   * @param fieldDescriptor Proto format to be transmitted over the wire (derived from table schema
+   *     via BQTableSchemaToProtoDescriptor.BQTableSchemaModeMap)
+   * @param fieldSchema Actual table column schema type if available
    * @param json If root level has no matching fields, throws exception.
    * @param exactJsonKeyName Exact key name in JSONObject instead of lowercased version
    * @param currentScope Debugging purposes
@@ -872,7 +877,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               protoMsg.addRepeatedField(
                   fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64DatetimeMicros(
+                  CivilTimeEncoder.encodePacked64DatetimeMicrosLocalDateTime(
                       LocalDateTime.parse((String) val, DATETIME_FORMATTER)));
             } else if (val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, val);
@@ -883,7 +888,8 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             if (val instanceof String) {
               protoMsg.addRepeatedField(
                   fieldDescriptor,
-                  CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.parse((String) val)));
+                  CivilTimeEncoder.encodePacked64TimeMicrosLocalTime(
+                      LocalTime.parse((String) val)));
             } else if (val instanceof Long) {
               protoMsg.addRepeatedField(fieldDescriptor, val);
             } else {
@@ -913,6 +919,10 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             protoMsg.addRepeatedField(fieldDescriptor, Long.valueOf((Integer) val));
           } else if (val instanceof Long) {
             protoMsg.addRepeatedField(fieldDescriptor, val);
+          } else if (val instanceof Byte) {
+            protoMsg.addRepeatedField(fieldDescriptor, Long.valueOf((Byte) val));
+          } else if (val instanceof Short) {
+            protoMsg.addRepeatedField(fieldDescriptor, Long.valueOf((Short) val));
           } else if (val instanceof String) {
             Long parsed = Longs.tryParse((String) val);
             if (parsed != null) {

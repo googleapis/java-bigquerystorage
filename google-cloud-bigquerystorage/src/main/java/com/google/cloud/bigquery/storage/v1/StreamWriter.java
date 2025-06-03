@@ -73,6 +73,9 @@ public class StreamWriter implements AutoCloseable {
    */
   private final String streamName;
 
+  /** This is the library version may or may not include library version id. */
+  private final String fullTraceId;
+
   /** Every writer has a fixed proto schema. */
   private final ProtoSchema writerSchema;
 
@@ -233,6 +236,7 @@ public class StreamWriter implements AutoCloseable {
     BigQueryWriteSettings clientSettings = getBigQueryWriteSettings(builder);
     this.requestProfilerHook =
         new RequestProfiler.RequestProfilerHook(builder.enableRequestProfiler);
+    this.fullTraceId = builder.getFullTraceId();
     if (builder.enableRequestProfiler) {
       // Request profiler is enabled on singleton level, from now on a periodical flush will be
       // started
@@ -257,7 +261,7 @@ public class StreamWriter implements AutoCloseable {
                   builder.retrySettings,
                   builder.enableRequestProfiler,
                   builder.enableOpenTelemetry,
-                  /*isMultiplexing=*/ false));
+                  /* isMultiplexing= */ false));
     } else {
       if (!isDefaultStream(streamName)) {
         log.warning(
@@ -320,7 +324,6 @@ public class StreamWriter implements AutoCloseable {
                         builder.maxInflightBytes,
                         builder.maxRetryDuration,
                         builder.limitExceededBehavior,
-                        builder.getFullTraceId(),
                         builder.compressorName,
                         client.getSettings(),
                         builder.retrySettings,
@@ -359,6 +362,10 @@ public class StreamWriter implements AutoCloseable {
     return streamMatcher.find();
   }
 
+  String getFullTraceId() {
+    return fullTraceId;
+  }
+
   AppendRowsRequest.MissingValueInterpretation getDefaultValueInterpretation() {
     return defaultMissingValueInterpretation;
   }
@@ -372,8 +379,8 @@ public class StreamWriter implements AutoCloseable {
           new BigQueryWriteSettings.Builder()
               .setTransportChannelProvider(
                   BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
-                      .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))
-                      .setKeepAliveTimeout(org.threeten.bp.Duration.ofMinutes(1))
+                      .setKeepAliveTimeDuration(java.time.Duration.ofMinutes(1))
+                      .setKeepAliveTimeoutDuration(java.time.Duration.ofMinutes(1))
                       .setKeepAliveWithoutCalls(true)
                       .setChannelsPerCpu(2)
                       .build())
@@ -401,15 +408,6 @@ public class StreamWriter implements AutoCloseable {
 
   // Validate whether the fetched connection pool matched certain properties.
   private void validateFetchedConnectonPool(StreamWriter.Builder builder) {
-    String storedTraceId =
-        this.singleConnectionOrConnectionPool.connectionWorkerPool().getTraceId();
-    if (!Objects.equals(storedTraceId, builder.getFullTraceId())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Trace id used for the same connection pool for the same location must be the same, "
-                  + "however stored trace id is %s, and expected trace id is %s.",
-              storedTraceId, builder.getFullTraceId()));
-    }
     FlowController.LimitExceededBehavior storedLimitExceededBehavior =
         singleConnectionOrConnectionPool.connectionWorkerPool().limitExceededBehavior();
     if (!Objects.equals(storedLimitExceededBehavior, builder.limitExceededBehavior)) {
@@ -477,8 +475,8 @@ public class StreamWriter implements AutoCloseable {
       AppendRequestAndResponse requestWrapper =
           new AppendRequestAndResponse(
               AppendRowsRequest.newBuilder().build(),
-              /*StreamWriter=*/ this,
-              /*RetrySettings=*/ null,
+              /* StreamWriter= */ this,
+              /* RetrySettings= */ null,
               requestUniqueId);
       requestWrapper.appendResult.setException(
           new Exceptions.StreamWriterClosedException(
@@ -510,27 +508,37 @@ public class StreamWriter implements AutoCloseable {
     return singleConnectionOrConnectionPool.getInflightWaitSeconds(this);
   }
 
-  /** @return a unique Id for the writer. */
+  /**
+   * @return a unique Id for the writer.
+   */
   public String getWriterId() {
     return singleConnectionOrConnectionPool.getWriterId(writerId);
   }
 
-  /** @return name of the Stream that this writer is working on. */
+  /**
+   * @return name of the Stream that this writer is working on.
+   */
   public String getStreamName() {
     return streamName;
   }
 
-  /** @return the passed in user schema. */
+  /**
+   * @return the passed in user schema.
+   */
   public ProtoSchema getProtoSchema() {
     return writerSchema;
   }
 
-  /** @return the location of the destination. */
+  /**
+   * @return the location of the destination.
+   */
   public String getLocation() {
     return location;
   }
 
-  /** @return the missing value interpretation map used for the writer. */
+  /**
+   * @return the missing value interpretation map used for the writer.
+   */
   public Map<String, AppendRowsRequest.MissingValueInterpretation>
       getMissingValueInterpretationMap() {
     return missingValueInterpretationMap;
@@ -551,7 +559,9 @@ public class StreamWriter implements AutoCloseable {
     }
   }
 
-  /** @return if user explicitly closed the writer. */
+  /**
+   * @return if user explicitly closed the writer.
+   */
   public boolean isUserClosed() {
     return userClosed.get();
   }
@@ -600,7 +610,9 @@ public class StreamWriter implements AutoCloseable {
     ConnectionWorker.MAXIMUM_REQUEST_CALLBACK_WAIT_TIME = waitTime;
   }
 
-  /** @return the default stream name associated with tableName */
+  /**
+   * @return the default stream name associated with tableName
+   */
   public static String getDefaultStreamName(TableName tableName) {
     return tableName + defaultStreamMatching;
   }
@@ -731,8 +743,21 @@ public class StreamWriter implements AutoCloseable {
     }
 
     /**
-     * Enable multiplexing for this writer. In multiplexing mode tables will share the same
-     * connection if possible until the connection is overwhelmed.
+     * Enables a static shared bidi-streaming connection pool that would dynamically scale up
+     * connections based on backlog within each individual connection. A single table's traffic
+     * might be splitted into multiple connections if needed. Different tables' traffic can also be
+     * multiplexed within the same connection.
+     *
+     * <pre>
+     * Each connection pool would have a upper limit (default to 20) and lower limit (default to
+     * 2) for the number of active connections. This parameter can be tuned via a static method
+     * exposed on {@link ConnectionWorkerPool}.
+     *
+     * Example:
+     * ConnectionWorkerPool.setOptions(
+     *     Settings.builder().setMinConnectionsPerRegion(4).setMaxConnectionsPerRegion(10).build());
+     *
+     * </pre>
      *
      * @param enableConnectionPool
      * @return Builder

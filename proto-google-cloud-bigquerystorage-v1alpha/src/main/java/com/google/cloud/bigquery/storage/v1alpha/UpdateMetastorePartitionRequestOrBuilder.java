@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public interface UpdateMetastorePartitionRequestOrBuilder
    * @return Whether the metastorePartition field is set.
    */
   boolean hasMetastorePartition();
+
   /**
    *
    *
@@ -52,6 +53,7 @@ public interface UpdateMetastorePartitionRequestOrBuilder
    * @return The metastorePartition.
    */
   com.google.cloud.bigquery.storage.v1alpha.MetastorePartition getMetastorePartition();
+
   /**
    *
    *
@@ -79,6 +81,7 @@ public interface UpdateMetastorePartitionRequestOrBuilder
    * @return Whether the updateMask field is set.
    */
   boolean hasUpdateMask();
+
   /**
    *
    *
@@ -92,6 +95,7 @@ public interface UpdateMetastorePartitionRequestOrBuilder
    * @return The updateMask.
    */
   com.google.protobuf.FieldMask getUpdateMask();
+
   /**
    *
    *

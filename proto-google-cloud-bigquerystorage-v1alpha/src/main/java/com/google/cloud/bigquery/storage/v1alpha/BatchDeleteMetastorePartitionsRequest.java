@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ public final class BatchDeleteMetastorePartitionsRequest
     // @@protoc_insertion_point(message_implements:google.cloud.bigquery.storage.v1alpha.BatchDeleteMetastorePartitionsRequest)
     BatchDeleteMetastorePartitionsRequestOrBuilder {
   private static final long serialVersionUID = 0L;
+
   // Use BatchDeleteMetastorePartitionsRequest.newBuilder() to construct.
   private BatchDeleteMetastorePartitionsRequest(
       com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
@@ -45,6 +46,7 @@ public final class BatchDeleteMetastorePartitionsRequest
   private BatchDeleteMetastorePartitionsRequest() {
     parent_ = "";
     partitionValues_ = java.util.Collections.emptyList();
+    traceId_ = "";
   }
 
   @java.lang.Override
@@ -73,6 +75,7 @@ public final class BatchDeleteMetastorePartitionsRequest
 
   @SuppressWarnings("serial")
   private volatile java.lang.Object parent_ = "";
+
   /**
    *
    *
@@ -100,6 +103,7 @@ public final class BatchDeleteMetastorePartitionsRequest
       return s;
     }
   }
+
   /**
    *
    *
@@ -133,12 +137,13 @@ public final class BatchDeleteMetastorePartitionsRequest
   @SuppressWarnings("serial")
   private java.util.List<com.google.cloud.bigquery.storage.v1alpha.MetastorePartitionValues>
       partitionValues_;
+
   /**
    *
    *
    * <pre>
    * Required. The list of metastore partitions (identified by its values) to be
-   * deleted. A maximum of 100 partitions can be deleted in a batch.
+   * deleted. A maximum of 900 partitions can be deleted in a batch.
    * </pre>
    *
    * <code>
@@ -150,12 +155,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       getPartitionValuesList() {
     return partitionValues_;
   }
+
   /**
    *
    *
    * <pre>
    * Required. The list of metastore partitions (identified by its values) to be
-   * deleted. A maximum of 100 partitions can be deleted in a batch.
+   * deleted. A maximum of 900 partitions can be deleted in a batch.
    * </pre>
    *
    * <code>
@@ -168,12 +174,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       getPartitionValuesOrBuilderList() {
     return partitionValues_;
   }
+
   /**
    *
    *
    * <pre>
    * Required. The list of metastore partitions (identified by its values) to be
-   * deleted. A maximum of 100 partitions can be deleted in a batch.
+   * deleted. A maximum of 900 partitions can be deleted in a batch.
    * </pre>
    *
    * <code>
@@ -184,12 +191,13 @@ public final class BatchDeleteMetastorePartitionsRequest
   public int getPartitionValuesCount() {
     return partitionValues_.size();
   }
+
   /**
    *
    *
    * <pre>
    * Required. The list of metastore partitions (identified by its values) to be
-   * deleted. A maximum of 100 partitions can be deleted in a batch.
+   * deleted. A maximum of 900 partitions can be deleted in a batch.
    * </pre>
    *
    * <code>
@@ -201,12 +209,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       int index) {
     return partitionValues_.get(index);
   }
+
   /**
    *
    *
    * <pre>
    * Required. The list of metastore partitions (identified by its values) to be
-   * deleted. A maximum of 100 partitions can be deleted in a batch.
+   * deleted. A maximum of 900 partitions can be deleted in a batch.
    * </pre>
    *
    * <code>
@@ -217,6 +226,67 @@ public final class BatchDeleteMetastorePartitionsRequest
   public com.google.cloud.bigquery.storage.v1alpha.MetastorePartitionValuesOrBuilder
       getPartitionValuesOrBuilder(int index) {
     return partitionValues_.get(index);
+  }
+
+  public static final int TRACE_ID_FIELD_NUMBER = 4;
+
+  @SuppressWarnings("serial")
+  private volatile java.lang.Object traceId_ = "";
+
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Optional trace id to be used for debugging. It is expected that
+   * the client sets the same `trace_id` for all the batches in the same
+   * operation, so that it is possible to tie together the logs to all the
+   * batches in the same operation. This is expected, but not required, to be
+   * globally unique.
+   * </pre>
+   *
+   * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The traceId.
+   */
+  @java.lang.Override
+  public java.lang.String getTraceId() {
+    java.lang.Object ref = traceId_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      traceId_ = s;
+      return s;
+    }
+  }
+
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Optional trace id to be used for debugging. It is expected that
+   * the client sets the same `trace_id` for all the batches in the same
+   * operation, so that it is possible to tie together the logs to all the
+   * batches in the same operation. This is expected, but not required, to be
+   * globally unique.
+   * </pre>
+   *
+   * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The bytes for traceId.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString getTraceIdBytes() {
+    java.lang.Object ref = traceId_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b =
+          com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+      traceId_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
   }
 
   private byte memoizedIsInitialized = -1;
@@ -239,6 +309,9 @@ public final class BatchDeleteMetastorePartitionsRequest
     for (int i = 0; i < partitionValues_.size(); i++) {
       output.writeMessage(2, partitionValues_.get(i));
     }
+    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(traceId_)) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 4, traceId_);
+    }
     getUnknownFields().writeTo(output);
   }
 
@@ -253,6 +326,9 @@ public final class BatchDeleteMetastorePartitionsRequest
     }
     for (int i = 0; i < partitionValues_.size(); i++) {
       size += com.google.protobuf.CodedOutputStream.computeMessageSize(2, partitionValues_.get(i));
+    }
+    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(traceId_)) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, traceId_);
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -274,6 +350,7 @@ public final class BatchDeleteMetastorePartitionsRequest
 
     if (!getParent().equals(other.getParent())) return false;
     if (!getPartitionValuesList().equals(other.getPartitionValuesList())) return false;
+    if (!getTraceId().equals(other.getTraceId())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -291,6 +368,8 @@ public final class BatchDeleteMetastorePartitionsRequest
       hash = (37 * hash) + PARTITION_VALUES_FIELD_NUMBER;
       hash = (53 * hash) + getPartitionValuesList().hashCode();
     }
+    hash = (37 * hash) + TRACE_ID_FIELD_NUMBER;
+    hash = (53 * hash) + getTraceId().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -398,6 +477,7 @@ public final class BatchDeleteMetastorePartitionsRequest
     Builder builder = new Builder(parent);
     return builder;
   }
+
   /**
    *
    *
@@ -450,6 +530,7 @@ public final class BatchDeleteMetastorePartitionsRequest
         partitionValuesBuilder_.clear();
       }
       bitField0_ = (bitField0_ & ~0x00000002);
+      traceId_ = "";
       return this;
     }
 
@@ -507,6 +588,9 @@ public final class BatchDeleteMetastorePartitionsRequest
       int from_bitField0_ = bitField0_;
       if (((from_bitField0_ & 0x00000001) != 0)) {
         result.parent_ = parent_;
+      }
+      if (((from_bitField0_ & 0x00000004) != 0)) {
+        result.traceId_ = traceId_;
       }
     }
 
@@ -594,6 +678,11 @@ public final class BatchDeleteMetastorePartitionsRequest
           }
         }
       }
+      if (!other.getTraceId().isEmpty()) {
+        traceId_ = other.traceId_;
+        bitField0_ |= 0x00000004;
+        onChanged();
+      }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
       return this;
@@ -640,6 +729,12 @@ public final class BatchDeleteMetastorePartitionsRequest
                 }
                 break;
               } // case 18
+            case 34:
+              {
+                traceId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 34
             default:
               {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
@@ -660,6 +755,7 @@ public final class BatchDeleteMetastorePartitionsRequest
     private int bitField0_;
 
     private java.lang.Object parent_ = "";
+
     /**
      *
      *
@@ -686,6 +782,7 @@ public final class BatchDeleteMetastorePartitionsRequest
         return (java.lang.String) ref;
       }
     }
+
     /**
      *
      *
@@ -712,6 +809,7 @@ public final class BatchDeleteMetastorePartitionsRequest
         return (com.google.protobuf.ByteString) ref;
       }
     }
+
     /**
      *
      *
@@ -737,6 +835,7 @@ public final class BatchDeleteMetastorePartitionsRequest
       onChanged();
       return this;
     }
+
     /**
      *
      *
@@ -758,6 +857,7 @@ public final class BatchDeleteMetastorePartitionsRequest
       onChanged();
       return this;
     }
+
     /**
      *
      *
@@ -809,7 +909,7 @@ public final class BatchDeleteMetastorePartitionsRequest
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -824,12 +924,13 @@ public final class BatchDeleteMetastorePartitionsRequest
         return partitionValuesBuilder_.getMessageList();
       }
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -843,12 +944,13 @@ public final class BatchDeleteMetastorePartitionsRequest
         return partitionValuesBuilder_.getCount();
       }
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -863,12 +965,13 @@ public final class BatchDeleteMetastorePartitionsRequest
         return partitionValuesBuilder_.getMessage(index);
       }
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -889,12 +992,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -914,12 +1018,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -940,12 +1045,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -966,12 +1072,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -990,12 +1097,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1015,12 +1123,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1040,12 +1149,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1062,12 +1172,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1084,12 +1195,13 @@ public final class BatchDeleteMetastorePartitionsRequest
       }
       return this;
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1100,12 +1212,13 @@ public final class BatchDeleteMetastorePartitionsRequest
         getPartitionValuesBuilder(int index) {
       return getPartitionValuesFieldBuilder().getBuilder(index);
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1120,12 +1233,13 @@ public final class BatchDeleteMetastorePartitionsRequest
         return partitionValuesBuilder_.getMessageOrBuilder(index);
       }
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1141,12 +1255,13 @@ public final class BatchDeleteMetastorePartitionsRequest
         return java.util.Collections.unmodifiableList(partitionValues_);
       }
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1160,12 +1275,13 @@ public final class BatchDeleteMetastorePartitionsRequest
               com.google.cloud.bigquery.storage.v1alpha.MetastorePartitionValues
                   .getDefaultInstance());
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1180,12 +1296,13 @@ public final class BatchDeleteMetastorePartitionsRequest
               com.google.cloud.bigquery.storage.v1alpha.MetastorePartitionValues
                   .getDefaultInstance());
     }
+
     /**
      *
      *
      * <pre>
      * Required. The list of metastore partitions (identified by its values) to be
-     * deleted. A maximum of 100 partitions can be deleted in a batch.
+     * deleted. A maximum of 900 partitions can be deleted in a batch.
      * </pre>
      *
      * <code>
@@ -1216,6 +1333,137 @@ public final class BatchDeleteMetastorePartitionsRequest
         partitionValues_ = null;
       }
       return partitionValuesBuilder_;
+    }
+
+    private java.lang.Object traceId_ = "";
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return The traceId.
+     */
+    public java.lang.String getTraceId() {
+      java.lang.Object ref = traceId_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        traceId_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return The bytes for traceId.
+     */
+    public com.google.protobuf.ByteString getTraceIdBytes() {
+      java.lang.Object ref = traceId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+        traceId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @param value The traceId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setTraceId(java.lang.String value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      traceId_ = value;
+      bitField0_ |= 0x00000004;
+      onChanged();
+      return this;
+    }
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @return This builder for chaining.
+     */
+    public Builder clearTraceId() {
+      traceId_ = getDefaultInstance().getTraceId();
+      bitField0_ = (bitField0_ & ~0x00000004);
+      onChanged();
+      return this;
+    }
+
+    /**
+     *
+     *
+     * <pre>
+     * Optional. Optional trace id to be used for debugging. It is expected that
+     * the client sets the same `trace_id` for all the batches in the same
+     * operation, so that it is possible to tie together the logs to all the
+     * batches in the same operation. This is expected, but not required, to be
+     * globally unique.
+     * </pre>
+     *
+     * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+     *
+     * @param value The bytes for traceId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setTraceIdBytes(com.google.protobuf.ByteString value) {
+      if (value == null) {
+        throw new NullPointerException();
+      }
+      checkByteStringIsUtf8(value);
+      traceId_ = value;
+      bitField0_ |= 0x00000004;
+      onChanged();
+      return this;
     }
 
     @java.lang.Override

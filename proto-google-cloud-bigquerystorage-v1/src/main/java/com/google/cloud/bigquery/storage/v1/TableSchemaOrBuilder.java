@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ public interface TableSchemaOrBuilder
    * <code>repeated .google.cloud.bigquery.storage.v1.TableFieldSchema fields = 1;</code>
    */
   java.util.List<com.google.cloud.bigquery.storage.v1.TableFieldSchema> getFieldsList();
+
   /**
    *
    *
@@ -44,6 +45,7 @@ public interface TableSchemaOrBuilder
    * <code>repeated .google.cloud.bigquery.storage.v1.TableFieldSchema fields = 1;</code>
    */
   com.google.cloud.bigquery.storage.v1.TableFieldSchema getFields(int index);
+
   /**
    *
    *
@@ -54,6 +56,7 @@ public interface TableSchemaOrBuilder
    * <code>repeated .google.cloud.bigquery.storage.v1.TableFieldSchema fields = 1;</code>
    */
   int getFieldsCount();
+
   /**
    *
    *
@@ -65,6 +68,7 @@ public interface TableSchemaOrBuilder
    */
   java.util.List<? extends com.google.cloud.bigquery.storage.v1.TableFieldSchemaOrBuilder>
       getFieldsOrBuilderList();
+
   /**
    *
    *

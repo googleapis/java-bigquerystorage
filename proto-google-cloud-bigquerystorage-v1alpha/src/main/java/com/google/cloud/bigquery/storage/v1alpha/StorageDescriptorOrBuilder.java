@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public interface StorageDescriptorOrBuilder
    * @return The locationUri.
    */
   java.lang.String getLocationUri();
+
   /**
    *
    *
@@ -67,6 +68,7 @@ public interface StorageDescriptorOrBuilder
    * @return The inputFormat.
    */
   java.lang.String getInputFormat();
+
   /**
    *
    *
@@ -96,6 +98,7 @@ public interface StorageDescriptorOrBuilder
    * @return The outputFormat.
    */
   java.lang.String getOutputFormat();
+
   /**
    *
    *
@@ -125,6 +128,7 @@ public interface StorageDescriptorOrBuilder
    * @return Whether the serdeInfo field is set.
    */
   boolean hasSerdeInfo();
+
   /**
    *
    *
@@ -139,6 +143,7 @@ public interface StorageDescriptorOrBuilder
    * @return The serdeInfo.
    */
   com.google.cloud.bigquery.storage.v1alpha.SerDeInfo getSerdeInfo();
+
   /**
    *
    *

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ public interface SerDeInfoOrBuilder
    * @return The name.
    */
   java.lang.String getName();
+
   /**
    *
    *
@@ -66,6 +67,7 @@ public interface SerDeInfoOrBuilder
    * @return The serializationLibrary.
    */
   java.lang.String getSerializationLibrary();
+
   /**
    *
    *
@@ -95,6 +97,7 @@ public interface SerDeInfoOrBuilder
    * </code>
    */
   int getParametersCount();
+
   /**
    *
    *
@@ -108,9 +111,11 @@ public interface SerDeInfoOrBuilder
    * </code>
    */
   boolean containsParameters(java.lang.String key);
+
   /** Use {@link #getParametersMap()} instead. */
   @java.lang.Deprecated
   java.util.Map<java.lang.String, java.lang.String> getParameters();
+
   /**
    *
    *
@@ -124,6 +129,7 @@ public interface SerDeInfoOrBuilder
    * </code>
    */
   java.util.Map<java.lang.String, java.lang.String> getParametersMap();
+
   /**
    *
    *
@@ -141,6 +147,7 @@ public interface SerDeInfoOrBuilder
       java.lang.String key,
       /* nullable */
       java.lang.String defaultValue);
+
   /**
    *
    *

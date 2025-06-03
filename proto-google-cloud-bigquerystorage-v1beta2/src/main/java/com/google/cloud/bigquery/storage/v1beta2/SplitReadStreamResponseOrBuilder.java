@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public interface SplitReadStreamResponseOrBuilder
    * @return Whether the primaryStream field is set.
    */
   boolean hasPrimaryStream();
+
   /**
    *
    *
@@ -52,6 +53,7 @@ public interface SplitReadStreamResponseOrBuilder
    * @return The primaryStream.
    */
   com.google.cloud.bigquery.storage.v1beta2.ReadStream getPrimaryStream();
+
   /**
    *
    *
@@ -78,6 +80,7 @@ public interface SplitReadStreamResponseOrBuilder
    * @return Whether the remainderStream field is set.
    */
   boolean hasRemainderStream();
+
   /**
    *
    *
@@ -91,6 +94,7 @@ public interface SplitReadStreamResponseOrBuilder
    * @return The remainderStream.
    */
   com.google.cloud.bigquery.storage.v1beta2.ReadStream getRemainderStream();
+
   /**
    *
    *

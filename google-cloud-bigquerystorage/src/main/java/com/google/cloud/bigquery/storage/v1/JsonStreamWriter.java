@@ -21,6 +21,7 @@ import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.ExecutorProvider;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.TransportChannelProvider;
+import com.google.gson.JsonArray;
 import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.time.Duration;
@@ -45,7 +46,9 @@ public class JsonStreamWriter implements AutoCloseable {
    * @param builder The Builder object for the JsonStreamWriter
    */
   private JsonStreamWriter(SchemaAwareStreamWriter.Builder<Object> builder)
-      throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
+      throws Descriptors.DescriptorValidationException,
+          IllegalArgumentException,
+          IOException,
           InterruptedException {
     this.schemaAwareStreamWriter = builder.build();
   }
@@ -81,11 +84,48 @@ public class JsonStreamWriter implements AutoCloseable {
     return this.schemaAwareStreamWriter.append(jsonArr, offset);
   }
 
+  private JSONArray gsonToOrgJSON(JsonArray jsonArr) {
+    return new JSONArray(jsonArr.toString());
+  }
+
+  /**
+   * Writes a JsonArray that contains JsonObjects to the BigQuery table by first converting the JSON
+   * data to protobuf messages, then using StreamWriter's append() to write the data at current end
+   * of stream. If there is a schema update, the current StreamWriter is closed. A new StreamWriter
+   * is created with the updated TableSchema.
+   *
+   * @param jsonArr The JSON array that contains JsonObjects to be written
+   * @return {@code ApiFuture<AppendRowsResponse>} returns an AppendRowsResponse message wrapped in
+   *     an ApiFuture
+   */
+  public ApiFuture<AppendRowsResponse> append(JsonArray jsonArr)
+      throws IOException, Descriptors.DescriptorValidationException {
+    return this.append(jsonArr, -1);
+  }
+
+  /**
+   * Writes a JsonArray that contains JsonObjects to the BigQuery table by first converting the JSON
+   * data to protobuf messages, then using StreamWriter's append() to write the data at the
+   * specified offset. If there is a schema update, the current StreamWriter is closed. A new
+   * StreamWriter is created with the updated TableSchema.
+   *
+   * @param jsonArr The JSON array that contains JSONObjects to be written
+   * @param offset Offset for deduplication
+   * @return {@code ApiFuture<AppendRowsResponse>} returns an AppendRowsResponse message wrapped in
+   *     an ApiFuture
+   */
+  public ApiFuture<AppendRowsResponse> append(JsonArray jsonArr, long offset)
+      throws IOException, Descriptors.DescriptorValidationException {
+    return this.append(gsonToOrgJSON(jsonArr), offset);
+  }
+
   public String getStreamName() {
     return this.schemaAwareStreamWriter.getStreamName();
   }
 
-  /** @return A unique Id for this writer. */
+  /**
+   * @return A unique Id for this writer.
+   */
   public String getWriterId() {
     return this.schemaAwareStreamWriter.getWriterId();
   }
@@ -119,7 +159,9 @@ public class JsonStreamWriter implements AutoCloseable {
     return this.schemaAwareStreamWriter.getInflightWaitSeconds();
   }
 
-  /** @return the missing value interpretation map used for the writer. */
+  /**
+   * @return the missing value interpretation map used for the writer.
+   */
   public Map<String, AppendRowsRequest.MissingValueInterpretation>
       getMissingValueInterpretationMap() {
     return this.schemaAwareStreamWriter.getMissingValueInterpretationMap();
@@ -207,7 +249,9 @@ public class JsonStreamWriter implements AutoCloseable {
     return this.schemaAwareStreamWriter.isClosed();
   }
 
-  /** @return if user explicitly closed the writer. */
+  /**
+   * @return if user explicitly closed the writer.
+   */
   public boolean isUserClosed() {
     return this.schemaAwareStreamWriter.isUserClosed();
   }
@@ -312,8 +356,21 @@ public class JsonStreamWriter implements AutoCloseable {
     }
 
     /**
-     * Enable multiplexing for this writer. In multiplexing mode tables will share the same
-     * connection if possible until the connection is overwhelmed.
+     * Enables a static shared bidi-streaming connection pool that would dynamically scale up
+     * connections based on backlog within each individual connection. A single table's traffic
+     * might be splitted into multiple connections if needed. Different tables' traffic can also be
+     * multiplexed within the same connection.
+     *
+     * <pre>
+     * Each connection pool would have a upper limit (default to 20) and lower limit (default to
+     * 2) for the number of active connections. This parameter can be tuned via a static method
+     * exposed on {@link ConnectionWorkerPool}.
+     *
+     * Example:
+     * ConnectionWorkerPool.setOptions(
+     *     Settings.builder().setMinConnectionsPerRegion(4).setMaxConnectionsPerRegion(10).build());
+     *
+     * </pre>
      *
      * @param enableConnectionPool
      * @return Builder
@@ -423,7 +480,9 @@ public class JsonStreamWriter implements AutoCloseable {
      * @return JsonStreamWriter
      */
     public JsonStreamWriter build()
-        throws Descriptors.DescriptorValidationException, IllegalArgumentException, IOException,
+        throws Descriptors.DescriptorValidationException,
+            IllegalArgumentException,
+            IOException,
             InterruptedException {
       return new JsonStreamWriter(this.schemaAwareStreamWriterBuilder);
     }

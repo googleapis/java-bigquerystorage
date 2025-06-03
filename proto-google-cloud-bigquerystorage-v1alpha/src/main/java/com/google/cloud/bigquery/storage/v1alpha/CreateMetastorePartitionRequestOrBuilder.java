@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public interface CreateMetastorePartitionRequestOrBuilder
    * @return The parent.
    */
   java.lang.String getParent();
+
   /**
    *
    *
@@ -71,6 +72,7 @@ public interface CreateMetastorePartitionRequestOrBuilder
    * @return Whether the metastorePartition field is set.
    */
   boolean hasMetastorePartition();
+
   /**
    *
    *
@@ -85,6 +87,7 @@ public interface CreateMetastorePartitionRequestOrBuilder
    * @return The metastorePartition.
    */
   com.google.cloud.bigquery.storage.v1alpha.MetastorePartition getMetastorePartition();
+
   /**
    *
    *

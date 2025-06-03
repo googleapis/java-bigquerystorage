@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ public interface MetastorePartitionListOrBuilder
    * </code>
    */
   java.util.List<com.google.cloud.bigquery.storage.v1alpha.MetastorePartition> getPartitionsList();
+
   /**
    *
    *
@@ -48,6 +49,7 @@ public interface MetastorePartitionListOrBuilder
    * </code>
    */
   com.google.cloud.bigquery.storage.v1alpha.MetastorePartition getPartitions(int index);
+
   /**
    *
    *
@@ -60,6 +62,7 @@ public interface MetastorePartitionListOrBuilder
    * </code>
    */
   int getPartitionsCount();
+
   /**
    *
    *
@@ -73,6 +76,7 @@ public interface MetastorePartitionListOrBuilder
    */
   java.util.List<? extends com.google.cloud.bigquery.storage.v1alpha.MetastorePartitionOrBuilder>
       getPartitionsOrBuilderList();
+
   /**
    *
    *

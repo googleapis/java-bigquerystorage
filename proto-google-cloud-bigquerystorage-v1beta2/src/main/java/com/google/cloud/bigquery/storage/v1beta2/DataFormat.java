@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ public enum DataFormat implements com.google.protobuf.ProtocolMessageEnum {
 
   /** <code>DATA_FORMAT_UNSPECIFIED = 0;</code> */
   public static final int DATA_FORMAT_UNSPECIFIED_VALUE = 0;
+
   /**
    *
    *
@@ -69,6 +70,7 @@ public enum DataFormat implements com.google.protobuf.ProtocolMessageEnum {
    * <code>AVRO = 1;</code>
    */
   public static final int AVRO_VALUE = 1;
+
   /**
    *
    *

@@ -38,6 +38,8 @@ import com.google.cloud.bigquery.storage.v1.ConnectionWorkerPool.Settings;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
 import com.google.cloud.bigquery.storage.v1.TableFieldSchema.Mode;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Int64Value;
@@ -47,6 +49,8 @@ import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,8 +67,6 @@ import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.threeten.bp.Instant;
-import org.threeten.bp.LocalTime;
 
 @RunWith(JUnit4.class)
 public class JsonStreamWriterTest {
@@ -252,6 +254,49 @@ public class JsonStreamWriterTest {
   }
 
   @Test
+  public void testSingleAppendSimpleGson() throws Exception {
+    FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
+    JsonObject foo = new JsonObject();
+    foo.addProperty("foo", "allen");
+    JsonArray jsonArr = new JsonArray();
+    jsonArr.add(foo);
+
+    try (JsonStreamWriter writer =
+        getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA)
+            .setTraceId("test:empty")
+            .build()) {
+
+      testBigQueryWrite.addResponse(
+          AppendRowsResponse.newBuilder()
+              .setAppendResult(
+                  AppendRowsResponse.AppendResult.newBuilder().setOffset(Int64Value.of(0)).build())
+              .build());
+
+      ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
+      assertEquals(0L, appendFuture.get().getAppendResult().getOffset().getValue());
+      appendFuture.get();
+      assertEquals(
+          1,
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRowsCount());
+      assertEquals(
+          testBigQueryWrite
+              .getAppendRequests()
+              .get(0)
+              .getProtoRows()
+              .getRows()
+              .getSerializedRows(0),
+          expectedProto.toByteString());
+      assertEquals(
+          "java-jsonwriter test:empty", testBigQueryWrite.getAppendRequests().get(0).getTraceId());
+    }
+  }
+
+  @Test
   public void testFlexibleColumnAppend() throws Exception {
     TableFieldSchema field =
         TableFieldSchema.newBuilder()
@@ -310,7 +355,7 @@ public class JsonStreamWriterTest {
 
     JsonTest.TestTime expectedProto =
         JsonTest.TestTime.newBuilder()
-            .addTime(CivilTimeEncoder.encodePacked64TimeMicros(LocalTime.of(1, 0, 1)))
+            .addTime(CivilTimeEncoder.encodePacked64TimeMicrosLocalTime(LocalTime.of(1, 0, 1)))
             .build();
     JSONObject foo = new JSONObject();
     foo.put("time", new JSONArray(new String[] {"01:00:01"}));
@@ -1652,6 +1697,7 @@ public class JsonStreamWriterTest {
     assertTrue(
         ex.getMessage()
             .contains(
-                "Compression of type \"not-gzip\" isn't supported, only \"gzip\" compression is supported."));
+                "Compression of type \"not-gzip\" isn't supported, only \"gzip\" compression is"
+                    + " supported."));
   }
 }

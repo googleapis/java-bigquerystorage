@@ -34,6 +34,7 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -48,7 +49,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.threeten.bp.Duration;
 
 @RunWith(JUnit4.class)
 public class ConnectionWorkerPoolTest {
@@ -67,7 +67,7 @@ public class ConnectionWorkerPoolTest {
   private static final int MAX_RETRY_DELAY_MINUTES = 5;
   private static final RetrySettings retrySettings =
       RetrySettings.newBuilder()
-          .setInitialRetryDelay(Duration.ofMillis(INITIAL_RETRY_MILLIS))
+          .setInitialRetryDelayDuration(Duration.ofMillis(INITIAL_RETRY_MILLIS))
           .setRetryDelayMultiplier(RETRY_MULTIPLIER)
           .setMaxAttempts(MAX_RETRY_NUM_ATTEMPTS)
           .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(MAX_RETRY_DELAY_MINUTES))
@@ -95,22 +95,22 @@ public class ConnectionWorkerPoolTest {
   public void testSingleTableConnection_noOverwhelmedConnection() throws Exception {
     // Set the max requests count to a large value so we will not scaling up.
     testSendRequestsToMultiTable(
-        /*requestToSend=*/ 100,
-        /*maxRequests=*/ 100000,
-        /*maxConnections=*/ 8,
-        /*expectedConnectionCount=*/ 1,
-        /*tableCount=*/ 1);
+        /* requestToSend= */ 100,
+        /* maxRequests= */ 100000,
+        /* maxConnections= */ 8,
+        /* expectedConnectionCount= */ 1,
+        /* tableCount= */ 1);
   }
 
   @Test
   public void testSingleTableConnections_overwhelmed() throws Exception {
     // A connection will be considered overwhelmed when the requests count reach 5 (max 10).
     testSendRequestsToMultiTable(
-        /*requestToSend=*/ 100,
-        /*maxRequests=*/ 10,
-        /*maxConnections=*/ 8,
-        /*expectedConnectionCount=*/ 8,
-        /*tableCount=*/ 1);
+        /* requestToSend= */ 100,
+        /* maxRequests= */ 10,
+        /* maxConnections= */ 8,
+        /* expectedConnectionCount= */ 8,
+        /* tableCount= */ 1);
   }
 
   @Test
@@ -118,44 +118,44 @@ public class ConnectionWorkerPoolTest {
     // Set the max requests count to a large value so we will not scaling up.
     // All tables will share the two connections (2 becasue we set the min connections to be 2).
     testSendRequestsToMultiTable(
-        /*requestToSend=*/ 100,
-        /*maxRequests=*/ 100000,
-        /*maxConnections=*/ 8,
-        /*expectedConnectionCount=*/ 2,
-        /*tableCount=*/ 4);
+        /* requestToSend= */ 100,
+        /* maxRequests= */ 100000,
+        /* maxConnections= */ 8,
+        /* expectedConnectionCount= */ 2,
+        /* tableCount= */ 4);
   }
 
   @Test
   public void testMultiTableConnections_overwhelmed_reachingMaximum() throws Exception {
     // A connection will be considered overwhelmed when the requests count reach 5 (max 10).
     testSendRequestsToMultiTable(
-        /*requestToSend=*/ 100,
-        /*maxRequests=*/ 10,
-        /*maxConnections=*/ 8,
-        /*expectedConnectionCount=*/ 8,
-        /*tableCount=*/ 4);
+        /* requestToSend= */ 100,
+        /* maxRequests= */ 10,
+        /* maxConnections= */ 8,
+        /* expectedConnectionCount= */ 8,
+        /* tableCount= */ 4);
   }
 
   @Test
   public void testMultiTableConnections_overwhelmed_overTotalLimit() throws Exception {
     // A connection will be considered overwhelmed when the requests count reach 5 (max 10).
     testSendRequestsToMultiTable(
-        /*requestToSend=*/ 200,
-        /*maxRequests=*/ 10,
-        /*maxConnections=*/ 8,
-        /*expectedConnectionCount=*/ 8,
-        /*tableCount=*/ 10);
+        /* requestToSend= */ 200,
+        /* maxRequests= */ 10,
+        /* maxConnections= */ 8,
+        /* expectedConnectionCount= */ 8,
+        /* tableCount= */ 10);
   }
 
   @Test
   public void testMultiTableConnections_overwhelmed_notReachingMaximum() throws Exception {
     // A connection will be considered overwhelmed when the requests count reach 5 (max 10).
     testSendRequestsToMultiTable(
-        /*requestToSend=*/ 20,
-        /*maxRequests=*/ 10,
-        /*maxConnections=*/ 8,
-        /*expectedConnectionCount=*/ 4,
-        /*tableCount=*/ 4);
+        /* requestToSend= */ 20,
+        /* maxRequests= */ 10,
+        /* maxConnections= */ 8,
+        /* expectedConnectionCount= */ 4,
+        /* tableCount= */ 4);
   }
 
   private void testSendRequestsToMultiTable(
@@ -172,7 +172,7 @@ public class ConnectionWorkerPoolTest {
             .build());
     ConnectionWorkerPool connectionWorkerPool =
         createConnectionWorkerPool(
-            maxRequests, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
+            maxRequests, /* maxBytes= */ 100000, java.time.Duration.ofSeconds(5));
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
@@ -226,7 +226,7 @@ public class ConnectionWorkerPoolTest {
         Settings.builder().setMaxConnectionsPerRegion(10).setMinConnectionsPerRegion(5).build());
     ConnectionWorkerPool connectionWorkerPool =
         createConnectionWorkerPool(
-            /*maxRequests=*/ 3, /*maxBytes=*/ 1000, java.time.Duration.ofSeconds(5));
+            /* maxRequests= */ 3, /* maxBytes= */ 1000, java.time.Duration.ofSeconds(5));
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
@@ -276,7 +276,7 @@ public class ConnectionWorkerPoolTest {
         Settings.builder().setMaxConnectionsPerRegion(10).setMinConnectionsPerRegion(5).build());
     ConnectionWorkerPool connectionWorkerPool =
         createConnectionWorkerPool(
-            /*maxRequests=*/ 3, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
+            /* maxRequests= */ 3, /* maxBytes= */ 100000, java.time.Duration.ofSeconds(5));
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(50L));
@@ -339,7 +339,7 @@ public class ConnectionWorkerPoolTest {
         Settings.builder().setMaxConnectionsPerRegion(10).setMinConnectionsPerRegion(5).build());
     ConnectionWorkerPool connectionWorkerPool =
         createConnectionWorkerPool(
-            /*maxRequests=*/ 1500, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
+            /* maxRequests= */ 1500, /* maxBytes= */ 100000, java.time.Duration.ofSeconds(5));
 
     // Sets the sleep time to simulate requests stuck in connection.
     testBigQueryWrite.setResponseSleep(Duration.ofMillis(20L));
@@ -403,7 +403,7 @@ public class ConnectionWorkerPoolTest {
   public void testAppendWithRetry() throws Exception {
     ConnectionWorkerPool connectionWorkerPool =
         createConnectionWorkerPool(
-            /*maxRequests=*/ 1500, /*maxBytes=*/ 100000, java.time.Duration.ofSeconds(5));
+            /* maxRequests= */ 1500, /* maxBytes= */ 100000, java.time.Duration.ofSeconds(5));
 
     StreamWriter writeStream1 = getTestStreamWriter(TEST_STREAM_1);
 
@@ -541,7 +541,7 @@ public class ConnectionWorkerPoolTest {
       String[] messages,
       long offset) {
     return connectionWorkerPool.append(
-        writeStream, createProtoRows(messages), offset, /*requestUniqueId=*/ "request_" + offset);
+        writeStream, createProtoRows(messages), offset, /* requestUniqueId= */ "request_" + offset);
   }
 
   private ProtoRows createProtoRows(String[] messages) {
@@ -561,11 +561,10 @@ public class ConnectionWorkerPoolTest {
         maxBytes,
         maxRetryDuration,
         FlowController.LimitExceededBehavior.Block,
-        TEST_TRACE_ID,
         null,
         clientSettings,
         retrySettings,
-        /*enableRequestProfiler=*/ false,
+        /* enableRequestProfiler= */ false,
         /*enableOpenTelemetry*/ false);
   }
 }

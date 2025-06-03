@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@
  *           .setParent(TableName.of("[PROJECT]", "[DATASET]", "[TABLE]").toString())
  *           .addAllRequests(new ArrayList<CreateMetastorePartitionRequest>())
  *           .setSkipExistingPartitions(true)
+ *           .setTraceId("traceId-1067401920")
  *           .build();
  *   BatchCreateMetastorePartitionsResponse response =
  *       metastorePartitionServiceClient.batchCreateMetastorePartitions(request);

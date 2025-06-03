@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public interface BatchCreateMetastorePartitionsRequestOrBuilder
    * @return The parent.
    */
   java.lang.String getParent();
+
   /**
    *
    *
@@ -70,6 +71,7 @@ public interface BatchCreateMetastorePartitionsRequestOrBuilder
    */
   java.util.List<com.google.cloud.bigquery.storage.v1alpha.CreateMetastorePartitionRequest>
       getRequestsList();
+
   /**
    *
    *
@@ -82,6 +84,7 @@ public interface BatchCreateMetastorePartitionsRequestOrBuilder
    * </code>
    */
   com.google.cloud.bigquery.storage.v1alpha.CreateMetastorePartitionRequest getRequests(int index);
+
   /**
    *
    *
@@ -94,6 +97,7 @@ public interface BatchCreateMetastorePartitionsRequestOrBuilder
    * </code>
    */
   int getRequestsCount();
+
   /**
    *
    *
@@ -109,6 +113,7 @@ public interface BatchCreateMetastorePartitionsRequestOrBuilder
           ? extends
               com.google.cloud.bigquery.storage.v1alpha.CreateMetastorePartitionRequestOrBuilder>
       getRequestsOrBuilderList();
+
   /**
    *
    *
@@ -131,7 +136,7 @@ public interface BatchCreateMetastorePartitionsRequestOrBuilder
    * add_partitions(..). If the flag is set to false, the server will return
    * ALREADY_EXISTS if any partition already exists. If the flag is set to true,
    * the server will skip existing partitions and insert only the non-existing
-   * partitions.
+   * partitions. A maximum of 900 partitions can be inserted in a batch.
    * </pre>
    *
    * <code>bool skip_existing_partitions = 3 [(.google.api.field_behavior) = OPTIONAL];</code>
@@ -139,4 +144,38 @@ public interface BatchCreateMetastorePartitionsRequestOrBuilder
    * @return The skipExistingPartitions.
    */
   boolean getSkipExistingPartitions();
+
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Optional trace id to be used for debugging. It is expected that
+   * the client sets the same `trace_id` for all the batches in the same
+   * operation, so that it is possible to tie together the logs to all the
+   * batches in the same operation. Limited to 256 characters. This is expected,
+   * but not required, to be globally unique.
+   * </pre>
+   *
+   * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The traceId.
+   */
+  java.lang.String getTraceId();
+
+  /**
+   *
+   *
+   * <pre>
+   * Optional. Optional trace id to be used for debugging. It is expected that
+   * the client sets the same `trace_id` for all the batches in the same
+   * operation, so that it is possible to tie together the logs to all the
+   * batches in the same operation. Limited to 256 characters. This is expected,
+   * but not required, to be globally unique.
+   * </pre>
+   *
+   * <code>string trace_id = 4 [(.google.api.field_behavior) = OPTIONAL];</code>
+   *
+   * @return The bytes for traceId.
+   */
+  com.google.protobuf.ByteString getTraceIdBytes();
 }

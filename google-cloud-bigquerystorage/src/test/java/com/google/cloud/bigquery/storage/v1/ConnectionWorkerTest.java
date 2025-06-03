@@ -32,6 +32,7 @@ import com.google.cloud.bigquery.storage.test.Test.InnerType;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.Load;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Int64Value;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.opentelemetry.api.common.Attributes;
 import java.io.IOException;
@@ -55,10 +56,10 @@ public class ConnectionWorkerTest {
   private static final String TEST_TRACE_ID = "DATAFLOW:job_id";
   private static final RetrySettings retrySettings =
       RetrySettings.newBuilder()
-          .setInitialRetryDelay(org.threeten.bp.Duration.ofMillis(500))
+          .setInitialRetryDelayDuration(java.time.Duration.ofMillis(500))
           .setRetryDelayMultiplier(1.1)
           .setMaxAttempts(3)
-          .setMaxRetryDelay(org.threeten.bp.Duration.ofMinutes(5))
+          .setMaxRetryDelayDuration(java.time.Duration.ofMinutes(5))
           .build();
 
   private FakeBigQueryWrite testBigQueryWrite;
@@ -86,23 +87,50 @@ public class ConnectionWorkerTest {
   }
 
   @Test
-  public void testMultiplexedAppendSuccess() throws Exception {
+  public void testMultiplexedAppendSuccess_NonNullTraceId() throws Exception {
+    testMultiplexedIngestion(
+        /* sw1TraceId= */ "header_1:trailer_1",
+        /* sw2TraceId= */ "header_2:trailer_2",
+        /* expectedSW1TraceId= */ "java-streamwriter header_1:trailer_1",
+        /* expectedSW2TraceId= */ "java-streamwriter header_2:trailer_2");
+  }
+
+  @Test
+  public void testMultiplexedAppendSuccess_EmptyTraceId() throws Exception {
+    testMultiplexedIngestion(
+        /* sw1TraceId= */ "header_1:trailer_1",
+        /* sw2TraceId= */ "",
+        /* expectedSW1TraceId= */ "java-streamwriter header_1:trailer_1",
+        /* expectedSW2TraceId= */ "java-streamwriter");
+  }
+
+  private void testMultiplexedIngestion(
+      String sw1TraceId, String sw2TraceId, String expectedSW1TraceId, String expectedSW2TraceId)
+      throws Exception {
     try (ConnectionWorker connectionWorker = createMultiplexedConnectionWorker()) {
       long appendCount = 20;
       for (long i = 0; i < appendCount; i++) {
         testBigQueryWrite.addResponse(createAppendResponse(i));
       }
       List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
-      StreamWriter sw1 =
+      // SW1 has not trace id, SW2 does
+      StreamWriter.Builder sw1Builder =
           StreamWriter.newBuilder(TEST_STREAM_1, client)
               .setWriterSchema(createProtoSchema("foo"))
-              .setLocation("us")
-              .build();
-      StreamWriter sw2 =
+              .setLocation("us");
+      StreamWriter.Builder sw2Builder =
           StreamWriter.newBuilder(TEST_STREAM_2, client)
               .setWriterSchema(createProtoSchema("complicate"))
-              .setLocation("us")
-              .build();
+              .setLocation("us");
+      if (!sw1TraceId.isEmpty()) {
+        sw1Builder.setTraceId(sw1TraceId);
+      }
+      if (!sw2TraceId.isEmpty()) {
+        sw2Builder.setTraceId(sw2TraceId);
+      }
+      StreamWriter sw1 = sw1Builder.build();
+      StreamWriter sw2 = sw2Builder.build();
+
       // We do a pattern of:
       // send to stream1, string1
       // send to stream1, string2
@@ -161,12 +189,14 @@ public class ConnectionWorkerTest {
             assertThat(
                     serverRequest.getProtoRows().getWriterSchema().getProtoDescriptor().getName())
                 .isEqualTo("foo");
+            assertThat(serverRequest.getTraceId()).isEqualTo(expectedSW1TraceId);
             break;
           case 1:
             // The write stream is empty until we enter multiplexing.
             assertThat(serverRequest.getWriteStream()).isEqualTo(TEST_STREAM_1);
             // Schema is empty if not at the first request after table switch.
             assertThat(serverRequest.getProtoRows().hasWriterSchema()).isFalse();
+            assertThat(serverRequest.getTraceId()).isEmpty();
             break;
           case 2:
             // Stream name is always populated after multiplexing.
@@ -175,12 +205,14 @@ public class ConnectionWorkerTest {
             assertThat(
                     serverRequest.getProtoRows().getWriterSchema().getProtoDescriptor().getName())
                 .isEqualTo("complicate");
+            assertThat(serverRequest.getTraceId()).isEqualTo(expectedSW2TraceId);
             break;
           case 3:
             // Schema is empty if not at the first request after table switch.
             assertThat(serverRequest.getProtoRows().hasWriterSchema()).isFalse();
             // Stream name is always populated after multiplexing.
             assertThat(serverRequest.getWriteStream()).isEqualTo(TEST_STREAM_2);
+            assertThat(serverRequest.getTraceId()).isEmpty();
             break;
           default: // fall out
             break;
@@ -191,6 +223,9 @@ public class ConnectionWorkerTest {
       assertThat(connectionWorker.getLoad().inFlightRequestsBytes()).isEqualTo(0);
     }
   }
+
+  @Test
+  public void testMultiplexedAppendSuccess_MixEmptyAndNonEmptyTraceId() throws Exception {}
 
   @Test
   public void testAppendInSameStream_switchSchema() throws Exception {
@@ -335,10 +370,10 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
-            /*isMultiplexing=*/ false);
-    testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
+            /* isMultiplexing= */ false);
+    testBigQueryWrite.setResponseSleep(java.time.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
     long appendCount = 6;
@@ -395,10 +430,10 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
-            /*isMultiplexing=*/ true);
-    testBigQueryWrite.setResponseSleep(org.threeten.bp.Duration.ofSeconds(1));
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
+            /* isMultiplexing= */ true);
+    testBigQueryWrite.setResponseSleep(java.time.Duration.ofSeconds(1));
     ConnectionWorker.setMaxInflightQueueWaitTime(500);
 
     long appendCount = 10;
@@ -467,9 +502,9 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
-            /*isMultiplexing=*/ true);
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
+            /* isMultiplexing= */ true);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -480,7 +515,8 @@ public class ConnectionWorkerTest {
                     createFooProtoRows(new String[] {String.valueOf(0)}),
                     0));
     assertEquals(
-        "INVALID_ARGUMENT: StreamWriter with location eu is scheduled to use a connection with location us",
+        "INVALID_ARGUMENT: StreamWriter with location eu is scheduled to use a connection with"
+            + " location us",
         ex.getMessage());
   }
 
@@ -502,9 +538,9 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
-            /*isMultiplexing=*/ true);
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
+            /* isMultiplexing= */ true);
     StatusRuntimeException ex =
         assertThrows(
             StatusRuntimeException.class,
@@ -515,7 +551,9 @@ public class ConnectionWorkerTest {
                     createFooProtoRows(new String[] {String.valueOf(0)}),
                     0));
     assertEquals(
-        "INVALID_ARGUMENT: StreamWriter with stream name projects/p1/datasets/d1/tables/t1/streams/s1 is scheduled to use a connection with stream name projects/p2/datasets/d2/tables/t2/streams/s2",
+        "INVALID_ARGUMENT: StreamWriter with stream name"
+            + " projects/p1/datasets/d1/tables/t1/streams/s1 is scheduled to use a connection with"
+            + " stream name projects/p2/datasets/d2/tables/t2/streams/s2",
         ex.getMessage());
   }
 
@@ -558,9 +596,9 @@ public class ConnectionWorkerTest {
         null,
         client.getSettings(),
         retrySettings,
-        /*enableRequestProfiler=*/ false,
-        /*enableOpenTelemetry=*/ false,
-        /*isMultiplexing=*/ true);
+        /* enableRequestProfiler= */ false,
+        /* enableOpenTelemetry= */ false,
+        /* isMultiplexing= */ true);
   }
 
   private ProtoSchema createProtoSchema(String protoName) {
@@ -584,7 +622,7 @@ public class ConnectionWorkerTest {
       ProtoRows protoRows,
       long offset) {
     return connectionWorker.append(
-        streamWriter, protoRows, offset, /*requestUniqueId=*/ "request_" + offset);
+        streamWriter, protoRows, offset, /* requestUniqueId= */ "request_" + offset);
   }
 
   private ProtoRows createFooProtoRows(String[] messages) {
@@ -657,10 +695,10 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
             /*isMultiplexing*/ false);
-    org.threeten.bp.Duration durationSleep = org.threeten.bp.Duration.ofSeconds(2);
+    java.time.Duration durationSleep = java.time.Duration.ofSeconds(2);
     testBigQueryWrite.setResponseSleep(durationSleep);
 
     long appendCount = 2;
@@ -735,8 +773,8 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ false,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
             /*isMultiplexing*/ false);
 
     long appendCount = 10;
@@ -783,8 +821,8 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ true,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ true,
             /*isMultiplexing*/ false);
 
     Attributes attributes = connectionWorker.getTelemetryAttributes();
@@ -826,8 +864,8 @@ public class ConnectionWorkerTest {
             null,
             client.getSettings(),
             retrySettings,
-            /*enableRequestProfiler=*/ false,
-            /*enableOpenTelemetry=*/ true,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ true,
             /*isMultiplexing*/ false);
 
     Attributes attributes = connectionWorker.getTelemetryAttributes();
@@ -841,7 +879,8 @@ public class ConnectionWorkerTest {
     exerciseOpenTelemetryAttributesWithTraceId(null, null, null, null);
     exerciseOpenTelemetryAttributesWithTraceId("a:b:c", null, null, null);
     exerciseOpenTelemetryAttributesWithTraceId(
-        "java-streamwriter:HEAD+20240508-1544 Dataflow:monorail-c-multi:2024-05-08_11_44_34-6968230696879535523:1972585693681960752",
+        "java-streamwriter:HEAD+20240508-1544"
+            + " Dataflow:monorail-c-multi:2024-05-08_11_44_34-6968230696879535523:1972585693681960752",
         "monorail-c-multi",
         "2024-05-08_11_44_34-6968230696879535523",
         "1972585693681960752");
@@ -856,12 +895,56 @@ public class ConnectionWorkerTest {
         "2024-04-03_03_49_33-845412829237675723",
         "63737042897365355");
     exerciseOpenTelemetryAttributesWithTraceId(
-        "java-streamwriter Dataflow:pubsub-to-bq-staging-tongruil-1024-static:2024-05-14_15_13_14-5530509399715326669:4531186922674871499",
+        "java-streamwriter"
+            + " Dataflow:pubsub-to-bq-staging-tongruil-1024-static:2024-05-14_15_13_14-5530509399715326669:4531186922674871499",
         "pubsub-to-bq-staging-tongruil-1024-static",
         "2024-05-14_15_13_14-5530509399715326669",
         "4531186922674871499");
     exerciseOpenTelemetryAttributesWithTraceId("a:b dataflow :c", null, null, null);
     exerciseOpenTelemetryAttributesWithTraceId("a:b dataflow:c:d", "c", "d", null);
+  }
+
+  @Test
+  public void testDoubleDisconnectWithShorterRetryDuration() throws Exception {
+    // simulate server disconnect due to idle stream
+    testBigQueryWrite.setFailedStatus(
+        Status.ABORTED.withDescription(
+            "Closing the stream because it has been inactive for 600 seconds."));
+    testBigQueryWrite.setCloseEveryNAppends(1);
+    testBigQueryWrite.setTimesToClose(
+        2); // Total of 2 connection failures. The time interval between the processing of these
+    // failures will exceed the configured maxRetryDuration.
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+
+    ProtoSchema schema1 = createProtoSchema("foo");
+    StreamWriter sw1 =
+        StreamWriter.newBuilder(TEST_STREAM_1, client)
+            .setLocation("us")
+            .setWriterSchema(schema1)
+            .build();
+    ConnectionWorker connectionWorker =
+        new ConnectionWorker(
+            TEST_STREAM_1,
+            "us",
+            schema1,
+            100000,
+            100000,
+            Duration.ofMillis(1), // very small maxRetryDuration
+            FlowController.LimitExceededBehavior.Block,
+            TEST_TRACE_ID,
+            null,
+            client.getSettings(),
+            retrySettings,
+            /* enableRequestProfiler= */ false,
+            /* enableOpenTelemetry= */ false,
+            /*isMultiplexing*/ false);
+
+    List<ApiFuture<AppendRowsResponse>> futures = new ArrayList<>();
+    futures.add(
+        sendTestMessage(
+            connectionWorker, sw1, createFooProtoRows(new String[] {String.valueOf(0)}), 0));
+
+    assertEquals(0, futures.get(0).get().getAppendResult().getOffset().getValue());
   }
 
   @Test
