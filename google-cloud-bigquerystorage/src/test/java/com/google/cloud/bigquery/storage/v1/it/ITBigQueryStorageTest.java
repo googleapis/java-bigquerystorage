@@ -76,7 +76,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Timestamp;
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -1600,10 +1599,12 @@ public class ITBigQueryStorageTest {
             .setSampler(Sampler.alwaysOn())
             .build();
     OpenTelemetry otel = OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build();
-    GlobalOpenTelemetry.set(otel);
 
     BigQueryReadSettings otelSettings =
-        BigQueryReadSettings.newBuilder().setEnableOpenTelemetryTracing(true).build();
+        BigQueryReadSettings.newBuilder()
+            .setEnableOpenTelemetryTracing(true)
+            .setOpenTelemetryTracerProvider(tracerProvider)
+            .build();
     BigQueryReadClient otelClient = BigQueryReadClient.create(otelSettings);
 
     String table =
