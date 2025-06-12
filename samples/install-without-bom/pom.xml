@@ -18,7 +18,7 @@
   </parent>
 
   <properties>
-    <project.protobuf-java.version>3.25.7</project.protobuf-java.version>
+    <project.protobuf-java.version>3.25.8</project.protobuf-java.version>
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -31,7 +31,7 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-bigquerystorage</artifactId>
-      <version>3.14.0</version>
+      <version>3.15.0</version>
     </dependency>
     <!-- [END bigquerystorage_install_without_bom] -->
 
