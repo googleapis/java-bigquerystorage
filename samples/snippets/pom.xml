@@ -18,7 +18,7 @@
   </parent>
 
   <properties>
-    <project.protobuf-java.version>3.25.7</project.protobuf-java.version>
+    <project.protobuf-java.version>3.25.8</project.protobuf-java.version>
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -32,14 +32,14 @@
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>libraries-bom</artifactId>
-        <version>26.61.0</version>
+        <version>26.62.0</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>io.opentelemetry</groupId>
         <artifactId>opentelemetry-bom</artifactId>
-        <version>1.50.0</version>
+        <version>1.51.0</version>
         <type>pom</type>
         <scope>import</scope>
        </dependency>
@@ -56,7 +56,7 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-bigquery</artifactId>
-      <version>2.50.1</version>
+      <version>2.52.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.avro</groupId>
@@ -80,7 +80,7 @@
     <dependency>
       <groupId>com.google.cloud.opentelemetry</groupId>
       <artifactId>exporter-metrics</artifactId>
-      <version>0.34.0</version>
+      <version>0.36.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
