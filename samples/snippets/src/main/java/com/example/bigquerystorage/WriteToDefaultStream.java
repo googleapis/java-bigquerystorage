@@ -186,7 +186,7 @@ public class WriteToDefaultStream {
                   .build())
           .setEnableConnectionPool(true)
           .setFlowControlSettings(
-              FlowControlSettings.newBuilder().setMaxOutstandingElementCount(100).build())
+              FlowControlSettings.newBuilder().setMaxOutstandingElementCount(100L).build())
           // If value is missing in json and there is a default value configured on bigquery
           // column, apply the default value to the missing value field.
           .setDefaultMissingValueInterpretation(
