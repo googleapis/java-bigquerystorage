@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.16.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.15.3...v3.16.0) (2025-07-02)
+
+
+### Features
+
+* Lower maxInflightRequest setting so that connection pool can scale up more efficiently. ([#2993](https://github.com/googleapis/java-bigquerystorage/issues/2993)) ([38e5837](https://github.com/googleapis/java-bigquerystorage/commit/38e5837dda2dfd2c2b22bedae6db089892f129f1))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.52.0 ([#3028](https://github.com/googleapis/java-bigquerystorage/issues/3028)) ([6501ab5](https://github.com/googleapis/java-bigquerystorage/commit/6501ab5b204a9d13dce709fd832173645596f5d9))
+
 ## [3.15.3](https://github.com/googleapis/java-bigquerystorage/compare/v3.15.2...v3.15.3) (2025-06-25)
 
 
