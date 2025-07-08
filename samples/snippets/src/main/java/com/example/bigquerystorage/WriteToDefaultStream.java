@@ -184,7 +184,6 @@ public class WriteToDefaultStream {
                   .setChannelsPerCpu(2)
                   .build())
           .setEnableConnectionPool(true)
-          .setMaxInflightRequest(100)
           // If value is missing in json and there is a default value configured on bigquery
           // column, apply the default value to the missing value field.
           .setDefaultMissingValueInterpretation(
