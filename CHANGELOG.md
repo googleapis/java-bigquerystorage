@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.16.1](https://github.com/googleapis/java-bigquerystorage/compare/v3.16.0...v3.16.1) (2025-07-17)
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.53.0 ([#3047](https://github.com/googleapis/java-bigquerystorage/issues/3047)) ([9ce3925](https://github.com/googleapis/java-bigquerystorage/commit/9ce39254cc26d0dd6bcf019d259a124461cacfc2))
+* Update dependency io.opentelemetry:opentelemetry-bom to v1.52.0 ([#3044](https://github.com/googleapis/java-bigquerystorage/issues/3044)) ([f922f1f](https://github.com/googleapis/java-bigquerystorage/commit/f922f1fdd78442ee4111a79da20ebb0ba891ccc3))
+* Update dependency io.opentelemetry:opentelemetry-exporter-logging to v1.52.0 ([#3045](https://github.com/googleapis/java-bigquerystorage/issues/3045)) ([c59ec44](https://github.com/googleapis/java-bigquerystorage/commit/c59ec448729ddee124755015d652143860fd1179))
+
 ## [3.16.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.15.3...v3.16.0) (2025-07-11)
 
 
