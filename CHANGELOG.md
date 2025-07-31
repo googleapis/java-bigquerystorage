@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.16.2](https://github.com/googleapis/java-bigquerystorage/compare/v3.16.1...v3.16.2) (2025-07-31)
+
+
+### Dependencies
+
+* Update dependency org.junit.vintage:junit-vintage-engine to v5.13.4 ([#3050](https://github.com/googleapis/java-bigquerystorage/issues/3050)) ([8a6b906](https://github.com/googleapis/java-bigquerystorage/commit/8a6b906970ea4dd05d1fbcb4557342cfa78ffb7c))
+
 ## [3.16.1](https://github.com/googleapis/java-bigquerystorage/compare/v3.16.0...v3.16.1) (2025-07-28)
 
 
