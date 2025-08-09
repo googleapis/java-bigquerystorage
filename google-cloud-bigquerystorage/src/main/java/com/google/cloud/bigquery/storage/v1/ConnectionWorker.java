@@ -24,6 +24,10 @@ import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.retrying.TimedAttemptSettings;
 import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auto.value.AutoValue;
+import com.google.cloud.bigquery.storage.v1.AppendFormats.AppendRowsData;
+import com.google.cloud.bigquery.storage.v1.AppendFormats.AppendRowsSchema;
+import com.google.cloud.bigquery.storage.v1.AppendFormats.DataFormat;
+import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ArrowData;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.ProtoData;
 import com.google.cloud.bigquery.storage.v1.Exceptions.AppendSerializationError;
@@ -100,9 +104,9 @@ class ConnectionWorker implements AutoCloseable {
   private String location = null;
 
   /*
-   * The proto schema of rows to write. This schema can change during multiplexing.
+   * The user provided schema of rows to write. This schema can change during multiplexing.
    */
-  private ProtoSchema writerSchema;
+  private AppendRowsSchema writerSchema;
 
   /*
    * Max allowed inflight requests in the stream. Method append is blocked at this.
@@ -322,7 +326,7 @@ class ConnectionWorker implements AutoCloseable {
   public ConnectionWorker(
       String streamName,
       String location,
-      ProtoSchema writerSchema,
+      AppendRowsSchema writerSchema,
       long maxInflightRequests,
       long maxInflightBytes,
       Duration maxRetryDuration,
@@ -493,9 +497,15 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  /** Schedules the writing of rows at given offset. */
+  /** Schedules the writing of Proto rows at given offset. */
   ApiFuture<AppendRowsResponse> append(
       StreamWriter streamWriter, ProtoRows rows, long offset, String requestUniqueId) {
+    return append(streamWriter, AppendRowsData.of(rows), offset, requestUniqueId);
+  }
+
+  /** Schedules the writing of rows at given offset. */
+  ApiFuture<AppendRowsResponse> append(
+      StreamWriter streamWriter, AppendRowsData rows, long offset, String requestUniqueId) {
     if (this.location != null && !this.location.equals(streamWriter.getLocation())) {
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
@@ -516,11 +526,23 @@ class ConnectionWorker implements AutoCloseable {
     }
     Preconditions.checkNotNull(streamWriter);
     AppendRowsRequest.Builder requestBuilder = AppendRowsRequest.newBuilder();
-    requestBuilder.setProtoRows(
-        ProtoData.newBuilder()
-            .setWriterSchema(streamWriter.getProtoSchema())
-            .setRows(rows)
-            .build());
+    Preconditions.checkArgument(rows.format() == streamWriter.getWriterSchema().format());
+    if (rows.format() == DataFormat.PROTO) {
+      requestBuilder.setProtoRows(
+          ProtoData.newBuilder()
+              .setWriterSchema(streamWriter.getProtoSchema())
+              .setRows(rows.protoRows())
+              .build());
+    } else if (rows.format() == DataFormat.ARROW) {
+      requestBuilder.setArrowRows(
+          ArrowData.newBuilder()
+              .setWriterSchema(streamWriter.getArrowSchema())
+              .setRows(rows.arrowRecordBatch())
+              .build());
+    } else {
+      throw new IllegalArgumentException(
+          "Unsupported data format: " + rows.format() + " for stream: " + streamName);
+    }
     if (offset >= 0) {
       requestBuilder.setOffset(Int64Value.of(offset));
     }
@@ -679,9 +701,7 @@ class ConnectionWorker implements AutoCloseable {
     return inflightWaitSec.longValue();
   }
 
-  /**
-   * @return a unique Id for the writer.
-   */
+  /** @return a unique Id for the writer. */
   public String getWriterId() {
     return writerId;
   }
@@ -846,9 +866,11 @@ class ConnectionWorker implements AutoCloseable {
         AppendRowsRequest originalRequest = wrapper.message;
         String requestUniqueId = wrapper.requestUniqueId;
         AppendRowsRequest.Builder originalRequestBuilder = originalRequest.toBuilder();
+        // incomingWriterSchema is null if the request doesn't have a schema.
+        AppendRowsSchema incomingWriterSchema = getSchema(originalRequest);
         // Always respect the first writer schema seen by the loop.
-        if (writerSchema == null) {
-          writerSchema = originalRequest.getProtoRows().getWriterSchema();
+        if (writerSchema == null && incomingWriterSchema != null) {
+          writerSchema = incomingWriterSchema;
         }
         // Consider we enter multiplexing if we met a different non empty stream name or we meet
         // a new schema for the same stream name.
@@ -859,11 +881,10 @@ class ConnectionWorker implements AutoCloseable {
         if ((!originalRequest.getWriteStream().isEmpty()
                 && !streamName.isEmpty()
                 && !originalRequest.getWriteStream().equals(streamName))
-            || (originalRequest.getProtoRows().hasWriterSchema()
-                && !originalRequest.getProtoRows().getWriterSchema().equals(writerSchema))) {
+            || (incomingWriterSchema != null && !incomingWriterSchema.equals(writerSchema))) {
           streamName = originalRequest.getWriteStream();
           telemetryMetrics.refreshOpenTelemetryTableNameAttributes(getTableName());
-          writerSchema = originalRequest.getProtoRows().getWriterSchema();
+          writerSchema = incomingWriterSchema;
           firstRequestForTableOrSchemaSwitch = true;
         }
 
@@ -879,7 +900,13 @@ class ConnectionWorker implements AutoCloseable {
 
         // During non table/schema switch requests, clear writer schema.
         if (!firstRequestForTableOrSchemaSwitch) {
-          originalRequestBuilder.getProtoRowsBuilder().clearWriterSchema();
+          if (originalRequest.hasProtoRows()) {
+            originalRequestBuilder.getProtoRowsBuilder().clearWriterSchema();
+          } else if (originalRequest.hasArrowRows()) {
+            originalRequestBuilder.getArrowRowsBuilder().clearWriterSchema();
+          } else {
+            throw new IllegalStateException("Unsupported data format in the AppendRowsRequest.");
+          }
         }
         firstRequestForTableOrSchemaSwitch = false;
 
@@ -899,6 +926,21 @@ class ConnectionWorker implements AutoCloseable {
       }
     }
     cleanupConnectionAndRequests(/* avoidBlocking= */ false);
+  }
+
+  @Nullable
+  private AppendRowsSchema getSchema(AppendRowsRequest request) {
+    if (request.hasProtoRows()) {
+      return request.getProtoRows().hasWriterSchema()
+          ? AppendRowsSchema.of(request.getProtoRows().getWriterSchema())
+          : null;
+    } else if (request.hasArrowRows()) {
+      return request.getArrowRows().hasWriterSchema()
+          ? AppendRowsSchema.of(request.getArrowRows().getWriterSchema())
+          : null;
+    } else {
+      throw new IllegalStateException("Unsupported data format in the AppendRowsRequest.");
+    }
   }
 
   private void cleanupConnectionAndRequests(boolean avoidBlocking) {
@@ -1391,7 +1433,13 @@ class ConnectionWorker implements AutoCloseable {
         String requestUniqueId) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
-      this.messageSize = message.getProtoRows().getSerializedSize();
+      if (message.hasProtoRows()) {
+        this.messageSize = message.getProtoRows().getSerializedSize();
+      } else if (message.hasArrowRows()) {
+        this.messageSize = message.getArrowRows().getSerializedSize();
+      } else {
+        this.messageSize = 0;
+      }
       this.streamWriter = streamWriter;
       this.requestUniqueId = requestUniqueId;
       this.blockMessageSendDeadline = Instant.now();
