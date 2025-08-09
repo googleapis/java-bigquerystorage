@@ -16,6 +16,7 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -50,6 +51,7 @@ import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConne
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.Any;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
@@ -57,7 +59,9 @@ import com.google.protobuf.Int64Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.opentelemetry.api.common.Attributes;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.channels.Channels;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +75,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.VarCharVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.VectorUnloader;
+import org.apache.arrow.vector.compression.CompressionCodec;
+import org.apache.arrow.vector.compression.CompressionUtil;
+import org.apache.arrow.vector.compression.NoCompressionCodec;
+import org.apache.arrow.vector.ipc.WriteChannel;
+import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
+import org.apache.arrow.vector.ipc.message.MessageSerializer;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -121,14 +140,30 @@ public class StreamWriterTest {
       ProtoSchemaConverter.convert(
           BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(TABLE_SCHEMA));
 
+  private final Schema ARROW_SCHEMA;
+  private final ArrowSchema SERIALIZED_ARROW_SCHEMA;
+
   private final TableSchema UPDATED_TABLE_SCHEMA =
       TableSchema.newBuilder().addFields(0, FOO).addFields(1, BAR).build();
   private final ProtoSchema UPDATED_PROTO_SCHEMA =
       ProtoSchemaConverter.convert(
           BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(
               UPDATED_TABLE_SCHEMA));
+  private static final BufferAllocator allocator = new RootAllocator();
 
-  public StreamWriterTest() throws DescriptorValidationException {}
+  public StreamWriterTest() throws DescriptorValidationException {
+    Field foo = new Field("foo", FieldType.nullable(new ArrowType.Utf8()), null);
+    ARROW_SCHEMA = new Schema(Arrays.asList(foo));
+    final ByteArrayOutputStream out = new ByteArrayOutputStream();
+    try {
+      MessageSerializer.serialize(new WriteChannel(Channels.newChannel(out)), ARROW_SCHEMA);
+    } catch (IOException e) {
+      throw new IllegalStateException("Failed to serialize arrow schema.", e);
+    }
+    byte[] bytes = out.toByteArray();
+    SERIALIZED_ARROW_SCHEMA =
+        ArrowSchema.newBuilder().setSerializedSchema(ByteString.copyFrom(bytes)).build();
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -199,6 +234,16 @@ public class StreamWriterTest {
         .build();
   }
 
+  private StreamWriter getTestStreamWriterExclusiveRetryEnabledWithArrowSchema()
+      throws IOException {
+    return StreamWriter.newBuilder(EXPLICIT_STREAM, client)
+        .setWriterSchema(SERIALIZED_ARROW_SCHEMA)
+        .setTraceId(TEST_TRACE_ID)
+        .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
+        .setRetrySettings(retrySettings)
+        .build();
+  }
+
   private ProtoSchema createProtoSchema() {
     return createProtoSchema("foo");
   }
@@ -225,6 +270,39 @@ public class StreamWriterTest {
       rowsBuilder.addSerializedRows(foo.toByteString());
     }
     return rowsBuilder.build();
+  }
+
+  private com.google.cloud.bigquery.storage.v1.ArrowRecordBatch createArrowRecordBatch(
+      String[] messages) {
+    // Mostly copied from arrow public doc, however we can't directly use the ArrowStreamWriter
+    // as we need the raw record batch instead of IPC stream format.
+    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(ARROW_SCHEMA, allocator)) {
+      VarCharVector fooVector = (VarCharVector) vectorSchemaRoot.getVector("foo");
+      fooVector.allocateNew(messages.length);
+      for (int i = 0; i < messages.length; i++) {
+        fooVector.set(i, messages[i].getBytes(UTF_8));
+      }
+      vectorSchemaRoot.setRowCount(messages.length);
+
+      CompressionCodec codec =
+          NoCompressionCodec.Factory.INSTANCE.createCodec(CompressionUtil.CodecType.NO_COMPRESSION);
+      VectorUnloader vectorUnloader =
+          new VectorUnloader(
+              vectorSchemaRoot, /* includeNullCount= */ true, codec, /* alignBuffers= */ true);
+      ArrowRecordBatch recordBatch = vectorUnloader.getRecordBatch();
+      final ByteArrayOutputStream out = new ByteArrayOutputStream();
+      try {
+        MessageSerializer.serialize(new WriteChannel(Channels.newChannel(out)), recordBatch);
+      } catch (IOException e) {
+        throw new IllegalStateException("Failed to serialize arrow rows.", e);
+      }
+      ByteString serializedArrowRows = ByteString.copyFrom(out.toByteArray());
+      com.google.cloud.bigquery.storage.v1.ArrowRecordBatch.Builder recordBatchBuilder =
+          com.google.cloud.bigquery.storage.v1.ArrowRecordBatch.newBuilder()
+              .setSerializedRecordBatch(serializedArrowRows);
+
+      return recordBatchBuilder.build();
+    }
   }
 
   private AppendRowsResponse createAppendResponse(long offset) {
@@ -2033,6 +2111,23 @@ public class StreamWriterTest {
         writer.append(createProtoRows(new String[] {"A"}), 0);
     ApiFuture<AppendRowsResponse> appendFuture2 =
         writer.append(createProtoRows(new String[] {"B"}), 1);
+
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
+
+    writer.close();
+  }
+
+  @Test
+  public void testAppendSuccessWithArrowData() throws Exception {
+    StreamWriter writer = getTestStreamWriterExclusiveRetryEnabledWithArrowSchema();
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addResponse(createAppendResponse(1));
+
+    ApiFuture<AppendRowsResponse> appendFuture1 =
+        writer.append(createArrowRecordBatch(new String[] {"A"}), 0L);
+    ApiFuture<AppendRowsResponse> appendFuture2 =
+        writer.append(createArrowRecordBatch(new String[] {"B"}), 1L);
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
