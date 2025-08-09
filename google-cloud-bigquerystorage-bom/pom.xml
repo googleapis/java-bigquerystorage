@@ -104,6 +104,21 @@
         <artifactId>proto-google-cloud-bigquerystorage-v1beta</artifactId>
         <version>3.16.4-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1beta:current} -->
       </dependency>
+      <dependency>
+        <groupId>org.apache.arrow</groupId>
+        <artifactId>arrow-vector</artifactId>
+        <version>18.3.0</version>
+      </dependency>
+         <dependency>
+             <groupId>org.apache.arrow</groupId>
+             <artifactId>arrow-memory-core</artifactId>
+             <version>18.3.0</version>
+         </dependency>
+         <dependency>
+             <groupId>org.apache.arrow</groupId>
+             <artifactId>arrow-memory-netty</artifactId>
+             <version>18.3.0</version>
+         </dependency>
     </dependencies>
   </dependencyManagement>
 

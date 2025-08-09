@@ -25,12 +25,15 @@ import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.auth.Credentials;
 import com.google.auto.value.AutoOneOf;
 import com.google.auto.value.AutoValue;
+import com.google.cloud.bigquery.storage.v1.AppendFormats.AppendRowsData;
+import com.google.cloud.bigquery.storage.v1.AppendFormats.AppendRowsSchema;
 import com.google.cloud.bigquery.storage.v1.AppendRowsRequest.MissingValueInterpretation;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.AppendRequestAndResponse;
 import com.google.cloud.bigquery.storage.v1.ConnectionWorker.TableSchemaAndTimestamp;
 import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConnectionPool.Kind;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
@@ -76,8 +79,8 @@ public class StreamWriter implements AutoCloseable {
   /** This is the library version may or may not include library version id. */
   private final String fullTraceId;
 
-  /** Every writer has a fixed proto schema. */
-  private final ProtoSchema writerSchema;
+  /** Every writer has a fixed proto schema or arrow schema. */
+  private final AppendRowsSchema writerSchema;
 
   /*
    * Location of the destination.
@@ -171,11 +174,11 @@ public class StreamWriter implements AutoCloseable {
     abstract ConnectionWorkerPool connectionWorkerPool();
 
     ApiFuture<AppendRowsResponse> append(
-        StreamWriter streamWriter, ProtoRows protoRows, long offset, String requestUniqueId) {
+        StreamWriter streamWriter, AppendRowsData rows, long offset, String requestUniqueId) {
       if (getKind() == Kind.CONNECTION_WORKER) {
-        return connectionWorker().append(streamWriter, protoRows, offset, requestUniqueId);
+        return connectionWorker().append(streamWriter, rows, offset, requestUniqueId);
       } else {
-        return connectionWorkerPool().append(streamWriter, protoRows, offset, requestUniqueId);
+        return connectionWorkerPool().append(streamWriter, rows, offset, requestUniqueId);
       }
     }
 
@@ -421,6 +424,18 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
+   * Schedules the writing of Arrow record batch at the end of current stream.
+   *
+   * @param recordBatch the Arrow record batch in serialized format to write to BigQuery.
+   *     <p>Since the serialized Arrow record batch doesn't contain schema, to use this method, the
+   *     StreamWriter must have been created with Arrow schema.
+   * @return the append response wrapped in a future.
+   */
+  public ApiFuture<AppendRowsResponse> append(ArrowRecordBatch recordBatch) {
+    return append(recordBatch, -1);
+  }
+
+  /**
    * Schedules the writing of rows at the end of current stream.
    *
    * @param rows the rows in serialized format to write to BigQuery.
@@ -457,6 +472,40 @@ public class StreamWriter implements AutoCloseable {
    * @return the append response wrapped in a future.
    */
   public ApiFuture<AppendRowsResponse> append(ProtoRows rows, long offset) {
+    return append(AppendRowsData.of(rows), offset);
+  }
+
+  /**
+   * Schedules the writing of Arrow record batch at given offset.
+   *
+   * <p>Example of writing Arrow record batch with specific offset.
+   *
+   * <pre>{@code
+   * ApiFuture<AppendRowsResponse> future = writer.append(recordBatch, 0);
+   * ApiFutures.addCallback(future, new ApiFutureCallback<AppendRowsResponse>() {
+   *   public void onSuccess(AppendRowsResponse response) {
+   *     if (!response.hasError()) {
+   *       System.out.println("written with offset: " + response.getAppendResult().getOffset());
+   *     } else {
+   *       System.out.println("received an in stream error: " + response.getError().toString());
+   *     }
+   *   }
+   *
+   *   public void onFailure(Throwable t) {
+   *     System.out.println("failed to write: " + t);
+   *   }
+   * }, MoreExecutors.directExecutor());
+   * }</pre>
+   *
+   * @param recordBatch the ArrowRecordBatch in serialized format to write to BigQuery.
+   * @param offset the offset of the first row. Provide -1 to write at the current end of stream.
+   * @return the append response wrapped in a future.
+   */
+  public ApiFuture<AppendRowsResponse> append(ArrowRecordBatch recordBatch, long offset) {
+    return append(AppendRowsData.of(recordBatch), offset);
+  }
+
+  private ApiFuture<AppendRowsResponse> append(AppendRowsData rows, long offset) {
     String requestUniqueId = generateRequestUniqueId();
     requestProfilerHook.startOperation(
         RequestProfiler.OperationName.TOTAL_LATENCY, requestUniqueId);
@@ -471,12 +520,17 @@ public class StreamWriter implements AutoCloseable {
 
   ApiFuture<AppendRowsResponse> appendWithUniqueId(
       ProtoRows rows, long offset, String requestUniqueId) {
+    return appendWithUniqueId(AppendRowsData.of(rows), offset, requestUniqueId);
+  }
+
+  ApiFuture<AppendRowsResponse> appendWithUniqueId(
+      AppendRowsData rows, long offset, String requestUniqueId) {
     if (userClosed.get()) {
       AppendRequestAndResponse requestWrapper =
           new AppendRequestAndResponse(
               AppendRowsRequest.newBuilder().build(),
-              /* StreamWriter= */ this,
-              /* RetrySettings= */ null,
+              /* streamWriter= */ this,
+              /* retrySettings= */ null,
               requestUniqueId);
       requestWrapper.appendResult.setException(
           new Exceptions.StreamWriterClosedException(
@@ -508,37 +562,46 @@ public class StreamWriter implements AutoCloseable {
     return singleConnectionOrConnectionPool.getInflightWaitSeconds(this);
   }
 
-  /**
-   * @return a unique Id for the writer.
-   */
+  /** @return a unique Id for the writer. */
   public String getWriterId() {
     return singleConnectionOrConnectionPool.getWriterId(writerId);
   }
 
-  /**
-   * @return name of the Stream that this writer is working on.
-   */
+  /** @return name of the Stream that this writer is working on. */
   public String getStreamName() {
     return streamName;
   }
 
-  /**
-   * @return the passed in user schema.
-   */
-  public ProtoSchema getProtoSchema() {
+  /** @return the passed in user schema. */
+  /** {@return the user provided schema in a general AppendRowsSchema} */
+  public AppendRowsSchema getWriterSchema() {
     return writerSchema;
   }
 
-  /**
-   * @return the location of the destination.
-   */
+  /** {@return the passed in Proto user schema} */
+  public ProtoSchema getProtoSchema() {
+    if (writerSchema.format() == AppendFormats.DataFormat.PROTO) {
+      return writerSchema.protoSchema();
+    } else {
+      throw new IllegalStateException("No Proto schema found.");
+    }
+  }
+
+  /** {@return the passed in Arrow user schema} */
+  public ArrowSchema getArrowSchema() {
+    if (writerSchema.format() == AppendFormats.DataFormat.ARROW) {
+      return writerSchema.arrowSchema();
+    } else {
+      throw new IllegalStateException("No Arrow schema found.");
+    }
+  }
+
+  /** @return the location of the destination. */
   public String getLocation() {
     return location;
   }
 
-  /**
-   * @return the missing value interpretation map used for the writer.
-   */
+  /** @return the missing value interpretation map used for the writer. */
   public Map<String, AppendRowsRequest.MissingValueInterpretation>
       getMissingValueInterpretationMap() {
     return missingValueInterpretationMap;
@@ -559,9 +622,7 @@ public class StreamWriter implements AutoCloseable {
     }
   }
 
-  /**
-   * @return if user explicitly closed the writer.
-   */
+  /** @return if user explicitly closed the writer. */
   public boolean isUserClosed() {
     return userClosed.get();
   }
@@ -610,9 +671,7 @@ public class StreamWriter implements AutoCloseable {
     ConnectionWorker.MAXIMUM_REQUEST_CALLBACK_WAIT_TIME = waitTime;
   }
 
-  /**
-   * @return the default stream name associated with tableName
-   */
+  /** @return the default stream name associated with tableName */
   public static String getDefaultStreamName(TableName tableName) {
     return tableName + defaultStreamMatching;
   }
@@ -651,7 +710,7 @@ public class StreamWriter implements AutoCloseable {
     return connectionPoolMap;
   }
 
-  // A method to clear the static connectio pool to avoid making pool visible to other tests.
+  // A method to clear the static connection pool to avoid making pool visible to other tests.
   @VisibleForTesting
   static void clearConnectionPool() {
     connectionPoolMap.clear();
@@ -667,7 +726,7 @@ public class StreamWriter implements AutoCloseable {
 
     private BigQueryWriteClient client;
 
-    private ProtoSchema writerSchema = null;
+    private AppendRowsSchema writerSchema = null;
 
     private long maxInflightRequest = DEFAULT_MAX_INFLIGHT_REQUESTS;
 
@@ -720,9 +779,17 @@ public class StreamWriter implements AutoCloseable {
       this.client = Preconditions.checkNotNull(client);
     }
 
-    /** Sets the proto schema of the rows. */
-    public Builder setWriterSchema(ProtoSchema writerSchema) {
-      this.writerSchema = writerSchema;
+    /** Sets the user provided proto schema of the rows. */
+    @CanIgnoreReturnValue
+    public Builder setWriterSchema(ProtoSchema protoSchema) {
+      this.writerSchema = AppendRowsSchema.of(protoSchema);
+      return this;
+    }
+
+    /** Sets the user provided Arrow schema of the rows. */
+    @CanIgnoreReturnValue
+    public Builder setWriterSchema(ArrowSchema arrowSchema) {
+      this.writerSchema = AppendRowsSchema.of(arrowSchema);
       return this;
     }
 
