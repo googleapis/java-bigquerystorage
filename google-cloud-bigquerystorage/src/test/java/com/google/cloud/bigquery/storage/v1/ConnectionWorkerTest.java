@@ -361,7 +361,7 @@ public class ConnectionWorkerTest {
         new ConnectionWorker(
             TEST_STREAM_1,
             "us",
-            createProtoSchema("foo"),
+            AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
             6,
             100000,
             Duration.ofSeconds(100),
@@ -421,7 +421,7 @@ public class ConnectionWorkerTest {
         new ConnectionWorker(
             TEST_STREAM_1,
             "us",
-            createProtoSchema("foo"),
+            AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
             100000,
             100000,
             Duration.ofSeconds(100),
@@ -493,7 +493,7 @@ public class ConnectionWorkerTest {
         new ConnectionWorker(
             TEST_STREAM_1,
             "us",
-            createProtoSchema("foo"),
+            AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
             100000,
             100000,
             Duration.ofSeconds(100),
@@ -529,7 +529,7 @@ public class ConnectionWorkerTest {
         new ConnectionWorker(
             TEST_STREAM_2,
             null,
-            createProtoSchema("foo"),
+            AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
             100000,
             100000,
             Duration.ofSeconds(100),
@@ -587,7 +587,7 @@ public class ConnectionWorkerTest {
     return new ConnectionWorker(
         streamName,
         "us",
-        createProtoSchema("foo"),
+        AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
         maxRequests,
         maxBytes,
         maxRetryDuration,
@@ -686,7 +686,7 @@ public class ConnectionWorkerTest {
         new ConnectionWorker(
             TEST_STREAM_1,
             null,
-            createProtoSchema("foo"),
+            AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
             100000,
             100000,
             Duration.ofSeconds(100),
@@ -764,7 +764,7 @@ public class ConnectionWorkerTest {
         new ConnectionWorker(
             TEST_STREAM_1,
             null,
-            createProtoSchema("foo"),
+            AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
             100000,
             100000,
             Duration.ofSeconds(100),
@@ -807,12 +807,11 @@ public class ConnectionWorkerTest {
 
   private void exerciseOpenTelemetryAttributesWithStreamNames(String streamName, String expected)
       throws Exception {
-    ProtoSchema schema1 = createProtoSchema("foo");
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             streamName,
             null,
-            schema1,
+            AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
             100000,
             100000,
             Duration.ofSeconds(100),
@@ -850,12 +849,11 @@ public class ConnectionWorkerTest {
   void exerciseOpenTelemetryAttributesWithTraceId(
       String traceId, String expectedField1, String expectedField2, String expectedField3)
       throws Exception {
-    ProtoSchema schema1 = createProtoSchema("foo");
     ConnectionWorker connectionWorker =
         new ConnectionWorker(
             TEST_STREAM_1,
             null,
-            schema1,
+            AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
             100000,
             100000,
             Duration.ofSeconds(100),
@@ -926,7 +924,7 @@ public class ConnectionWorkerTest {
         new ConnectionWorker(
             TEST_STREAM_1,
             "us",
-            schema1,
+            AppendFormats.AppendRowsSchema.of(createProtoSchema("foo")),
             100000,
             100000,
             Duration.ofMillis(1), // very small maxRetryDuration
