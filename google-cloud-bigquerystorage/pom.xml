@@ -54,6 +54,9 @@
             ${argLine}
           </argLine>
           <reuseForks>false</reuseForks>
+          <systemPropertyVariables>
+            <arrow.memory.allocator.type>netty</arrow.memory.allocator.type>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>
@@ -63,6 +66,9 @@
           <usedDependencies>
             <dependency>com.google.auto.value:auto-value</dependency>
           </usedDependencies>
+          <ignoredUnusedDeclaredDependencies>
+            <dependency>org.apache.arrow:arrow-memory-netty</dependency>
+          </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>
     </plugins>
