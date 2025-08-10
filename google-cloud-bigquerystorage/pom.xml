@@ -331,9 +331,21 @@
       <activation>
         <jdk>[9,)</jdk>
       </activation>
-      <properties>
-        <argLine.java9.extras>--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED</argLine.java9.extras>
-      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <argLine>
+                -Xmx2048m
+                --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED
+                ${argLine}
+              </argLine>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>
