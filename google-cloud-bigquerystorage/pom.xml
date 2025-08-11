@@ -15,6 +15,7 @@
   </parent>
   <properties>
     <site.installationModule>google-cloud-bigquerystorage</site.installationModule>
+    <surefire.java9.opts/>
   </properties>
   <build>
     <pluginManagement>
@@ -81,6 +82,7 @@
         <configuration>
           <argLine>
             -Xmx2048m
+            ${surefire.java9.opts}
             ${jacoco.agent.argLine}
           </argLine>
           <reuseForks>false</reuseForks>
@@ -361,25 +363,20 @@
       <activation>
         <jdk>[9,)</jdk>
       </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <argLine>
-                -Xmx2048m
-                --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED
-                ${jacoco.agent.argLine}
-              </argLine>
-              <reuseForks>false</reuseForks>
-              <systemPropertyVariables>
-                <arrow.memory.allocator.type>netty</arrow.memory.allocator.type>
-              </systemPropertyVariables>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
+      <properties>
+        <surefire.java9.opts>--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED</surefire.java9.opts>
+      </properties>
+    </profile>
+    <profile>
+      <id>java8-test-jvm</id>
+      <activation>
+        <property>
+          <name>jvm</name>
+        </property>
+      </activation>
+      <properties>
+        <surefire.java9.opts/>
+      </properties>
     </profile>
   </profiles>
 </project>
