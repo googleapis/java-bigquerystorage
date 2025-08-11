@@ -356,16 +356,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-<!--  <profiles>-->
-<!--    <profile>-->
-<!--      <id>java9</id>-->
-<!--      <activation>-->
-<!--        <jdk>[9,)</jdk>-->
-<!--      </activation>-->
-<!--      <properties>-->
-<!--        <surefire.java9.opts>&#45;&#45;add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED</surefire.java9.opts>-->
-<!--      </properties>-->
-<!--    </profile>-->
-<!--  </profiles>-->
 </project>
