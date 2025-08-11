@@ -15,6 +15,7 @@
   </parent>
   <properties>
     <site.installationModule>google-cloud-bigquerystorage</site.installationModule>
+    <surefire.java9.opts/>
   </properties>
   <build>
     <extensions>
@@ -50,7 +51,7 @@
         <configuration>
           <argLine>
             -Xmx2048m
-            ${argLine.java9.extras}
+            ${surefire.java9.opts}
             ${argLine}
           </argLine>
           <reuseForks>false</reuseForks>
@@ -331,21 +332,9 @@
       <activation>
         <jdk>[9,)</jdk>
       </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <argLine>
-                -Xmx2048m
-                --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED
-                ${argLine}
-              </argLine>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
+      <properties>
+        <surefire.java9.opts>--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED</surefire.java9.opts>
+      </properties>
     </profile>
   </profiles>
 </project>
