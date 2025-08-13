@@ -326,6 +326,39 @@ class ConnectionWorker implements AutoCloseable {
   public ConnectionWorker(
       String streamName,
       String location,
+      ProtoSchema writerSchema,
+      long maxInflightRequests,
+      long maxInflightBytes,
+      Duration maxRetryDuration,
+      FlowController.LimitExceededBehavior limitExceededBehavior,
+      String traceId,
+      @Nullable String compressorName,
+      BigQueryWriteSettings clientSettings,
+      RetrySettings retrySettings,
+      boolean enableRequestProfiler,
+      boolean enableOpenTelemetry,
+      boolean isMultiplexing)
+      throws IOException {
+    this(
+        streamName,
+        location,
+        AppendRowsSchema.of(writerSchema),
+        maxInflightRequests,
+        maxInflightBytes,
+        maxRetryDuration,
+        limitExceededBehavior,
+        traceId,
+        compressorName,
+        clientSettings,
+        retrySettings,
+        enableRequestProfiler,
+        enableOpenTelemetry,
+        isMultiplexing);
+  }
+
+  public ConnectionWorker(
+      String streamName,
+      String location,
       AppendRowsSchema writerSchema,
       long maxInflightRequests,
       long maxInflightBytes,
