@@ -580,7 +580,7 @@ public class StreamWriter implements AutoCloseable {
    * @return the passed in user schema.
    */
   /** {@return the user provided schema in a general AppendRowsSchema} */
-  public AppendRowsSchema getWriterSchema() {
+  AppendRowsSchema getWriterSchema() {
     return writerSchema;
   }
 
