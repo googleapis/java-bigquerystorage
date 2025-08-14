@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
 /** Adapter class for data formats used in the AppendRows. */
 final class AppendFormats {
   /** Enum for the data format used in the AppendRows. */
-  public enum DataFormat {
+  enum DataFormat {
     UNKNOWN,
     PROTO,
     ARROW
@@ -29,7 +29,7 @@ final class AppendFormats {
 
   /** Container class for the schema used in the AppendRows request. */
   @AutoValue
-  public abstract static class AppendRowsSchema {
+  abstract static class AppendRowsSchema {
     public abstract DataFormat format();
 
     @Nullable
@@ -51,7 +51,7 @@ final class AppendFormats {
 
   /** Container class for the data used in the AppendRows request. */
   @AutoValue
-  public abstract static class AppendRowsData {
+  abstract static class AppendRowsData {
     public abstract DataFormat format();
 
     @Nullable
@@ -65,7 +65,7 @@ final class AppendFormats {
           DataFormat.PROTO, protoRows, /* arrowRecordBatch= */ null);
     }
 
-    public static AppendRowsData of(ArrowRecordBatch arrowRecordBatch) {
+    static AppendRowsData of(ArrowRecordBatch arrowRecordBatch) {
       return new AutoValue_AppendFormats_AppendRowsData(
           DataFormat.ARROW, /* protoRows= */ null, arrowRecordBatch);
     }
