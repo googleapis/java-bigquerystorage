@@ -19,7 +19,7 @@ import com.google.auto.value.AutoValue;
 import javax.annotation.Nullable;
 
 /** Adapter class for data formats used in the AppendRows. */
-public final class AppendFormats {
+final class AppendFormats {
   /** Enum for the data format used in the AppendRows. */
   public enum DataFormat {
     UNKNOWN,
