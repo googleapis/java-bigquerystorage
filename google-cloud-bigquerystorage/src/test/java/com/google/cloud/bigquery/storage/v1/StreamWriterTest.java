@@ -305,6 +305,30 @@ public class StreamWriterTest {
     }
   }
 
+  private com.google.cloud.bigquery.storage.v1.ArrowRecordBatch createArrowRecordBatch(
+      Schema arrowSchema, BufferAllocator allocator, String[] messages) {
+    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, allocator)) {
+      VarCharVector varCharVector = (VarCharVector) vectorSchemaRoot.getVector(0);
+      varCharVector.allocateNew(messages.length);
+      for (int i = 0; i < messages.length; i++) {
+        varCharVector.set(i, messages[i].getBytes(UTF_8));
+      }
+      vectorSchemaRoot.setRowCount(messages.length);
+
+      VectorUnloader vectorUnloader = new VectorUnloader(vectorSchemaRoot);
+      try (final ArrowRecordBatch recordBatch = vectorUnloader.getRecordBatch()) {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        MessageSerializer.serialize(new WriteChannel(Channels.newChannel(out)), recordBatch);
+        ByteString serialized = ByteString.copyFrom(out.toByteArray());
+        return com.google.cloud.bigquery.storage.v1.ArrowRecordBatch.newBuilder()
+            .setSerializedRecordBatch(serialized)
+            .build();
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private AppendRowsResponse createAppendResponse(long offset) {
     return AppendRowsResponse.newBuilder()
         .setAppendResult(
@@ -1042,6 +1066,79 @@ public class StreamWriterTest {
 
     writer1.close();
     writer2.close();
+  }
+
+  @Test
+  public void testMultiplexingWithDifferentStreamAndArrowSchema() throws Exception {
+    // Use the shared connection mode.
+    ConnectionWorkerPool.setOptions(
+        Settings.builder().setMinConnectionsPerRegion(1).setMaxConnectionsPerRegion(1).build());
+    Field col1 = new Field("col1", FieldType.nullable(new ArrowType.Utf8()), null);
+    Schema arrowSchema1 = new Schema(Arrays.asList(col1));
+    final ByteArrayOutputStream out1 = new ByteArrayOutputStream();
+    MessageSerializer.serialize(new WriteChannel(Channels.newChannel(out1)), arrowSchema1);
+    ArrowSchema serializedArrowSchema1 =
+        ArrowSchema.newBuilder()
+            .setSerializedSchema(ByteString.copyFrom(out1.toByteArray()))
+            .build();
+
+    Field col2 = new Field("col2", FieldType.nullable(new ArrowType.Utf8()), null);
+    Schema arrowSchema2 = new Schema(Arrays.asList(col2));
+    final ByteArrayOutputStream out2 = new ByteArrayOutputStream();
+    MessageSerializer.serialize(new WriteChannel(Channels.newChannel(out2)), arrowSchema2);
+    ArrowSchema serializedArrowSchema2 =
+        ArrowSchema.newBuilder()
+            .setSerializedSchema(ByteString.copyFrom(out2.toByteArray()))
+            .build();
+
+    try (StreamWriter writer1 =
+            StreamWriter.newBuilder(TEST_STREAM_1, client)
+                .setWriterSchema(serializedArrowSchema1)
+                .setLocation("US")
+                .setEnableConnectionPool(true)
+                .build();
+        StreamWriter writer2 =
+            StreamWriter.newBuilder(TEST_STREAM_2, client)
+                .setWriterSchema(serializedArrowSchema2)
+                .setEnableConnectionPool(true)
+                .setLocation("US")
+                .build(); ) {
+
+      // Verify they are sharing the same connection pool.
+      assertEquals(
+          writer1.getTestOnlyConnectionWorkerPool(), writer2.getTestOnlyConnectionWorkerPool());
+
+      testBigQueryWrite.addResponse(createAppendResponse(0));
+      testBigQueryWrite.addResponse(createAppendResponse(1));
+
+      com.google.cloud.bigquery.storage.v1.ArrowRecordBatch batch1 =
+          createArrowRecordBatch(arrowSchema1, allocator, new String[] {"val1"});
+      com.google.cloud.bigquery.storage.v1.ArrowRecordBatch batch2 =
+          createArrowRecordBatch(arrowSchema2, allocator, new String[] {"val2"});
+
+      ApiFuture<AppendRowsResponse> future1 = writer1.append(batch1);
+      ApiFuture<AppendRowsResponse> future2 = writer2.append(batch2);
+
+      assertEquals(0, future1.get().getAppendResult().getOffset().getValue());
+      assertEquals(1, future2.get().getAppendResult().getOffset().getValue());
+
+      assertEquals(2, testBigQueryWrite.getAppendRequests().size());
+
+      // Verify both requests sent to backend contain stream and schema.
+      AppendRowsRequest request1 = testBigQueryWrite.getAppendRequests().get(0);
+      assertEquals(TEST_STREAM_1, request1.getWriteStream());
+      assertEquals(serializedArrowSchema1, request1.getArrowRows().getWriterSchema());
+      assertEquals(
+          batch1.getSerializedRecordBatch(),
+          request1.getArrowRows().getRows().getSerializedRecordBatch());
+
+      AppendRowsRequest request2 = testBigQueryWrite.getAppendRequests().get(1);
+      assertEquals(TEST_STREAM_2, request2.getWriteStream());
+      assertEquals(serializedArrowSchema2, request2.getArrowRows().getWriterSchema());
+      assertEquals(
+          batch2.getSerializedRecordBatch(),
+          request2.getArrowRows().getRows().getSerializedRecordBatch());
+    }
   }
 
   @Test
