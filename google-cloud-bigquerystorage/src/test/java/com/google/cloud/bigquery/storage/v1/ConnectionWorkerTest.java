@@ -448,12 +448,12 @@ public class ConnectionWorkerTest {
         assertThat(serverRequest.getOffset().getValue()).isEqualTo(i);
 
         // Since schema 1 equals schema 2, we will get the request as the pattern of:
-        // (writer_stream: t1, schema: schema1)
-        // (writer_stream: t1, schema: _)
-        // (writer_stream: t1, schema: schema3)
-        // (writer_stream: t1, schema: _)
-        // (writer_stream: t1, schema: schema1)
-        // (writer_stream: t1, schema: _)
+        // (writer_stream: TEST_STREAM_1, schema: schema1)
+        // (writer_stream: TEST_STREAM_1, schema: _)
+        // (writer_stream: TEST_STREAM_1, schema: schema3)
+        // (writer_stream: TEST_STREAM_1, schema: _)
+        // (writer_stream: TEST_STREAM_1, schema: schema1)
+        // (writer_stream: TEST_STREAM_1, schema: _)
         switch (i % 4) {
           case 0:
             assertThat(serverRequest.getWriteStream()).isEqualTo(TEST_STREAM_1);
