@@ -620,7 +620,8 @@ class ConnectionWorker implements AutoCloseable {
       requestBuilder.setDefaultMissingValueInterpretation(
           streamWriter.getDefaultValueInterpretation());
     }
-    return appendInternal(streamWriter, requestBuilder.build(), requestUniqueId);
+    return appendInternal(
+        streamWriter, requestBuilder.build(), requestUniqueId, rows.recordBatchRowCount());
   }
 
   Boolean isUserClosed() {
@@ -637,9 +638,13 @@ class ConnectionWorker implements AutoCloseable {
   }
 
   private ApiFuture<AppendRowsResponse> appendInternal(
-      StreamWriter streamWriter, AppendRowsRequest message, String requestUniqueId) {
+      StreamWriter streamWriter,
+      AppendRowsRequest message,
+      String requestUniqueId,
+      long recordBatchRowCount) {
     AppendRequestAndResponse requestWrapper =
-        new AppendRequestAndResponse(message, streamWriter, this.retrySettings, requestUniqueId);
+        new AppendRequestAndResponse(
+            message, streamWriter, this.retrySettings, requestUniqueId, recordBatchRowCount);
     if (requestWrapper.messageSize > getApiMaxRequestBytes()) {
       requestWrapper.appendResult.setException(
           new StatusRuntimeException(
@@ -1299,9 +1304,14 @@ class ConnectionWorker implements AutoCloseable {
       this.lock.unlock();
     }
 
+    long rowCount =
+        requestWrapper.message.hasProtoRows()
+            ? requestWrapper.message.getProtoRows().getRows().getSerializedRowsCount()
+            : requestWrapper.recordBatchRowCount == -1 ? 0L : requestWrapper.recordBatchRowCount;
+
     telemetryMetrics.recordResponse(
         requestWrapper.messageSize,
-        requestWrapper.message.getProtoRows().getRows().getSerializedRowsCount(),
+        rowCount,
         Code.values()[
             response.hasError() ? response.getError().getCode() : Status.Code.OK.ordinal()]
             .toString(),
@@ -1490,6 +1500,9 @@ class ConnectionWorker implements AutoCloseable {
 
     TimedAttemptSettings attemptSettings;
 
+    // -1 means the value is not set.
+    long recordBatchRowCount = -1;
+
     // Time at which request was last sent over the network.
     // If a response is no longer expected this is set back to null.
     Instant requestSendTimeStamp;
@@ -1498,7 +1511,8 @@ class ConnectionWorker implements AutoCloseable {
         AppendRowsRequest message,
         StreamWriter streamWriter,
         RetrySettings retrySettings,
-        String requestUniqueId) {
+        String requestUniqueId,
+        long recordBatchRowCount) {
       this.appendResult = SettableApiFuture.create();
       this.message = message;
       if (message.hasProtoRows()) {
@@ -1520,6 +1534,7 @@ class ConnectionWorker implements AutoCloseable {
       } else {
         this.retryAlgorithm = null;
       }
+      this.recordBatchRowCount = recordBatchRowCount;
     }
 
     void setRequestSendQueueTime() {

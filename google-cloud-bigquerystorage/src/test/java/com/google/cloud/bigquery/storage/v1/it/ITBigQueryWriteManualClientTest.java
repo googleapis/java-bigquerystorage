@@ -1175,7 +1175,7 @@ public class ITBigQueryWriteManualClientTest {
                     .setMaxRetryDelayDuration(java.time.Duration.ofMinutes(5))
                     .build())
             .build()) {
-      ApiFuture<AppendRowsResponse> response = streamWriter.append(v1ArrowRecordBatch);
+      ApiFuture<AppendRowsResponse> response = streamWriter.append(v1ArrowRecordBatch, 3);
       assertEquals(0, response.get().getAppendResult().getOffset().getValue());
     }
 

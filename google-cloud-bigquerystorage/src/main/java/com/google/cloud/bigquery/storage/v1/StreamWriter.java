@@ -34,11 +34,14 @@ import com.google.cloud.bigquery.storage.v1.StreamWriter.SingleConnectionOrConne
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import io.opentelemetry.api.common.Attributes;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.channels.Channels;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,6 +56,9 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
+import org.apache.arrow.vector.ipc.WriteChannel;
+import org.apache.arrow.vector.ipc.message.MessageSerializer;
+import org.apache.arrow.vector.types.pojo.Schema;
 
 /**
  * A BigQuery Stream Writer that can be used to write data into BigQuery Table.
@@ -424,15 +430,18 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
-   * Schedules the writing of Arrow record batch at the end of current stream.
+   * Schedules the writing of Arrow record batch at the end of current stream. User need to provide
+   * the row count in the batch to report OpenTelemetry row count metric.
    *
    * @param recordBatch the Arrow record batch in serialized format to write to BigQuery.
    *     <p>Since the serialized Arrow record batch doesn't contain schema, to use this method, the
    *     StreamWriter must have been created with Arrow schema.
+   * @param recordBatchRowCount the row count in the record batch.
    * @return the append response wrapped in a future.
    */
-  public ApiFuture<AppendRowsResponse> append(ArrowRecordBatch recordBatch) {
-    return append(recordBatch, -1);
+  public ApiFuture<AppendRowsResponse> append(
+      ArrowRecordBatch recordBatch, long recordBatchRowCount) {
+    return append(recordBatch, -1, recordBatchRowCount);
   }
 
   /**
@@ -476,12 +485,13 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
-   * Schedules the writing of Arrow record batch at given offset.
+   * Schedules the writing of Arrow record batch at given offset. User need to provide the row count
+   * in the batch to report OpenTelemetry row count metric.
    *
    * <p>Example of writing Arrow record batch with specific offset.
    *
    * <pre>{@code
-   * ApiFuture<AppendRowsResponse> future = writer.append(recordBatch, 0);
+   * ApiFuture<AppendRowsResponse> future = writer.append(recordBatch, 0, 5);
    * ApiFutures.addCallback(future, new ApiFutureCallback<AppendRowsResponse>() {
    *   public void onSuccess(AppendRowsResponse response) {
    *     if (!response.hasError()) {
@@ -499,10 +509,58 @@ public class StreamWriter implements AutoCloseable {
    *
    * @param recordBatch the ArrowRecordBatch in serialized format to write to BigQuery.
    * @param offset the offset of the first row. Provide -1 to write at the current end of stream.
+   * @param recordBatchRowCount the row count in the record batch.
    * @return the append response wrapped in a future.
    */
-  public ApiFuture<AppendRowsResponse> append(ArrowRecordBatch recordBatch, long offset) {
-    return append(AppendRowsData.of(recordBatch), offset);
+  public ApiFuture<AppendRowsResponse> append(
+      ArrowRecordBatch recordBatch, long offset, long recordBatchRowCount) {
+    return append(AppendRowsData.of(recordBatch, recordBatchRowCount), offset);
+  }
+
+  /**
+   * Schedules the writing of Arrow record batch at the end of current stream.
+   *
+   * @param recordBatch the Arrow record batch to write to BigQuery.
+   *     <p>Since the serialized Arrow record batch doesn't contain schema, to use this method, the
+   *     StreamWriter must have been created with Arrow schema. The ArrowRecordBatch will be closed
+   *     after it is serialized.
+   * @return the append response wrapped in a future.
+   */
+  public ApiFuture<AppendRowsResponse> append(
+      org.apache.arrow.vector.ipc.message.ArrowRecordBatch recordBatch) {
+    return append(recordBatch, -1);
+  }
+
+  /**
+   * Schedules the writing of Arrow record batch at given offset.
+   *
+   * @param recordBatch the Arrow record batch to write to BigQuery.
+   * @param offset the offset of the first row. Provide -1 to write at the current end of stream.
+   *     <p>The ArrowRecordBatch will be closed after it is serialized.
+   * @return the append response wrapped in a future.
+   */
+  public ApiFuture<AppendRowsResponse> append(
+      org.apache.arrow.vector.ipc.message.ArrowRecordBatch recordBatch, long offset) {
+    Preconditions.checkNotNull(recordBatch);
+    if (writerSchema.format() != AppendFormats.DataFormat.ARROW) {
+      throw new IllegalStateException(
+          "The StreamWriter must be created with Arrow schema to append Arrow data.");
+    }
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      MessageSerializer.serialize(new WriteChannel(Channels.newChannel(out)), recordBatch);
+      ArrowRecordBatch v1RecordBatch =
+          ArrowRecordBatch.newBuilder()
+              .setSerializedRecordBatch(ByteString.copyFrom(out.toByteArray()))
+              .build();
+      return append(v1RecordBatch, offset, recordBatch.getLength());
+    } catch (IOException e) {
+      throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT
+              .withDescription("Failed to serialize arrow record batch.")
+              .withCause(e));
+    } finally {
+      recordBatch.close();
+    }
   }
 
   private ApiFuture<AppendRowsResponse> append(AppendRowsData rows, long offset) {
@@ -531,7 +589,8 @@ public class StreamWriter implements AutoCloseable {
               AppendRowsRequest.newBuilder().build(),
               /* streamWriter= */ this,
               /* retrySettings= */ null,
-              requestUniqueId);
+              requestUniqueId,
+              rows.recordBatchRowCount());
       requestWrapper.appendResult.setException(
           new Exceptions.StreamWriterClosedException(
               Status.fromCode(Status.Code.FAILED_PRECONDITION)
@@ -800,10 +859,28 @@ public class StreamWriter implements AutoCloseable {
       return this;
     }
 
-    /** Sets the user provided Arrow schema of the rows. */
+    /** Sets the user provided serialized Arrow schema of the rows. */
     @CanIgnoreReturnValue
     public Builder setWriterSchema(ArrowSchema arrowSchema) {
       this.writerSchema = AppendRowsSchema.of(arrowSchema);
+      return this;
+    }
+
+    /** Sets the user provided unserialized Arrow schema of the rows. */
+    @CanIgnoreReturnValue
+    public Builder setWriterSchema(Schema arrowSchema) {
+      final ByteArrayOutputStream out = new ByteArrayOutputStream();
+      try {
+        MessageSerializer.serialize(new WriteChannel(Channels.newChannel(out)), arrowSchema);
+        this.writerSchema =
+            AppendRowsSchema.of(
+                ArrowSchema.newBuilder()
+                    .setSerializedSchema(ByteString.copyFrom(out.toByteArray()))
+                    .build());
+      } catch (IOException e) {
+        throw new StatusRuntimeException(
+            Status.INVALID_ARGUMENT.withDescription("Failed to serialize arrow schema."));
+      }
       return this;
     }
 

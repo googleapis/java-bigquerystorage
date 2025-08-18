@@ -1116,8 +1116,8 @@ public class StreamWriterTest {
       com.google.cloud.bigquery.storage.v1.ArrowRecordBatch batch2 =
           createArrowRecordBatch(arrowSchema2, allocator, new String[] {"val2"});
 
-      ApiFuture<AppendRowsResponse> future1 = writer1.append(batch1);
-      ApiFuture<AppendRowsResponse> future2 = writer2.append(batch2);
+      ApiFuture<AppendRowsResponse> future1 = writer1.append(batch1, 1L);
+      ApiFuture<AppendRowsResponse> future2 = writer2.append(batch2, 1L);
 
       assertEquals(0, future1.get().getAppendResult().getOffset().getValue());
       assertEquals(1, future2.get().getAppendResult().getOffset().getValue());
@@ -2222,9 +2222,9 @@ public class StreamWriterTest {
     testBigQueryWrite.addResponse(createAppendResponse(1));
 
     ApiFuture<AppendRowsResponse> appendFuture1 =
-        writer.append(createArrowRecordBatch(new String[] {"A"}), 0L);
+        writer.append(createArrowRecordBatch(new String[] {"A"}), 0L, 1L);
     ApiFuture<AppendRowsResponse> appendFuture2 =
-        writer.append(createArrowRecordBatch(new String[] {"B"}), 1L);
+        writer.append(createArrowRecordBatch(new String[] {"B"}), 1L, 1L);
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
