@@ -30,20 +30,20 @@ final class AppendFormats {
   /** Container class for the schema used in the AppendRows request. */
   @AutoValue
   abstract static class AppendRowsSchema {
-    public abstract DataFormat format();
+    abstract DataFormat format();
 
     @Nullable
-    public abstract ProtoSchema protoSchema();
+    abstract ProtoSchema protoSchema();
 
     @Nullable
-    public abstract ArrowSchema arrowSchema();
+    abstract ArrowSchema arrowSchema();
 
-    public static AppendRowsSchema of(ProtoSchema protoSchema) {
+    static AppendRowsSchema of(ProtoSchema protoSchema) {
       return new AutoValue_AppendFormats_AppendRowsSchema(
           DataFormat.PROTO, protoSchema, /* arrowSchema= */ null);
     }
 
-    public static AppendRowsSchema of(ArrowSchema arrowSchema) {
+    static AppendRowsSchema of(ArrowSchema arrowSchema) {
       return new AutoValue_AppendFormats_AppendRowsSchema(
           DataFormat.ARROW, /* protoSchema= */ null, arrowSchema);
     }
@@ -52,22 +52,30 @@ final class AppendFormats {
   /** Container class for the data used in the AppendRows request. */
   @AutoValue
   abstract static class AppendRowsData {
-    public abstract DataFormat format();
+    abstract DataFormat format();
 
     @Nullable
-    public abstract ProtoRows protoRows();
+    abstract ProtoRows protoRows();
 
     @Nullable
-    public abstract ArrowRecordBatch arrowRecordBatch();
+    abstract ArrowRecordBatch arrowRecordBatch();
 
-    public static AppendRowsData of(ProtoRows protoRows) {
+    // Row count for arrowRecordBatch. It is defaulted to -1 of not set.
+    abstract long recordBatchRowCount();
+
+    static AppendRowsData of(ProtoRows protoRows) {
       return new AutoValue_AppendFormats_AppendRowsData(
-          DataFormat.PROTO, protoRows, /* arrowRecordBatch= */ null);
+          DataFormat.PROTO, protoRows, /* arrowRecordBatch= */ null, /* recordBatchRowCount= */ -1);
     }
 
     static AppendRowsData of(ArrowRecordBatch arrowRecordBatch) {
       return new AutoValue_AppendFormats_AppendRowsData(
-          DataFormat.ARROW, /* protoRows= */ null, arrowRecordBatch);
+          DataFormat.ARROW, /* protoRows= */ null, arrowRecordBatch, /* recordBatchRowCount= */ -1);
+    }
+
+    static AppendRowsData of(ArrowRecordBatch arrowRecordBatch, long recordBatchRowCount) {
+      return new AutoValue_AppendFormats_AppendRowsData(
+          DataFormat.ARROW, /* protoRows= */ null, arrowRecordBatch, recordBatchRowCount);
     }
   }
 
