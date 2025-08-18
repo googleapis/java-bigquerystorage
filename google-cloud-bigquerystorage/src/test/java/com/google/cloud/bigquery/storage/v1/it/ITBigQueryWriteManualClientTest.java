@@ -1096,7 +1096,10 @@ public class ITBigQueryWriteManualClientTest {
 
   private void testArrowIngestion(boolean serializedInput)
       throws IOException, InterruptedException, ExecutionException, TimeoutException {
-    String tableName = "arrowIngestion";
+    String tableName =
+        serializedInput
+            ? "arrowIngestionWithSerializedInput"
+            : "arrowIngestionWithUnSerializedInput";
     TableInfo tableInfo =
         TableInfo.newBuilder(
                 TableId.of(DATASET, tableName),
