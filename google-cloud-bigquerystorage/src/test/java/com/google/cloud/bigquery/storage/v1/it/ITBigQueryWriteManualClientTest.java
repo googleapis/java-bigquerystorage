@@ -1083,7 +1083,18 @@ public class ITBigQueryWriteManualClientTest {
   }
 
   @Test
-  public void testArrowIngestion()
+  public void testArrowIngestionWithSerializedInput()
+      throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    testArrowIngestion(/* serializedInput= */ true);
+  }
+
+  @Test
+  public void testArrowIngestionWithUnSerializedInput()
+      throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    testArrowIngestion(/* serializedInput= */ false);
+  }
+
+  private void testArrowIngestion(boolean serializedInput)
       throws IOException, InterruptedException, ExecutionException, TimeoutException {
     String tableName = "arrowIngestion";
     TableInfo tableInfo =
@@ -1120,6 +1131,7 @@ public class ITBigQueryWriteManualClientTest {
         new org.apache.arrow.vector.types.pojo.Schema(fields, null);
     ArrowSchema v1ArrowSchema;
     ArrowRecordBatch v1ArrowRecordBatch;
+    org.apache.arrow.vector.ipc.message.ArrowRecordBatch recordBatch;
 
     try (VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, allocator)) {
       // Create Arrow data
@@ -1152,8 +1164,7 @@ public class ITBigQueryWriteManualClientTest {
           NoCompressionCodec.Factory.INSTANCE.createCodec(CompressionUtil.CodecType.NO_COMPRESSION);
       VectorUnloader vectorUnloader =
           new VectorUnloader(root, /* includeNullCount= */ true, codec, /* alignBuffers= */ true);
-      org.apache.arrow.vector.ipc.message.ArrowRecordBatch recordBatch =
-          vectorUnloader.getRecordBatch();
+      recordBatch = vectorUnloader.getRecordBatch();
 
       out = new ByteArrayOutputStream();
       MessageSerializer.serialize(new WriteChannel(Channels.newChannel(out)), recordBatch);
@@ -1162,21 +1173,40 @@ public class ITBigQueryWriteManualClientTest {
               .setSerializedRecordBatch(ByteString.copyFrom(out.toByteArray()))
               .build();
     }
-    try (StreamWriter streamWriter =
-        StreamWriter.newBuilder(tableId + "/_default", client)
-            .setWriterSchema(v1ArrowSchema)
-            .setTraceId(TEST_TRACE_ID)
-            .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
-            .setRetrySettings(
-                RetrySettings.newBuilder()
-                    .setInitialRetryDelayDuration(java.time.Duration.ofMillis(500))
-                    .setRetryDelayMultiplier(1.3)
-                    .setMaxAttempts(3)
-                    .setMaxRetryDelayDuration(java.time.Duration.ofMinutes(5))
-                    .build())
-            .build()) {
-      ApiFuture<AppendRowsResponse> response = streamWriter.append(v1ArrowRecordBatch, 3);
-      assertEquals(0, response.get().getAppendResult().getOffset().getValue());
+    if (serializedInput) {
+      try (StreamWriter streamWriter =
+          StreamWriter.newBuilder(tableId + "/_default", client)
+              .setWriterSchema(v1ArrowSchema)
+              .setTraceId(TEST_TRACE_ID)
+              .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
+              .setRetrySettings(
+                  RetrySettings.newBuilder()
+                      .setInitialRetryDelayDuration(java.time.Duration.ofMillis(500))
+                      .setRetryDelayMultiplier(1.3)
+                      .setMaxAttempts(3)
+                      .setMaxRetryDelayDuration(java.time.Duration.ofMinutes(5))
+                      .build())
+              .build()) {
+        ApiFuture<AppendRowsResponse> response = streamWriter.append(v1ArrowRecordBatch, 3);
+        assertEquals(0, response.get().getAppendResult().getOffset().getValue());
+      }
+    } else {
+      try (StreamWriter streamWriter =
+          StreamWriter.newBuilder(tableId + "/_default", client)
+              .setWriterSchema(arrowSchema)
+              .setTraceId(TEST_TRACE_ID)
+              .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
+              .setRetrySettings(
+                  RetrySettings.newBuilder()
+                      .setInitialRetryDelayDuration(java.time.Duration.ofMillis(500))
+                      .setRetryDelayMultiplier(1.3)
+                      .setMaxAttempts(3)
+                      .setMaxRetryDelayDuration(java.time.Duration.ofMinutes(5))
+                      .build())
+              .build()) {
+        ApiFuture<AppendRowsResponse> response = streamWriter.append(recordBatch);
+        assertEquals(0, response.get().getAppendResult().getOffset().getValue());
+      }
     }
 
     TableResult result =

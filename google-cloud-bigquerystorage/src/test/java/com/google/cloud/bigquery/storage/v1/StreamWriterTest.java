@@ -244,6 +244,16 @@ public class StreamWriterTest {
         .build();
   }
 
+  private StreamWriter getTestStreamWriterExclusiveRetryEnabledWithUnserialiedArrowSchema()
+      throws IOException {
+    return StreamWriter.newBuilder(EXPLICIT_STREAM, client)
+        .setWriterSchema(ARROW_SCHEMA)
+        .setTraceId(TEST_TRACE_ID)
+        .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
+        .setRetrySettings(retrySettings)
+        .build();
+  }
+
   private ProtoSchema createProtoSchema() {
     return createProtoSchema("foo");
   }
@@ -2216,7 +2226,7 @@ public class StreamWriterTest {
   }
 
   @Test
-  public void testAppendSuccessWithArrowData() throws Exception {
+  public void testAppendSuccessWithArrowSerializedData() throws Exception {
     StreamWriter writer = getTestStreamWriterExclusiveRetryEnabledWithArrowSchema();
     testBigQueryWrite.addResponse(createAppendResponse(0));
     testBigQueryWrite.addResponse(createAppendResponse(1));
@@ -2225,6 +2235,43 @@ public class StreamWriterTest {
         writer.append(createArrowRecordBatch(new String[] {"A"}), 0L, 1L);
     ApiFuture<AppendRowsResponse> appendFuture2 =
         writer.append(createArrowRecordBatch(new String[] {"B"}), 1L, 1L);
+
+    assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
+    assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
+
+    writer.close();
+  }
+
+  @Test
+  public void testAppendSuccessWithUnserializedArrowRecordBatch() throws Exception {
+    StreamWriter writer = getTestStreamWriterExclusiveRetryEnabledWithUnserialiedArrowSchema();
+    testBigQueryWrite.addResponse(createAppendResponse(0));
+    testBigQueryWrite.addResponse(createAppendResponse(1));
+
+    ApiFuture<AppendRowsResponse> appendFuture1;
+    ApiFuture<AppendRowsResponse> appendFuture2;
+
+    try (VectorSchemaRoot vectorSchemaRoot1 = VectorSchemaRoot.create(ARROW_SCHEMA, allocator)) {
+      VarCharVector fooVector1 = (VarCharVector) vectorSchemaRoot1.getVector("foo");
+      fooVector1.allocateNew(1);
+      fooVector1.set(0, "A".getBytes(UTF_8));
+      vectorSchemaRoot1.setRowCount(1);
+      VectorUnloader vectorUnloader1 = new VectorUnloader(vectorSchemaRoot1);
+      try (ArrowRecordBatch recordBatch1 = vectorUnloader1.getRecordBatch()) {
+        appendFuture1 = writer.append(recordBatch1, 0L);
+      }
+    }
+
+    try (VectorSchemaRoot vectorSchemaRoot2 = VectorSchemaRoot.create(ARROW_SCHEMA, allocator)) {
+      VarCharVector fooVector2 = (VarCharVector) vectorSchemaRoot2.getVector("foo");
+      fooVector2.allocateNew(1);
+      fooVector2.set(0, "B".getBytes(UTF_8));
+      vectorSchemaRoot2.setRowCount(1);
+      VectorUnloader vectorUnloader2 = new VectorUnloader(vectorSchemaRoot2);
+      try (ArrowRecordBatch recordBatch2 = vectorUnloader2.getRecordBatch()) {
+        appendFuture2 = writer.append(recordBatch2, 1L);
+      }
+    }
 
     assertEquals(0, appendFuture1.get().getAppendResult().getOffset().getValue());
     assertEquals(1, appendFuture2.get().getAppendResult().getOffset().getValue());
