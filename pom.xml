@@ -87,6 +87,13 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>org.apache.arrow</groupId>
+        <artifactId>arrow-bom</artifactId>
+        <version>${arrow.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>com.google.api.grpc</groupId>
         <artifactId>proto-google-cloud-bigquerystorage-v1beta</artifactId>
         <version>3.16.3-SNAPSHOT</version><!-- {x-version-update:proto-google-cloud-bigquerystorage-v1beta:current} -->
