@@ -430,18 +430,17 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
-   * Schedules the writing of Arrow record batch at the end of current stream. User need to provide
-   * the row count in the batch to report OpenTelemetry row count metric.
+   * Schedules the writing of Arrow record batch at the end of current stream. Since the
+   * StreamWriter doesn't know how many rows are in the batch, the OpenTelemetry row count metric
+   * will report 0 rows for the append.
    *
    * @param recordBatch the Arrow record batch in serialized format to write to BigQuery.
    *     <p>Since the serialized Arrow record batch doesn't contain schema, to use this method, the
    *     StreamWriter must have been created with Arrow schema.
-   * @param recordBatchRowCount the row count in the record batch.
    * @return the append response wrapped in a future.
    */
-  public ApiFuture<AppendRowsResponse> append(
-      ArrowRecordBatch recordBatch, long recordBatchRowCount) {
-    return append(recordBatch, -1, recordBatchRowCount);
+  public ApiFuture<AppendRowsResponse> append(ArrowRecordBatch recordBatch) {
+    return append(recordBatch, -1);
   }
 
   /**
@@ -485,13 +484,14 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
-   * Schedules the writing of Arrow record batch at given offset. User need to provide the row count
-   * in the batch to report OpenTelemetry row count metric.
+   * Schedules the writing of Arrow record batch at given offset. Since the StreamWriter doesn't
+   * know how many rows are in the batch, the OpenTelemetry row count metric will report 0 rows for
+   * the append.
    *
    * <p>Example of writing Arrow record batch with specific offset.
    *
    * <pre>{@code
-   * ApiFuture<AppendRowsResponse> future = writer.append(recordBatch, 0, 5);
+   * ApiFuture<AppendRowsResponse> future = writer.append(recordBatch, 0);
    * ApiFutures.addCallback(future, new ApiFutureCallback<AppendRowsResponse>() {
    *   public void onSuccess(AppendRowsResponse response) {
    *     if (!response.hasError()) {
@@ -509,10 +509,13 @@ public class StreamWriter implements AutoCloseable {
    *
    * @param recordBatch the ArrowRecordBatch in serialized format to write to BigQuery.
    * @param offset the offset of the first row. Provide -1 to write at the current end of stream.
-   * @param recordBatchRowCount the row count in the record batch.
    * @return the append response wrapped in a future.
    */
-  public ApiFuture<AppendRowsResponse> append(
+  public ApiFuture<AppendRowsResponse> append(ArrowRecordBatch recordBatch, long offset) {
+    return append(recordBatch, offset, -1);
+  }
+
+  private ApiFuture<AppendRowsResponse> append(
       ArrowRecordBatch recordBatch, long offset, long recordBatchRowCount) {
     return append(AppendRowsData.of(recordBatch, recordBatchRowCount), offset);
   }
