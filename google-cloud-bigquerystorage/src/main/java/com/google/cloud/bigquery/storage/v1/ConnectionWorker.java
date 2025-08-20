@@ -566,6 +566,9 @@ class ConnectionWorker implements AutoCloseable {
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(
       StreamWriter streamWriter, AppendRowsData rows, long offset, String requestUniqueId) {
+    Preconditions.checkArgument(
+        rows.format() == streamWriter.getWriterSchema().format(),
+        "The appended data format must be compatible with the StreamWriter's schema.");
     if (this.location != null && !this.location.equals(streamWriter.getLocation())) {
       throw new StatusRuntimeException(
           Status.fromCode(Code.INVALID_ARGUMENT)
