@@ -75,6 +75,7 @@ integration)
 graalvm)
     # Run Unit and Integration Tests with Native Image
     mvn -B ${INTEGRATION_TEST_ARGS} -ntp -Pnative test
+    RETURN_CODE=$?
     ;;
 samples)
     SAMPLES_DIR=samples
