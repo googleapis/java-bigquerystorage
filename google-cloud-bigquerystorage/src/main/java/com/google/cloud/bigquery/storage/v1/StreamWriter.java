@@ -551,11 +551,12 @@ public class StreamWriter implements AutoCloseable {
     }
     try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
       MessageSerializer.serialize(new WriteChannel(Channels.newChannel(out)), recordBatch);
-      ArrowRecordBatch v1RecordBatch =
+      return append(
           ArrowRecordBatch.newBuilder()
               .setSerializedRecordBatch(ByteString.copyFrom(out.toByteArray()))
-              .build();
-      return append(v1RecordBatch, offset, recordBatch.getLength());
+              .build(),
+          offset,
+          recordBatch.getLength());
     } catch (IOException e) {
       throw new StatusRuntimeException(
           Status.INVALID_ARGUMENT
