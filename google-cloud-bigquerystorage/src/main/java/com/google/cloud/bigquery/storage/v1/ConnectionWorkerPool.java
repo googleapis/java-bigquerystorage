@@ -276,12 +276,6 @@ public class ConnectionWorkerPool {
     return connectionWorker;
   }
 
-  /** Distributes the writing of a proto message to an underlying connection. */
-  ApiFuture<AppendRowsResponse> append(
-      StreamWriter streamWriter, ProtoRows rows, long offset, String uniqueRequestId) {
-    return append(streamWriter, AppendRowsData.of(rows), offset, uniqueRequestId);
-  }
-
   /** Distributes the writing of a message to an underlying connection. */
   ApiFuture<AppendRowsResponse> append(
       StreamWriter streamWriter, AppendRowsData rows, long offset, String uniqueRequestId) {

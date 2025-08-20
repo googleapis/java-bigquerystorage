@@ -563,12 +563,6 @@ class ConnectionWorker implements AutoCloseable {
     }
   }
 
-  /** Schedules the writing of Proto rows at given offset. */
-  ApiFuture<AppendRowsResponse> append(
-      StreamWriter streamWriter, ProtoRows rows, long offset, String requestUniqueId) {
-    return append(streamWriter, AppendRowsData.of(rows), offset, requestUniqueId);
-  }
-
   /** Schedules the writing of rows at given offset. */
   ApiFuture<AppendRowsResponse> append(
       StreamWriter streamWriter, AppendRowsData rows, long offset, String requestUniqueId) {
