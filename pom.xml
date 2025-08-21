@@ -292,6 +292,7 @@
               <fork>true</fork>
               <compilerArgs>
                 <arg>-J--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED</arg>
+                <arg>-J--add-opens=java.base/java.nio=java-base,ALL-UNNAMED</arg>
               </compilerArgs>
             </configuration>
           </plugin>
