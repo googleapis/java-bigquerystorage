@@ -432,7 +432,9 @@ public class StreamWriter implements AutoCloseable {
   /**
    * Schedules the writing of Arrow record batch at the end of current stream. Since the
    * StreamWriter doesn't know how many rows are in the batch, the OpenTelemetry row count metric
-   * will report 0 rows for the append.
+   * will report 0 rows for the append. Please use the version of append method that accepts
+   * org.apache.arrow.vector.ipc.message.ArrowRecordBatch if OpenTelemetry row count is requried.
+   * Arrow schema is required to be set for the StreamWriter to use this method.
    *
    * @param recordBatch the Arrow record batch in serialized format to write to BigQuery.
    *     <p>Since the serialized Arrow record batch doesn't contain schema, to use this method, the
@@ -486,7 +488,9 @@ public class StreamWriter implements AutoCloseable {
   /**
    * Schedules the writing of Arrow record batch at given offset. Since the StreamWriter doesn't
    * know how many rows are in the batch, the OpenTelemetry row count metric will report 0 rows for
-   * the append.
+   * the append. Please use the version of append method that accepts
+   * org.apache.arrow.vector.ipc.message.ArrowRecordBatch if OpenTelemetry row count is requried.
+   * Arrow schema is required to be set for the StreamWriter to use this method.
    *
    * <p>Example of writing Arrow record batch with specific offset.
    *
@@ -521,7 +525,8 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
-   * Schedules the writing of Arrow record batch at the end of current stream.
+   * Schedules the writing of Arrow record batch at the end of current stream. Arrow schema is
+   * required to be set for the StreamWriter to use this method.
    *
    * @param recordBatch the Arrow record batch to write to BigQuery.
    *     <p>Since the serialized Arrow record batch doesn't contain schema, to use this method, the
@@ -535,7 +540,8 @@ public class StreamWriter implements AutoCloseable {
   }
 
   /**
-   * Schedules the writing of Arrow record batch at given offset.
+   * Schedules the writing of Arrow record batch at given offset. Arrow schema is required to be set
+   * for the StreamWriter to use this method.
    *
    * @param recordBatch the Arrow record batch to write to BigQuery.
    * @param offset the offset of the first row. Provide -1 to write at the current end of stream.
