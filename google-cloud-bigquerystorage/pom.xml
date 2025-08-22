@@ -111,9 +111,6 @@
           <usedDependencies>
             <dependency>com.google.auto.value:auto-value</dependency>
           </usedDependencies>
-          <ignoredUnusedDeclaredDependencies>
-            <dependency>org.apache.arrow:arrow-memory-netty</dependency>
-          </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>
     </plugins>
@@ -238,6 +235,12 @@
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
       <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-netty</artifactId>
+      <version>${arrow.version}</version>
+      <scope>runtime</scope>
     </dependency>
     <!-- Test dependencies -->
     <dependency>
