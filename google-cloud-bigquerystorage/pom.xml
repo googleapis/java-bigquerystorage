@@ -16,7 +16,6 @@
   <properties>
     <site.installationModule>google-cloud-bigquerystorage</site.installationModule>
     <surefire.java9.opts/>
-    <arrow.version>17.0.0</arrow.version>
   </properties>
   <build>
     <pluginManagement>
