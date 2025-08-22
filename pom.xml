@@ -307,13 +307,12 @@
         <dependency>
           <groupId>org.opentest4j</groupId>
           <artifactId>opentest4j</artifactId>
-          <version>1.3.0</version>
+          <version>${opentest4j.version}</version>
         </dependency>
         <dependency>
           <groupId>org.junit.vintage</groupId>
           <artifactId>junit-vintage-engine</artifactId>
-          <version>5.13.4</version>
-          <scope>test</scope>
+          <version>${junit-vintage-engine.version}</version>
         </dependency>
       </dependencies>
       <build>
@@ -326,8 +325,7 @@
               <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
-                <version>5.13.4</version>
-                <scope>test</scope>
+                <version>${junit-vintage-engine.version}</version>
               </dependency>
             </dependencies>
             <configuration>
@@ -345,7 +343,7 @@
           <plugin>
             <groupId>org.graalvm.buildtools</groupId>
             <artifactId>native-maven-plugin</artifactId>
-            <version>0.11.0</version>
+            <version>${native-maven-plugin.version}</version>
             <extensions>true</extensions>
             <executions>
               <execution>
