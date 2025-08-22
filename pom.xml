@@ -325,6 +325,12 @@
           <scope>test</scope>
         </dependency>
         <dependency>
+          <groupId>org.apache.arrow</groupId>
+          <artifactId>arrow-memory-unsafe</artifactId>
+          <version>${arrow.version}</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
           <groupId>org.junit.vintage</groupId>
           <artifactId>junit-vintage-engine</artifactId>
           <version>5.10.2</version>
@@ -371,9 +377,6 @@
               </execution>
             </executions>
             <configuration>
-              <systemProperties>
-                <arrow.memory.allocator.type>netty</arrow.memory.allocator.type>
-              </systemProperties>
               <buildArgs>
                 <buildArg>--no-fallback</buildArg>
                 <buildArg>--no-server</buildArg>
