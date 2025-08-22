@@ -111,6 +111,9 @@
           <usedDependencies>
             <dependency>com.google.auto.value:auto-value</dependency>
           </usedDependencies>
+          <ignoredUnusedDeclaredDependencies>
+            <dependency>org.apache.arrow:arrow-memory-netty</dependency>
+          </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>
     </plugins>
