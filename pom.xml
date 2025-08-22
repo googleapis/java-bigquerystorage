@@ -366,6 +366,9 @@
               </execution>
             </executions>
             <configuration>
+              <systemProperties>
+                <arrow.memory.allocator.type>netty</arrow.memory.allocator.type>
+              </systemProperties>
               <buildArgs>
                 <buildArg>--no-fallback</buildArg>
                 <buildArg>--no-server</buildArg>
