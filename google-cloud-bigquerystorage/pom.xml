@@ -21,19 +21,6 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>org.graalvm.buildtools</groupId>
-          <artifactId>native-maven-plugin</artifactId>
-          <configuration>
-            <buildArgs>
-              <buildArg>--add-opens=java.base/java.nio=ALL-UNNAMED</buildArg>
-              <buildArg>--initialize-at-build-time=org.apache.arrow.memory.BaseAllocator</buildArg>
-              <buildArg>--initialize-at-build-time=org.apache.arrow.memory.BaseAllocator$Config</buildArg>
-              <buildArg>--initialize-at-build-time=org.apache.arrow.memory.DefaultAllocationManagerOption</buildArg>
-              <buildArg>--initialize-at-build-time=org.apache.arrow.memory.netty.NettyAllocationManager$1</buildArg>
-            </buildArgs>
-          </configuration>
-        </plugin>
-        <plugin>
         <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>0.8.12</version>
@@ -251,18 +238,6 @@
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
       <version>${arrow.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-netty</artifactId>
-      <version>${arrow.version}</version>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-core</artifactId>
-      <version>${arrow.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <!-- Test dependencies -->
     <dependency>
