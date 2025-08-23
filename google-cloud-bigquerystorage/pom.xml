@@ -15,8 +15,36 @@
   </parent>
   <properties>
     <site.installationModule>google-cloud-bigquerystorage</site.installationModule>
+    <surefire.java9.opts/>
   </properties>
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+        <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.12</version>
+          <executions>
+            <execution>
+              <id>prepare-agent</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+              <configuration>
+                <propertyName>jacoco.agent.argLine</propertyName>
+              </configuration>
+            </execution>
+            <execution>
+              <id>report</id>
+              <phase>prepare-package</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <extensions>
       <extension>
         <groupId>kr.motd.maven</groupId>
@@ -25,6 +53,19 @@
       </extension>
     </extensions>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>com.google.auto.value</groupId>
+              <artifactId>auto-value</artifactId>
+              <version>${auto-value.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.xolstice.maven.plugins</groupId>
         <artifactId>protobuf-maven-plugin</artifactId>
@@ -45,12 +86,34 @@
         <artifactId>flatten-maven-plugin</artifactId>
       </plugin>
       <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>
+            -Xmx2048m
+            ${surefire.java9.opts}
+            ${jacoco.agent.argLine}
+          </argLine>
+          <reuseForks>false</reuseForks>
+          <systemPropertyVariables>
+            <arrow.memory.allocator.type>netty</arrow.memory.allocator.type>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <configuration>
           <usedDependencies>
             <dependency>com.google.auto.value:auto-value</dependency>
           </usedDependencies>
+          <ignoredUnusedDeclaredDependencies>
+            <dependency>org.apache.arrow:arrow-memory-netty</dependency>
+          </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>
     </plugins>
@@ -67,10 +130,6 @@
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-protobuf</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.grpc</groupId>
-      <artifactId>grpc-util</artifactId>
     </dependency>
     <dependency>
       <groupId>io.grpc</groupId>
@@ -175,7 +234,11 @@
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-context</artifactId>
     </dependency>
-
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-vector</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
     <!-- Test dependencies -->
     <dependency>
       <groupId>io.opentelemetry</groupId>
@@ -229,12 +292,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-vector</artifactId>
+      <artifactId>arrow-memory-core</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-core</artifactId>
+      <artifactId>arrow-memory-netty</artifactId>
       <scope>test</scope>
     </dependency>
 
@@ -261,6 +324,13 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-core</artifactId>
       <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.errorprone</groupId>
+      <artifactId>error_prone_annotations</artifactId>
+      <version>2.41.0</version>
+      <scope>compile</scope>
     </dependency>
 
     <dependency>
@@ -294,4 +364,27 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>java9</id>
+      <activation>
+        <jdk>[9,)</jdk>
+      </activation>
+      <properties>
+        <surefire.java9.opts>--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED</surefire.java9.opts>
+      </properties>
+    </profile>
+    <profile>
+      <id>java8-test-jvm</id>
+      <activation>
+        <property>
+          <name>jvm</name>
+        </property>
+      </activation>
+      <properties>
+        <surefire.java9.opts/>
+      </properties>
+    </profile>
+  </profiles>
 </project>
