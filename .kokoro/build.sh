@@ -62,6 +62,7 @@ javadoc)
 integration)
     mvn -B ${INTEGRATION_TEST_ARGS} \
       -Penable-integration-tests \
+      -Dprotobuf.version=4.29.4 \
       -DtrimStackTrace=false \
       -Dclirr.skip=true \
       -Denforcer.skip=true \
