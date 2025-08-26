@@ -44,18 +44,6 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
       </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>com.google.auto.value</groupId>
-              <artifactId>auto-value</artifactId>
-              <version>${auto-value.version}</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
   <dependencies>
@@ -294,6 +282,28 @@
   </dependencies>
 
   <profiles>
+    <profile>
+      <id>arrow-config</id>
+      <activation>
+        <jdk>[9,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <encoding>UTF-8</encoding>
+              <fork>true</fork>
+              <compilerArgs>
+                <arg>-J--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED</arg>
+                <arg>-J--add-opens=java.base/java.nio=java-base,ALL-UNNAMED</arg>
+              </compilerArgs>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <!-- This profile is used to enable GraalVM native image testing in BQ storage-->
       <id>customNative</id>
