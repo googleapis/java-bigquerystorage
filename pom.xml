@@ -41,7 +41,7 @@
     <url>https://github.com/googleapis/java-bigquerystorage/issues</url>
     <system>GitHub Issues</system>
   </issueManagement>
-  
+
   <licenses>
     <license>
       <name>Apache-2.0</name>
@@ -55,7 +55,6 @@
     <project.protobuf-java.version>3.25.4</project.protobuf-java.version>
     <github.global.server>github</github.global.server>
     <site.installationModule>google-cloud-bigquerystorage-parent</site.installationModule>
-    <arrow.version>17.0.0</arrow.version>
   </properties>
 
   <pluginRepositories>
@@ -74,11 +73,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>com.google.errorprone</groupId>
-        <artifactId>error_prone_annotations</artifactId>
-        <version>2.41.0</version>
-      </dependency>
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-shared-dependencies</artifactId>
@@ -149,26 +143,9 @@
 
       <!-- Test dependencies -->
       <dependency>
-        <groupId>org.junit</groupId>
-        <artifactId>junit-bom</artifactId>
-        <version>5.10.2</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>4.13.2</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.platform</groupId>
-        <artifactId>junit-platform-commons</artifactId>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.junit.platform</groupId>
-        <artifactId>junit-platform-engine</artifactId>
         <scope>test</scope>
       </dependency>
       <dependency>
