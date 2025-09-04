@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.17.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.16.3...v3.17.0) (2025-09-04)
+
+
+### Features
+
+* **write:** Support Arrow format for Write API ([#3086](https://github.com/googleapis/java-bigquerystorage/issues/3086)) ([6b37a95](https://github.com/googleapis/java-bigquerystorage/commit/6b37a959b2d30dcc70052b29abc4607106f1bf28))
+
 ## [3.16.3](https://github.com/googleapis/java-bigquerystorage/compare/v3.16.2...v3.16.3) (2025-08-26)
 
 
