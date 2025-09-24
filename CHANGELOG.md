@@ -1,5 +1,77 @@
 # Changelog
 
+## [3.17.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.16.3...v3.17.0) (2025-09-11)
+
+
+### Features
+
+* **write:** Support Arrow format for Write API ([#3086](https://github.com/googleapis/java-bigquerystorage/issues/3086)) ([6b37a95](https://github.com/googleapis/java-bigquerystorage/commit/6b37a959b2d30dcc70052b29abc4607106f1bf28))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:sdk-platform-java-config to v3.52.1 ([#3088](https://github.com/googleapis/java-bigquerystorage/issues/3088)) ([4cb9fab](https://github.com/googleapis/java-bigquerystorage/commit/4cb9fab5c9c5ea716aab1813efcab319414d46c9))
+* Update googleapis/sdk-platform-java action to v2.62.1 ([#3089](https://github.com/googleapis/java-bigquerystorage/issues/3089)) ([08a1968](https://github.com/googleapis/java-bigquerystorage/commit/08a19685f519cd0a8ad43572377552e0b3727014))
+
+## [3.16.3](https://github.com/googleapis/java-bigquerystorage/compare/v3.16.2...v3.16.3) (2025-08-26)
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:sdk-platform-java-config to v3.52.0 ([#3076](https://github.com/googleapis/java-bigquerystorage/issues/3076)) ([a99d3f3](https://github.com/googleapis/java-bigquerystorage/commit/a99d3f32b7f732c276f5a57e317f3173044c7a8d))
+
+## [3.16.2](https://github.com/googleapis/java-bigquerystorage/compare/v3.16.1...v3.16.2) (2025-08-05)
+
+
+### Bug Fixes
+
+* **deps:** Update the Java code generator (gapic-generator-java) to 2.61.0 ([7ab0f12](https://github.com/googleapis/java-bigquerystorage/commit/7ab0f121ae2ba94e70875fd8505da1bea100a573))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:sdk-platform-java-config to v3.51.0 ([#3064](https://github.com/googleapis/java-bigquerystorage/issues/3064)) ([e33c4ae](https://github.com/googleapis/java-bigquerystorage/commit/e33c4aef51815ae6c8887301b2873710a28aa8c2))
+* Update dependency org.junit.vintage:junit-vintage-engine to v5.13.4 ([#3050](https://github.com/googleapis/java-bigquerystorage/issues/3050)) ([8a6b906](https://github.com/googleapis/java-bigquerystorage/commit/8a6b906970ea4dd05d1fbcb4557342cfa78ffb7c))
+* Update googleapis/sdk-platform-java action to v2.61.0 ([#3065](https://github.com/googleapis/java-bigquerystorage/issues/3065)) ([80acc0b](https://github.com/googleapis/java-bigquerystorage/commit/80acc0b85689716739d169df14edf52461d9da0d))
+
+## [3.16.1](https://github.com/googleapis/java-bigquerystorage/compare/v3.16.0...v3.16.1) (2025-07-28)
+
+
+### Bug Fixes
+
+* **deps:** Update the Java code generator (gapic-generator-java) to 2.60.2 ([d00dc03](https://github.com/googleapis/java-bigquerystorage/commit/d00dc03867b587be50ed6be12bc7eb7e7fd7cc7f))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.53.0 ([#3047](https://github.com/googleapis/java-bigquerystorage/issues/3047)) ([9ce3925](https://github.com/googleapis/java-bigquerystorage/commit/9ce39254cc26d0dd6bcf019d259a124461cacfc2))
+* Update dependency com.google.cloud:sdk-platform-java-config to v3.50.2 ([#3051](https://github.com/googleapis/java-bigquerystorage/issues/3051)) ([6ecd933](https://github.com/googleapis/java-bigquerystorage/commit/6ecd9338bac7382ad58cfafe25d7268a6d9654eb))
+* Update dependency io.opentelemetry:opentelemetry-bom to v1.52.0 ([#3044](https://github.com/googleapis/java-bigquerystorage/issues/3044)) ([f922f1f](https://github.com/googleapis/java-bigquerystorage/commit/f922f1fdd78442ee4111a79da20ebb0ba891ccc3))
+* Update dependency io.opentelemetry:opentelemetry-exporter-logging to v1.52.0 ([#3045](https://github.com/googleapis/java-bigquerystorage/issues/3045)) ([c59ec44](https://github.com/googleapis/java-bigquerystorage/commit/c59ec448729ddee124755015d652143860fd1179))
+* Update dependency org.graalvm.buildtools:native-maven-plugin to v0.11.0 ([#3049](https://github.com/googleapis/java-bigquerystorage/issues/3049)) ([84ae4f8](https://github.com/googleapis/java-bigquerystorage/commit/84ae4f8cc6b506cc2a804227dbe424c9f85fbc75))
+
+## [3.16.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.15.3...v3.16.0) (2025-07-11)
+
+
+### Features
+
+* Lower maxInflightRequest setting so that connection pool can scale up more efficiently. ([#2993](https://github.com/googleapis/java-bigquerystorage/issues/2993)) ([38e5837](https://github.com/googleapis/java-bigquerystorage/commit/38e5837dda2dfd2c2b22bedae6db089892f129f1))
+* Next release from main branch is 3.16.0 ([#3037](https://github.com/googleapis/java-bigquerystorage/issues/3037)) ([314d641](https://github.com/googleapis/java-bigquerystorage/commit/314d6419d29c175106f7d935be8c6ccf442466a5))
+
+
+### Bug Fixes
+
+* Add UNKNOWN to retry code, the same set was used for request level retries. ([#3034](https://github.com/googleapis/java-bigquerystorage/issues/3034)) ([60fb0c7](https://github.com/googleapis/java-bigquerystorage/commit/60fb0c743a1546d8ca2d6ea4c79e88d33ae09139))
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.52.0 ([#3028](https://github.com/googleapis/java-bigquerystorage/issues/3028)) ([6501ab5](https://github.com/googleapis/java-bigquerystorage/commit/6501ab5b204a9d13dce709fd832173645596f5d9))
+* Update dependency com.google.cloud:sdk-platform-java-config to v3.50.1 ([#3035](https://github.com/googleapis/java-bigquerystorage/issues/3035)) ([40d4e06](https://github.com/googleapis/java-bigquerystorage/commit/40d4e061f45ac3a08806828a4e47a2b48843f551))
+* Update dependency org.junit.vintage:junit-vintage-engine to v5.13.3 ([#3032](https://github.com/googleapis/java-bigquerystorage/issues/3032)) ([951f769](https://github.com/googleapis/java-bigquerystorage/commit/951f7697e28f8bfbe27130da29904c888266f30a))
+* Update googleapis/sdk-platform-java action to v2.60.1 ([#3036](https://github.com/googleapis/java-bigquerystorage/issues/3036)) ([c2941a5](https://github.com/googleapis/java-bigquerystorage/commit/c2941a5d6f99515d5ee49ebcfd00a855f22dce1c))
+* Update googleapis/sdk-platform-java action to v2.60.1 ([#3040](https://github.com/googleapis/java-bigquerystorage/issues/3040)) ([11412b4](https://github.com/googleapis/java-bigquerystorage/commit/11412b4b99510f5c52f26a3b83d7ce5cab7ae032))
+
 ## [3.15.3](https://github.com/googleapis/java-bigquerystorage/compare/v3.15.2...v3.15.3) (2025-06-25)
 
 
