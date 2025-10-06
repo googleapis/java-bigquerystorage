@@ -139,11 +139,6 @@ public class StreamWriter implements AutoCloseable {
 
   private Lock lock;
 
-  /** The maximum size of one request. Defined by the API. */
-  public static long getApiMaxRequestBytes() {
-    return 10L * 1000L * 1000L; // 10 megabytes (https://en.wikipedia.org/wiki/Megabyte)
-  }
-
   /**
    * Connection pool with different key will be split.
    *
