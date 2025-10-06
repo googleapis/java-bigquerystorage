@@ -139,6 +139,11 @@ public class StreamWriter implements AutoCloseable {
 
   private Lock lock;
 
+  /** The maximum size of one request. Defined by the API. */
+  public static long getApiMaxRequestBytes() {
+    return ConnectionWorker.getApiMaxRequestBytes();
+  }
+
   /**
    * Connection pool with different key will be split.
    *
