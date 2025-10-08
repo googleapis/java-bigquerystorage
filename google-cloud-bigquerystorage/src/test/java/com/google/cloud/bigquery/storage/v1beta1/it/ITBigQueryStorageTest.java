@@ -28,6 +28,7 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.rpc.ServerStream;
 import com.google.api.gax.rpc.UnauthenticatedException;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.RetryOption;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.BigQuery;
@@ -139,7 +140,7 @@ public class ITBigQueryStorageTest {
           + "  \"universe_domain\": \"googleapis.com\"\n"
           + "}";
 
-  private static final String FAKE_JSON_CRED_WITH_INVALID_DOMAIN =
+  private static final String FAKE_SA_JSON_CRED_WITH_INVALID_DOMAIN =
       "{\n"
           + "  \"private_key_id\": \"somekeyid\",\n"
           + "  \"private_key\": \"-----BEGIN PRIVATE KEY-----\\n"
@@ -1010,8 +1011,7 @@ public class ITBigQueryStorageTest {
     BigQueryStorageSettings bigQueryStorageSettings =
         BigQueryStorageSettings.newBuilder()
             .setCredentialsProvider(
-                FixedCredentialsProvider.create(
-                    loadCredentials(FAKE_JSON_CRED_WITH_INVALID_DOMAIN)))
+                FixedCredentialsProvider.create(loadCredentials()))
             .setUniverseDomain("invalid.domain")
             .build();
 
@@ -1044,8 +1044,7 @@ public class ITBigQueryStorageTest {
     BigQueryStorageSettings bigQueryStorageSettings =
         BigQueryStorageSettings.newBuilder()
             .setCredentialsProvider(
-                FixedCredentialsProvider.create(
-                    loadCredentials(FAKE_JSON_CRED_WITH_INVALID_DOMAIN)))
+                FixedCredentialsProvider.create(loadCredentials()))
             .setUniverseDomain("invalid.domain")
             .build();
 
@@ -1315,10 +1314,10 @@ public class ITBigQueryStorageTest {
     return completedJob;
   }
 
-  static GoogleCredentials loadCredentials(String credentialFile) {
+  static GoogleCredentials loadCredentials() {
     try {
-      InputStream keyStream = new ByteArrayInputStream(credentialFile.getBytes());
-      return GoogleCredentials.fromStream(keyStream);
+      InputStream keyStream = new ByteArrayInputStream(ITBigQueryStorageTest.FAKE_SA_JSON_CRED_WITH_INVALID_DOMAIN.getBytes());
+      return ServiceAccountCredentials.fromStream(keyStream);
     } catch (IOException e) {
       fail("Couldn't create fake JSON credentials.");
     }

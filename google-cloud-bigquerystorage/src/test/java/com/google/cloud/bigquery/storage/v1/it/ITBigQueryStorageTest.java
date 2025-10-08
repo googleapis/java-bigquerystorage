@@ -34,6 +34,7 @@ import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.gax.rpc.ServerStream;
 import com.google.api.gax.rpc.UnauthenticatedException;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.RetryOption;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.bigquery.BigQuery;
@@ -128,7 +129,7 @@ public class ITBigQueryStorageTest {
   private static String parentProjectId;
   private static BigQuery bigquery;
 
-  private static final String FAKE_JSON_CRED_WITH_GOOGLE_DOMAIN =
+  private static final String FAKE_SA_JSON_CRED_WITH_GOOGLE_DOMAIN =
       "{\n"
           + "  \"private_key_id\": \"somekeyid\",\n"
           + "  \"private_key\": \"-----BEGIN PRIVATE KEY-----\\n"
@@ -1491,7 +1492,7 @@ public class ITBigQueryStorageTest {
     BigQueryReadSettings bigQueryReadSettings =
         BigQueryReadSettings.newBuilder()
             .setCredentialsProvider(
-                FixedCredentialsProvider.create(loadCredentials(FAKE_JSON_CRED_WITH_GOOGLE_DOMAIN)))
+                FixedCredentialsProvider.create(loadCredentials(FAKE_SA_JSON_CRED_WITH_GOOGLE_DOMAIN)))
             .setUniverseDomain("invalid.domain")
             .build();
     BigQueryReadClient localClient = BigQueryReadClient.create(bigQueryReadSettings);
@@ -1855,7 +1856,7 @@ public class ITBigQueryStorageTest {
   static GoogleCredentials loadCredentials(String credentialFile) {
     try {
       InputStream keyStream = new ByteArrayInputStream(credentialFile.getBytes());
-      return GoogleCredentials.fromStream(keyStream);
+      return ServiceAccountCredentials.fromStream(keyStream);
     } catch (IOException e) {
       fail("Couldn't create fake JSON credentials.");
     }
