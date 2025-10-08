@@ -1010,8 +1010,7 @@ public class ITBigQueryStorageTest {
   public void testUniverseDomainWithInvalidUniverseDomain() throws IOException {
     BigQueryStorageSettings bigQueryStorageSettings =
         BigQueryStorageSettings.newBuilder()
-            .setCredentialsProvider(
-                FixedCredentialsProvider.create(loadCredentials()))
+            .setCredentialsProvider(FixedCredentialsProvider.create(loadCredentials()))
             .setUniverseDomain("invalid.domain")
             .build();
 
@@ -1043,8 +1042,7 @@ public class ITBigQueryStorageTest {
   public void testInvalidUniverseDomainWithMismatchCredentials() throws IOException {
     BigQueryStorageSettings bigQueryStorageSettings =
         BigQueryStorageSettings.newBuilder()
-            .setCredentialsProvider(
-                FixedCredentialsProvider.create(loadCredentials()))
+            .setCredentialsProvider(FixedCredentialsProvider.create(loadCredentials()))
             .setUniverseDomain("invalid.domain")
             .build();
 
@@ -1316,7 +1314,9 @@ public class ITBigQueryStorageTest {
 
   static GoogleCredentials loadCredentials() {
     try {
-      InputStream keyStream = new ByteArrayInputStream(ITBigQueryStorageTest.FAKE_SA_JSON_CRED_WITH_INVALID_DOMAIN.getBytes());
+      InputStream keyStream =
+          new ByteArrayInputStream(
+              ITBigQueryStorageTest.FAKE_SA_JSON_CRED_WITH_INVALID_DOMAIN.getBytes());
       return ServiceAccountCredentials.fromStream(keyStream);
     } catch (IOException e) {
       fail("Couldn't create fake JSON credentials.");

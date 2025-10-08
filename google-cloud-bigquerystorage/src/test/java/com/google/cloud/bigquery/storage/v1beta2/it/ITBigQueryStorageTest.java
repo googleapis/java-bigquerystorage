@@ -1002,7 +1002,8 @@ public class ITBigQueryStorageTest {
     BigQueryReadSettings bigQueryReadSettings =
         BigQueryReadSettings.newBuilder()
             .setCredentialsProvider(
-                FixedCredentialsProvider.create(loadCredentials(FAKE_SA_JSON_CRED_WITH_GOOGLE_DOMAIN)))
+                FixedCredentialsProvider.create(
+                    loadCredentials(FAKE_SA_JSON_CRED_WITH_GOOGLE_DOMAIN)))
             .setUniverseDomain("invalid.domain")
             .build();
     BigQueryReadClient localClient = BigQueryReadClient.create(bigQueryReadSettings);
