@@ -39,7 +39,6 @@ import com.google.cloud.bigquery.storage.v1.StreamWriter;
 import com.google.cloud.bigquery.storage.v1.TableName;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import java.io.IOException;
 import java.util.List;
@@ -78,38 +77,25 @@ public class WriteToDefaultStreamWithArrow {
     writeToDefaultStreamWithArrow(projectId, datasetName, tableName);
   }
 
-  private static ByteString buildByteString() {
-    byte[] bytes = new byte[] {1, 2, 3, 4, 5};
-    return ByteString.copyFrom(bytes);
-  }
-
-  // Create a JSON object that is compatible with the table schema.
-  private static ArrowRecordBatch buildRecordBatchWithThreeRows(VectorSchemaRoot root) {
+  // Create an ArrowRecordBatch object that is compatible with the table schema.
+  private static ArrowRecordBatch buildRecordBatch(VectorSchemaRoot root, int rowCount) {
     VarCharVector test_string = (VarCharVector) root.getVector("test_string");
-    test_string.allocateNew(3);
-    test_string.set(0, "A".getBytes());
-    test_string.set(1, "B".getBytes());
-    test_string.set(2, "C".getBytes());
     BigIntVector test_int = (BigIntVector) root.getVector("test_int");
-    test_int.allocateNew(3);
-    test_int.set(0, 1);
-    test_int.set(1, 2);
-    test_int.set(2, 3);
     VarCharVector test_geo = (VarCharVector) root.getVector("test_geo");
-    test_geo.allocateNew(3);
-    test_geo.set(
-        0,
-        "POLYGON((-124.49 47.35,-124.49 40.73,-116.49 40.73,-113.49 47.35,-124.49 47.35))"
-            .getBytes());
-    test_geo.set(
-        1,
-        "POLYGON((-124.49 47.35,-124.49 40.73,-116.49 40.73,-115.49 47.35,-124.49 47.35))"
-            .getBytes());
-    test_geo.set(
-        2,
-        "POLYGON((-124.49 47.35,-124.49 40.73,-116.49 40.73,-116.49 47.35,-124.49 47.35))"
-            .getBytes());
-    root.setRowCount(3);
+
+    test_string.allocateNew(rowCount);
+    test_int.allocateNew(rowCount);
+    test_geo.allocateNew(rowCount);
+
+    for (int i = 0; i < rowCount; i++) {
+      test_string.set(i, ("A" + i).getBytes());
+      test_int.set(i, i + 100);
+      test_geo.set(
+          i,
+          "POLYGON((-124.49 47.35,-124.49 40.73,-116.49 40.73,-113.49 47.35,-124.49 47.35))"
+              .getBytes());
+    }
+    root.setRowCount(rowCount);
 
     CompressionCodec codec =
         NoCompressionCodec.Factory.INSTANCE.createCodec(CompressionUtil.CodecType.NO_COMPRESSION);
@@ -130,14 +116,20 @@ public class WriteToDefaultStreamWithArrow {
     long initialRowCount = getRowCount(parentTable);
 
     BufferAllocator allocator = new RootAllocator();
-    try (VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, allocator)) {
-      ArrowRecordBatch batch = buildRecordBatchWithThreeRows(root);
-      writer.append(new ArrowData(arrowSchema, batch));
 
-      // Final cleanup for the stream during worker teardown.
-      writer.cleanup();
+    // A writer should be used to ingest as much data as possible before teardown.
+    // Append 100 batches.
+    for (int i = 0; i < 100; i++) {
+      try (VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, allocator)) {
+        // Each batch has 10 rows.
+        ArrowRecordBatch batch = buildRecordBatch(root, 10);
+        writer.append(new ArrowData(arrowSchema, batch));
+      }
     }
-    verifyExpectedRowCount(parentTable, initialRowCount + 3);
+    // Final cleanup for the stream during worker teardown.
+    writer.cleanup();
+
+    verifyExpectedRowCount(parentTable, initialRowCount + 1000);
     System.out.println("Appended records successfully.");
   }
 
