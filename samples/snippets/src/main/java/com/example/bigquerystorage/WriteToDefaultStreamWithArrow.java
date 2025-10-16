@@ -79,18 +79,18 @@ public class WriteToDefaultStreamWithArrow {
 
   // Create an ArrowRecordBatch object that is compatible with the table schema.
   private static ArrowRecordBatch buildRecordBatch(VectorSchemaRoot root, int rowCount) {
-    VarCharVector test_string = (VarCharVector) root.getVector("test_string");
-    BigIntVector test_int = (BigIntVector) root.getVector("test_int");
-    VarCharVector test_geo = (VarCharVector) root.getVector("test_geo");
+    VarCharVector testString = (VarCharVector) root.getVector("test_string");
+    BigIntVector testInt = (BigIntVector) root.getVector("test_int");
+    VarCharVector testGeo = (VarCharVector) root.getVector("test_geo");
 
-    test_string.allocateNew(rowCount);
-    test_int.allocateNew(rowCount);
-    test_geo.allocateNew(rowCount);
+    testString.allocateNew(rowCount);
+    testInt.allocateNew(rowCount);
+    testGeo.allocateNew(rowCount);
 
     for (int i = 0; i < rowCount; i++) {
-      test_string.set(i, ("A" + i).getBytes());
-      test_int.set(i, i + 100);
-      test_geo.set(
+      testString.set(i, ("A" + i).getBytes());
+      testInt.set(i, i + 100);
+      testGeo.set(
           i,
           "POLYGON((-124.49 47.35,-124.49 40.73,-116.49 40.73,-113.49 47.35,-124.49 47.35))"
               .getBytes());
