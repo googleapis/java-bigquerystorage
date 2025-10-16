@@ -63,6 +63,11 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.threeten.bp.Duration;
 
+/**
+ * This class demonstrates how to ingest data using Arrow format into BigQuery via the default
+ * stream. It initiates a DataWriter to establish a connection to BigQuery and reuses this
+ * connection to continuously ingest data.
+ */
 public class WriteToDefaultStreamWithArrow {
   public static void main(String[] args)
       throws DescriptorValidationException, InterruptedException, IOException {
