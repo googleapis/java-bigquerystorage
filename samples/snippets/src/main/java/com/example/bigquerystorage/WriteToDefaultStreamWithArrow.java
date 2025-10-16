@@ -74,7 +74,18 @@ public class WriteToDefaultStreamWithArrow {
     String projectId = args[0];
     String datasetName = args[1];
     String tableName = args[2];
+    // Table schema should contain 3 fields:
+    // ['test_string': STRING, 'test_int': INTEGER, 'test_geo':GEOGRAPHY]
     writeToDefaultStreamWithArrow(projectId, datasetName, tableName);
+  }
+
+  private static Schema createArrowSchema() {
+    List<Field> fields =
+        ImmutableList.of(
+            new Field("test_string", FieldType.nullable(new ArrowType.Utf8()), null),
+            new Field("test_int", FieldType.nullable(new ArrowType.Int(64, true)), null),
+            new Field("test_geo", FieldType.nullable(new ArrowType.Utf8()), null));
+    return new Schema(fields, null);
   }
 
   // Create an ArrowRecordBatch object that is compatible with the table schema.
@@ -112,9 +123,7 @@ public class WriteToDefaultStreamWithArrow {
     DataWriter writer = new DataWriter();
     // One time initialization for the worker.
     writer.initialize(parentTable, arrowSchema);
-
     long initialRowCount = getRowCount(parentTable);
-
     BufferAllocator allocator = new RootAllocator();
 
     // A writer should be used to ingest as much data as possible before teardown.
@@ -123,10 +132,13 @@ public class WriteToDefaultStreamWithArrow {
       try (VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, allocator)) {
         // Each batch has 10 rows.
         ArrowRecordBatch batch = buildRecordBatch(root, 10);
+
+        // Asynchronous append.
         writer.append(new ArrowData(arrowSchema, batch));
       }
     }
     // Final cleanup for the stream during worker teardown.
+    // It's blocked until all append requests' response are received.
     writer.cleanup();
 
     verifyExpectedRowCount(parentTable, initialRowCount + 1000);
@@ -169,15 +181,6 @@ public class WriteToDefaultStreamWithArrow {
       throw new RuntimeException(
           "Unexpected row count. Expected: " + expectedRowCount + ". Actual: " + countRowsActual);
     }
-  }
-
-  private static Schema createArrowSchema() {
-    List<Field> fields =
-        ImmutableList.of(
-            new Field("test_string", FieldType.nullable(new ArrowType.Utf8()), null),
-            new Field("test_int", FieldType.nullable(new ArrowType.Int(64, true)), null),
-            new Field("test_geo", FieldType.nullable(new ArrowType.Utf8()), null));
-    return new Schema(fields, null);
   }
 
   private static class ArrowData {
@@ -237,8 +240,8 @@ public class WriteToDefaultStreamWithArrow {
                   .setChannelsPerCpu(2)
                   .build())
           .setEnableConnectionPool(true)
-          // If value is missing in json and there is a default value configured on bigquery
-          // column, apply the default value to the missing value field.
+          // If value is missing in ArrowRecordBatch and there is a default value configured on
+          // bigquery column, apply the default value to the missing value field.
           .setDefaultMissingValueInterpretation(
               AppendRowsRequest.MissingValueInterpretation.DEFAULT_VALUE)
           .setMaxRetryDuration(java.time.Duration.ofSeconds(5))
