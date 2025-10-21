@@ -19,7 +19,7 @@ If you are using Maven with [BOM][libraries-bom], add this to your pom.xml file:
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>libraries-bom</artifactId>
-      <version>26.65.0</version>
+      <version>26.70.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -29,7 +29,7 @@ If you are using Maven with [BOM][libraries-bom], add this to your pom.xml file:
       <version>1.52.0</version>
       <type>pom</type>
       <scope>import</scope>
-     </dependency>
+    </dependency>
   </dependencies>
 </dependencyManagement>
 
@@ -48,7 +48,7 @@ If you are using Maven without the BOM, add this to your dependencies:
 <dependency>
   <groupId>com.google.cloud</groupId>
   <artifactId>google-cloud-bigquerystorage</artifactId>
-  <version>3.16.1</version>
+  <version>3.17.2</version>
 </dependency>
 
 ```
@@ -63,13 +63,13 @@ implementation 'com.google.cloud:google-cloud-bigquerystorage'
 If you are using Gradle without BOM, add this to your dependencies:
 
 ```Groovy
-implementation 'com.google.cloud:google-cloud-bigquerystorage:3.17.2'
+implementation 'com.google.cloud:google-cloud-bigquerystorage:3.17.3'
 ```
 
 If you are using SBT, add this to your dependencies:
 
 ```Scala
-libraryDependencies += "com.google.cloud" % "google-cloud-bigquerystorage" % "3.17.2"
+libraryDependencies += "com.google.cloud" % "google-cloud-bigquerystorage" % "3.17.3"
 ```
 
 ## Authentication
@@ -153,6 +153,7 @@ Samples are in the [`samples/`](https://github.com/googleapis/java-bigquerystora
 | Write Nested Proto | [source code](https://github.com/googleapis/java-bigquerystorage/blob/main/samples/snippets/src/main/java/com/example/bigquerystorage/WriteNestedProto.java) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/java-bigquerystorage&page=editor&open_in_editor=samples/snippets/src/main/java/com/example/bigquerystorage/WriteNestedProto.java) |
 | Write Pending Stream | [source code](https://github.com/googleapis/java-bigquerystorage/blob/main/samples/snippets/src/main/java/com/example/bigquerystorage/WritePendingStream.java) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/java-bigquerystorage&page=editor&open_in_editor=samples/snippets/src/main/java/com/example/bigquerystorage/WritePendingStream.java) |
 | Write To Default Stream | [source code](https://github.com/googleapis/java-bigquerystorage/blob/main/samples/snippets/src/main/java/com/example/bigquerystorage/WriteToDefaultStream.java) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/java-bigquerystorage&page=editor&open_in_editor=samples/snippets/src/main/java/com/example/bigquerystorage/WriteToDefaultStream.java) |
+| Write To Default Stream With Arrow | [source code](https://github.com/googleapis/java-bigquerystorage/blob/main/samples/snippets/src/main/java/com/example/bigquerystorage/WriteToDefaultStreamWithArrow.java) | [![Open in Cloud Shell][shell_img]](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/googleapis/java-bigquerystorage&page=editor&open_in_editor=samples/snippets/src/main/java/com/example/bigquerystorage/WriteToDefaultStreamWithArrow.java) |
 
 
 
@@ -256,7 +257,7 @@ Java is a registered trademark of Oracle and/or its affiliates.
 [kokoro-badge-link-5]: http://storage.googleapis.com/cloud-devrel-public/java/badges/java-bigquerystorage/java11.html
 [stability-image]: https://img.shields.io/badge/stability-stable-green
 [maven-version-image]: https://img.shields.io/maven-central/v/com.google.cloud/google-cloud-bigquerystorage.svg
-[maven-version-link]: https://central.sonatype.com/artifact/com.google.cloud/google-cloud-bigquerystorage/3.17.2
+[maven-version-link]: https://central.sonatype.com/artifact/com.google.cloud/google-cloud-bigquerystorage/3.17.3
 [authentication]: https://github.com/googleapis/google-cloud-java#authentication
 [auth-scopes]: https://developers.google.com/identity/protocols/oauth2/scopes
 [predefined-iam-roles]: https://cloud.google.com/iam/docs/understanding-roles#predefined_roles
