@@ -40,6 +40,6 @@ branches:
     branch: 3.15.x
   - bumpMinorPreMajor: true
     handleGHRelease: true
-    releaseType: java-backport
+    releaseType: java-yoshi
     branch: protobuf-4.x-rc
     manifest: true
