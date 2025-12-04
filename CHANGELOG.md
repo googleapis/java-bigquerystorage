@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.18.1-rc1](https://github.com/googleapis/java-bigquerystorage/compare/v3.18.0...v3.18.1-rc1) (2025-12-04)
+
+
+### Bug Fixes
+
+* next release candidate ([a7636c6](https://github.com/googleapis/java-bigquerystorage/commit/a7636c6abcb2a39022653e2c78bf9af6362424b6))
+
 ## [3.18.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.17.3...v3.18.0) (2025-11-13)
 
 
