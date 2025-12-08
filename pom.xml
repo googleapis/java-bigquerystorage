@@ -52,9 +52,10 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <project.protobuf-java.version>3.25.4</project.protobuf-java.version>
     <github.global.server>github</github.global.server>
     <site.installationModule>google-cloud-bigquerystorage-parent</site.installationModule>
+
+    <protobuf.version>3.25.8</protobuf.version>
   </properties>
 
   <pluginRepositories>

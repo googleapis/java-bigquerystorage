@@ -19,7 +19,6 @@
   </parent>
 
   <properties>
-    <project.protobuf-java.version>3.25.8</project.protobuf-java.version>
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -74,7 +73,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java-util</artifactId>
-      <version>${project.protobuf-java.version}</version>
+      <version>${protobuf.version}</version>
     </dependency>
 
     <dependency>
@@ -136,7 +135,7 @@
         <artifactId>protobuf-maven-plugin</artifactId>
         <version>0.6.1</version>
         <configuration>
-          <protocArtifact>com.google.protobuf:protoc:${project.protobuf-java.version}:exe:${os.detected.classifier}</protocArtifact>
+          <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
           <protoSourceRoot>../snippets/src/main/proto</protoSourceRoot>
         </configuration>
         <executions>

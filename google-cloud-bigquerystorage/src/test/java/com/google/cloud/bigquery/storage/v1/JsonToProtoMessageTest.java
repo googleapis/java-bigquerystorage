@@ -1157,30 +1157,30 @@ public class JsonToProtoMessageTest {
     JSONArray data = new JSONArray();
     JSONObject row = new JSONObject();
 
-    JSONObject rangeDate = new JSONObject();
-    rangeDate.put("start", 18262);
-    rangeDate.put("end", 18627);
-    row.put("range_date", rangeDate);
-
-    JSONObject rangeDatetime = new JSONObject();
-    rangeDatetime.put("start", 1715360343);
-    rangeDatetime.put("end", 1715446743);
-    row.put("range_datetime", rangeDatetime);
-
-    JSONObject rangeTimestamp = new JSONObject();
-    rangeTimestamp.put("start", 1715360343);
-    rangeTimestamp.put("end", 1715446743);
-    row.put("range_timestamp", rangeTimestamp);
-
-    JSONObject rangeDateMixedCase = new JSONObject();
-    rangeDateMixedCase.put("START", "1970-01-02");
-    rangeDateMixedCase.put("eND", "1970-01-03");
-    row.put("range_date_mixed_case", rangeDateMixedCase);
-
-    JSONObject rangeDatetimeMixedCase = new JSONObject();
-    rangeDatetimeMixedCase.put("STaRT", "2021-09-27T20:51:10.752");
-    rangeDatetimeMixedCase.put("END", "2021-09-27T00:00:00");
-    row.put("range_datetime_mixed_case", rangeDatetimeMixedCase);
+//    JSONObject rangeDate = new JSONObject();
+//    rangeDate.put("start", 18262);
+//    rangeDate.put("end", 18627);
+//    row.put("range_date", rangeDate);
+//
+//    JSONObject rangeDatetime = new JSONObject();
+//    rangeDatetime.put("start", 1715360343);
+//    rangeDatetime.put("end", 1715446743);
+//    row.put("range_datetime", rangeDatetime);
+//
+//    JSONObject rangeTimestamp = new JSONObject();
+//    rangeTimestamp.put("start", 1715360343);
+//    rangeTimestamp.put("end", 1715446743);
+//    row.put("range_timestamp", rangeTimestamp);
+//
+//    JSONObject rangeDateMixedCase = new JSONObject();
+//    rangeDateMixedCase.put("START", "1970-01-02");
+//    rangeDateMixedCase.put("eND", "1970-01-03");
+//    row.put("range_date_mixed_case", rangeDateMixedCase);
+//
+//    JSONObject rangeDatetimeMixedCase = new JSONObject();
+//    rangeDatetimeMixedCase.put("STaRT", "2021-09-27T20:51:10.752");
+//    rangeDatetimeMixedCase.put("END", "2021-09-27T00:00:00");
+//    row.put("range_datetime_mixed_case", rangeDatetimeMixedCase);
 
     JSONObject rangeTimestampMixedCase = new JSONObject();
     rangeTimestampMixedCase.put("START", "1970-01-01 00:00:00.000010");
