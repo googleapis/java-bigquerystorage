@@ -30,6 +30,7 @@ import com.google.protobuf.Message;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Converts a BQ table schema to protobuf descriptor. All field names will be converted to lowercase
@@ -37,15 +38,14 @@ import java.util.List;
  * shown in the ImmutableMaps below.
  */
 public class BQTableSchemaToProtoDescriptor {
-  private static ImmutableMap<TableFieldSchema.Mode, FieldDescriptorProto.Label>
-      BQTableSchemaModeMap =
-          ImmutableMap.of(
-              TableFieldSchema.Mode.NULLABLE, FieldDescriptorProto.Label.LABEL_OPTIONAL,
-              TableFieldSchema.Mode.REPEATED, FieldDescriptorProto.Label.LABEL_REPEATED,
-              TableFieldSchema.Mode.REQUIRED, FieldDescriptorProto.Label.LABEL_REQUIRED);
+  private static Map<Mode, FieldDescriptorProto.Label> DEFAULT_BQ_TABLE_SCHEMA_MODE_MAP =
+      ImmutableMap.of(
+          TableFieldSchema.Mode.NULLABLE, FieldDescriptorProto.Label.LABEL_OPTIONAL,
+          TableFieldSchema.Mode.REPEATED, FieldDescriptorProto.Label.LABEL_REPEATED,
+          TableFieldSchema.Mode.REQUIRED, FieldDescriptorProto.Label.LABEL_REQUIRED);
 
-  private static ImmutableMap<TableFieldSchema.Type, FieldDescriptorProto.Type>
-      BQTableSchemaTypeMap =
+  private static Map<TableFieldSchema.Type, FieldDescriptorProto.Type>
+      DEFAULT_BQ_TABLE_SCHEMA_TYPE_MAP =
           new ImmutableMap.Builder<TableFieldSchema.Type, FieldDescriptorProto.Type>()
               .put(TableFieldSchema.Type.BOOL, FieldDescriptorProto.Type.TYPE_BOOL)
               .put(TableFieldSchema.Type.BYTES, FieldDescriptorProto.Type.TYPE_BYTES)
@@ -142,11 +142,13 @@ public class BQTableSchemaToProtoDescriptor {
                       .setType(BQTableField.getRangeElementType().getType())
                       .setName("start")
                       .setMode(Mode.NULLABLE)
+                      .setTimestampPrecision(BQTableField.getTimestampPrecision())
                       .build(),
                   TableFieldSchema.newBuilder()
                       .setType(BQTableField.getRangeElementType().getType())
                       .setName("end")
                       .setMode(Mode.NULLABLE)
+                      .setTimestampPrecision(BQTableField.getTimestampPrecision())
                       .build());
 
           if (dependencyMap.containsKey(rangeFields)) {
@@ -189,7 +191,7 @@ public class BQTableSchemaToProtoDescriptor {
    * @param index Index for protobuf fields.
    * @param scope used to name descriptors
    */
-  private static FieldDescriptorProto convertBQTableFieldToProtoField(
+  static FieldDescriptorProto convertBQTableFieldToProtoField(
       TableFieldSchema BQTableField, int index, String scope) {
     TableFieldSchema.Mode mode = BQTableField.getMode();
     String fieldName = BQTableField.getName().toLowerCase();
@@ -198,7 +200,7 @@ public class BQTableSchemaToProtoDescriptor {
         FieldDescriptorProto.newBuilder()
             .setName(fieldName)
             .setNumber(index)
-            .setLabel((FieldDescriptorProto.Label) BQTableSchemaModeMap.get(mode));
+            .setLabel((FieldDescriptorProto.Label) DEFAULT_BQ_TABLE_SCHEMA_MODE_MAP.get(mode));
 
     switch (BQTableField.getType()) {
       case STRUCT:
@@ -206,12 +208,38 @@ public class BQTableSchemaToProtoDescriptor {
         break;
       case RANGE:
         fieldDescriptor.setType(
-            (FieldDescriptorProto.Type) BQTableSchemaTypeMap.get(BQTableField.getType()));
+            (FieldDescriptorProto.Type)
+                DEFAULT_BQ_TABLE_SCHEMA_TYPE_MAP.get(BQTableField.getType()));
         fieldDescriptor.setTypeName(scope);
+        break;
+      case TIMESTAMP:
+        // Can map to either int64 or string based on the BQ Field's timestamp precision
+        // Default: microsecond (6) maps to int64 and picosecond (12) maps to string.
+        switch ((int) BQTableField.getTimestampPrecision().getValue()) {
+          case 12:
+            fieldDescriptor.setType(
+                (FieldDescriptorProto.Type) FieldDescriptorProto.Type.TYPE_STRING);
+            break;
+          case 6:
+          case 0:
+            // If the timestampPrecision value coems back as a null result from the server, a
+            // default value
+            // of 0L is set. Map this value as default precision as 6 (microsecond).
+            fieldDescriptor.setType(
+                (FieldDescriptorProto.Type) FieldDescriptorProto.Type.TYPE_INT64);
+            break;
+          default:
+            // This should never happen as it's an invalid value from server
+            throw new IllegalStateException(
+                "BigQuery Timestamp field "
+                    + BQTableField.getName()
+                    + " has timestamp precision that is not 6 or 12");
+        }
         break;
       default:
         fieldDescriptor.setType(
-            (FieldDescriptorProto.Type) BQTableSchemaTypeMap.get(BQTableField.getType()));
+            (FieldDescriptorProto.Type)
+                DEFAULT_BQ_TABLE_SCHEMA_TYPE_MAP.get(BQTableField.getType()));
         break;
     }
 

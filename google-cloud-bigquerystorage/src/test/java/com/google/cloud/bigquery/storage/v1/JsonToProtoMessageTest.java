@@ -16,6 +16,7 @@
 package com.google.cloud.bigquery.storage.v1;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.google.cloud.bigquery.storage.test.JsonTest.*;
@@ -27,7 +28,9 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
+import com.google.protobuf.Timestamp;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1833,5 +1836,59 @@ public class JsonToProtoMessageTest {
     protoMsg =
         JsonToProtoMessage.INSTANCE.convertToProtoMessage(TestBignumeric.getDescriptor(), ts, json);
     assertEquals(expectedProto, protoMsg);
+  }
+
+  @Test
+  public void testGetTimestampAsString() {
+    assertEquals(
+        "2025-10-01 12:34:56.123456+00:00",
+        JsonToProtoMessage.getTimestampAsString("2025-10-01 12:34:56.123456+00:00"));
+    assertEquals(
+        "2025-10-01 12:34:56.123456789123+00:00",
+        JsonToProtoMessage.getTimestampAsString("2025-10-01 12:34:56.123456789123+00:00"));
+
+    assertEquals("1970-01-01T00:00:00.000001Z", JsonToProtoMessage.getTimestampAsString(1L));
+    assertEquals("1969-12-31T23:59:59.999999Z", JsonToProtoMessage.getTimestampAsString(-1L));
+
+    assertEquals(
+        "1970-01-02T10:17:36.000123456Z",
+        JsonToProtoMessage.getTimestampAsString(
+            Timestamp.newBuilder().setSeconds(123456).setNanos(123456).build()));
+    assertEquals(
+        "1969-12-30T13:42:23.999876544Z",
+        JsonToProtoMessage.getTimestampAsString(
+            Timestamp.newBuilder().setSeconds(-123456).setNanos(-123456).build()));
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> JsonToProtoMessage.getTimestampAsString("2025-10-01"));
+    assertThrows(
+        IllegalArgumentException.class, () -> JsonToProtoMessage.getTimestampAsString("1234"));
+    assertThrows(
+        IllegalArgumentException.class, () -> JsonToProtoMessage.getTimestampAsString("abc"));
+    assertThrows(
+        IllegalArgumentException.class, () -> JsonToProtoMessage.getTimestampAsString(10.4));
+    assertThrows(
+        IllegalArgumentException.class, () -> JsonToProtoMessage.getTimestampAsString(-1000.4));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> JsonToProtoMessage.getTimestampAsString(Timestamp.newBuilder()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> JsonToProtoMessage.getTimestampAsString(new Object()));
+    assertThrows(
+        IllegalArgumentException.class, () -> JsonToProtoMessage.getTimestampAsString(null));
+  }
+
+  @Test
+  public void testFromEpochMicros() {
+    // The `+` is added if there are more than 4 digits for years
+    assertEquals(
+        "+294247-01-10T04:00:54.775807Z",
+        JsonToProtoMessage.fromEpochMicros(Long.MAX_VALUE).toString());
+    assertEquals(
+        "-290308-12-21T19:59:05.224192Z",
+        JsonToProtoMessage.fromEpochMicros(Long.MIN_VALUE).toString());
+    assertEquals(Instant.EPOCH.toString(), JsonToProtoMessage.fromEpochMicros(0L).toString());
   }
 }

@@ -17,6 +17,7 @@ package com.google.cloud.bigquery.storage.v1;
 
 import com.google.api.pathtemplate.ValidationException;
 import com.google.cloud.bigquery.storage.v1.Exceptions.RowIndexToErrorException;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Doubles;
@@ -26,15 +27,18 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.DynamicMessage;
+import com.google.protobuf.Timestamp;
 import com.google.protobuf.UninitializedMessageException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
@@ -42,6 +46,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -119,6 +125,14 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
           .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
           .toFormatter();
+
+  // Regex to identify >9 digits in the fraction part (e.g. `.123456789123`)
+  // Matches the dot, followed by 10+ digits (fractional part), followed by non-digits (like `+00`)
+  // or end of string
+  private static final Pattern ISO8601_TIMESTAMP_HIGH_PRECISION_PATTERN =
+      Pattern.compile("\\.(\\d{10,})(?:\\D|$)");
+  private static final long MICROS_PER_SECOND = 1_000_000;
+  private static final int NANOS_PER_MICRO = 1_000;
 
   /** You can use {@link #INSTANCE} instead */
   public JsonToProtoMessage() {}
@@ -685,6 +699,14 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
         }
         break;
       case STRING:
+        // Timestamp fields will be transmitted as a String if BQ's timestamp field is
+        // enabled to support picosecond. Check that the schema's field is timestamp before
+        // proceeding with the rest of the logic. Converts the supported types into a String.
+        // Supported types: https://docs.cloud.google.com/bigquery/docs/supported-data-types
+        if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
+          protoMsg.setField(fieldDescriptor, getTimestampAsString(val));
+          return;
+        }
         if (val instanceof String) {
           protoMsg.setField(fieldDescriptor, val);
           return;
@@ -958,6 +980,14 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           }
           break;
         case STRING:
+          // Timestamp fields will be transmitted as a String if BQ's timestamp field is
+          // enabled to support picosecond. Check that the schema's field is timestamp before
+          // proceeding with the rest of the logic. Converts the supported types into a String.
+          // Supported types: https://docs.cloud.google.com/bigquery/docs/supported-data-types
+          if (fieldSchema != null && fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
+            protoMsg.addRepeatedField(fieldDescriptor, getTimestampAsString(val));
+            return;
+          }
           if (val instanceof String) {
             protoMsg.addRepeatedField(fieldDescriptor, val);
           } else if (val instanceof Short
@@ -1002,11 +1032,84 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     }
   }
 
+  /**
+   * Converts microseconds from epoch to a Java Instant.
+   *
+   * @param micros the number of microseconds from 1970-01-01T00:00:00Z
+   * @return the Instant corresponding to the microseconds
+   */
+  @VisibleForTesting
+  static Instant fromEpochMicros(long micros) {
+    long seconds = Math.floorDiv(micros, MICROS_PER_SECOND);
+    int nanos = (int) Math.floorMod(micros, MICROS_PER_SECOND) * NANOS_PER_MICRO;
+
+    return Instant.ofEpochSecond(seconds, nanos);
+  }
+
+  /** Best effort to try and convert a timestamp to an ISO8601 string */
+  @VisibleForTesting
+  static String getTimestampAsString(Object val) {
+    if (val instanceof String) {
+      // Validate the ISO8601 values before sending it to the server
+      String value = (String) val;
+      validateTimestamp(value);
+      return value;
+    } else if (val instanceof Short || val instanceof Integer || val instanceof Long) {
+      // Micros from epoch will most likely will be represented a Long, but any non-float
+      // numeric value can be used
+      return fromEpochMicros((Long) val).toString();
+    } else if (val instanceof Timestamp) {
+      // Convert the Protobuf timestamp class to ISO8601 string
+      Timestamp timestamp = (Timestamp) val;
+      return Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos()).toString();
+    }
+    throw new IllegalArgumentException("The timestamp value passed in is not from a valid type");
+  }
+
   private static void throwWrongFieldType(
       FieldDescriptor fieldDescriptor, String currentScope, int index) {
     throw new IllegalArgumentException(
         String.format(
             "JSONObject does not have a %s field at %s[%d].",
             FIELD_TYPE_TO_DEBUG_MESSAGE.get(fieldDescriptor.getType()), currentScope, index));
+  }
+
+  /**
+   * Internal helper method to check that the timestamp follows the expected String input of ISO8601
+   * string. Allows the fractional portion of the timestamp to support up to 12 digits of precision
+   * (up to picosecond).
+   *
+   * @throws IllegalArgumentException if timestamp is invalid or exceeds picosecond precision
+   */
+  @VisibleForTesting
+  static void validateTimestamp(String timestamp) {
+    // Check if the string has greater than nanosecond precision (>9 digits in fractional second)
+    Matcher matcher = ISO8601_TIMESTAMP_HIGH_PRECISION_PATTERN.matcher(timestamp);
+    if (matcher.find()) {
+      // Group 1 is the fractional second part of the ISO8601 string
+      String fraction = matcher.group(1);
+      // Pos 10-12 of the fractional second are guaranteed to be digits. The regex only
+      // matches the fraction section as long as they are digits.
+      if (fraction.length() > 12) {
+        throw new IllegalArgumentException(
+            "Fractional second portion of ISO8601 only supports up to picosecond (12 digits) in"
+                + " BigQuery");
+      }
+
+      // Replace the entire fractional second portion with just the nanosecond portion.
+      // The new timestamp will be validated against the JDK's DateTimeFormatter
+      String truncatedFraction = fraction.substring(0, 9);
+      timestamp =
+          new StringBuilder(timestamp)
+              .replace(matcher.start(1), matcher.end(1), truncatedFraction)
+              .toString();
+    }
+
+    // It is valid as long as DateTimeFormatter doesn't throw an exception
+    try {
+      TIMESTAMP_FORMATTER.parse((String) timestamp);
+    } catch (DateTimeParseException e) {
+      throw new IllegalArgumentException(e.getMessage(), e);
+    }
   }
 }
