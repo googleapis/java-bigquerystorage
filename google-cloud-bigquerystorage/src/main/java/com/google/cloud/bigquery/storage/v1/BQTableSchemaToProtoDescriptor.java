@@ -228,7 +228,7 @@ public class BQTableSchemaToProtoDescriptor {
         }
         // This should never happen as this is a server response issue. If this is the case,
         // warn the user and use INT64 as the default is microsecond precision.
-        if (timestampPrecision != 6L || timestampPrecision != 0L) {
+        if (timestampPrecision != 6L && timestampPrecision != 0L) {
           LOG.warning(
               "BigQuery Timestamp field "
                   + BQTableField.getName()
