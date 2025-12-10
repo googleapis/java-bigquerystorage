@@ -2014,7 +2014,8 @@ public class JsonToProtoMessageTest {
     assertEquals(
         "1970-01-01T00:00:00.001234+00:00", JsonToProtoMessage.getTimestampAsString("1234"));
     assertEquals("1970-01-01T00:00:00.000010+00:00", JsonToProtoMessage.getTimestampAsString(10.4));
-    assertEquals("1969-12-31T23:59:59.999000+00:00", JsonToProtoMessage.getTimestampAsString("-1000.4"));
+    assertEquals(
+        "1969-12-31T23:59:59.999000+00:00", JsonToProtoMessage.getTimestampAsString("-1000.4"));
 
     // Protobuf timestamp format is converted to ISO8601 string
     assertEquals(
