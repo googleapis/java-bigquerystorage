@@ -24,8 +24,6 @@ import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.google.protobuf.Int64Value;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
