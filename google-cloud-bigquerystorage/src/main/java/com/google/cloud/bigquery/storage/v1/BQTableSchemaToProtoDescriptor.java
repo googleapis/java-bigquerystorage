@@ -232,7 +232,8 @@ public class BQTableSchemaToProtoDescriptor {
           LOG.warning(
               "BigQuery Timestamp field "
                   + BQTableField.getName()
-                  + " has timestamp precision that is not 6 or 12. Defaulting to microsecond precision and mapping to INT64 protobuf type.");
+                  + " has timestamp precision that is not 6 or 12. Defaulting to microsecond"
+                  + " precision and mapping to INT64 protobuf type.");
         }
         // If the timestampPrecision value comes back as a null result from the server,
         // timestampPrecision has a value of 0L. Use the INT64 to map to the type used
