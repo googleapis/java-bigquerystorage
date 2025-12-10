@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Converts a BQ table schema to protobuf descriptor. All field names will be converted to lowercase
@@ -38,6 +39,10 @@ import java.util.Map;
  * shown in the ImmutableMaps below.
  */
 public class BQTableSchemaToProtoDescriptor {
+
+  private static final Logger LOG =
+      Logger.getLogger(BQTableSchemaToProtoDescriptor.class.getName());
+
   private static Map<Mode, FieldDescriptorProto.Label> DEFAULT_BQ_TABLE_SCHEMA_MODE_MAP =
       ImmutableMap.of(
           TableFieldSchema.Mode.NULLABLE, FieldDescriptorProto.Label.LABEL_OPTIONAL,
@@ -215,26 +220,24 @@ public class BQTableSchemaToProtoDescriptor {
       case TIMESTAMP:
         // Can map to either int64 or string based on the BQ Field's timestamp precision
         // Default: microsecond (6) maps to int64 and picosecond (12) maps to string.
-        switch ((int) BQTableField.getTimestampPrecision().getValue()) {
-          case 12:
-            fieldDescriptor.setType(
-                (FieldDescriptorProto.Type) FieldDescriptorProto.Type.TYPE_STRING);
-            break;
-          case 6:
-          case 0:
-            // If the timestampPrecision value coems back as a null result from the server, a
-            // default value
-            // of 0L is set. Map this value as default precision as 6 (microsecond).
-            fieldDescriptor.setType(
-                (FieldDescriptorProto.Type) FieldDescriptorProto.Type.TYPE_INT64);
-            break;
-          default:
-            // This should never happen as it's an invalid value from server
-            throw new IllegalStateException(
-                "BigQuery Timestamp field "
-                    + BQTableField.getName()
-                    + " has timestamp precision that is not 6 or 12");
+        long timestampPrecision = BQTableField.getTimestampPrecision().getValue();
+        if (timestampPrecision == 12L) {
+          fieldDescriptor.setType(
+              (FieldDescriptorProto.Type) FieldDescriptorProto.Type.TYPE_STRING);
+          break;
         }
+        // This should never happen as this is a server response issue. If this is the case,
+        // warn the user and use INT64 as the default is microsecond precision.
+        if (timestampPrecision != 6L || timestampPrecision != 0L) {
+          LOG.warning(
+              "BigQuery Timestamp field "
+                  + BQTableField.getName()
+                  + " has timestamp precision that is not 6 or 12. Defaulting to microsecond precision and mapping to INT64 protobuf type.");
+        }
+        // If the timestampPrecision value comes back as a null result from the server,
+        // timestampPrecision has a value of 0L. Use the INT64 to map to the type used
+        // for the default precision (microsecond).
+        fieldDescriptor.setType((FieldDescriptorProto.Type) FieldDescriptorProto.Type.TYPE_INT64);
         break;
       default:
         fieldDescriptor.setType(

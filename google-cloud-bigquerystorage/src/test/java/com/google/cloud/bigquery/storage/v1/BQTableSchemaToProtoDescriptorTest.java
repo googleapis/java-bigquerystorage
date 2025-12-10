@@ -17,7 +17,6 @@ package com.google.cloud.bigquery.storage.v1;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.google.cloud.bigquery.storage.test.JsonTest;
@@ -71,9 +70,9 @@ public class BQTableSchemaToProtoDescriptorTest {
 
   // Checks that two descriptors are the same by the check the fields inside the descriptors.
   // Checks that each descriptor has the same number of fields and that each field has the same
-  // type and mode on the message. If a field is a nested message, then it recurisvly checks the
+  // type and mode on the message. If a field is a nested message, then it recursively checks the
   // fields inside each nested message.
-  private void assertDesciptorsAreEqual(Descriptor expected, Descriptor actual) {
+  private void assertDescriptorsAreEqual(Descriptor expected, Descriptor actual) {
     // Check same number of fields
     assertEquals(actual.getFields().size(), expected.getFields().size());
     for (FieldDescriptor convertedField : actual.getFields()) {
@@ -90,7 +89,7 @@ public class BQTableSchemaToProtoDescriptorTest {
       assertEquals(expectedField.isOptional(), convertedField.isOptional());
       // Recursively check nested messages
       if (convertedType == FieldDescriptor.Type.MESSAGE) {
-        assertDesciptorsAreEqual(expectedField.getMessageType(), convertedField.getMessageType());
+        assertDescriptorsAreEqual(expectedField.getMessageType(), convertedField.getMessageType());
       }
     }
   }
@@ -109,7 +108,7 @@ public class BQTableSchemaToProtoDescriptorTest {
           TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
       final Descriptor descriptor =
           BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-      assertDesciptorsAreEqual(entry.getValue(), descriptor);
+      assertDescriptorsAreEqual(entry.getValue(), descriptor);
     }
   }
 
@@ -127,7 +126,7 @@ public class BQTableSchemaToProtoDescriptorTest {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
     Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-    assertDesciptorsAreEqual(SchemaTest.StringType.getDescriptor(), descriptor);
+    assertDescriptorsAreEqual(SchemaTest.StringType.getDescriptor(), descriptor);
   }
 
   @Test
@@ -197,7 +196,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-    assertDesciptorsAreEqual(JsonTest.TestRange.getDescriptor(), descriptor);
+    assertDescriptorsAreEqual(JsonTest.TestRange.getDescriptor(), descriptor);
   }
 
   @Test
@@ -218,7 +217,7 @@ public class BQTableSchemaToProtoDescriptorTest {
     final TableSchema tableSchema = TableSchema.newBuilder().addFields(0, tableFieldSchema).build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-    assertDesciptorsAreEqual(SchemaTest.MessageType.getDescriptor(), descriptor);
+    assertDescriptorsAreEqual(SchemaTest.MessageType.getDescriptor(), descriptor);
   }
 
   @Test
@@ -464,7 +463,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-    assertDesciptorsAreEqual(JsonTest.ComplexRoot.getDescriptor(), descriptor);
+    assertDescriptorsAreEqual(JsonTest.ComplexRoot.getDescriptor(), descriptor);
   }
 
   @Test
@@ -544,7 +543,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-    assertDesciptorsAreEqual(JsonTest.CasingComplex.getDescriptor(), descriptor);
+    assertDescriptorsAreEqual(JsonTest.CasingComplex.getDescriptor(), descriptor);
   }
 
   @Test
@@ -575,7 +574,7 @@ public class BQTableSchemaToProtoDescriptorTest {
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-    assertDesciptorsAreEqual(JsonTest.OptionTest.getDescriptor(), descriptor);
+    assertDescriptorsAreEqual(JsonTest.OptionTest.getDescriptor(), descriptor);
   }
 
   @Test
@@ -632,7 +631,7 @@ public class BQTableSchemaToProtoDescriptorTest {
     assertEquals(descriptorToCount.get("root__reuse_lvl1").intValue(), 3);
     assertTrue(descriptorToCount.containsKey("root__reuse_lvl1__reuse_lvl2"));
     assertEquals(descriptorToCount.get("root__reuse_lvl1__reuse_lvl2").intValue(), 3);
-    assertDesciptorsAreEqual(JsonTest.ReuseRoot.getDescriptor(), descriptor);
+    assertDescriptorsAreEqual(JsonTest.ReuseRoot.getDescriptor(), descriptor);
   }
 
   @Test
@@ -660,7 +659,7 @@ public class BQTableSchemaToProtoDescriptorTest {
         TableSchema.newBuilder().addFields(0, stringField).addFields(1, nestedField).build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
-    assertDesciptorsAreEqual(SchemaTest.TestNestedFlexibleFieldName.getDescriptor(), descriptor);
+    assertDescriptorsAreEqual(SchemaTest.TestNestedFlexibleFieldName.getDescriptor(), descriptor);
   }
 
   @Test
@@ -691,18 +690,17 @@ public class BQTableSchemaToProtoDescriptorTest {
   }
 
   @Test
-  public void timestampField_picosecondPrecision_invalid() throws Exception {
+  public void timestampField_unexpectedPrecision() throws Exception {
     TableFieldSchema timestampField =
         TableFieldSchema.newBuilder()
             .setType(TableFieldSchema.Type.TIMESTAMP)
             .setTimestampPrecision(Int64Value.newBuilder().setValue(13).build())
             .setMode(TableFieldSchema.Mode.NULLABLE)
             .build();
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            BQTableSchemaToProtoDescriptor.convertBQTableFieldToProtoField(
-                timestampField, 0, null));
+    DescriptorProtos.FieldDescriptorProto fieldDescriptorProto =
+        BQTableSchemaToProtoDescriptor.convertBQTableFieldToProtoField(timestampField, 0, null);
+    assertEquals(
+        DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT64, fieldDescriptorProto.getType());
 
     TableFieldSchema timestampField1 =
         TableFieldSchema.newBuilder()
@@ -710,10 +708,20 @@ public class BQTableSchemaToProtoDescriptorTest {
             .setTimestampPrecision(Int64Value.newBuilder().setValue(7).build())
             .setMode(TableFieldSchema.Mode.NULLABLE)
             .build();
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            BQTableSchemaToProtoDescriptor.convertBQTableFieldToProtoField(
-                timestampField1, 0, null));
+    DescriptorProtos.FieldDescriptorProto fieldDescriptorProto1 =
+        BQTableSchemaToProtoDescriptor.convertBQTableFieldToProtoField(timestampField1, 0, null);
+    assertEquals(
+        DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT64, fieldDescriptorProto1.getType());
+
+    TableFieldSchema timestampField2 =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.TIMESTAMP)
+            .setTimestampPrecision(Int64Value.newBuilder().setValue(-1).build())
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .build();
+    DescriptorProtos.FieldDescriptorProto fieldDescriptorProto2 =
+        BQTableSchemaToProtoDescriptor.convertBQTableFieldToProtoField(timestampField2, 0, null);
+    assertEquals(
+        DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT64, fieldDescriptorProto2.getType());
   }
 }

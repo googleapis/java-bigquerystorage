@@ -1041,7 +1041,11 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
     return Instant.ofEpochSecond(seconds, nanos);
   }
 
-  /** Best effort to try and convert a timestamp to an ISO8601 string */
+  /**
+   * Best effort to try and convert a timestamp to an ISO8601 string. Standardize the timestamp
+   * output to be ISO_DATE_TIME (e.g. 2011-12-03T10:15:30+01:00) for timestamps up to nanosecond
+   * precision. For higher precision, the ISO8601 input is used as long as it is valid.
+   */
   @VisibleForTesting
   static String getTimestampAsString(Object val) {
     if (val instanceof String) {
@@ -1051,8 +1055,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
       if (parsed != null) {
         return getTimestampAsString(parsed.longValue());
       }
-      // Validate the ISO8601 values before sending it to the server. No need to format
-      // if it's valid.
+      // Validate the ISO8601 values before sending it to the server.
       validateTimestamp(value);
 
       // If it's high precision (more than 9 digits), then return the ISO8601 string as-is
@@ -1065,8 +1068,8 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
       Instant instant = FROM_TIMESTAMP_FORMATTER.parse(value, Instant::from);
       return TO_TIMESTAMP_FORMATTER.format(instant);
     } else if (val instanceof Number) {
-      // Micros from epoch will most likely will be represented a Long, but any non-float
-      // numeric value can be used
+      // Micros from epoch will most likely will be represented a Long, but any numeric
+      // value can be used
       Instant instant = fromEpochMicros(((Number) val).longValue());
       return TO_TIMESTAMP_FORMATTER.format(instant);
     } else if (val instanceof Timestamp) {
