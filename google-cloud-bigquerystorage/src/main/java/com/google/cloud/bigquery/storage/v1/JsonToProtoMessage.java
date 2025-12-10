@@ -15,6 +15,11 @@
  */
 package com.google.cloud.bigquery.storage.v1;
 
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+
 import com.google.api.pathtemplate.ValidationException;
 import com.google.cloud.bigquery.storage.v1.Exceptions.RowIndexToErrorException;
 import com.google.common.annotations.VisibleForTesting;
@@ -69,7 +74,31 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
           .put(FieldDescriptor.Type.STRING, "string")
           .put(FieldDescriptor.Type.MESSAGE, "object")
           .build();
-  private static final DateTimeFormatter TIMESTAMP_FORMATTER =
+
+  private static final DateTimeFormatter TO_TIMESTAMP_FORMATTER =
+      new DateTimeFormatterBuilder()
+          .parseLenient()
+          .append(DateTimeFormatter.ISO_LOCAL_DATE)
+          .optionalStart()
+          .appendLiteral('T')
+          .optionalEnd()
+          .appendValue(HOUR_OF_DAY, 2)
+          .appendLiteral(':')
+          .appendValue(MINUTE_OF_HOUR, 2)
+          .optionalStart()
+          .appendLiteral(':')
+          .appendValue(SECOND_OF_MINUTE, 2)
+          .optionalEnd()
+          .optionalStart()
+          .appendFraction(NANO_OF_SECOND, 6, 9, true)
+          .optionalEnd()
+          .optionalStart()
+          .appendOffset("+HHMM", "+00:00")
+          .optionalEnd()
+          .toFormatter()
+          .withZone(ZoneOffset.UTC);
+
+  private static final DateTimeFormatter FROM_TIMESTAMP_FORMATTER =
       new DateTimeFormatterBuilder()
           .parseLenient()
           .append(DateTimeFormatter.ofPattern("yyyy[/][-]MM[/][-]dd"))
@@ -634,25 +663,8 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
               return;
             }
           } else if (fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
-            if (val instanceof String) {
-              Double parsed = Doubles.tryParse((String) val);
-              if (parsed != null) {
-                protoMsg.setField(fieldDescriptor, parsed.longValue());
-                return;
-              }
-              TemporalAccessor parsedTime = TIMESTAMP_FORMATTER.parse((String) val);
-              protoMsg.setField(
-                  fieldDescriptor,
-                  parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
-                      + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
-              return;
-            } else if (val instanceof Long) {
-              protoMsg.setField(fieldDescriptor, val);
-              return;
-            } else if (val instanceof Integer) {
-              protoMsg.setField(fieldDescriptor, Long.valueOf((Integer) val));
-              return;
-            }
+            protoMsg.setField(fieldDescriptor, getTimestampAsLong(val));
+            return;
           }
         }
         if (val instanceof Integer) {
@@ -919,24 +931,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
             }
           } else if (fieldSchema != null
               && fieldSchema.getType() == TableFieldSchema.Type.TIMESTAMP) {
-            if (val instanceof String) {
-              Double parsed = Doubles.tryParse((String) val);
-              if (parsed != null) {
-                protoMsg.addRepeatedField(fieldDescriptor, parsed.longValue());
-              } else {
-                TemporalAccessor parsedTime = TIMESTAMP_FORMATTER.parse((String) val);
-                protoMsg.addRepeatedField(
-                    fieldDescriptor,
-                    parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
-                        + parsedTime.getLong(ChronoField.MICRO_OF_SECOND));
-              }
-            } else if (val instanceof Long) {
-              protoMsg.addRepeatedField(fieldDescriptor, val);
-            } else if (val instanceof Integer) {
-              protoMsg.addRepeatedField(fieldDescriptor, Long.valueOf((Integer) val));
-            } else {
-              throwWrongFieldType(fieldDescriptor, currentScope, index);
-            }
+            protoMsg.addRepeatedField(fieldDescriptor, getTimestampAsLong(val));
           } else if (val instanceof Integer) {
             protoMsg.addRepeatedField(fieldDescriptor, Long.valueOf((Integer) val));
           } else if (val instanceof Long) {
@@ -1050,18 +1045,51 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
   @VisibleForTesting
   static String getTimestampAsString(Object val) {
     if (val instanceof String) {
-      // Validate the ISO8601 values before sending it to the server
       String value = (String) val;
+      Double parsed = Doubles.tryParse(value);
+      // If true, it was a numeric value inside a String
+      if (parsed != null) {
+        return getTimestampAsString(parsed.longValue());
+      }
+      // Validate the ISO8601 values before sending it to the server. No need to format
+      // if it's valid.
       validateTimestamp(value);
-      return value;
-    } else if (val instanceof Short || val instanceof Integer || val instanceof Long) {
+
+      // If it's high precision (more than 9 digits), then return the ISO8601 string as-is
+      // as JDK does not have a DateTimeFormatter that supports more than nanosecond precision.
+      Matcher matcher = ISO8601_TIMESTAMP_HIGH_PRECISION_PATTERN.matcher(value);
+      if (matcher.find()) {
+        return value;
+      }
+      // Otherwise, output the timestamp to a standard format before sending it to BQ
+      Instant instant = FROM_TIMESTAMP_FORMATTER.parse(value, Instant::from);
+      return TO_TIMESTAMP_FORMATTER.format(instant);
+    } else if (val instanceof Number) {
       // Micros from epoch will most likely will be represented a Long, but any non-float
       // numeric value can be used
-      return fromEpochMicros((Long) val).toString();
+      Instant instant = fromEpochMicros(((Number) val).longValue());
+      return TO_TIMESTAMP_FORMATTER.format(instant);
     } else if (val instanceof Timestamp) {
       // Convert the Protobuf timestamp class to ISO8601 string
       Timestamp timestamp = (Timestamp) val;
-      return Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos()).toString();
+      return TO_TIMESTAMP_FORMATTER.format(
+          Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos()));
+    }
+    throw new IllegalArgumentException("The timestamp value passed in is not from a valid type");
+  }
+
+  /* Best effort to try and convert the Object to a long (microseconds since epoch) */
+  private long getTimestampAsLong(Object val) {
+    if (val instanceof String) {
+      Double parsed = Doubles.tryParse((String) val);
+      if (parsed != null) {
+        return parsed.longValue();
+      }
+      TemporalAccessor parsedTime = FROM_TIMESTAMP_FORMATTER.parse((String) val);
+      return parsedTime.getLong(ChronoField.INSTANT_SECONDS) * 1000000
+          + parsedTime.getLong(ChronoField.MICRO_OF_SECOND);
+    } else if (val instanceof Number) {
+      return ((Number) val).longValue();
     }
     throw new IllegalArgumentException("The timestamp value passed in is not from a valid type");
   }
@@ -1107,7 +1135,7 @@ public class JsonToProtoMessage implements ToProtoConverter<Object> {
 
     // It is valid as long as DateTimeFormatter doesn't throw an exception
     try {
-      TIMESTAMP_FORMATTER.parse((String) timestamp);
+      FROM_TIMESTAMP_FORMATTER.parse((String) timestamp);
     } catch (DateTimeParseException e) {
       throw new IllegalArgumentException(e.getMessage(), e);
     }

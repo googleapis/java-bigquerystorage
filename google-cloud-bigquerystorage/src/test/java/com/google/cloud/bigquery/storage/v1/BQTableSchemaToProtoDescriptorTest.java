@@ -85,10 +85,9 @@ public class BQTableSchemaToProtoDescriptorTest {
       FieldDescriptor.Type originalType = expectedField.getType();
       assertEquals(convertedField.getName(), convertedType, originalType);
       // Check mode
-      assertTrue(
-          (expectedField.isRepeated() == convertedField.isRepeated())
-              && (expectedField.isRequired() == convertedField.isRequired())
-              && (expectedField.isOptional() == convertedField.isOptional()));
+      assertEquals(expectedField.isRepeated(), convertedField.isRepeated());
+      assertEquals(expectedField.isRequired(), convertedField.isRequired());
+      assertEquals(expectedField.isOptional(), convertedField.isOptional());
       // Recursively check nested messages
       if (convertedType == FieldDescriptor.Type.MESSAGE) {
         assertDesciptorsAreEqual(expectedField.getMessageType(), convertedField.getMessageType());
@@ -194,17 +193,6 @@ public class BQTableSchemaToProtoDescriptorTest {
                         TableFieldSchema.FieldElementType.newBuilder()
                             .setType(TableFieldSchema.Type.TIMESTAMP)
                             .build())
-                    .build())
-            .addFields(
-                TableFieldSchema.newBuilder()
-                    .setName("range_timestamp_higher_precision_miXEd_caSE")
-                    .setType(TableFieldSchema.Type.RANGE)
-                    .setMode(TableFieldSchema.Mode.NULLABLE)
-                    .setRangeElementType(
-                        TableFieldSchema.FieldElementType.newBuilder()
-                            .setType(TableFieldSchema.Type.TIMESTAMP)
-                            .build())
-                    .setTimestampPrecision(Int64Value.newBuilder().setValue(12).build())
                     .build())
             .build();
     final Descriptor descriptor =
@@ -424,6 +412,20 @@ public class BQTableSchemaToProtoDescriptorTest {
             .setMode(TableFieldSchema.Mode.REPEATED)
             .setName("test_json")
             .build();
+    final TableFieldSchema TEST_TIMESTAMP_HIGHER_PRECISION =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.TIMESTAMP)
+            .setMode(TableFieldSchema.Mode.NULLABLE)
+            .setName("test_timestamp_higher_precision")
+            .setTimestampPrecision(Int64Value.newBuilder().setValue(12).build())
+            .build();
+    final TableFieldSchema TEST_TIMESTAMP_HIGHER_PRECISION_REPEATED =
+        TableFieldSchema.newBuilder()
+            .setType(TableFieldSchema.Type.TIMESTAMP)
+            .setMode(TableFieldSchema.Mode.REPEATED)
+            .setName("test_timestamp_higher_precision_repeated")
+            .setTimestampPrecision(Int64Value.newBuilder().setValue(12).build())
+            .build();
     final TableSchema tableSchema =
         TableSchema.newBuilder()
             .addFields(0, test_int)
@@ -457,6 +459,8 @@ public class BQTableSchemaToProtoDescriptorTest {
             .addFields(28, TEST_BIGNUMERIC_DOUBLE)
             .addFields(29, TEST_INTERVAL)
             .addFields(30, TEST_JSON)
+            .addFields(31, TEST_TIMESTAMP_HIGHER_PRECISION)
+            .addFields(32, TEST_TIMESTAMP_HIGHER_PRECISION_REPEATED)
             .build();
     final Descriptor descriptor =
         BQTableSchemaToProtoDescriptor.convertBQTableSchemaToProtoDescriptor(tableSchema);
