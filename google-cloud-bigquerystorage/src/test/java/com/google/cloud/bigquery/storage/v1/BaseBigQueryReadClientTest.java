@@ -35,7 +35,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Generated;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -80,7 +79,6 @@ public class BaseBigQueryReadClientTest {
   @After
   public void tearDown() throws Exception {
     client.close();
-    client.awaitTermination(10, TimeUnit.SECONDS);
   }
 
   @Test

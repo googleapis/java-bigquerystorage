@@ -1438,7 +1438,8 @@ public class ITBigQueryStorageTest {
   }
 
   @Test
-  public void testSimpleReadWithBackgroundExecutorProvider() throws IOException, InterruptedException {
+  public void testSimpleReadWithBackgroundExecutorProvider()
+      throws IOException, InterruptedException {
     BigQueryReadSettings bigQueryReadSettings =
         BigQueryReadSettings.newBuilder()
             .setBackgroundExecutorProvider(
