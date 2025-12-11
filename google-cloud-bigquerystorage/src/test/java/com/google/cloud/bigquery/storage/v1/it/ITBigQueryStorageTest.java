@@ -1487,9 +1487,6 @@ public class ITBigQueryStorageTest {
     }
 
     assertEquals(164_656, rowCount);
-
-    client.close();
-    client.awaitTermination(10, TimeUnit.SECONDS);
   }
 
   @Test
