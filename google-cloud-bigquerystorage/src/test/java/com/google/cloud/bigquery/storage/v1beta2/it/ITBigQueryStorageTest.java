@@ -84,9 +84,11 @@ import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.avro.util.Utf8;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /** Integration tests for BigQuery Storage API. */
+@Ignore("Ignoring non v1 ITs")
 public class ITBigQueryStorageTest {
 
   private static final Logger LOG = Logger.getLogger(ITBigQueryStorageTest.class.getName());

@@ -38,12 +38,14 @@ import java.util.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Integration tests for BigQuery Storage API which target long running sessions. These tests can be
  * enabled by setting the system property 'bigquery.storage.enable_long_running_tests' to true.
  */
+@Ignore("Ignoring non v1 ITs")
 public class ITBigQueryStorageLongRunningTest {
 
   private static final Logger LOG =
