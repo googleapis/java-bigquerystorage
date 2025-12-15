@@ -22,6 +22,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -123,6 +124,8 @@ public class ITBigQueryStorageReadClientTest {
       Logger.getLogger(ITBigQueryStorageReadClientTest.class.getName());
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String DESCRIPTION = "BigQuery Storage Java client test dataset";
+  private static final int SHAKESPEARE_SAMPLE_ROW_COUNT = 164_656;
+  private static final int MAX_STREAM_COUNT = 1;
 
   private static BigQueryReadClient client;
   private static String projectName;
@@ -270,7 +273,7 @@ public class ITBigQueryStorageReadClientTest {
                   .build())
           .build();
 
-  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_DATES =
+  private static final Map<String, Range> RANGE_TEST_VALUES_DATES =
       new ImmutableMap.Builder<String, Range>()
           .put(
               "bounded",
@@ -303,7 +306,7 @@ public class ITBigQueryStorageReadClientTest {
           .build();
 
   // dates are returned as days since epoch
-  private static final ImmutableMap<String, Range> RANGE_TEST_VALUES_EXPECTED_DATES =
+  private static final Map<String, Range> RANGE_TEST_VALUES_EXPECTED_DATES =
       new ImmutableMap.Builder<String, Range>()
           .put(
               "bounded",
@@ -562,7 +565,7 @@ public class ITBigQueryStorageReadClientTest {
       rowCount += response.getRowCount();
     }
 
-    assertEquals(164_656, rowCount);
+    assertEquals(SHAKESPEARE_SAMPLE_ROW_COUNT, rowCount);
   }
 
   @Test
@@ -608,7 +611,7 @@ public class ITBigQueryStorageReadClientTest {
       Preconditions.checkState(response.hasArrowRecordBatch());
       rowCount += response.getRowCount();
     }
-    assertEquals(164_656, rowCount);
+    assertEquals(SHAKESPEARE_SAMPLE_ROW_COUNT, rowCount);
   }
 
   @Test
@@ -800,6 +803,105 @@ public class ITBigQueryStorageReadClientTest {
   }
 
   @Test
+  public void timestamp_readArrow()
+      throws InterruptedException, IOException, DescriptorValidationException {
+    com.google.cloud.bigquery.Schema timestampSchema =
+        com.google.cloud.bigquery.Schema.of(
+            Field.newBuilder("timestamp", StandardSQLTypeName.TIMESTAMP)
+                .setMode(Mode.NULLABLE)
+                .build());
+
+    TableSchema timestampTableSchema =
+        TableSchema.newBuilder()
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("timestamp")
+                    .setType(TableFieldSchema.Type.TIMESTAMP)
+                    .setMode(TableFieldSchema.Mode.NULLABLE)
+                    .build())
+            .build();
+
+    // Create table with Range fields.
+    String tableName = "test_timestamp_read_arrow";
+    TableId tableId = TableId.of(DATASET, tableName);
+    bigquery.create(TableInfo.of(tableId, StandardTableDefinition.of(timestampSchema)));
+
+    TableName parentTable = TableName.of(projectName, DATASET, tableName);
+    RetrySettings retrySettings =
+        RetrySettings.newBuilder()
+            .setInitialRetryDelayDuration(Duration.ofMillis(500))
+            .setRetryDelayMultiplier(1.1)
+            .setMaxAttempts(5)
+            .setMaxRetryDelayDuration(Duration.ofSeconds(10))
+            .build();
+
+    Long[] timestampsMicros =
+        new Long[] {
+          1735734896123456L, // 2025-01-01T12:34:56.123456Z
+          1580646896123456L, // 2020-02-02T12:34:56.123456Z
+          636467696123456L, // 1990-03-03T12:34:56.123456Z
+          165846896123456L // 1975-04-04T12:34:56.123456Z
+        };
+
+    try (JsonStreamWriter writer =
+        JsonStreamWriter.newBuilder(parentTable.toString(), timestampTableSchema)
+            .setRetrySettings(retrySettings)
+            .build()) {
+      JSONArray data = new JSONArray();
+      for (long timestampMicro : timestampsMicros) {
+        JSONObject row = new JSONObject();
+        row.put("timestamp", timestampMicro);
+        data.put(row);
+      }
+
+      ApiFuture<AppendRowsResponse> future = writer.append(data);
+      // The append method is asynchronous. Rather than waiting for the method to complete,
+      // which can hurt performance, register a completion callback and continue streaming.
+      ApiFutures.addCallback(future, new AppendCompleteCallback(), MoreExecutors.directExecutor());
+    }
+
+    String table = BigQueryResource.formatTableResource(projectName, DATASET, tableId.getTable());
+    ReadSession session =
+        client.createReadSession(
+            parentProjectId,
+            ReadSession.newBuilder().setTable(table).setDataFormat(DataFormat.ARROW).build(),
+            MAX_STREAM_COUNT);
+    assertEquals(
+        String.format(
+            "Did not receive expected number of streams for table '%s' CreateReadSession"
+                + " response:%n%s",
+            table, session.toString()),
+        MAX_STREAM_COUNT,
+        session.getStreamsCount());
+
+    // Assert that there are streams available in the session. An empty table may not have
+    // data available. If no sessions are available for an anonymous (cached) table, consider
+    // writing results of a query to a named table rather than consuming cached results
+    // directly.
+    assertThat(session.getStreamsCount()).isGreaterThan(0);
+
+    // Set up a simple reader and start a read session.
+    try (SimpleRowReaderArrow reader = new SimpleRowReaderArrow(session.getArrowSchema())) {
+      // Use the first stream to perform reading.
+      String streamName = session.getStreams(0).getName();
+      ReadRowsRequest readRowsRequest =
+          ReadRowsRequest.newBuilder().setReadStream(streamName).build();
+
+      long rowCount = 0;
+      // Process each block of rows as they arrive and decode using our simple row reader.
+      ServerStream<ReadRowsResponse> stream = client.readRowsCallable().call(readRowsRequest);
+      for (ReadRowsResponse response : stream) {
+        Preconditions.checkState(response.hasArrowRecordBatch());
+        reader.processRows(
+            response.getArrowRecordBatch(),
+            new SimpleRowReaderArrow.ArrowTimestampBatchConsumer(Arrays.asList(timestampsMicros)));
+        rowCount += response.getRowCount();
+      }
+      assertEquals(timestampsMicros.length, rowCount);
+    }
+  }
+
+  @Test
   public void testSimpleReadAndResume() {
     String table =
         BigQueryResource.formatTableResource(
@@ -825,7 +927,7 @@ public class ITBigQueryStorageReadClientTest {
 
     // We have to read some number of rows in order to be able to resume. More details:
 
-    long rowCount = ReadStreamToOffset(session.getStreams(0), /* rowOffset= */ 34_846);
+    long rowCount = readStreamToOffset(session.getStreams(0), /* rowOffset= */ 34_846);
 
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder()
@@ -841,7 +943,7 @@ public class ITBigQueryStorageReadClientTest {
 
     // Verifies that the number of rows skipped and read equals to the total number of rows in the
     // table.
-    assertEquals(164_656, rowCount);
+    assertEquals(SHAKESPEARE_SAMPLE_ROW_COUNT, rowCount);
   }
 
   @Test
@@ -994,11 +1096,11 @@ public class ITBigQueryStorageReadClientTest {
     bigquery.create(TableInfo.of(testTableId, StandardTableDefinition.of(tableSchema)));
 
     Job firstJob =
-        RunQueryAppendJobAndExpectSuccess(
+        runQueryAppendJobAndExpectSuccess(
             /* destinationTableId= */ testTableId, /* query= */ "SELECT 1 AS col");
 
     Job secondJob =
-        RunQueryAppendJobAndExpectSuccess(
+        runQueryAppendJobAndExpectSuccess(
             /* destinationTableId= */ testTableId, /* query= */ "SELECT 2 AS col");
 
     String table =
@@ -1008,7 +1110,7 @@ public class ITBigQueryStorageReadClientTest {
             /* tableId= */ testTableId.getTable());
 
     final List<Long> rowsAfterFirstSnapshot = new ArrayList<>();
-    ProcessRowsAtSnapshot(
+    processRowsAtSnapshot(
         /* table= */ table,
         /* snapshotInMillis= */ firstJob.getStatistics().getEndTime(),
         /* filter= */ null,
@@ -1021,7 +1123,7 @@ public class ITBigQueryStorageReadClientTest {
     assertEquals(Collections.singletonList(1L), rowsAfterFirstSnapshot);
 
     final List<Long> rowsAfterSecondSnapshot = new ArrayList<>();
-    ProcessRowsAtSnapshot(
+    processRowsAtSnapshot(
         /* table= */ table,
         /* snapshotInMillis= */ secondJob.getStatistics().getEndTime(),
         /* filter= */ null,
@@ -1053,7 +1155,7 @@ public class ITBigQueryStorageReadClientTest {
                 + "   SELECT 3, CAST(\"2019-01-03\" AS DATE)",
             DATASET, partitionedTableName);
 
-    RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
+    runQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     String table =
         BigQueryResource.formatTableResource(
@@ -1061,11 +1163,11 @@ public class ITBigQueryStorageReadClientTest {
             /* datasetId= */ DATASET,
             /* tableId= */ partitionedTableName);
 
-    List<GenericData.Record> unfilteredRows = ReadAllRows(/* table= */ table, /* filter= */ null);
+    List<GenericData.Record> unfilteredRows = readAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + unfilteredRows.toString(), 3, unfilteredRows.size());
 
     List<GenericData.Record> partitionFilteredRows =
-        ReadAllRows(/* table= */ table, /* filter= */ "date_field = CAST(\"2019-01-02\" AS DATE)");
+        readAllRows(/* table= */ table, /* filter= */ "date_field = CAST(\"2019-01-02\" AS DATE)");
     assertEquals(
         "Actual rows read: " + partitionFilteredRows.toString(), 1, partitionFilteredRows.size());
     assertEquals(2L, partitionFilteredRows.get(0).get("num_field"));
@@ -1092,13 +1194,13 @@ public class ITBigQueryStorageReadClientTest {
                 .build()));
 
     // Simulate ingestion for 2019-01-01.
-    RunQueryAppendJobAndExpectSuccess(
+    runQueryAppendJobAndExpectSuccess(
         /* destinationTableId= */ TableId.of(
             /* dataset= */ DATASET, /* table= */ testTableId.getTable() + "$20190101"),
         /* query= */ "SELECT 1 AS num_field");
 
     // Simulate ingestion for 2019-01-02.
-    RunQueryAppendJobAndExpectSuccess(
+    runQueryAppendJobAndExpectSuccess(
         /* destinationTableId= */ TableId.of(
             /* dataset= */ DATASET, /* table= */ testTableId.getTable() + "$20190102"),
         /* query= */ "SELECT 2 AS num_field");
@@ -1109,11 +1211,11 @@ public class ITBigQueryStorageReadClientTest {
             /* datasetId= */ testTableId.getDataset(),
             /* tableId= */ testTableId.getTable());
 
-    List<GenericData.Record> unfilteredRows = ReadAllRows(/* table= */ table, /* filter= */ null);
+    List<GenericData.Record> unfilteredRows = readAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + unfilteredRows.toString(), 2, unfilteredRows.size());
 
     List<GenericData.Record> partitionFilteredRows =
-        ReadAllRows(/* table= */ table, /* filter= */ "_PARTITIONDATE > \"2019-01-01\"");
+        readAllRows(/* table= */ table, /* filter= */ "_PARTITIONDATE > \"2019-01-01\"");
     assertEquals(
         "Actual rows read: " + partitionFilteredRows.toString(), 1, partitionFilteredRows.size());
     assertEquals(2L, partitionFilteredRows.get(0).get("num_field"));
@@ -1144,13 +1246,13 @@ public class ITBigQueryStorageReadClientTest {
                 + "     b\"абвгд\"",
             DATASET, tableName);
 
-    RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
+    runQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     String table =
         BigQueryResource.formatTableResource(
             /* projectId= */ projectName, /* datasetId= */ DATASET, /* tableId= */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table= */ table, /* filter= */ null);
+    List<GenericData.Record> rows = readAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -1241,13 +1343,13 @@ public class ITBigQueryStorageReadClientTest {
                 + "     CAST(\"2019-04-30 19:24:19.123456 UTC\" AS TIMESTAMP)",
             DATASET, tableName);
 
-    RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
+    runQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     String table =
         BigQueryResource.formatTableResource(
             /* projectId= */ projectName, /* datasetId= */ DATASET, /* tableId= */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table= */ table, /* filter= */ null);
+    List<GenericData.Record> rows = readAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -1336,13 +1438,13 @@ public class ITBigQueryStorageReadClientTest {
                 + "   SELECT ST_GEOGPOINT(1.1, 2.2)",
             DATASET, tableName);
 
-    RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
+    runQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     String table =
         BigQueryResource.formatTableResource(
             /* projectId= */ projectName, /* datasetId= */ DATASET, /* tableId= */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table= */ table, /* filter= */ null);
+    List<GenericData.Record> rows = readAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -1379,13 +1481,13 @@ public class ITBigQueryStorageReadClientTest {
                 + " (10, 'abc')",
             DATASET, tableName);
 
-    RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
+    runQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     String table =
         BigQueryResource.formatTableResource(
             /* projectId= */ projectName, /* datasetId= */ DATASET, /* tableId= */ tableName);
 
-    List<GenericData.Record> rows = ReadAllRows(/* table= */ table, /* filter= */ null);
+    List<GenericData.Record> rows = readAllRows(/* table= */ table, /* filter= */ null);
     assertEquals("Actual rows read: " + rows.toString(), 1, rows.size());
 
     GenericData.Record record = rows.get(0);
@@ -1432,8 +1534,7 @@ public class ITBigQueryStorageReadClientTest {
   }
 
   @Test
-  public void testSimpleReadWithBackgroundExecutorProvider()
-      throws IOException, InterruptedException {
+  public void testSimpleReadWithBackgroundExecutorProvider() throws IOException {
     BigQueryReadSettings bigQueryReadSettings =
         BigQueryReadSettings.newBuilder()
             .setBackgroundExecutorProvider(
@@ -1480,7 +1581,7 @@ public class ITBigQueryStorageReadClientTest {
       rowCount += response.getRowCount();
     }
 
-    assertEquals(164_656, rowCount);
+    assertEquals(SHAKESPEARE_SAMPLE_ROW_COUNT, rowCount);
   }
 
   @Test
@@ -1534,22 +1635,21 @@ public class ITBigQueryStorageReadClientTest {
             /* datasetId= */ "samples",
             /* tableId= */ "shakespeare");
 
-    try {
-      ReadSession session =
-          localClient.createReadSession(
-              /* parent= */ parentProjectId,
-              /* readSession= */ ReadSession.newBuilder()
-                  .setTable(table)
-                  .setDataFormat(DataFormat.AVRO)
-                  .build(),
-              /* maxStreamCount= */ 1);
-      fail("RPCs to invalid universe domain should fail");
-    } catch (UnauthenticatedException e) {
-      assertThat(
-              (e.getMessage()
-                  .contains("does not match the universe domain found in the credentials")))
-          .isTrue();
-    }
+    UnauthenticatedException e =
+        assertThrows(
+            "RPCs to invalid universe domain should fail",
+            UnauthenticatedException.class,
+            () -> {
+              localClient.createReadSession(
+                  /* parent= */ parentProjectId,
+                  /* readSession= */ ReadSession.newBuilder()
+                      .setTable(table)
+                      .setDataFormat(DataFormat.AVRO)
+                      .build(),
+                  /* maxStreamCount= */ 1);
+            });
+    assertTrue(
+        e.getMessage().contains("does not match the universe domain found in the credentials"));
     localClient.close();
   }
 
@@ -1584,7 +1684,7 @@ public class ITBigQueryStorageReadClientTest {
       rowCount += response.getRowCount();
     }
 
-    assertEquals(164_656, rowCount);
+    assertEquals(SHAKESPEARE_SAMPLE_ROW_COUNT, rowCount);
     localClient.close();
   }
 
@@ -1650,9 +1750,9 @@ public class ITBigQueryStorageReadClientTest {
         createReadSessionMap.get(
             AttributeKey.longKey("bq.storage.read_session.request.max_stream_count")));
     assertEquals(
+        1L,
         createReadSessionMap.get(
-            AttributeKey.longKey("bq.storage.read_session.request.max_stream_count")),
-        1L);
+            AttributeKey.longKey("bq.storage.read_session.request.max_stream_count")));
   }
 
   public void testUniverseDomain() throws IOException {
@@ -1699,8 +1799,7 @@ public class ITBigQueryStorageReadClientTest {
    * @param rowOffset
    * @return the number of requested rows to skip or the total rows read if stream had less rows.
    */
-  private long ReadStreamToOffset(ReadStream readStream, long rowOffset) {
-
+  private long readStreamToOffset(ReadStream readStream, long rowOffset) {
     ReadRowsRequest readRowsRequest =
         ReadRowsRequest.newBuilder().setReadStream(readStream.getName()).build();
 
@@ -1728,7 +1827,7 @@ public class ITBigQueryStorageReadClientTest {
    * @param consumer that receives all Avro rows.
    * @throws IOException
    */
-  private void ProcessRowsAtSnapshot(
+  private void processRowsAtSnapshot(
       String table, Long snapshotInMillis, String filter, AvroRowConsumer consumer)
       throws IOException {
     Preconditions.checkNotNull(table);
@@ -1787,9 +1886,9 @@ public class ITBigQueryStorageReadClientTest {
    * @param filter Optional. If specified, it will be used to restrict returned data.
    * @return
    */
-  List<GenericData.Record> ReadAllRows(String table, String filter) throws IOException {
+  List<GenericData.Record> readAllRows(String table, String filter) throws IOException {
     final List<GenericData.Record> rows = new ArrayList<>();
-    ProcessRowsAtSnapshot(
+    processRowsAtSnapshot(
         /* table= */ table,
         /* snapshotInMillis= */ null,
         /* filter= */ filter,
@@ -1812,9 +1911,9 @@ public class ITBigQueryStorageReadClientTest {
    * @return
    * @throws InterruptedException
    */
-  private Job RunQueryAppendJobAndExpectSuccess(TableId destinationTableId, String query)
+  private Job runQueryAppendJobAndExpectSuccess(TableId destinationTableId, String query)
       throws InterruptedException {
-    return RunQueryJobAndExpectSuccess(
+    return runQueryJobAndExpectSuccess(
         QueryJobConfiguration.newBuilder(query)
             .setDestinationTable(destinationTableId)
             .setUseQueryCache(false)
@@ -1830,7 +1929,7 @@ public class ITBigQueryStorageReadClientTest {
    * @return
    * @throws InterruptedException
    */
-  private Job RunQueryJobAndExpectSuccess(QueryJobConfiguration configuration)
+  private Job runQueryJobAndExpectSuccess(QueryJobConfiguration configuration)
       throws InterruptedException {
     Job job = bigquery.create(JobInfo.of(configuration));
     Job completedJob =
