@@ -45,7 +45,6 @@ import org.junit.Test;
  * Integration tests for BigQuery Storage API which target long running sessions. These tests can be
  * enabled by setting the system property 'bigquery.storage.enable_long_running_tests' to true.
  */
-@Ignore("Ignoring non v1 ITs")
 public class ITBigQueryStorageLongRunningTest {
 
   private static final Logger LOG =
