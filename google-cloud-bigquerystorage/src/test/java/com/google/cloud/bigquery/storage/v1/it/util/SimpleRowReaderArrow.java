@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.cloud.bigquery.storage.v1.it;
+package com.google.cloud.bigquery.storage.v1.it.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -49,10 +49,10 @@ public class SimpleRowReaderArrow implements AutoCloseable {
     void accept(VectorSchemaRoot root);
   }
 
-  static class ArrowTimestampBatchConsumer implements ArrowBatchConsumer {
+  public static class ArrowTimestampBatchConsumer implements ArrowBatchConsumer {
     private final List<Long> expectedTimestampValues;
 
-    ArrowTimestampBatchConsumer(List<Long> expectedTimestampValues) {
+    public ArrowTimestampBatchConsumer(List<Long> expectedTimestampValues) {
       this.expectedTimestampValues = expectedTimestampValues;
     }
 

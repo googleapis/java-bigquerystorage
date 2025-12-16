@@ -36,6 +36,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+
+import com.google.cloud.bigquery.storage.v1.it.util.BigQueryResource;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
