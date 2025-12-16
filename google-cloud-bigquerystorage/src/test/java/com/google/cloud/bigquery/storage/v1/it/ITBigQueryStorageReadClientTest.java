@@ -106,6 +106,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.apache.avro.Conversions;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
@@ -126,6 +127,7 @@ public class ITBigQueryStorageReadClientTest {
   private static final String DESCRIPTION = "BigQuery Storage Java client test dataset";
   private static final int SHAKESPEARE_SAMPLE_ROW_COUNT = 164_656;
   private static final int MAX_STREAM_COUNT = 1;
+  private static final String BQSTORAGE_TIMESTAMP_READ_TABLE = "bqstorage_timestamp_read";
 
   private static BigQueryReadClient client;
   private static String projectName;
@@ -209,6 +211,14 @@ public class ITBigQueryStorageReadClientTest {
           + "  \"type\": \"service_account\",\n"
           + "  \"universe_domain\": \"fake.domain\"\n"
           + "}";
+
+  private static final Long[] EXPECTED_TIMESTAMPS_MICROS =
+      new Long[] {
+        1735734896123456L, // 2025-01-01T12:34:56.123456Z
+        1580646896123456L, // 2020-02-02T12:34:56.123456Z
+        636467696123456L, // 1990-03-03T12:34:56.123456Z
+        165846896123456L // 1975-04-04T12:34:56.123456Z
+      };
 
   private static final com.google.cloud.bigquery.Schema RANGE_SCHEMA =
       com.google.cloud.bigquery.Schema.of(
@@ -499,7 +509,8 @@ public class ITBigQueryStorageReadClientTest {
   }
 
   @BeforeClass
-  public static void beforeClass() throws IOException {
+  public static void beforeClass()
+      throws IOException, DescriptorValidationException, InterruptedException {
     client = BigQueryReadClient.create();
     projectName = ServiceOptions.getDefaultProjectId();
     parentProjectId = String.format("projects/%s", projectName);
@@ -517,6 +528,57 @@ public class ITBigQueryStorageReadClientTest {
             .build();
     bigquery.create(datasetInfo);
     LOG.info("Created test dataset: " + DATASET);
+
+    setupTimestampTable();
+  }
+
+  private static void setupTimestampTable()
+      throws DescriptorValidationException, IOException, InterruptedException {
+    com.google.cloud.bigquery.Schema timestampSchema =
+        com.google.cloud.bigquery.Schema.of(
+            Field.newBuilder("timestamp", StandardSQLTypeName.TIMESTAMP)
+                .setMode(Mode.NULLABLE)
+                .build());
+
+    TableSchema timestampTableSchema =
+        TableSchema.newBuilder()
+            .addFields(
+                TableFieldSchema.newBuilder()
+                    .setName("timestamp")
+                    .setType(TableFieldSchema.Type.TIMESTAMP)
+                    .setMode(TableFieldSchema.Mode.NULLABLE)
+                    .build())
+            .build();
+
+    // Create table with Range fields.
+    TableId tableId = TableId.of(DATASET, BQSTORAGE_TIMESTAMP_READ_TABLE);
+    bigquery.create(TableInfo.of(tableId, StandardTableDefinition.of(timestampSchema)));
+
+    TableName parentTable = TableName.of(projectName, DATASET, BQSTORAGE_TIMESTAMP_READ_TABLE);
+    RetrySettings retrySettings =
+        RetrySettings.newBuilder()
+            .setInitialRetryDelayDuration(Duration.ofMillis(500))
+            .setRetryDelayMultiplier(1.1)
+            .setMaxAttempts(5)
+            .setMaxRetryDelayDuration(Duration.ofSeconds(10))
+            .build();
+
+    try (JsonStreamWriter writer =
+        JsonStreamWriter.newBuilder(parentTable.toString(), timestampTableSchema)
+            .setRetrySettings(retrySettings)
+            .build()) {
+      JSONArray data = new JSONArray();
+      for (long timestampMicro : EXPECTED_TIMESTAMPS_MICROS) {
+        JSONObject row = new JSONObject();
+        row.put("timestamp", timestampMicro);
+        data.put(row);
+      }
+
+      ApiFuture<AppendRowsResponse> future = writer.append(data);
+      // The append method is asynchronous. Rather than waiting for the method to complete,
+      // which can hurt performance, register a completion callback and continue streaming.
+      ApiFutures.addCallback(future, new AppendCompleteCallback(), MoreExecutors.directExecutor());
+    }
   }
 
   @AfterClass
@@ -803,64 +865,9 @@ public class ITBigQueryStorageReadClientTest {
   }
 
   @Test
-  public void timestamp_readArrow()
-      throws InterruptedException, IOException, DescriptorValidationException {
-    com.google.cloud.bigquery.Schema timestampSchema =
-        com.google.cloud.bigquery.Schema.of(
-            Field.newBuilder("timestamp", StandardSQLTypeName.TIMESTAMP)
-                .setMode(Mode.NULLABLE)
-                .build());
-
-    TableSchema timestampTableSchema =
-        TableSchema.newBuilder()
-            .addFields(
-                TableFieldSchema.newBuilder()
-                    .setName("timestamp")
-                    .setType(TableFieldSchema.Type.TIMESTAMP)
-                    .setMode(TableFieldSchema.Mode.NULLABLE)
-                    .build())
-            .build();
-
-    // Create table with Range fields.
-    String tableName = "test_timestamp_read_arrow";
-    TableId tableId = TableId.of(DATASET, tableName);
-    bigquery.create(TableInfo.of(tableId, StandardTableDefinition.of(timestampSchema)));
-
-    TableName parentTable = TableName.of(projectName, DATASET, tableName);
-    RetrySettings retrySettings =
-        RetrySettings.newBuilder()
-            .setInitialRetryDelayDuration(Duration.ofMillis(500))
-            .setRetryDelayMultiplier(1.1)
-            .setMaxAttempts(5)
-            .setMaxRetryDelayDuration(Duration.ofSeconds(10))
-            .build();
-
-    Long[] timestampsMicros =
-        new Long[] {
-          1735734896123456L, // 2025-01-01T12:34:56.123456Z
-          1580646896123456L, // 2020-02-02T12:34:56.123456Z
-          636467696123456L, // 1990-03-03T12:34:56.123456Z
-          165846896123456L // 1975-04-04T12:34:56.123456Z
-        };
-
-    try (JsonStreamWriter writer =
-        JsonStreamWriter.newBuilder(parentTable.toString(), timestampTableSchema)
-            .setRetrySettings(retrySettings)
-            .build()) {
-      JSONArray data = new JSONArray();
-      for (long timestampMicro : timestampsMicros) {
-        JSONObject row = new JSONObject();
-        row.put("timestamp", timestampMicro);
-        data.put(row);
-      }
-
-      ApiFuture<AppendRowsResponse> future = writer.append(data);
-      // The append method is asynchronous. Rather than waiting for the method to complete,
-      // which can hurt performance, register a completion callback and continue streaming.
-      ApiFutures.addCallback(future, new AppendCompleteCallback(), MoreExecutors.directExecutor());
-    }
-
-    String table = BigQueryResource.formatTableResource(projectName, DATASET, tableId.getTable());
+  public void timestamp_readArrow() throws IOException {
+    String table =
+        BigQueryResource.formatTableResource(projectName, DATASET, BQSTORAGE_TIMESTAMP_READ_TABLE);
     ReadSession session =
         client.createReadSession(
             parentProjectId,
@@ -894,10 +901,23 @@ public class ITBigQueryStorageReadClientTest {
         Preconditions.checkState(response.hasArrowRecordBatch());
         reader.processRows(
             response.getArrowRecordBatch(),
-            new SimpleRowReaderArrow.ArrowTimestampBatchConsumer(Arrays.asList(timestampsMicros)));
+            new SimpleRowReaderArrow.ArrowTimestampBatchConsumer(
+                Arrays.asList(EXPECTED_TIMESTAMPS_MICROS)));
         rowCount += response.getRowCount();
       }
-      assertEquals(timestampsMicros.length, rowCount);
+      assertEquals(EXPECTED_TIMESTAMPS_MICROS.length, rowCount);
+    }
+  }
+
+  @Test
+  public void timestamp_readAvro() throws IOException {
+    String table =
+        BigQueryResource.formatTableResource(projectName, DATASET, BQSTORAGE_TIMESTAMP_READ_TABLE);
+    List<GenericData.Record> rows = readAllRows(table, null);
+    List<Long> timestamps =
+        rows.stream().map(x -> (Long) x.get("timestamp")).collect(Collectors.toList());
+    for (int i = 0; i < timestamps.size(); i++) {
+      assertEquals(EXPECTED_TIMESTAMPS_MICROS[i], timestamps.get(i));
     }
   }
 
@@ -1892,13 +1912,11 @@ public class ITBigQueryStorageReadClientTest {
         /* table= */ table,
         /* snapshotInMillis= */ null,
         /* filter= */ filter,
-        new AvroRowConsumer() {
-          @Override
-          public void accept(GenericData.Record record) {
-            // clone the record since that reference will be reused by the reader.
-            rows.add(new GenericRecordBuilder(record).build());
-          }
-        });
+        (AvroRowConsumer)
+            record -> {
+              // clone the record since that reference will be reused by the reader.
+              rows.add(new GenericRecordBuilder(record).build());
+            });
     return rows;
   }
 
