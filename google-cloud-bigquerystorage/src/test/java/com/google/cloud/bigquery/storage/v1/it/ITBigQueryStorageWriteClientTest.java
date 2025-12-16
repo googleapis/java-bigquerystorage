@@ -87,8 +87,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /** Integration tests for BigQuery Write API. */
-public class ITBigQueryWriteClientTest {
-  private static final Logger LOG = Logger.getLogger(ITBigQueryWriteClientTest.class.getName());
+public class ITBigQueryStorageWriteClientTest {
+  private static final Logger LOG =
+      Logger.getLogger(ITBigQueryStorageWriteClientTest.class.getName());
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String DATASET_EU = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
@@ -100,7 +101,6 @@ public class ITBigQueryWriteClientTest {
 
   private static BigQueryReadClient readClient;
   private static BigQueryWriteClient writeClient;
-  private static String projectName;
   private static String parentProjectId;
   private static TableInfo tableInfo;
   private static TableInfo tableInfo2;
@@ -138,8 +138,7 @@ public class ITBigQueryWriteClientTest {
     BigQueryWriteSettings settings =
         BigQueryWriteSettings.newBuilder().setHeaderProvider(USER_AGENT_HEADER_PROVIDER).build();
     writeClient = BigQueryWriteClient.create(settings);
-    projectName = ServiceOptions.getDefaultProjectId();
-    parentProjectId = String.format("projects/%s", projectName);
+    parentProjectId = String.format("projects/%s", ServiceOptions.getDefaultProjectId());
 
     RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
     bigquery = bigqueryHelper.getOptions().getService();
