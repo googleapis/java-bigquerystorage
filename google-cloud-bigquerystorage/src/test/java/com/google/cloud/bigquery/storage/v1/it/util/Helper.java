@@ -30,7 +30,7 @@ import com.google.cloud.bigquery.storage.v1.ReadRowsRequest;
 import com.google.cloud.bigquery.storage.v1.ReadRowsResponse;
 import com.google.cloud.bigquery.storage.v1.ReadSession;
 import com.google.common.base.Preconditions;
-import com.google.protobuf.Timestamp;
+import com.google.protobuf.util.Timestamps;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,8 +68,8 @@ public class Helper {
   }
 
   public static class AppendCompleteCallback implements ApiFutureCallback<AppendRowsResponse> {
-    private static final Object lock = new Object();
-    private static int batchCount = 0;
+    private final Object lock = new Object();
+    private int batchCount = 0;
 
     public void onSuccess(AppendRowsResponse response) {
       synchronized (lock) {
@@ -117,15 +117,12 @@ public class Helper {
                 ReadSession.newBuilder().setTable(table).setDataFormat(DataFormat.AVRO).build());
 
     if (snapshotInMillis != null) {
-      Timestamp snapshotTimestamp =
-          Timestamp.newBuilder()
-              .setSeconds(snapshotInMillis / 1_000)
-              .setNanos((int) ((snapshotInMillis % 1000) * 1000000))
-              .build();
       createSessionRequestBuilder
           .getReadSessionBuilder()
           .setTableModifiers(
-              ReadSession.TableModifiers.newBuilder().setSnapshotTime(snapshotTimestamp).build());
+              ReadSession.TableModifiers.newBuilder()
+                  .setSnapshotTime(Timestamps.fromMicros(snapshotInMillis))
+                  .build());
     }
 
     if (filter != null && !filter.isEmpty()) {
