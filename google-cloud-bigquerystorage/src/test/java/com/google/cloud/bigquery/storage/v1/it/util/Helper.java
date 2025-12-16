@@ -121,7 +121,7 @@ public class Helper {
           .getReadSessionBuilder()
           .setTableModifiers(
               ReadSession.TableModifiers.newBuilder()
-                  .setSnapshotTime(Timestamps.fromMicros(snapshotInMillis))
+                  .setSnapshotTime(Timestamps.fromMillis(snapshotInMillis))
                   .build());
     }
 
