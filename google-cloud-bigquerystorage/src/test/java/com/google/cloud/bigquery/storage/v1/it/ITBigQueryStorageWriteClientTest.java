@@ -145,8 +145,9 @@ public class ITBigQueryStorageWriteClientTest {
         {165846896123456L /* 1975-04-04T12:34:56.123456Z */, "1975-04-04T12:34:56.123456789000Z"}
       };
 
-  // Arrow is a bit special in that timestamps are limited to nanoseconds precision.
-  // The data will be padded to fit into the higher precision columns.
+  // Special case where users can use the Write API with Protobuf messages
+  // The format is two fields: 1. Seconds from epoch and 2. Subsecond fractional (millis, micros,
+  // nano, or pico). This test case is using picos sub-second fractional
   private static final Long[][] INPUT_PROTO_DESCRIPTOR_WRITE_TIMESTAMPS =
       new Long[][] {
         {1735734896L, 123456789123L}, /* 2025-01-01T12:34:56.123456789123Z */
@@ -155,15 +156,15 @@ public class ITBigQueryStorageWriteClientTest {
         {165846896L, 123456789123L} /* 1975-04-04T12:34:56.123456789123Z */
       };
 
-  // Arrow's higher precision column is padded with extra 0's if configured to return
-  // ISO as output for any picosecond enabled column.
-  private static final String[] EXPECTED_PROTO_DESCRIPTOR_WRITE_TIMESTAMPS_ISO_OUTPUT =
-      new String[] {
-        "2025-01-01T12:34:56.123456789123Z",
-        "2020-02-02T12:34:56.123456789123Z",
-        "1990-03-03T12:34:56.123456789123Z",
-        "1975-04-04T12:34:56.123456789123Z"
-      };
+  // Expected ISO8601 output when using proto descriptors to write to BQ with pico precision
+  private static final String[]
+      EXPECTED_PROTO_DESCRIPTOR_WRITE_TIMESTAMPS_HIGH_PRECISION_ISO_OUTPUT =
+          new String[] {
+            "2025-01-01T12:34:56.123456789123Z",
+            "2020-02-02T12:34:56.123456789123Z",
+            "1990-03-03T12:34:56.123456789123Z",
+            "1975-04-04T12:34:56.123456789123Z"
+          };
 
   public static class StringWithSecondsNanos {
     public String foo;
@@ -2453,7 +2454,7 @@ public class ITBigQueryStorageWriteClientTest {
     createTimestampTable(tableName);
 
     /*
-     A sample protobuf format :
+     A sample protobuf format:
      message Wrapper {
        message TimestampPicos {
          int64 seconds = 1;
@@ -2551,11 +2552,13 @@ public class ITBigQueryStorageWriteClientTest {
             .map(x -> x.get(TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME).toString())
             .collect(Collectors.toList());
     assertEquals(
-        EXPECTED_PROTO_DESCRIPTOR_WRITE_TIMESTAMPS_ISO_OUTPUT.length,
+        EXPECTED_PROTO_DESCRIPTOR_WRITE_TIMESTAMPS_HIGH_PRECISION_ISO_OUTPUT.length,
         timestampHigherPrecision.size());
-    for (int i = 0; i < EXPECTED_PROTO_DESCRIPTOR_WRITE_TIMESTAMPS_ISO_OUTPUT.length; i++) {
+    for (int i = 0;
+        i < EXPECTED_PROTO_DESCRIPTOR_WRITE_TIMESTAMPS_HIGH_PRECISION_ISO_OUTPUT.length;
+        i++) {
       assertEquals(
-          EXPECTED_PROTO_DESCRIPTOR_WRITE_TIMESTAMPS_ISO_OUTPUT[i],
+          EXPECTED_PROTO_DESCRIPTOR_WRITE_TIMESTAMPS_HIGH_PRECISION_ISO_OUTPUT[i],
           timestampHigherPrecision.get(i));
     }
   }
