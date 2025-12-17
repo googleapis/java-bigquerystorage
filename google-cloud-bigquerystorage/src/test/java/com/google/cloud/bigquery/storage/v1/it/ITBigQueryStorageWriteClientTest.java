@@ -2522,7 +2522,8 @@ public class ITBigQueryStorageWriteClientTest {
             DynamicMessage.newBuilder(descriptor)
                 .setField(
                     descriptor.findFieldByName(TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME),
-                    DynamicMessage.newBuilder(descriptor.findNestedTypeByName(timestampPicosProtoName))
+                    DynamicMessage.newBuilder(
+                            descriptor.findNestedTypeByName(timestampPicosProtoName))
                         .setField(
                             descriptor
                                 .findNestedTypeByName(timestampPicosProtoName)
