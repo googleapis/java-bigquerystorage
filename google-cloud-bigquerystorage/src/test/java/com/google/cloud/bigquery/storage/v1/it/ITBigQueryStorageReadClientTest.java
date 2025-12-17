@@ -535,7 +535,7 @@ public class ITBigQueryStorageReadClientTest {
                 .setMode(Mode.NULLABLE)
                 .build(),
             Field.newBuilder(TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME, StandardSQLTypeName.TIMESTAMP)
-                .setTimestampPrecision(12L)
+                .setTimestampPrecision(Helper.PICOSECOND_PRECISION)
                 .setMode(Mode.NULLABLE)
                 .build());
 
@@ -557,7 +557,8 @@ public class ITBigQueryStorageReadClientTest {
             .addFields(
                 TableFieldSchema.newBuilder()
                     .setName(TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME)
-                    .setTimestampPrecision(Int64Value.newBuilder().setValue(12).build())
+                    .setTimestampPrecision(
+                        Int64Value.newBuilder().setValue(Helper.PICOSECOND_PRECISION).build())
                     .setType(TableFieldSchema.Type.TIMESTAMP)
                     .setMode(TableFieldSchema.Mode.NULLABLE)
                     .build())

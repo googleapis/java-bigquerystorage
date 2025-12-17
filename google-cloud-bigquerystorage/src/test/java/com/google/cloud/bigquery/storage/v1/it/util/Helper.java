@@ -43,6 +43,7 @@ import org.apache.avro.generic.GenericRecordBuilder;
 
 public class Helper {
 
+  public static final long PICOSECOND_PRECISION = 12;
   public static final String TIMESTAMP_COLUMN_NAME = "timestamp";
   public static final String TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME = "timestampHigherPrecision";
 

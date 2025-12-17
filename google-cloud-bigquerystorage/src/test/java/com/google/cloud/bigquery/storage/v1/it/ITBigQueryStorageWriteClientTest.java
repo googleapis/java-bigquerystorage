@@ -2386,7 +2386,8 @@ public class ITBigQueryStorageWriteClientTest {
     TableFieldSchema testTimestampHighPrecision =
         TableFieldSchema.newBuilder()
             .setName(TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME)
-            .setTimestampPrecision(Int64Value.newBuilder().setValue(12).build())
+            .setTimestampPrecision(
+                Int64Value.newBuilder().setValue(Helper.PICOSECOND_PRECISION).build())
             .setType(TableFieldSchema.Type.TIMESTAMP)
             .setMode(TableFieldSchema.Mode.NULLABLE)
             .build();
@@ -2399,6 +2400,9 @@ public class ITBigQueryStorageWriteClientTest {
     TableName parent = TableName.of(ServiceOptions.getDefaultProjectId(), DATASET, tableName);
     try (JsonStreamWriter jsonStreamWriter =
         JsonStreamWriter.newBuilder(parent.toString(), tableSchema).build()) {
+
+      // Creates a single payload to append (JsonArray with multiple JsonObjects)
+      // Each JsonObject contains a row (one micros, one picos)
       JSONArray jsonArray = new JSONArray();
       for (Object[] timestampData : Helper.INPUT_TIMESTAMPS) {
         JSONObject row = new JSONObject();
@@ -2421,7 +2425,7 @@ public class ITBigQueryStorageWriteClientTest {
                 .build(),
             Field.newBuilder(TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME, StandardSQLTypeName.TIMESTAMP)
                 .setMode(Mode.NULLABLE)
-                .setTimestampPrecision(12L)
+                .setTimestampPrecision(Helper.PICOSECOND_PRECISION)
                 .build());
 
     TableId testTableId = TableId.of(DATASET, tableName);
@@ -2447,11 +2451,11 @@ public class ITBigQueryStorageWriteClientTest {
             .map(x -> x.get(TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME).toString())
             .collect(Collectors.toList());
 
-    assertEquals(timestamps.size(), expected.length);
-    assertEquals(timestampHigherPrecision.size(), expected.length);
+    assertEquals(expected.length, timestamps.size());
+    assertEquals(expected.length, timestampHigherPrecision.size());
     for (int i = 0; i < timestampHigherPrecision.size(); i++) {
-      assertEquals(timestamps.get(i), expected[i][0]);
-      assertEquals(timestampHigherPrecision.get(i), expected[i][1]);
+      assertEquals(expected[i][0], timestamps.get(i));
+      assertEquals(expected[i][1], timestampHigherPrecision.get(i));
     }
   }
 }
