@@ -56,9 +56,7 @@ import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
-import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Int64Value;
-import com.google.protobuf.Message;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import java.io.ByteArrayOutputStream;
@@ -2546,6 +2544,8 @@ public class ITBigQueryStorageWriteClientTest {
     String table =
         BigQueryResource.formatTableResource(
             ServiceOptions.getDefaultProjectId(), DATASET, tableName);
+
+    // Read all the data as Avro GenericRecords
     List<GenericData.Record> rows = Helper.readAllRows(readClient, parentProjectId, table, null);
     List<String> timestampHigherPrecision =
         rows.stream()
