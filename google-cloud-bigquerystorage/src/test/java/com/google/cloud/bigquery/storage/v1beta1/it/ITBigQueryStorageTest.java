@@ -79,6 +79,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import org.apache.avro.Conversions;
@@ -292,7 +293,7 @@ class ITBigQueryStorageTest {
   @Test
   void testRangeType() throws InterruptedException {
     // Create table with Range values.
-    String tableName = "test_range_type";
+    String tableName = "test_range_type" + UUID.randomUUID().toString().substring(0, 8);
     QueryJobConfiguration createTable =
         QueryJobConfiguration.newBuilder(
                 String.format(
@@ -593,7 +594,8 @@ class ITBigQueryStorageTest {
 
   @Test
   void testColumnPartitionedTableByDateField() throws InterruptedException, IOException {
-    String partitionedTableName = "test_column_partition_table_by_date";
+    String partitionedTableName =
+        "test_column_partition_table_by_date" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s (num_field INT64, date_field DATE) "
@@ -684,7 +686,7 @@ class ITBigQueryStorageTest {
 
   @Test
   void testBasicSqlTypes() throws InterruptedException, IOException {
-    String table_name = "test_basic_sql_types";
+    String tableName = "test_basic_sql_types" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s "
@@ -705,13 +707,13 @@ class ITBigQueryStorageTest {
                 + "     TRUE,"
                 + "     \"String field value\","
                 + "     b\"абвгд\"",
-            DATASET, table_name);
+            DATASET, tableName);
 
     RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     TableReference tableReference =
         TableReference.newBuilder()
-            .setTableId(table_name)
+            .setTableId(tableName)
             .setDatasetId(DATASET)
             .setProjectId(ServiceOptions.getDefaultProjectId())
             .build();
@@ -789,7 +791,8 @@ class ITBigQueryStorageTest {
 
   @Test
   void testDateAndTimeSqlTypes() throws InterruptedException, IOException {
-    String table_name = "test_date_and_time_sql_types";
+    String tableName =
+        "test_date_and_time_sql_types" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s "
@@ -806,13 +809,13 @@ class ITBigQueryStorageTest {
                 + "     CAST(\"2019-04-30 21:47:59.999999\" AS DATETIME),"
                 + "     CAST(\"21:47:59.999999\" AS TIME),"
                 + "     CAST(\"2019-04-30 19:24:19.123456 UTC\" AS TIMESTAMP)",
-            DATASET, table_name);
+            DATASET, tableName);
 
     RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     TableReference tableReference =
         TableReference.newBuilder()
-            .setTableId(table_name)
+            .setTableId(tableName)
             .setDatasetId(DATASET)
             .setProjectId(ServiceOptions.getDefaultProjectId())
             .build();
@@ -895,7 +898,7 @@ class ITBigQueryStorageTest {
 
   @Test
   void testGeographySqlType() throws InterruptedException, IOException {
-    String table_name = "test_geography_sql_type";
+    String tableName = "test_geography_sql_type" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s "
@@ -905,13 +908,13 @@ class ITBigQueryStorageTest {
                 + " ) "
                 + "AS "
                 + "   SELECT ST_GEOGPOINT(1.1, 2.2)",
-            DATASET, table_name);
+            DATASET, tableName);
 
     RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     TableReference tableReference =
         TableReference.newBuilder()
-            .setTableId(table_name)
+            .setTableId(tableName)
             .setDatasetId(DATASET)
             .setProjectId(ServiceOptions.getDefaultProjectId())
             .build();
@@ -945,20 +948,21 @@ class ITBigQueryStorageTest {
 
   @Test
   void testStructAndArraySqlTypes() throws InterruptedException, IOException {
-    String table_name = "test_struct_and_array_sql_types";
+    String tableName =
+        "test_struct_and_array_sql_types" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s  (array_field ARRAY<INT64>,  struct_field STRUCT<int_field INT64"
                 + " NOT NULL, str_field STRING NOT NULL> NOT NULL) OPTIONS(    description=\"a"
                 + " table with array and time column types\"  ) AS    SELECT      [1, 2, 3],    "
                 + " (10, 'abc')",
-            DATASET, table_name);
+            DATASET, tableName);
 
     RunQueryJobAndExpectSuccess(QueryJobConfiguration.newBuilder(createTableStatement).build());
 
     TableReference tableReference =
         TableReference.newBuilder()
-            .setTableId(table_name)
+            .setTableId(tableName)
             .setDatasetId(DATASET)
             .setProjectId(ServiceOptions.getDefaultProjectId())
             .build();

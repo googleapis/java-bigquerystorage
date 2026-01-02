@@ -76,6 +76,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 import org.apache.avro.Conversions;
 import org.apache.avro.LogicalTypes;
@@ -291,7 +292,7 @@ class ITBigQueryStorageTest {
   @Test
   void testRangeType() throws InterruptedException {
     // Create table with Range values.
-    String tableName = "test_range_type";
+    String tableName = "test_range_type" + UUID.randomUUID().toString().substring(0, 8);
     TableId tableId = TableId.of(DATASET, tableName);
     QueryJobConfiguration createTable =
         QueryJobConfiguration.newBuilder(
@@ -595,7 +596,8 @@ class ITBigQueryStorageTest {
 
   @Test
   void testColumnPartitionedTableByDateField() throws InterruptedException, IOException {
-    String partitionedTableName = "test_column_partition_table_by_date";
+    String partitionedTableName =
+        "test_column_partition_table_by_date" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s (num_field INT64, date_field DATE) "
@@ -679,7 +681,7 @@ class ITBigQueryStorageTest {
 
   @Test
   void testBasicSqlTypes() throws InterruptedException, IOException {
-    String tableName = "test_basic_sql_types";
+    String tableName = "test_basic_sql_types" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s "
@@ -782,7 +784,8 @@ class ITBigQueryStorageTest {
 
   @Test
   void testDateAndTimeSqlTypes() throws InterruptedException, IOException {
-    String tableName = "test_date_and_time_sql_types";
+    String tableName =
+        "test_date_and_time_sql_types" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s "
@@ -886,7 +889,7 @@ class ITBigQueryStorageTest {
 
   @Test
   void testGeographySqlType() throws InterruptedException, IOException {
-    String tableName = "test_geography_sql_type";
+    String tableName = "test_geography_sql_type" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s "
@@ -934,7 +937,8 @@ class ITBigQueryStorageTest {
 
   @Test
   void testStructAndArraySqlTypes() throws InterruptedException, IOException {
-    String tableName = "test_struct_and_array_sql_types";
+    String tableName =
+        "test_struct_and_array_sql_types" + UUID.randomUUID().toString().substring(0, 8);
     String createTableStatement =
         String.format(
             " CREATE TABLE %s.%s  (array_field ARRAY<INT64>,  struct_field STRUCT<int_field INT64"
