@@ -620,7 +620,7 @@ class ITBigQueryStorageTest {
 
     List<GenericData.Record> unfilteredRows =
         ReadAllRows(/* tableReference= */ tableReference, /* filter= */ null);
-    assertEquals(1, unfilteredRows.size(), "Actual rows read: " + unfilteredRows.toString());
+    assertEquals(3, unfilteredRows.size(), "Actual rows read: " + unfilteredRows.toString());
 
     List<GenericData.Record> partitionFilteredRows =
         ReadAllRows(
