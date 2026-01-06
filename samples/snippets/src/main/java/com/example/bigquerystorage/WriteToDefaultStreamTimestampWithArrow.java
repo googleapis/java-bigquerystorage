@@ -71,6 +71,8 @@ import org.threeten.bp.Duration;
  */
 public class WriteToDefaultStreamTimestampWithArrow {
 
+  public static final long NANOS = 1000000000L;
+
   public static void main(String[] args) throws InterruptedException, IOException {
     if (args.length < 3) {
       System.out.println(
@@ -100,8 +102,9 @@ public class WriteToDefaultStreamTimestampWithArrow {
     TimeStampNanoTZVector timestampField = (TimeStampNanoTZVector) root.getVector("timestampField");
     timestampField.allocateNew(rowCount);
 
+    Instant now = Instant.now();
     for (int i = 0; i < rowCount; i++) {
-      timestampField.set(i, Instant.now().getNano());
+      timestampField.set(i, now.getEpochSecond() * NANOS + now.getNano());
     }
     root.setRowCount(rowCount);
 
@@ -228,7 +231,7 @@ public class WriteToDefaultStreamTimestampWithArrow {
       // For more information about StreamWriter, see:
       // https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/com.google.cloud.bigquery.storage.v1.StreamWriter
       return StreamWriter.newBuilder(streamName, client)
-          .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(100)))
+          .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(10)))
           .setChannelProvider(
               BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
                   .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))

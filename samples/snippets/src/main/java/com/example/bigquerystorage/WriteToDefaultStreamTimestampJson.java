@@ -157,7 +157,7 @@ public class WriteToDefaultStreamTimestampJson {
       // For more information about JsonStreamWriter, see:
       // https://googleapis.dev/java/google-cloud-bigquerystorage/latest/com/google/cloud/bigquery/storage/v1/JsonStreamWriter.html
       return JsonStreamWriter.newBuilder(tableName, client)
-          .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(100)))
+          .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(10)))
           .setChannelProvider(
               BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
                   .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))

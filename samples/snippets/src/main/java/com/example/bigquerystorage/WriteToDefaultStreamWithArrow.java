@@ -236,7 +236,7 @@ public class WriteToDefaultStreamWithArrow {
       // For more information about StreamWriter, see:
       // https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/com.google.cloud.bigquery.storage.v1.StreamWriter
       return StreamWriter.newBuilder(streamName, client)
-          .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(100)))
+          .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(10)))
           .setChannelProvider(
               BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
                   .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))

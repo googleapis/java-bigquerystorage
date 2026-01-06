@@ -85,7 +85,7 @@ public class ReadTimestampAvro {
     try (BigQueryReadClient client = BigQueryReadClient.create()) {
       String parent = String.format("projects/%s", projectId);
 
-      // This example uses baby name data from the public datasets.
+      // This example uses citibike data from the public datasets.
       String srcTable =
           String.format(
               "projects/%s/datasets/%s/tables/%s",
