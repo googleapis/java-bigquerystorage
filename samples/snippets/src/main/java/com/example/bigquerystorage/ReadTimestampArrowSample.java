@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.example.bigquerystorage;
 
 // [START bigquerystorage_read_timestamp_arrow]
@@ -46,9 +47,8 @@ import org.apache.arrow.vector.util.ByteArrayReadableSeekableByteChannel;
  * Depending on the JDK version, you may need to include this into your VM options: {@code
  * --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED}
  *
- * <p>See the {@link <a
- * href="https://arrow.apache.org/docs/java/install.html#java-compatibility">documentation</a>} for
- * more information.
+ * <p>See the <a href="https://arrow.apache.org/docs/java/install.html#java-compatibility">documentation</a>
+ * for more information.
  */
 public class ReadTimestampArrowSample {
   /*

@@ -65,9 +65,9 @@ import org.threeten.bp.Duration;
  * connection to continuously ingest data.
  *
  * <p>Depending on the JDK version, you may need to include this into your VM options: {@code
- * --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED}. See the {@link <a
- * href="https://arrow.apache.org/docs/java/install.html#java-compatibility">documentation</a>} for
- * more information.
+ * --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED}. See the
+ * <a href="https://arrow.apache.org/docs/java/install.html#java-compatibility">documentation</a>
+ * for more information.
  */
 public class WriteToDefaultStreamTimestampWithArrow {
 
