@@ -216,7 +216,8 @@ public class WriteToDefaultStreamWithArrow {
 
     private final AtomicInteger recreateCount = new AtomicInteger(0);
 
-    private StreamWriter createStreamWriter(String streamName, Schema arrowSchema) throws IOException {
+    private StreamWriter createStreamWriter(String streamName, Schema arrowSchema)
+        throws IOException {
       // Configure in-stream automatic retry settings.
       // Error codes that are immediately retried:
       // * ABORTED, UNAVAILABLE, CANCELLED, INTERNAL, DEADLINE_EXCEEDED
