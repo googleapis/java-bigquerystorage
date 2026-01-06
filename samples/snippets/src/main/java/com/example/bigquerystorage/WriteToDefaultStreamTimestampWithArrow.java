@@ -124,17 +124,17 @@ public class WriteToDefaultStreamTimestampWithArrow {
     // One time initialization for the worker.
     writer.initialize(parentTable, arrowSchema);
     long initialRowCount = getRowCount(parentTable);
-    BufferAllocator allocator = new RootAllocator();
+    try (BufferAllocator allocator = new RootAllocator()) {
+      // A writer should be used to ingest as much data as possible before teardown.
+      // Append 100 batches.
+      for (int i = 0; i < 100; i++) {
+        try (VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, allocator)) {
+          // Each batch has 10 rows.
+          ArrowRecordBatch batch = buildRecordBatch(root, 10);
 
-    // A writer should be used to ingest as much data as possible before teardown.
-    // Append 100 batches.
-    for (int i = 0; i < 100; i++) {
-      try (VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, allocator)) {
-        // Each batch has 10 rows.
-        ArrowRecordBatch batch = buildRecordBatch(root, 10);
-
-        // Asynchronous append.
-        writer.append(new ArrowData(arrowSchema, batch));
+          // Asynchronous append.
+          writer.append(new ArrowData(arrowSchema, batch));
+        }
       }
     }
     // Final cleanup for the stream during worker teardown.

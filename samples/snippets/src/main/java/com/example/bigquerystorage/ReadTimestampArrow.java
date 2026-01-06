@@ -110,9 +110,9 @@ public class ReadTimestampArrow {
   public static void main(String... args) throws Exception {
     // Sets your Google Cloud Platform project ID.
     String projectId = args[0];
-    Integer snapshotMillis = null;
+    Long snapshotMillis = null;
     if (args.length > 1) {
-      snapshotMillis = Integer.parseInt(args[1]);
+      snapshotMillis = Long.parseLong(args[1]);
     }
 
     try (BigQueryReadClient client = BigQueryReadClient.create()) {
@@ -142,7 +142,7 @@ public class ReadTimestampArrow {
         Timestamp t =
             Timestamp.newBuilder()
                 .setSeconds(snapshotMillis / 1000)
-                .setNanos(((snapshotMillis % 1000) * 1000000))
+                .setNanos((int) ((snapshotMillis % 1000) * 1000000))
                 .build();
         TableModifiers modifiers = TableModifiers.newBuilder().setSnapshotTime(t).build();
         sessionBuilder.setTableModifiers(modifiers);
