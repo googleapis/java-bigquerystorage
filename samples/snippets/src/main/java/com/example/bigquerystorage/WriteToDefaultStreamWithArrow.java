@@ -180,8 +180,8 @@ public class WriteToDefaultStreamWithArrow {
     BigQuery bigquery =
         BigQueryOptions.newBuilder().setProjectId(parentTable.getProject()).build().getService();
     TableResult results = bigquery.query(queryConfig);
-    int countRowsActual =
-        Integer.parseInt(results.getValues().iterator().next().get("f0_").getStringValue());
+    long countRowsActual =
+        Long.parseLong(results.getValues().iterator().next().get("f0_").getStringValue());
     if (countRowsActual != expectedRowCount) {
       throw new RuntimeException(
           "Unexpected row count. Expected: " + expectedRowCount + ". Actual: " + countRowsActual);
@@ -216,8 +216,7 @@ public class WriteToDefaultStreamWithArrow {
 
     private final AtomicInteger recreateCount = new AtomicInteger(0);
 
-    private StreamWriter createStreamWriter(String streamName, Schema arrowSchema)
-        throws DescriptorValidationException, IOException, InterruptedException {
+    private StreamWriter createStreamWriter(String streamName, Schema arrowSchema) throws IOException {
       // Configure in-stream automatic retry settings.
       // Error codes that are immediately retried:
       // * ABORTED, UNAVAILABLE, CANCELLED, INTERNAL, DEADLINE_EXCEEDED

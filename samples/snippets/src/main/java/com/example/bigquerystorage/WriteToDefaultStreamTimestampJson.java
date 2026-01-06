@@ -88,11 +88,11 @@ public class WriteToDefaultStreamTimestampJson {
 
     // Final cleanup for the stream during worker teardown.
     writer.cleanup();
-    verifyExpectedRowCount(parentTable, 20);
+    verifyExpectedRowCount(parentTable, 20L);
     System.out.println("Appended records successfully.");
   }
 
-  private static void verifyExpectedRowCount(TableName parentTable, int expectedRowCount)
+  private static void verifyExpectedRowCount(TableName parentTable, long expectedRowCount)
       throws InterruptedException {
     String queryRowCount =
         "SELECT COUNT(*) FROM `"
@@ -105,8 +105,8 @@ public class WriteToDefaultStreamTimestampJson {
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(queryRowCount).build();
     BigQuery bigquery = BigQueryOptions.getDefaultInstance().getService();
     TableResult results = bigquery.query(queryConfig);
-    int countRowsActual =
-        Integer.parseInt(results.getValues().iterator().next().get("f0_").getStringValue());
+    long countRowsActual =
+        Long.parseLong(results.getValues().iterator().next().get("f0_").getStringValue());
     if (countRowsActual != expectedRowCount) {
       throw new RuntimeException(
           "Unexpected row count. Expected: " + expectedRowCount + ". Actual: " + countRowsActual);
