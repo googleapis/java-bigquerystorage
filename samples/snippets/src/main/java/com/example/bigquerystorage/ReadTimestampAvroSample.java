@@ -92,9 +92,7 @@ public class ReadTimestampAvroSample {
 
       // We specify the columns to be projected by adding them to the selected fields,
       ReadSession.TableReadOptions options =
-          ReadSession.TableReadOptions.newBuilder()
-              .addSelectedFields("last_reported")
-              .build();
+          ReadSession.TableReadOptions.newBuilder().addSelectedFields("last_reported").build();
 
       // Start specifying the read session we want created.
       ReadSession.Builder sessionBuilder =

@@ -42,6 +42,14 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.ByteArrayReadableSeekableByteChannel;
 
+/**
+ * Depending on the JDK version, you may need to include this into your VM options: {@code
+ * --add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED}
+ *
+ * <p>See the {@link <a
+ * href="https://arrow.apache.org/docs/java/install.html#java-compatibility">documentation</a>} for
+ * more information.
+ */
 public class ReadTimestampArrowSample {
   /*
    * SimpleRowReader handles deserialization of the Apache Arrow-encoded row batches transmitted
@@ -100,8 +108,8 @@ public class ReadTimestampArrowSample {
 
   public static void main(String... args) throws Exception {
     // Sets your Google Cloud Platform project ID.
-     String projectId = "lawrence-test-project-2";
-//    String projectId = args[0];
+    String projectId = "lawrence-test-project-2";
+    //    String projectId = args[0];
     Integer snapshotMillis = null;
     if (args.length > 1) {
       snapshotMillis = Integer.parseInt(args[1]);
@@ -118,9 +126,7 @@ public class ReadTimestampArrowSample {
 
       // We specify the columns to be projected by adding them to the selected fields,
       ReadSession.TableReadOptions options =
-          ReadSession.TableReadOptions.newBuilder()
-              .addSelectedFields("last_reported")
-              .build();
+          ReadSession.TableReadOptions.newBuilder().addSelectedFields("last_reported").build();
 
       // Start specifying the read session we want created.
       ReadSession.Builder sessionBuilder =
@@ -151,7 +157,8 @@ public class ReadTimestampArrowSample {
 
       ReadSession session = client.createReadSession(builder.build());
       // Setup a simple reader and start a read session.
-      try (ReadTimestampArrowSample.SimpleRowReader reader = new ReadTimestampArrowSample.SimpleRowReader(session.getArrowSchema())) {
+      try (ReadTimestampArrowSample.SimpleRowReader reader =
+          new ReadTimestampArrowSample.SimpleRowReader(session.getArrowSchema())) {
 
         // Assert that there are streams available in the session.  An empty table may not have
         // data available.  If no sessions are available for an anonymous (cached) table, consider
