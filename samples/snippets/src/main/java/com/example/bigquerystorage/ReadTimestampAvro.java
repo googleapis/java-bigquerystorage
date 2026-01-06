@@ -36,7 +36,7 @@ import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
 
-public class ReadTimestampAvroSample {
+public class ReadTimestampAvro {
   /*
    * SimpleRowReader handles deserialization of the Avro-encoded row blocks transmitted
    * from the storage API using a generic datum decoder.
