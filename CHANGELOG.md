@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.19.1](https://github.com/googleapis/java-bigquerystorage/compare/v3.19.0...v3.19.1) (2026-01-08)
+
+
+### Dependencies
+
+* Update dependency com.google.cloud:google-cloud-bigquery to v2.57.1 ([#3060](https://github.com/googleapis/java-bigquerystorage/issues/3060)) ([3a82884](https://github.com/googleapis/java-bigquerystorage/commit/3a828848626d62dde6f89d9ef4bc781bda2b4c5e))
+
+
+### Documentation
+
+* Add samples for using timestamps with BQStorage Read and Write API ([#3167](https://github.com/googleapis/java-bigquerystorage/issues/3167)) ([332736e](https://github.com/googleapis/java-bigquerystorage/commit/332736e8a2e9569163838d266ff49897486b9c3a))
+
 ## [3.19.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.18.0...v3.19.0) (2025-12-12)
 
 
