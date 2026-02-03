@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.cloud</groupId>
   <artifactId>google-cloud-bigquerystorage</artifactId>
-  <version>3.18.0</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
+  <version>3.19.1</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
   <packaging>jar</packaging>
   <name>BigQuery Storage</name>
   <url>https://github.com/googleapis/java-bigquerystorage</url>
@@ -11,7 +11,7 @@
   <parent>
     <groupId>com.google.cloud</groupId>
     <artifactId>google-cloud-bigquerystorage-parent</artifactId>
-    <version>3.18.0</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
+    <version>3.19.1</version><!-- {x-version-update:google-cloud-bigquerystorage:current} -->
   </parent>
   <properties>
     <site.installationModule>google-cloud-bigquerystorage</site.installationModule>
@@ -39,6 +39,20 @@
       </extension>
     </extensions>
     <plugins>
+      <!-- Declare `surefire-junit-platform` here as shared-configs pulls in surefire-junit47 -->
+      <!-- which is for JUnit4 and not JUnit5. Declare this here until upstream is fixed -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.5.2</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
+            <version>${surefire.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
       <plugin>
         <groupId>org.xolstice.maven.plugins</groupId>
         <artifactId>protobuf-maven-plugin</artifactId>
@@ -72,10 +86,6 @@
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-protobuf</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.grpc</groupId>
-      <artifactId>grpc-util</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.api</groupId>
@@ -198,6 +208,23 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- The generated tests from gapic-generator are still generated with JUnit4. -->
+    <!-- Remove once they are migrated to JUnit 5.x+ -->
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.google.http-client</groupId>
       <artifactId>google-http-client</artifactId>
       <version>1.47.1</version>
@@ -232,10 +259,9 @@
       <artifactId>arrow-memory-core</artifactId>
       <scope>test</scope>
     </dependency>
-
     <dependency>
-      <groupId>io.grpc</groupId>
-      <artifactId>grpc-testing</artifactId>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java-util</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -328,6 +354,10 @@
           <version>${opentest4j.version}</version>
         </dependency>
         <dependency>
+          <groupId>org.junit.jupiter</groupId>
+          <artifactId>junit-jupiter-engine</artifactId>
+        </dependency>
+        <dependency>
           <groupId>org.junit.vintage</groupId>
           <artifactId>junit-vintage-engine</artifactId>
           <version>${junit-vintage-engine.version}</version>
@@ -340,6 +370,11 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>${surefire.version}</version>
             <dependencies>
+              <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit-vintage-engine.version}</version>
+              </dependency>
               <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>

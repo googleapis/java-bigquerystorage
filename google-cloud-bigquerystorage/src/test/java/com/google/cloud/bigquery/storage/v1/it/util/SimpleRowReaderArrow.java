@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.cloud.bigquery.storage.v1.it;
+package com.google.cloud.bigquery.storage.v1.it.util;
 
+import static com.google.cloud.bigquery.storage.v1.it.util.Helper.TIMESTAMP_COLUMN_NAME;
+import static com.google.cloud.bigquery.storage.v1.it.util.Helper.TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.cloud.bigquery.FieldElementType;
@@ -23,7 +25,6 @@ import com.google.cloud.bigquery.Range;
 import com.google.cloud.bigquery.storage.v1.ArrowRecordBatch;
 import com.google.cloud.bigquery.storage.v1.ArrowSchema;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -50,17 +51,44 @@ public class SimpleRowReaderArrow implements AutoCloseable {
     void accept(VectorSchemaRoot root);
   }
 
+  public static class ArrowTimestampBatchConsumer implements ArrowBatchConsumer {
+    private final Object[][] expectedTimestampValues;
+
+    public ArrowTimestampBatchConsumer(Object[][] expectedTimestampValues) {
+      this.expectedTimestampValues = expectedTimestampValues;
+    }
+
+    @Override
+    public void accept(VectorSchemaRoot root) {
+      FieldVector timestampFieldVector = root.getVector(TIMESTAMP_COLUMN_NAME);
+      FieldVector timestampHigherPrecisionFieldVector =
+          root.getVector(TIMESTAMP_HIGHER_PRECISION_COLUMN_NAME);
+      assertThat(timestampFieldVector.getValueCount())
+          .isEqualTo(timestampHigherPrecisionFieldVector.getValueCount());
+      int count = timestampFieldVector.getValueCount();
+      for (int i = 0; i < count; i++) {
+        long timestampMicros = (Long) timestampFieldVector.getObject(i);
+        assertThat(timestampMicros).isEqualTo(expectedTimestampValues[i][0]);
+
+        // The Object comes back as `Text` which cannot be cast to String
+        // (use `toString()` instead)
+        String timestampHigherPrecisionISO =
+            timestampHigherPrecisionFieldVector.getObject(i).toString();
+        assertThat(timestampHigherPrecisionISO).isEqualTo(expectedTimestampValues[i][1]);
+      }
+    }
+  }
+
   /** ArrowRangeBatchConsumer accepts batch Arrow data and validate the range values. */
   public static class ArrowRangeBatchConsumer implements ArrowBatchConsumer {
-
-    private final ImmutableMap<String, Range> expectedRangeDateValues;
-    private final ImmutableMap<String, Range> expectedRangeDatetimeValues;
-    private final ImmutableMap<String, Range> expectedRangeTimestampValues;
+    private final Map<String, Range> expectedRangeDateValues;
+    private final Map<String, Range> expectedRangeDatetimeValues;
+    private final Map<String, Range> expectedRangeTimestampValues;
 
     public ArrowRangeBatchConsumer(
-        ImmutableMap<String, Range> expectedRangeDateValues,
-        ImmutableMap<String, Range> expectedRangeDatetimeValues,
-        ImmutableMap<String, Range> expectedRangeTimestampValues) {
+        Map<String, Range> expectedRangeDateValues,
+        Map<String, Range> expectedRangeDatetimeValues,
+        Map<String, Range> expectedRangeTimestampValues) {
       this.expectedRangeDateValues = expectedRangeDateValues;
       this.expectedRangeDatetimeValues = expectedRangeDatetimeValues;
       this.expectedRangeTimestampValues = expectedRangeTimestampValues;

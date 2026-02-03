@@ -16,7 +16,8 @@
 
 package com.google.cloud.bigquery.storage.v1.it;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.ServiceOptions;
@@ -44,14 +45,14 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-public class ITBigQueryTimeEncoderTest {
+class ITBigQueryTimeEncoderTest {
   private static final String DATASET = RemoteBigQueryHelper.generateDatasetName();
   private static final String TABLE = "testtable";
   private static final String DESCRIPTION = "BigQuery Write Java manual client test dataset";
@@ -60,8 +61,8 @@ public class ITBigQueryTimeEncoderTest {
   private static TableInfo tableInfo;
   private static BigQuery bigquery;
 
-  @BeforeClass
-  public static void beforeClass() throws IOException {
+  @BeforeAll
+  static void beforeAll() throws IOException {
     client = BigQueryWriteClient.create();
 
     RemoteBigQueryHelper bigqueryHelper = RemoteBigQueryHelper.create();
@@ -97,10 +98,11 @@ public class ITBigQueryTimeEncoderTest {
     bigquery.create(tableInfo);
   }
 
-  @AfterClass
-  public static void afterClass() {
+  @AfterAll
+  static void afterAll() throws InterruptedException {
     if (client != null) {
       client.close();
+      client.awaitTermination(10, TimeUnit.SECONDS);
     }
     if (bigquery != null) {
       RemoteBigQueryHelper.forceDelete(bigquery, DATASET);
@@ -108,7 +110,7 @@ public class ITBigQueryTimeEncoderTest {
   }
 
   @Test
-  public void TestTimeEncoding()
+  void TestTimeEncoding()
       throws IOException,
           InterruptedException,
           ExecutionException,
@@ -187,7 +189,7 @@ public class ITBigQueryTimeEncoderTest {
       row.put("test_date", 300);
       JSONArray jsonArr = new JSONArray(new JSONObject[] {row});
       ApiFuture<AppendRowsResponse> response = jsonStreamWriter.append(jsonArr, -1);
-      Assert.assertFalse(response.get().getAppendResult().hasOffset());
+      assertFalse(response.get().getAppendResult().hasOffset());
       TableResult result =
           bigquery.listTableData(
               tableInfo.getTableId(), BigQuery.TableDataListOption.startIndex(0L));

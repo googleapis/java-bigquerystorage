@@ -129,17 +129,17 @@ public class WriteToDefaultStreamWithArrow {
     // One time initialization for the worker.
     writer.initialize(parentTable, arrowSchema);
     long initialRowCount = getRowCount(parentTable);
-    BufferAllocator allocator = new RootAllocator();
+    try (BufferAllocator allocator = new RootAllocator()) {
+      // A writer should be used to ingest as much data as possible before teardown.
+      // Append 100 batches.
+      for (int i = 0; i < 100; i++) {
+        try (VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, allocator)) {
+          // Each batch has 10 rows.
+          ArrowRecordBatch batch = buildRecordBatch(root, 10);
 
-    // A writer should be used to ingest as much data as possible before teardown.
-    // Append 100 batches.
-    for (int i = 0; i < 100; i++) {
-      try (VectorSchemaRoot root = VectorSchemaRoot.create(arrowSchema, allocator)) {
-        // Each batch has 10 rows.
-        ArrowRecordBatch batch = buildRecordBatch(root, 10);
-
-        // Asynchronous append.
-        writer.append(new ArrowData(arrowSchema, batch));
+          // Asynchronous append.
+          writer.append(new ArrowData(arrowSchema, batch));
+        }
       }
     }
     // Final cleanup for the stream during worker teardown.
@@ -180,8 +180,8 @@ public class WriteToDefaultStreamWithArrow {
     BigQuery bigquery =
         BigQueryOptions.newBuilder().setProjectId(parentTable.getProject()).build().getService();
     TableResult results = bigquery.query(queryConfig);
-    int countRowsActual =
-        Integer.parseInt(results.getValues().iterator().next().get("f0_").getStringValue());
+    long countRowsActual =
+        Long.parseLong(results.getValues().iterator().next().get("f0_").getStringValue());
     if (countRowsActual != expectedRowCount) {
       throw new RuntimeException(
           "Unexpected row count. Expected: " + expectedRowCount + ". Actual: " + countRowsActual);
@@ -217,7 +217,7 @@ public class WriteToDefaultStreamWithArrow {
     private final AtomicInteger recreateCount = new AtomicInteger(0);
 
     private StreamWriter createStreamWriter(String streamName, Schema arrowSchema)
-        throws DescriptorValidationException, IOException, InterruptedException {
+        throws IOException {
       // Configure in-stream automatic retry settings.
       // Error codes that are immediately retried:
       // * ABORTED, UNAVAILABLE, CANCELLED, INTERNAL, DEADLINE_EXCEEDED
@@ -236,7 +236,7 @@ public class WriteToDefaultStreamWithArrow {
       // For more information about StreamWriter, see:
       // https://cloud.google.com/java/docs/reference/google-cloud-bigquerystorage/latest/com.google.cloud.bigquery.storage.v1.StreamWriter
       return StreamWriter.newBuilder(streamName, client)
-          .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(100)))
+          .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(10)))
           .setChannelProvider(
               BigQueryWriteSettings.defaultGrpcTransportProviderBuilder()
                   .setKeepAliveTime(org.threeten.bp.Duration.ofMinutes(1))

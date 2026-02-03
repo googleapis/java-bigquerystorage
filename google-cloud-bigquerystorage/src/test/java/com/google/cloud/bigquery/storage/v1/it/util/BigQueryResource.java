@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.cloud.bigquery.storage.v1.it;
+package com.google.cloud.bigquery.storage.v1.it.util;
 
 /** Test helper class to generate BigQuery resource paths. */
 public class BigQueryResource {
@@ -28,7 +28,7 @@ public class BigQueryResource {
    * @param tableId
    * @return a path to a table resource.
    */
-  public static String FormatTableResource(String projectId, String datasetId, String tableId) {
+  public static String formatTableResource(String projectId, String datasetId, String tableId) {
     return String.format("projects/%s/datasets/%s/tables/%s", projectId, datasetId, tableId);
   }
 }

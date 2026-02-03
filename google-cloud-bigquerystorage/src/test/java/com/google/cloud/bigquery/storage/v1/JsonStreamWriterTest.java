@@ -15,9 +15,11 @@
  */
 package com.google.cloud.bigquery.storage.v1;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.api.client.util.Sleeper;
 import com.google.api.core.ApiFuture;
@@ -58,18 +60,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.function.ThrowingRunnable;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
-@RunWith(JUnit4.class)
-public class JsonStreamWriterTest {
+@Execution(ExecutionMode.SAME_THREAD)
+class JsonStreamWriterTest {
 
   private static final int NUMERIC_SCALE = 9;
   private static final String TEST_STREAM = "projects/p/datasets/d/tables/t/streams/_default";
@@ -132,10 +133,10 @@ public class JsonStreamWriterTest {
           .setName("test_string")
           .build();
 
-  public JsonStreamWriterTest() throws DescriptorValidationException {}
+  JsonStreamWriterTest() throws DescriptorValidationException {}
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void setUp() throws Exception {
     testBigQueryWrite = new FakeBigQueryWrite();
     serviceHelper =
         new MockServiceHelper(UUID.randomUUID().toString(), Arrays.asList(testBigQueryWrite));
@@ -155,9 +156,12 @@ public class JsonStreamWriterTest {
     StreamWriter.cleanUp();
   }
 
-  @After
-  public void tearDown() throws Exception {
+  @AfterEach
+  void tearDown() throws Exception {
     serviceHelper.stop();
+
+    client.close();
+    client.awaitTermination(10, TimeUnit.SECONDS);
   }
 
   private JsonStreamWriter.Builder getTestJsonStreamWriterBuilder(
@@ -176,34 +180,30 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testTwoParamNewBuilder_nullSchema() {
-    try {
-      getTestJsonStreamWriterBuilder(null, TABLE_SCHEMA);
-      Assert.fail("expected NullPointerException");
-    } catch (NullPointerException e) {
-      assertEquals(e.getMessage(), "StreamOrTableName is null.");
-    }
+  void testTwoParamNewBuilder_nullSchema() {
+    NullPointerException e =
+        assertThrows(
+            NullPointerException.class, () -> getTestJsonStreamWriterBuilder(null, TABLE_SCHEMA));
+    assertEquals(e.getMessage(), "StreamOrTableName is null.");
   }
 
   @Test
-  public void testTwoParamNewBuilder_nullStream() {
-    try {
-      getTestJsonStreamWriterBuilder(TEST_STREAM, null);
-      Assert.fail("expected NullPointerException");
-    } catch (NullPointerException e) {
-      assertEquals(e.getMessage(), "TableSchema is null.");
-    }
+  void testTwoParamNewBuilder_nullStream() {
+    NullPointerException e =
+        assertThrows(
+            NullPointerException.class, () -> getTestJsonStreamWriterBuilder(TEST_STREAM, null));
+    assertEquals(e.getMessage(), "TableSchema is null.");
   }
 
   @Test
-  public void testTwoParamNewBuilder()
+  void testTwoParamNewBuilder()
       throws DescriptorValidationException, IOException, InterruptedException {
     JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
     assertEquals(TEST_STREAM, writer.getStreamName());
   }
 
   @Test
-  public void testConstructWriterUsingDefaultStreamName()
+  void testConstructWriterUsingDefaultStreamName()
       throws DescriptorValidationException, IOException, InterruptedException {
     JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_TABLE_DEFAULT, TABLE_SCHEMA).build();
@@ -211,7 +211,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testSingleAppendSimpleJson() throws Exception {
+  void testSingleAppendSimpleJson() throws Exception {
     FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
     JSONObject foo = new JSONObject();
     foo.put("foo", "allen");
@@ -254,7 +254,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testSingleAppendSimpleGson() throws Exception {
+  void testSingleAppendSimpleGson() throws Exception {
     FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
     JsonObject foo = new JsonObject();
     foo.addProperty("foo", "allen");
@@ -297,7 +297,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testFlexibleColumnAppend() throws Exception {
+  void testFlexibleColumnAppend() throws Exception {
     TableFieldSchema field =
         TableFieldSchema.newBuilder()
             .setType(TableFieldSchema.Type.STRING)
@@ -344,7 +344,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testSpecialTypeAppend() throws Exception {
+  void testSpecialTypeAppend() throws Exception {
     TableFieldSchema field =
         TableFieldSchema.newBuilder()
             .setName("time")
@@ -394,7 +394,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testRepeatedByteStringAppend() throws Exception {
+  void testRepeatedByteStringAppend() throws Exception {
     TableFieldSchema NON_REPEATED_A =
         TableFieldSchema.newBuilder()
             .setType(TableFieldSchema.Type.NUMERIC)
@@ -525,7 +525,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testSingleAppendMultipleSimpleJson() throws Exception {
+  void testSingleAppendMultipleSimpleJson() throws Exception {
     FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
     JSONObject foo = new JSONObject();
     foo.put("foo", "allen");
@@ -579,7 +579,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testMultipleAppendSimpleJson() throws Exception {
+  void testMultipleAppendSimpleJson() throws Exception {
     FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
     JSONObject foo = new JSONObject();
     foo.put("foo", "allen");
@@ -634,7 +634,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testAppendOutOfRangeException() throws Exception {
+  void testAppendOutOfRangeException() throws Exception {
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
       testBigQueryWrite.addResponse(
@@ -646,17 +646,13 @@ public class JsonStreamWriterTest {
       JSONArray jsonArr = new JSONArray();
       jsonArr.put(foo);
       ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
-      try {
-        appendFuture.get();
-        Assert.fail("expected ExecutionException");
-      } catch (ExecutionException ex) {
-        assertEquals(ex.getCause().getMessage(), "OUT_OF_RANGE: ");
-      }
+      ExecutionException ex = assertThrows(ExecutionException.class, () -> appendFuture.get());
+      assertEquals(ex.getCause().getMessage(), "OUT_OF_RANGE: ");
     }
   }
 
   @Test
-  public void testCreateDefaultStream_withNoSchemaPassedIn() throws Exception {
+  void testCreateDefaultStream_withNoSchemaPassedIn() throws Exception {
     TableSchema tableSchema =
         TableSchema.newBuilder().addFields(0, TEST_INT).addFields(1, TEST_STRING).build();
     testBigQueryWrite.addResponse(
@@ -677,7 +673,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testCreateDefaultStream_withNoClientPassedIn() throws Exception {
+  void testCreateDefaultStream_withNoClientPassedIn() throws Exception {
     TableSchema tableSchema =
         TableSchema.newBuilder().addFields(0, TEST_INT).addFields(1, TEST_STRING).build();
     testBigQueryWrite.addResponse(
@@ -707,7 +703,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testCreateDefaultStreamWrongLocation() {
+  void testCreateDefaultStreamWrongLocation() {
     TableSchema tableSchema =
         TableSchema.newBuilder().addFields(0, TEST_INT).addFields(1, TEST_STRING).build();
     testBigQueryWrite.addResponse(
@@ -719,21 +715,18 @@ public class JsonStreamWriterTest {
     IllegalArgumentException ex =
         assertThrows(
             IllegalArgumentException.class,
-            new ThrowingRunnable() {
-              @Override
-              public void run() throws Throwable {
-                JsonStreamWriter.newBuilder(TEST_TABLE, client)
-                    .setChannelProvider(channelProvider)
-                    .setCredentialsProvider(NoCredentialsProvider.create())
-                    .setLocation("bb")
-                    .build();
-              }
+            () -> {
+              JsonStreamWriter.newBuilder(TEST_TABLE, client)
+                  .setChannelProvider(channelProvider)
+                  .setCredentialsProvider(NoCredentialsProvider.create())
+                  .setLocation("bb")
+                  .build();
             });
     assertEquals("Specified location bb does not match the system value aa", ex.getMessage());
   }
 
   @Test
-  public void testSimpleSchemaUpdate() throws Exception {
+  void testSimpleSchemaUpdate() throws Exception {
     testBigQueryWrite.addResponse(
         WriteStream.newBuilder()
             .setName(TEST_STREAM)
@@ -832,7 +825,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testSimpleSchemaUpdate_skipRefreshWriterIfSchemaProvided() throws Exception {
+  void testSimpleSchemaUpdate_skipRefreshWriterIfSchemaProvided() throws Exception {
     testBigQueryWrite.addResponse(
         WriteStream.newBuilder()
             .setName(TEST_STREAM)
@@ -914,7 +907,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testSimpleSchemaUpdate_withInterpretationMap() throws Exception {
+  void testSimpleSchemaUpdate_withInterpretationMap() throws Exception {
     testBigQueryWrite.addResponse(
         WriteStream.newBuilder()
             .setName(TEST_STREAM)
@@ -1003,7 +996,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testWithoutIgnoreUnknownFieldsUpdateImmeidateSuccess() throws Exception {
+  void testWithoutIgnoreUnknownFieldsUpdateImmeidateSuccess() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     TableSchema updatedSchema =
         TableSchema.newBuilder()
@@ -1041,7 +1034,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testWithoutIgnoreUnknownFieldsUpdateSecondSuccess() throws Exception {
+  void testWithoutIgnoreUnknownFieldsUpdateSecondSuccess() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     TableSchema updatedSchema =
         TableSchema.newBuilder()
@@ -1077,7 +1070,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testSchemaUpdateInMultiplexing_singleConnection() throws Exception {
+  void testSchemaUpdateInMultiplexing_singleConnection() throws Exception {
     // Set min connection count to be 1 to force sharing connection.
     ConnectionWorkerPool.setOptions(
         Settings.builder().setMinConnectionsPerRegion(1).setMaxConnectionsPerRegion(1).build());
@@ -1174,7 +1167,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testMissingValueInterpretation_multiplexingCase() throws Exception {
+  void testMissingValueInterpretation_multiplexingCase() throws Exception {
     // Set min connection count to be 1 to force sharing connection.
     ConnectionWorkerPool.setOptions(
         Settings.builder().setMinConnectionsPerRegion(1).setMaxConnectionsPerRegion(1).build());
@@ -1247,7 +1240,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testSchemaUpdateInMultiplexing_multipleWriterForSameStreamName() throws Exception {
+  void testSchemaUpdateInMultiplexing_multipleWriterForSameStreamName() throws Exception {
     // Set min connection count to be 1 to force sharing connection.
     ConnectionWorkerPool.setOptions(
         Settings.builder().setMinConnectionsPerRegion(1).setMaxConnectionsPerRegion(1).build());
@@ -1337,7 +1330,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testSchemaUpdateInMultiplexing_IgnoreUpdateIfTimeStampNewer() throws Exception {
+  void testSchemaUpdateInMultiplexing_IgnoreUpdateIfTimeStampNewer() throws Exception {
     // Set min connection count to be 1 to force sharing connection.
     ConnectionWorkerPool.setOptions(
         Settings.builder().setMinConnectionsPerRegion(1).setMaxConnectionsPerRegion(1).build());
@@ -1428,7 +1421,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testWithoutIgnoreUnknownFieldsUpdateFail() throws Exception {
+  void testWithoutIgnoreUnknownFieldsUpdateFail() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     // GetWriteStream is called once but failed to update to the right schema.
     testBigQueryWrite.addResponse(
@@ -1444,20 +1437,17 @@ public class JsonStreamWriterTest {
       JSONArray jsonArr = new JSONArray();
       jsonArr.put(foo);
       jsonArr.put(bar);
-      try {
-        ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
-        Assert.fail("expected ExecutionException");
-      } catch (AppendSerializationError ex) {
-        assertEquals(
-            "The source object has fields unknown to BigQuery: root.test_unknown.",
-            ex.getRowIndexToErrorMessage().get(1));
-        assertEquals(TEST_STREAM, ex.getStreamName());
-      }
+      AppendSerializationError ex =
+          assertThrows(AppendSerializationError.class, () -> writer.append(jsonArr));
+      assertEquals(
+          "The source object has fields unknown to BigQuery: root.test_unknown.",
+          ex.getRowIndexToErrorMessage().get(1));
+      assertEquals(TEST_STREAM, ex.getStreamName());
     }
   }
 
   @Test
-  public void testWithIgnoreUnknownFields() throws Exception {
+  void testWithIgnoreUnknownFields() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     try (JsonStreamWriter writer =
         JsonStreamWriter.newBuilder(TEST_STREAM, tableSchema)
@@ -1480,7 +1470,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testFlowControlSetting() throws Exception {
+  void testFlowControlSetting() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     try (JsonStreamWriter writer =
         JsonStreamWriter.newBuilder(TEST_STREAM, tableSchema)
@@ -1500,11 +1490,8 @@ public class JsonStreamWriterTest {
       StatusRuntimeException ex =
           assertThrows(
               StatusRuntimeException.class,
-              new ThrowingRunnable() {
-                @Override
-                public void run() throws Throwable {
-                  writer.append(jsonArr);
-                }
+              () -> {
+                writer.append(jsonArr);
               });
       assertEquals(ex.getStatus().getCode(), Status.RESOURCE_EXHAUSTED.getCode());
       assertTrue(
@@ -1519,7 +1506,7 @@ public class JsonStreamWriterTest {
   // This is to test the new addition didn't break previous settings, i.e., sets the inflight limit
   // without limit beahvior.
   @Test
-  public void testFlowControlSettingNoLimitBehavior() throws Exception {
+  void testFlowControlSettingNoLimitBehavior() throws Exception {
     TableSchema tableSchema = TableSchema.newBuilder().addFields(0, TEST_INT).build();
     try (JsonStreamWriter writer =
         JsonStreamWriter.newBuilder(TEST_STREAM, tableSchema)
@@ -1540,7 +1527,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testMultipleAppendSerializationErrors()
+  void testMultipleAppendSerializationErrors()
       throws DescriptorValidationException, IOException, InterruptedException {
     FooType expectedProto = FooType.newBuilder().setFoo("allen").build();
     JSONObject foo = new JSONObject();
@@ -1563,23 +1550,20 @@ public class JsonStreamWriterTest {
 
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
-      try {
-        ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
-        Assert.fail("expected AppendSerializationError");
-      } catch (AppendSerializationError appendSerializationError) {
-        Map<Integer, String> rowIndexToErrorMessage =
-            appendSerializationError.getRowIndexToErrorMessage();
-        assertEquals(
-            ImmutableMap.of(
-                0, "The source object has fields unknown to BigQuery: root.not_foo.",
-                2, "The source object has fields unknown to BigQuery: root.not_bar."),
-            rowIndexToErrorMessage);
-      }
+      AppendSerializationError appendSerializationError =
+          assertThrows(AppendSerializationError.class, () -> writer.append(jsonArr));
+      Map<Integer, String> rowIndexToErrorMessage =
+          appendSerializationError.getRowIndexToErrorMessage();
+      assertEquals(
+          ImmutableMap.of(
+              0, "The source object has fields unknown to BigQuery: root.not_foo.",
+              2, "The source object has fields unknown to BigQuery: root.not_bar."),
+          rowIndexToErrorMessage);
     }
   }
 
   @Test
-  public void testBadStringToNumericRowError()
+  void testBadStringToNumericRowError()
       throws DescriptorValidationException, IOException, InterruptedException {
     TableSchema TABLE_SCHEMA =
         TableSchema.newBuilder()
@@ -1601,38 +1585,34 @@ public class JsonStreamWriterTest {
 
     try (JsonStreamWriter writer =
         getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build()) {
-      try {
-        ApiFuture<AppendRowsResponse> appendFuture = writer.append(jsonArr);
-        Assert.fail("expected AppendSerializationError");
-      } catch (AppendSerializationError appendSerializationError) {
-        Map<Integer, String> rowIndexToErrorMessage =
-            appendSerializationError.getRowIndexToErrorMessage();
-        assertEquals(1, rowIndexToErrorMessage.size());
-        assertTrue(
-            rowIndexToErrorMessage
-                .get(0)
-                .startsWith("Field root.test_field_type failed to convert to NUMERIC. Error:"));
-      }
+      AppendSerializationError appendSerializationError =
+          assertThrows(AppendSerializationError.class, () -> writer.append(jsonArr));
+      Map<Integer, String> rowIndexToErrorMessage =
+          appendSerializationError.getRowIndexToErrorMessage();
+      assertEquals(1, rowIndexToErrorMessage.size());
+      assertTrue(
+          rowIndexToErrorMessage
+              .get(0)
+              .startsWith("Field root.test_field_type failed to convert to NUMERIC. Error:"));
     }
   }
 
   @Test
-  public void testWriterId()
-      throws DescriptorValidationException, IOException, InterruptedException {
+  void testWriterId() throws DescriptorValidationException, IOException, InterruptedException {
     JsonStreamWriter writer1 = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    Assert.assertFalse(writer1.getWriterId().isEmpty());
+    assertFalse(writer1.getWriterId().isEmpty());
     JsonStreamWriter writer2 = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    Assert.assertFalse(writer2.getWriterId().isEmpty());
-    Assert.assertNotEquals(writer1.getWriterId(), writer2.getWriterId());
+    assertFalse(writer2.getWriterId().isEmpty());
+    assertNotEquals(writer1.getWriterId(), writer2.getWriterId());
   }
 
   @Test
-  public void testIsDone() throws DescriptorValidationException, IOException, InterruptedException {
+  void testIsDone() throws DescriptorValidationException, IOException, InterruptedException {
     JsonStreamWriter writer = getTestJsonStreamWriterBuilder(TEST_STREAM, TABLE_SCHEMA).build();
-    Assert.assertFalse(writer.isClosed());
+    assertFalse(writer.isClosed());
     writer.close();
-    Assert.assertTrue(writer.isClosed());
-    Assert.assertTrue(writer.isUserClosed());
+    assertTrue(writer.isClosed());
+    assertTrue(writer.isUserClosed());
   }
 
   private AppendRowsResponse createAppendResponse(long offset) {
@@ -1643,7 +1623,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testAppendWithMissingValueMap() throws Exception {
+  void testAppendWithMissingValueMap() throws Exception {
     TableFieldSchema field =
         TableFieldSchema.newBuilder()
             .setType(TableFieldSchema.Type.STRING)
@@ -1685,7 +1665,7 @@ public class JsonStreamWriterTest {
   }
 
   @Test
-  public void testWrongCompressionType() throws Exception {
+  void testWrongCompressionType() throws Exception {
     IllegalArgumentException ex =
         assertThrows(
             IllegalArgumentException.class,
