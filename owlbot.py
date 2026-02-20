@@ -23,6 +23,7 @@ for library in s.get_staging_dirs():
 s.remove_staging_dirs()
 java.common_templates(
     excludes=[
+        "README.md",
         "renovate.json",
         ".kokoro/build.sh",
         ".kokoro/nightly/retry_non_quota.cfg",
