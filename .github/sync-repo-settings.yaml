@@ -171,5 +171,5 @@ permissionRules:
     permission: admin
   - team: api-bigquerystorage
     permission: push
-  - team: yoshi-java
+  - team: cloud-sdk-java-team
     permission: push
