@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.21.1](https://github.com/googleapis/java-bigquerystorage/compare/v3.21.0...v3.21.1) (2026-02-24)
+
+
+### Documentation
+
+* Redirect users to google-cloud-java ([#3201](https://github.com/googleapis/java-bigquerystorage/issues/3201)) ([44534dd](https://github.com/googleapis/java-bigquerystorage/commit/44534dd37bcee0f89c8ecf158b140d1d7a1f2e1a))
+
 ## [3.21.0](https://github.com/googleapis/java-bigquerystorage/compare/v3.20.0...v3.21.0) (2026-02-11)
 
 
